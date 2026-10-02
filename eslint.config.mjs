@@ -6,6 +6,11 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
+  {
+    // R3F: three.js objects are mutated every frame inside useFrame by design.
+    files: ["components/three/**/*.tsx"],
+    rules: { "react-hooks/immutability": "off" },
+  },
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
