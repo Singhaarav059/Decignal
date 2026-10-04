@@ -51,7 +51,9 @@ export function islandPose(s: number, c: number): Pose | null {
 /* ---------------- The signal crate: one tote of bearings ---------------- */
 
 // Where it sits on the warehouse island, relative to the island centre.
-export const CRATE_ON_ISLAND: Vec3 = [0.5, ISLAND_TOP + CRATE.h * 1.5, 0.38];
+// Totes on the island are shown at half size, in proportion to the warehouse beside them.
+export const ISLAND_TOTE = 0.5;
+export const CRATE_ON_ISLAND: Vec3 = [0.48, ISLAND_TOP + CRATE.h * ISLAND_TOTE * 1.5, 0.42];
 
 /* ---------------- 03 Problem: crates become the inventory chart ---------------- */
 
@@ -59,6 +61,10 @@ export const DAYS = [6, 5, 5, 4, 4, 4, 2];
 export const STEP_Y = CRATE.h + 0.035;
 export const DAY_X = (d: number) => (d - 3) * 1.0;
 export const SAFETY_Y = 2.5 * STEP_Y;
+/** Stock behind the chart: each tote holds about 70 units; today's count is exact. */
+export const UNITS_PER_CRATE = 70;
+export const SAFETY_UNITS = 175;
+export const dayUnits = (d: number) => (d === 0 ? 410 : DAYS[d] * UNITS_PER_CRATE);
 export const CHART_CRATES = DAYS.reduce((s, n) => s + n, 0) - 1; // the last one is the signal
 
 /** Chart slot k (0..CHART_CRATES): day column and level. The final slot is the signal. */
@@ -83,7 +89,7 @@ export function signalCratePose(c: number, t: number): Pose | null {
       const cs = Math.cos(ry);
       const sn = Math.sin(ry);
       const k = 1.1; // island scale
-      return { p: [x + (ox * cs + oz * sn) * k, oy * k, z + (-ox * sn + oz * cs) * k], ry, s: k };
+      return { p: [x + (ox * cs + oz * sn) * k, oy * k, z + (-ox * sn + oz * cs) * k], ry, s: k * ISLAND_TOTE };
     }
     case CH.signal:
       return { p: [0.55, 0.9, 1.6], rx: 0.12, ry: -0.55 + t * 0.5, s: 1.7 };
@@ -96,14 +102,28 @@ export function signalCratePose(c: number, t: number): Pose | null {
   }
 }
 
-/* ---------------- 05 Decision: two plants, one truck, one card ---------------- */
+/* ---------------- 05 Decision: two plants, one truck, one forklift ---------------- */
 
-export const PLANT_02: Vec3 = [-2.7, 0, -1.9];
-export const PLANT_01: Vec3 = [2.7, 0, -1.9];
-export const ROAD_Z = -0.95;
+/** Vehicles and buildings are modelled in metres; this is their scale in the scene. */
+export const M = 0.135;
+export const PLANT_02: Vec3 = [-2.55, 0, -1.6];
+export const PLANT_01: Vec3 = [2.55, 0, -1.6];
+/** Front face of both plants. */
+export const PLANT_FRONT = PLANT_02[2] + 5 * M;
+/** The road runs along x in front of the plants; the truck drives on its centre line. */
+export const ROAD_Z = 0.35;
+export const TRUCK_X0 = -2.75; // parked at Plant 02, trailer alongside the yard
+export const TRUCK_X1 = 2.3; // pulled up at Plant 01
 
-/** Truck x along the road as the decision chapter plays: Plant 02 to Plant 01. */
-export const truckX = (t: number) => -2.0 + smootherstep(0.08, 0.85, t) * 4.0;
+/** Decision chapter beats, as local progress through the chapter. */
+export const BEATS = {
+  load: [0.06, 0.5] as const, // three forklift trips
+  drive: [0.53, 0.78] as const,
+};
+
+/** Truck x as the decision chapter plays, plus how far it has driven out during the exit. */
+export const truckX = (t: number, exit = 0) =>
+  TRUCK_X0 + smootherstep(BEATS.drive[0], BEATS.drive[1], t) * (TRUCK_X1 - TRUCK_X0) + exit * exit * 6;
 
 /* ---------------- Cards: the decision and its layers ---------------- */
 
@@ -117,7 +137,8 @@ export function cardPose(k: number, c: number, t: number): Pose | null {
     case CH.decision:
       // Only the decision is shown; the layers wait behind it.
       // Lifted clear of the road, so the truck stays in view as it makes the delivery.
-      return { p: [0, CARD.h / 2 + 0.66, 0.9 - (4 - k) * 0.012], rx: UP, ry: 0.22 - t * 0.22, s: k === 4 ? 1.0 : 0.96 };
+      // Stands in the yard between the two plants, above the road: the truck passes in front of it.
+      return { p: [0, 0.86, -1.25 - (4 - k) * 0.012], rx: UP, ry: 0, s: k === 4 ? 0.85 : 0.81 };
     case CH.control:
       // The decision opens into the layers it was built from.
       // Fanned wide enough that each layer's headline number stays in view.
@@ -153,8 +174,11 @@ export function cameraPose(c: number, t: number): Cam {
       return { p: [-0.35, 3.9, 14.3 - t * 0.4], t: [-0.35, 2.05, 0] };
     case CH.context:
       return { p: [-0.95, 10.6 - t * 0.5, 13.2 - t * 0.4], t: [-1.55, 1.0, -0.3] };
-    case CH.decision:
-      return { p: [0, 2.3, 8.8 - t * 0.4], t: [0, 1.25, 0] };
+    case CH.decision: {
+      // A tracking shot on a long lens: it watches the loading at Plant 02, then travels with the truck.
+      const cx = truckX(t) + 0.55;
+      return { p: [cx, 2.45, 7.9], t: [cx, 0.78, -0.5] };
+    }
     case CH.control:
       return { p: [2.75, 2.3, 9.9], t: [2.3, 0.72, 0.1] };
     case CH.scale:

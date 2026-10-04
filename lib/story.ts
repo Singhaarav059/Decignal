@@ -14,7 +14,7 @@ export const CHAPTERS: Chapter[] = [
   { id: "signal", label: "Signal", len: 1.3, ts: 0.5 },
   { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
   { id: "context", label: "Context", len: 1.5, ts: 0.55 },
-  { id: "decision", label: "Decision", len: 1.7, ts: 0.6 },
+  { id: "decision", label: "Decision", len: 2.8, ts: 0.8 },
   { id: "control", label: "Control", len: 1.9, ts: 0.62 },
   { id: "scale", label: "Scale", len: 1.5, ts: 0.55 },
   { id: "industries", label: "Industries", len: 4.2, ts: 0.9 },
@@ -29,12 +29,38 @@ export const store = {
   velocity: 0, // scroll velocity from Lenis, px per frame
   pointer: { x: 0, y: 0 },
   camK: 1, // how far narrow screens step the camera back (1 on desktop)
+  /** Pointer is over the page (false once it leaves the window). */
+  pointerIn: false,
+  /** Card under the pointer in the chapters where cards can be read, or -1. */
+  focus: -1,
+  /** A card the page asks to bring forward (the approval panel points at the decision card). */
+  focusHint: -1,
+  /** The system island opened for a closer look (click), or -1. */
+  selected: -1,
+  /** A system the page points at (hovering its chip), lifted as if under the pointer. */
+  islandHint: -1,
+  /** Screen position (px) of the opened island's top, for the panel's leader line. */
+  anchor: { x: 0, y: 0 },
+  selectListeners: new Set<(i: number) => void>(),
   listeners: new Set<(g: number) => void>(),
 };
 
 export function setG(g: number) {
   store.g = g;
   store.listeners.forEach((l) => l(g));
+}
+
+export function select(i: number) {
+  if (store.selected === i) return;
+  store.selected = i;
+  store.selectListeners.forEach((l) => l(i));
+}
+
+export function onSelect(fn: (i: number) => void) {
+  store.selectListeners.add(fn);
+  return () => {
+    store.selectListeners.delete(fn);
+  };
 }
 
 export function subscribe(fn: (g: number) => void) {
@@ -128,10 +154,58 @@ export const FUNCTIONS = [
 ];
 
 export const INDUSTRIES = [
-  { name: "Manufacturing", decision: "Move Line 04 maintenance to Thursday night", system: "MES · CMMS · IoT" },
-  { name: "Automotive", decision: "Reserve 1,200 harnesses for the launch build", system: "ERP · DMS · Supplier portal" },
-  { name: "Retail", decision: "Shift 3,400 units from North to West DC", system: "POS · WMS · Planning" },
-  { name: "Logistics", decision: "Reroute 6 containers through Mombasa", system: "TMS · Port feeds · ERP" },
-  { name: "Financial Services", decision: "Review 18 payments before settlement", system: "Core banking · Risk · Docs" },
-  { name: "Energy", decision: "Send a crew to Feeder 7 before peak load", system: "SCADA · GIS · Work orders" },
+  {
+    name: "Manufacturing",
+    decision: "Move Line 04 maintenance to Thursday night",
+    system: "MES · CMMS · IoT",
+    challenge: "Downtime, quality drift and schedule risk move faster than the morning review.",
+    decisions: ["Move Line 04 maintenance to Thursday night", "Resequence Line 03 before the 14:00 shift", "Hold Batch 2207 for a seal inspection"],
+    start: "Predictive Maintenance",
+    weeks: "6 to 10",
+  },
+  {
+    name: "Automotive",
+    decision: "Reserve 1,200 harnesses for the launch build",
+    system: "ERP · DMS · Supplier portal",
+    challenge: "A launch build depends on thousands of parts from hundreds of suppliers arriving on time.",
+    decisions: ["Reserve 1,200 harnesses for the launch build", "Dual-source 2 parts ahead of a port delay", "Shift 12% of dealer allocation to the West"],
+    start: "Supply Chain Risk",
+    weeks: "5 to 8",
+  },
+  {
+    name: "Retail",
+    decision: "Shift 3,400 units from North to West DC",
+    system: "POS · WMS · Planning",
+    challenge: "Demand moves by region and by week, faster than replenishment cycles can follow.",
+    decisions: ["Shift 3,400 units from North to West DC", "Raise the West DC order by 1,800 units", "Mark down 6 slow lines before season end"],
+    start: "Demand & Replenishment",
+    weeks: "5 to 7",
+  },
+  {
+    name: "Logistics",
+    decision: "Reroute 6 containers through Mombasa",
+    system: "TMS · Port feeds · ERP",
+    challenge: "Disruption at one port ripples through every lane, booking and promise date.",
+    decisions: ["Reroute 6 containers through Mombasa", "Rebook 14 shipments onto Tuesday's sailing", "Warn 3 customers of a 2 day delay"],
+    start: "Supply Chain Risk",
+    weeks: "5 to 8",
+  },
+  {
+    name: "Financial Services",
+    decision: "Review 18 payments before settlement",
+    system: "Core banking · Risk · Docs",
+    challenge: "High-volume exceptions need fast review without loosening control.",
+    decisions: ["Review 18 payments before settlement", "Hold 3 invoices pending goods receipt", "Escalate 2 accounts for a KYC refresh"],
+    start: "Finance & Risk Operations",
+    weeks: "6 to 8",
+  },
+  {
+    name: "Energy",
+    decision: "Send a crew to Feeder 7 before peak load",
+    system: "SCADA · GIS · Work orders",
+    challenge: "Peak load and asset health decide where a limited number of crews should go.",
+    decisions: ["Send a crew to Feeder 7 before peak load", "Defer a transformer swap to the weekend", "Pre-position spares at Substation 12"],
+    start: "Predictive Maintenance",
+    weeks: "6 to 10",
+  },
 ];

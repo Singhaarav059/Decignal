@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Environment, Lightformer } from "@react-three/drei";
+import { ContactShadows } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
 import { CHAPTERS, blendAt, store, subscribe } from "@/lib/story";
@@ -10,10 +10,11 @@ import { bgAt, cameraPose } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { Plinth } from "./Plinth";
-import { COLORS, TINTS } from "./palette";
+import { COLORS } from "./palette";
+import { KeyLight, Studio } from "./Studio";
 
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
-const PORTRAIT_DROP = [0, 0.13, 0.13, 0.12, 0, 0.09, 0.1, 0, 0];
+const PORTRAIT_DROP = [0, 0.13, 0.13, 0.12, 0.08, 0.09, 0.1, 0, 0];
 // Desktop frames push objects right of the copy column; a portrait screen centres them instead.
 const PORTRAIT_X = [0, 1.0, 0, 1.45, 0, 0.6, 0, 0, 0];
 
@@ -24,6 +25,7 @@ function Rig() {
   const goal = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), []);
   const tmp = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), []);
   const ready = useRef(false);
+  const lean = useRef(0);
 
   useFrame((_, dt) => {
     const { i, j, local, e } = blendAt(store.g);
@@ -50,6 +52,33 @@ function Rig() {
       goal.p.add(axes.u);
       goal.t.add(axes.u);
     }
+    // An opened system docks a panel on the right. The scene steps back a little and slides left
+    // into the space that remains, so every island stays in view and a click away.
+    lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
+    if (lean.current > 0.001 && aspect >= 0.9) {
+      const k = lean.current;
+      goal.p.sub(goal.t).multiplyScalar(1 + 0.24 * k).add(goal.t);
+      const d = goal.p.distanceTo(goal.t);
+      const viewW = 2 * d * Math.tan(THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov / 2)) * aspect;
+      const panelPx = Math.min(400, size.width * 0.3);
+      axes.f.subVectors(goal.t, goal.p).normalize();
+      axes.r.crossVectors(axes.f, THREE.Object3D.DEFAULT_UP).normalize();
+      const shift = (panelPx / 2 / size.width) * viewW * k;
+      goal.p.addScaledVector(axes.r, shift);
+      goal.t.addScaledVector(axes.r, shift);
+    } else if (lean.current > 0.001) {
+      // Phones: the panel is a sheet along the bottom, so the scene steps back and rises above it.
+      const k = lean.current;
+      goal.p.sub(goal.t).multiplyScalar(1 + 0.18 * k).add(goal.t);
+      const d = goal.p.distanceTo(goal.t);
+      const viewH = 2 * d * Math.tan(THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov / 2));
+      axes.f.subVectors(goal.t, goal.p).normalize();
+      axes.r.crossVectors(axes.f, THREE.Object3D.DEFAULT_UP).normalize();
+      axes.u.crossVectors(axes.r, axes.f).normalize();
+      const lift = (Math.min(340, size.height * 0.45) / 2 / size.height) * viewH * k;
+      goal.p.addScaledVector(axes.u, -lift);
+      goal.t.addScaledVector(axes.u, -lift);
+    }
     // A few centimetres of parallax: confirms the space is real, nothing more.
     goal.p.x += store.pointer.x * 0.22;
     goal.p.y += store.pointer.y * 0.12;
@@ -65,22 +94,6 @@ function Rig() {
     camera.lookAt(look.current);
   });
   return null;
-}
-
-function Studio() {
-  // Studio lighting, built in code: one large top softbox, a key, a rim and a low fill.
-  return (
-    <Environment resolution={512} frames={1}>
-      <color attach="background" args={[COLORS.envBase]} />
-      <Lightformer form="rect" intensity={2.4} position={[0, 7, 0]} rotation-x={Math.PI / 2} scale={[12, 12, 1]} />
-      <Lightformer form="rect" intensity={3.0} position={[-7, 2.5, 3]} rotation-y={Math.PI / 2} scale={[5, 7, 1]} />
-      <Lightformer form="rect" intensity={1.6} position={[7, 1.5, -2]} rotation-y={-Math.PI / 2} scale={[3, 6, 1]} />
-      <Lightformer form="rect" intensity={0.9} position={[0, 1, 9]} scale={[10, 3, 1]} />
-      <Lightformer form="ring" intensity={1.2} position={[3, 5, 6]} scale={2} />
-      <Lightformer form="rect" color={TINTS.tangerine} intensity={0.5} position={[-8, 0.6, -4]} rotation-y={Math.PI / 3} scale={[6, 2, 1]} />
-      <Lightformer form="rect" color={TINTS.cobalt} intensity={0.4} position={[8, 0.6, 4]} rotation-y={-Math.PI / 1.6} scale={[6, 2, 1]} />
-    </Environment>
-  );
 }
 
 /** Fog takes the page's chapter tint, so distant objects melt into the background. */
@@ -105,21 +118,7 @@ function World() {
     <>
       <Studio />
       <Atmosphere />
-      <directionalLight
-        position={[5, 11, 7]}
-        intensity={1.1}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0003}
-        shadow-normalBias={0.02}
-        shadow-radius={6}
-        shadow-camera-left={-11}
-        shadow-camera-right={11}
-        shadow-camera-top={11}
-        shadow-camera-bottom={-11}
-        shadow-camera-near={1}
-        shadow-camera-far={40}
-      />
+      <KeyLight />
       <Suspense fallback={null}>
         <Islands />
         <SignalCrate />
@@ -135,7 +134,8 @@ function World() {
         <planeGeometry args={[80, 80]} />
         <shadowMaterial color={COLORS.shadow} opacity={0.16} transparent />
       </mesh>
-      <ContactShadows position={[0, 0.001, 0]} scale={30} resolution={512} blur={1.8} far={1.4} opacity={0.5} color={COLORS.shadow} />
+      {/* Tight contact shadows: every object sits on the ground, none of them float */}
+      <ContactShadows position={[0, 0.001, 0]} scale={30} resolution={1024} blur={1.1} far={0.7} opacity={0.42} color={COLORS.shadow} />
       <Rig />
       <Pause />
     </>

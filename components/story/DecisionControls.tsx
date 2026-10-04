@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { store } from "@/lib/story";
+import { DECISION_CARD } from "@/lib/scene";
 
 type Mode = "idle" | "adjust" | "reject" | "approved" | "rejected";
 
@@ -15,8 +17,15 @@ export function DecisionControls() {
 
   return (
     <div
-      className="mt-8 rounded-[22px] border border-white/80 bg-white/65 p-5 shadow-[0_18px_50px_-24px_rgba(20,19,15,0.35)] backdrop-blur-md"
+      className="mt-8 rounded-[22px] border border-white/80 bg-white/65 p-5 shadow-[0_18px_50px_-24px_rgba(20,19,15,0.35)] backdrop-blur-md transition-shadow duration-500 hover:shadow-[0_24px_60px_-24px_rgba(20,19,15,0.42)]"
       aria-live="polite"
+      // While someone is deciding, the decision card in the stack comes forward to be read.
+      onPointerEnter={() => (store.focusHint = DECISION_CARD)}
+      onPointerLeave={() => (store.focusHint = -1)}
+      onFocus={() => (store.focusHint = DECISION_CARD)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) store.focusHint = -1;
+      }}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="font-serif text-2xl leading-tight whitespace-nowrap">

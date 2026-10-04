@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import { CH, clamp01, smoothstep, store, weight } from "@/lib/story";
-import { CRATE, DAYS, DAY_X, HUB_Y, RING, SAFETY_Y, STEP_Y } from "@/lib/scene";
+import { CRATE, DAYS, DAY_X, HUB_Y, RING, SAFETY_UNITS, SAFETY_Y, STEP_Y, dayUnits } from "@/lib/scene";
 import { COLORS, FONTS } from "./palette";
 
 type TroikaText = THREE.Mesh & { fillOpacity: number };
@@ -44,7 +44,7 @@ export function ChartMarks() {
     });
   });
 
-  const day = (d: number) => (d === 0 ? "TODAY" : `+${d}D`);
+  const day = (d: number) => (d === 0 ? "TODAY" : `DAY ${d}`);
   const text = { font: FONTS.mono, fontSize: 0.09, letterSpacing: 0.06 };
 
   return (
@@ -67,14 +67,27 @@ export function ChartMarks() {
         transparent
       />
       <Text {...text} color={COLORS.signal} anchorX="right" anchorY="middle" position={[-3.8, SAFETY_Y, Z]}>
-        SAFETY STOCK
+        {`SAFETY STOCK  ${SAFETY_UNITS}`}
       </Text>
       <Text {...text} color={COLORS.demand} anchorX="left" anchorY="middle" position={[tube.end.x + 0.16, tube.end.y, tube.end.z]}>
         DEMAND +18%
       </Text>
-      <Text {...text} color={COLORS.inkSoft} anchorX="center" anchorY="bottom" position={[DAY_X(0), DAYS[0] * STEP_Y + 0.08, 0]}>
-        ON HAND
-      </Text>
+      {/* Units on hand, read off the top of every column */}
+      {DAYS.map((n, d) => (
+        <Text
+          key={`u${d}`}
+          {...text}
+          fontSize={0.105}
+          color={d === 6 ? COLORS.signal : COLORS.ink}
+          userData={{ alpha: d === 6 ? 1 : 0.75 }}
+          anchorX="center"
+          anchorY="bottom"
+          position={[DAY_X(d), n * STEP_Y + 0.08, 0]}
+        >
+          {d === 0 ? `${dayUnits(d)} ON HAND` : String(dayUnits(d))}
+        </Text>
+      ))}
+      {/* The day scale, painted on the floor in front of the columns */}
       {DAYS.map((_, d) => (
         <Text
           key={d}
@@ -83,11 +96,33 @@ export function ChartMarks() {
           color={d === 6 ? COLORS.signal : COLORS.inkSoft}
           anchorX="center"
           anchorY="top"
-          position={[DAY_X(d), -0.08, Z]}
+          // Stands just in front of the floor line; drawn over the ground so it never clips.
+          material-depthTest={false}
+          renderOrder={5}
+          position={[DAY_X(d), -0.04, Z + 0.15]}
         >
           {day(d)}
         </Text>
       ))}
+      {/* The gap that rules out waiting: the next supplier delivery is far off the chart. */}
+      <Line
+        points={[
+          [DAY_X(6) + 0.45, -0.1, Z + 0.15],
+          [DAY_X(6) + 2.1, -0.1, Z + 0.15],
+        ]}
+        depthTest={false}
+        renderOrder={5}
+        color={COLORS.inkSoft}
+        lineWidth={1.2}
+        dashed
+        dashSize={0.05}
+        gapSize={0.05}
+        transparent
+        opacity={0.7}
+      />
+      <Text {...text} fontSize={0.1} color={COLORS.ink} anchorX="left" anchorY="middle" material-depthTest={false} renderOrder={5} position={[DAY_X(6) + 2.2, -0.1, Z + 0.15]}>
+        DAY 21 · SUPPLIER
+      </Text>
     </group>
   );
 }

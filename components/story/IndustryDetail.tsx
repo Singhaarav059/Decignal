@@ -1,0 +1,101 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { CH, INDUSTRIES, clamp01, gToProgress, localIn, subscribe } from "@/lib/story";
+import { industryF } from "@/lib/layouts";
+import { scrollToTarget } from "../SmoothScroll";
+
+/** Local progress in the Industries chapter where industry k has settled (inverse of industryF). */
+const settleAt = (k: number) => 0.04 + (Math.min(k + 0.1, INDUSTRIES.length - 1) / (INDUSTRIES.length - 1)) * 0.86;
+
+/** What Decignal does in the industry on screen, and an index to jump between them. */
+export function IndustryDetail() {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const blocks = Array.from(el.querySelectorAll<HTMLElement>("[data-ind-detail]"));
+    const items = Array.from(el.querySelectorAll<HTMLElement>("[data-ind-item]"));
+    const bar = el.querySelector<HTMLElement>("[data-ind-bar]");
+    let last = -1;
+    return subscribe((g) => {
+      const f = industryF(localIn(CH.industries, g));
+      blocks.forEach((b, k) => {
+        // Each block holds while its industry faces the viewer, then hands over.
+        const w = 1 - clamp01(Math.abs(f - k) * 2.6);
+        b.style.opacity = String(w);
+        b.style.transform = `translate3d(0, ${(k - f) * 14}px, 0)`;
+        b.style.visibility = w < 0.01 ? "hidden" : "visible";
+      });
+      const now = Math.round(f);
+      if (bar) bar.style.transform = `translateY(${f * 100}%)`;
+      if (now !== last) {
+        last = now;
+        items.forEach((it, k) => it.toggleAttribute("aria-current", k === now));
+      }
+    });
+  }, []);
+
+  const go = (k: number) => {
+    const el = document.getElementById("story");
+    if (!el) return;
+    const start = el.getBoundingClientRect().top + window.scrollY;
+    const range = el.offsetHeight - window.innerHeight;
+    scrollToTarget(start + gToProgress(CH.industries + clamp01(settleAt(k))) * range);
+  };
+
+  return (
+    <div ref={root} className="pointer-events-none absolute inset-x-6 top-[25vh] bottom-[13vh] md:inset-x-10 md:bottom-[14vh]">
+      {/* Left: the industry's challenge, the decisions Decignal makes there, how to start */}
+      <div className="absolute inset-x-0 bottom-0 h-[180px] md:relative md:h-full md:w-[min(310px,24vw)]">
+        {INDUSTRIES.map((ind, k) => (
+          <div key={ind.name} data-ind-detail className="absolute inset-x-0 max-md:bottom-0 md:top-0" style={{ opacity: 0 }}>
+            <p className="eyebrow tabular max-md:hidden">
+              {String(k + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")} · The challenge
+            </p>
+            <p className="mt-2 text-[16px] font-medium max-md:hidden leading-[1.4] tracking-[-0.01em] text-ink">{ind.challenge}</p>
+            <p className="eyebrow md:mt-5">Decisions Decignal makes</p>
+            <ul className="mt-2 border-t border-line">
+              {ind.decisions.map((d) => (
+                <li key={d} className="flex gap-2.5 border-b border-line py-1.5 text-[13px] leading-snug text-ink-2">
+                  <svg width="14" height="14" viewBox="0 0 14 14" className="mt-[3px] shrink-0 text-emerald" aria-hidden>
+                    <path d="M3 7.5l2.5 2.5L11 4.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {d}
+                </li>
+              ))}
+            </ul>
+            <dl className="mt-3 grid grid-cols-2 gap-4 md:mt-4">
+              <div>
+                <dt className="eyebrow">Connects</dt>
+                <dd className="mt-1 text-[13px] text-ink-2">{ind.system}</dd>
+              </div>
+              <div>
+                <dt className="eyebrow">Typical start</dt>
+                <dd className="mt-1 text-[13px] text-ink-2">
+                  {ind.start}
+                  <span className="tabular block text-ink-soft">{ind.weeks} weeks</span>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        ))}
+      </div>
+
+      {/* Right: every industry, the current one marked; click to turn the card to it */}
+      <nav aria-label="Industries" className="pointer-events-auto absolute right-0 top-0 max-md:hidden">
+        <ol className="relative border-l border-line">
+          <span data-ind-bar className="absolute -left-px top-0 h-[34px] w-[2px] bg-ink transition-none" aria-hidden />
+          {INDUSTRIES.map((ind, k) => (
+            <li key={ind.name}>
+              <button type="button" data-ind-item onClick={() => go(k)} className="ind-item">
+                <span className="tabular eyebrow w-6">{String(k + 1).padStart(2, "0")}</span>
+                {ind.name}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
+  );
+}

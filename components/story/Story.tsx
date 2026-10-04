@@ -8,19 +8,36 @@ import {
   INDUSTRIES,
   TOTAL_LEN,
   blendAt,
+  gToProgress,
   clamp01,
   localIn,
+  onSelect,
   smoothstep,
   subscribe,
   weight,
 } from "@/lib/story";
 import { industryF } from "@/lib/layouts";
+import { BEATS } from "@/lib/scene";
 import { DecisionControls } from "./DecisionControls";
+import { IslandPanel } from "./IslandPanel";
+import { SystemChips } from "./SystemChips";
+import { ScaleApps } from "./ScaleApps";
+import { IndustryDetail } from "./IndustryDetail";
 import { scrollToTarget } from "../SmoothScroll";
 import { Arrow } from "../ui/Arrow";
 
 /** Chapter accent: the colour of what that chapter is about. */
 const TONE = ["", "signal", "cobalt", "violet", "saffron", "emerald", "tangerine", "pink", ""];
+
+/** One word per chapter, set huge and faint behind the 3D. */
+const GHOSTS: [number, string][] = [
+  [CH.signal, "SIGNAL"],
+  [CH.problem, "SHORTAGE"],
+  [CH.context, "CONTEXT"],
+  [CH.decision, "TRANSFER"],
+  [CH.control, "APPROVAL"],
+  [CH.scale, "FUNCTIONS"],
+];
 
 const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
@@ -39,17 +56,51 @@ export function Story() {
     const indEls = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ind]") ?? []);
     const ticks = Array.from(counter.current?.querySelectorAll<HTMLElement>("[data-tick]") ?? []);
     const label = counter.current?.querySelector<HTMLElement>("[data-label]");
+    const ghosts = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ghost]") ?? []);
+    const stock = front.current?.querySelector<HTMLElement>("[data-stock]");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let last = -1;
+    let lastStock = "";
+    // While a system is open, the giant headline steps back so the island and its panel lead.
+    const offSelect = onSelect((n) => {
+      back.current?.toggleAttribute("data-dim", n >= 0);
+      front.current?.toggleAttribute("data-dim", n >= 0);
+    });
 
-    return subscribe((g) => {
+    const off = subscribe((g) => {
       chEls.forEach((el) => {
         const w = shown(weight(Number(el.dataset.ch), g));
         el.style.opacity = String(w);
         el.style.transform = `translate3d(0, ${(1 - w) * 18}px, 0)`;
-        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 10}px)`;
+        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 6}px)`;
         el.style.visibility = w < 0.005 ? "hidden" : "visible";
+        // Headings resolve from a red and blue split into one sharp line as they settle.
+        if (!still) {
+          el.style.setProperty("--split", `${(1 - w) * 18}px`);
+          el.style.setProperty("--split-k", String(Math.min(1, (1 - w) * 3)));
+        }
         if (el.dataset.interactive !== undefined) el.style.pointerEvents = w > 0.6 ? "auto" : "none";
       });
+
+      // Giant chapter words drift slowly behind the object, the way a camera passes type on a wall.
+      ghosts.forEach((el) => {
+        const c = Number(el.dataset.ghost);
+        const w = weight(c, g);
+        el.style.opacity = String(smoothstep(0.3, 1, w));
+        el.style.visibility = w < 0.005 ? "hidden" : "visible";
+        if (!still) el.style.transform = `translate3d(${(0.5 - (g - c)) * 18}vw, 0, 0)`;
+      });
+
+      // Plant 02's stock counts down as each pallet goes onto the truck.
+      if (stock) {
+        const [l0, l1] = BEATS.load;
+        const t = g >= CH.decision + 1 ? 1 : localIn(CH.decision, g);
+        const v = `${Math.round(620 - 240 * smoothstep(l0, l1, t))} units`;
+        if (v !== lastStock) {
+          stock.textContent = v;
+          lastStock = v;
+        }
+      }
 
       const f = industryF(localIn(CH.industries, g));
       const wi = shown(weight(CH.industries, g));
@@ -78,6 +129,10 @@ export function Story() {
         );
       }
     });
+    return () => {
+      off();
+      offSelect();
+    };
   }, []);
 
   return (
@@ -96,6 +151,11 @@ export function Story() {
             </span>
           </p>
         </div>
+        {GHOSTS.map(([c, word]) => (
+          <p key={word} data-ghost={c} className="ghost-word" style={{ opacity: 0 }}>
+            {word}
+          </p>
+        ))}
         <div data-ch={CH.decision} className="absolute inset-x-0 top-[11vh] px-6 text-center">
           <p className="display text-[clamp(44px,7.4vw,136px)]">
             One clear
@@ -129,10 +189,13 @@ export function Story() {
         {/* 01 Fragmented */}
         <div data-ch={CH.fragments} data-interactive className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
           <div className="intro-fade flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <p className="max-w-[34ch] text-[15px] leading-relaxed text-ink-2 md:text-base">
-              ERP, CRM, MES, warehouse, suppliers, the outside world. Each holds part of the truth.
-              None of them sees the whole.
-            </p>
+            <div>
+              <p className="max-w-[34ch] text-[15px] leading-relaxed text-ink-2 md:text-base">
+                ERP, CRM, MES, warehouse, suppliers, the outside world. Each holds part of the truth.
+                None of them sees the whole.
+              </p>
+              <SystemChips className="mt-4 max-w-[520px]" />
+            </div>
             <div className="flex items-center gap-5">
               <span className="eyebrow hidden items-center gap-3 md:inline-flex">
                 <ScrollCue />
@@ -153,12 +216,28 @@ export function Story() {
         </Copy>
 
         {/* 03 Problem */}
-        <Copy ch={CH.problem} n="03" eyebrow="Problem" title={<>Demand is rising.<br />Stock is falling.</>}>
+        <Copy
+          ch={CH.problem}
+          n="03"
+          eyebrow="Problem"
+          title={<>Demand is rising.<br />Stock is falling.</>}
+        >
           In six days Plant 01 drops below safety stock. The next supplier delivery is 21 days away.
         </Copy>
 
+        {/* 03 Problem: the figures behind the chart */}
+        <div data-ch={CH.problem} className="absolute bottom-8 left-6 md:bottom-10 md:left-10">
+          <Facts
+            items={[
+              ["Daily usage", "45 units"],
+              ["Cover left", "6 days", true],
+              ["Supplier ETA", "21 days"],
+            ]}
+          />
+        </div>
+
         {/* 04 Context */}
-        <Copy ch={CH.context} n="04" eyebrow="Context" title={<>Everything a planner<br />would check.</>}>
+        <Copy dims ch={CH.context} n="04" eyebrow="Context" title={<>Everything a planner<br />would check.</>}>
           Decignal connects the evidence across systems: open orders, stock at every plant, production plans,
           supplier lead times, transfer policy, freight and weather.
         </Copy>
@@ -170,20 +249,23 @@ export function Story() {
               Not a dashboard. Not an alert. A recommendation with a quantity, a source, a destination and a
               cost.
             </p>
+            <div className="flex flex-col gap-3">
+            <Stepper />
             <dl className="grid grid-cols-3 divide-x divide-line overflow-hidden rounded-2xl border border-white/80 bg-white/60 text-left shadow-[0_10px_40px_-20px_rgba(20,19,15,0.3)] backdrop-blur-md">
               {[
                 ["Arrives", "2 days"],
                 ["Plant 02 left", "380 units"],
                 ["Cost", "INR 38k"],
               ].map(([k, v]) => (
-                <div key={k} className="px-4 py-3 md:px-5">
-                  <dt className="eyebrow whitespace-nowrap">{k}</dt>
-                  <dd className="mt-1 font-serif text-xl whitespace-nowrap md:text-[26px]">
+                <div key={k} className="min-w-0 px-3 py-3 md:px-5">
+                  <dt className="eyebrow truncate md:whitespace-nowrap">{k}</dt>
+                  <dd data-stock={k === "Plant 02 left" ? "" : undefined} className="tabular mt-1 font-serif text-xl whitespace-nowrap md:text-[26px]">
                     {v}
                   </dd>
                 </div>
               ))}
             </dl>
+            </div>
           </div>
         </div>
 
@@ -221,6 +303,16 @@ export function Story() {
           </p>
         </div>
 
+        {/* 07 Scale: what Decignal offers in each function */}
+        <div data-ch={CH.scale} data-interactive className="absolute inset-x-0 bottom-[8vh] px-6 md:px-10">
+          <ScaleApps />
+        </div>
+
+        {/* 08 Industries: detail and index */}
+        <div data-ch={CH.industries} className="absolute inset-0">
+          <IndustryDetail />
+        </div>
+
         {/* 08 Industries */}
         <div data-ch={CH.industries} className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
           <div className="flex items-end justify-between gap-6">
@@ -255,20 +347,97 @@ export function Story() {
         </div>
 
         {/* Chapter counter */}
-        <div ref={counter} className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 items-center gap-4 md:flex" style={{ opacity: 0 }}>
-          <div className="flex gap-1.5">
-            {CHAPTERS.map((c) => (
-              <span key={c.id} data-tick className="h-[2px] w-5 rounded-full bg-line-strong transition-colors duration-500" />
+        <div ref={counter} className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 items-center gap-4 md:flex" style={{ opacity: 0 }}>
+          <nav className="pointer-events-auto flex" aria-label="Story chapters">
+            {CHAPTERS.map((c, i) => (
+              // Each tick jumps to its chapter; the hit area is far taller than the 2px line it draws.
+              <button
+                key={c.id}
+                onClick={() => goToChapter(i)}
+                aria-label={`Go to ${c.label}`}
+                title={c.label}
+                className="group flex h-6 w-[26px] items-center justify-center"
+              >
+                <span
+                  data-tick
+                  className="h-[2px] w-5 rounded-full bg-line-strong transition-[background-color,height,transform] duration-300 ease-out group-hover:h-[4px] group-hover:scale-x-110"
+                />
+              </button>
             ))}
-          </div>
+          </nav>
           <span data-label className="eyebrow tabular min-w-[120px]" />
         </div>
       </div>
+
+      <IslandPanel />
 
       {/* The scroll track the story is mapped onto */}
       <div id="story" style={{ height: `${TOTAL_LEN * 100}svh` }} aria-hidden />
     </>
   );
+}
+
+/** The transfer order's progress, driven by the same beats as the forklift and the truck. */
+const STEPS: [string, number][] = [
+  ["Approved", 0],
+  ["Picking", BEATS.load[0]],
+  ["Loaded", BEATS.load[1]],
+  ["In transit", BEATS.drive[0]],
+  ["Received", BEATS.drive[1] - 0.02],
+];
+
+function Stepper() {
+  const root = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const items = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
+    const fills = Array.from(el.querySelectorAll<HTMLElement>("[data-fill]"));
+    let lastAt = -1;
+    return subscribe((g) => {
+      const t = g >= CH.decision + 1 ? 1 : g < CH.decision ? 0 : localIn(CH.decision, g);
+      let at = 0;
+      STEPS.forEach(([, s], i) => {
+        if (t >= s) at = i;
+      });
+      // Each connector fills as the work between two steps happens.
+      fills.forEach((f, i) => {
+        const a = STEPS[i][1];
+        const b = STEPS[i + 1][1];
+        f.style.transform = `scaleX(${clamp01((t - a) / (b - a))})`;
+      });
+      if (at !== lastAt) {
+        lastAt = at;
+        items.forEach((it, i) => (it.dataset.state = i < at ? "done" : i === at ? "now" : "next"));
+        el.setAttribute("aria-label", `Transfer TRF-0240: ${STEPS[at][0]}`);
+      }
+    });
+  }, []);
+  return (
+    <ol ref={root} className="stepper" aria-live="polite">
+      {STEPS.map(([name], i) => (
+        <li key={name} data-step data-state="next" className="stepper-step">
+          <span className="stepper-dot" aria-hidden />
+          <span className="stepper-label">{name}</span>
+          {i < STEPS.length - 1 && (
+            <span className="stepper-line" aria-hidden>
+              <span data-fill className="stepper-fill" />
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Scrolls to the point where a chapter has settled, before it starts handing over to the next. */
+function goToChapter(i: number) {
+  const el = document.getElementById("story");
+  if (!el) return;
+  const start = el.getBoundingClientRect().top + window.scrollY;
+  const range = el.offsetHeight - window.innerHeight;
+  const settle = Math.min(CHAPTERS[i].ts * 0.5, 0.3);
+  scrollToTarget(start + gToProgress(i + settle) * range);
 }
 
 function Copy({
@@ -277,21 +446,42 @@ function Copy({
   eyebrow,
   title,
   children,
+  after,
+  dims,
 }: {
+  dims?: boolean;
   ch: number;
   n: string;
   eyebrow: string;
   title: React.ReactNode;
   children: React.ReactNode;
+  after?: React.ReactNode;
 }) {
   return (
-    <div data-ch={ch} className="absolute left-6 top-[15vh] max-w-[580px] md:left-10 md:top-[18vh]">
+    <div data-ch={ch} data-dims={dims ? "" : undefined} data-interactive={after ? "" : undefined} className="absolute left-6 top-[15vh] max-w-[580px] md:left-10 md:top-[18vh]">
       <Tag n={n} tone={TONE[ch]}>
         {eyebrow}
       </Tag>
       <h2 className="display mt-4 text-[clamp(36px,3.8vw,60px)]">{title}</h2>
       <p className="mt-5 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">{children}</p>
+      {after}
     </div>
+  );
+}
+
+/** A short row of the figures behind a chapter, hairline-ruled. */
+function Facts({ items }: { items: [string, string, boolean?][] }) {
+  return (
+    <dl className="grid w-[min(420px,calc(100vw-48px))] grid-cols-3 border-t border-line">
+      {items.map(([k, v, risk]) => (
+        <div key={k} className="border-line py-3 pr-3 [&+&]:border-l [&+&]:pl-4">
+          <dt className="eyebrow">{k}</dt>
+          <dd className="tabular mt-1 text-[22px] font-semibold tracking-[-0.02em]" style={risk ? { color: "var(--color-signal)" } : undefined}>
+            {v}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

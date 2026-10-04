@@ -313,3 +313,274 @@ html.ready .intro-stage {
   opacity: 1;
   transform: none;
 }
+
+/* Colour-split reveal: a red and a blue ghost of each heading converge into one sharp line. */
+[data-ch] .display {
+  text-shadow:
+    calc(var(--split, 0px) * -1) 0 rgb(242 54 31 / calc(var(--split-k, 0) * 0.5)),
+    var(--split, 0px) 0 rgb(46 91 255 / calc(var(--split-k, 0) * 0.5));
+}
+
+/* Giant chapter words behind the 3D stage. */
+.ghost-word {
+  position: absolute;
+  inset-inline: 0;
+  top: 38vh;
+  text-align: center;
+  white-space: nowrap;
+  font-size: clamp(110px, 21vw, 360px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  /* A hairline outline, not a grey fill: it reads as type on a wall and never muddies the object in front. */
+  color: transparent;
+  -webkit-text-stroke: 1.25px rgb(20 19 15 / 0.085);
+  will-change: transform, opacity;
+}
+
+/* Transfer order progress (Decision chapter) */
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 12px 16px 10px;
+  border-radius: 16px;
+  border: 1px solid rgb(255 255 255 / 0.8);
+  background: rgb(255 255 255 / 0.6);
+  box-shadow: 0 10px 40px -20px rgb(20 19 15 / 0.3);
+  backdrop-filter: blur(12px);
+}
+.stepper-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.stepper-dot {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  box-shadow: inset 0 0 0 1.5px var(--color-line-strong);
+  transition: background-color 300ms var(--ease-out-quint), box-shadow 300ms var(--ease-out-quint), transform 300ms var(--ease-out-quint);
+}
+.stepper-step[data-state="done"] .stepper-dot {
+  background: var(--color-emerald);
+  box-shadow: inset 0 0 0 1.5px var(--color-emerald);
+}
+.stepper-step[data-state="now"] .stepper-dot {
+  background: var(--color-paper);
+  box-shadow: inset 0 0 0 3px var(--color-emerald), 0 0 0 4px rgb(15 168 116 / 0.16);
+  transform: scale(1.15);
+}
+.stepper-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-ink-soft);
+  transition: color 300ms var(--ease-out-quint);
+}
+.stepper-step[data-state="now"] .stepper-label,
+.stepper-step[data-state="done"] .stepper-label {
+  color: var(--color-ink);
+}
+.stepper-line {
+  position: absolute;
+  top: 4px;
+  left: 14px;
+  right: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-line);
+  overflow: hidden;
+}
+.stepper-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-emerald);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+@media (max-width: 767px) {
+  .stepper-label { font-size: 9px; letter-spacing: 0.04em; }
+  .stepper { padding: 10px 12px 8px; }
+}
+
+/* Opened system island: a spec sheet, tied to its island by a leader line */
+.island-panel {
+  position: fixed;
+  z-index: 30;
+  right: 40px;
+  top: 50%;
+  width: 360px;
+  padding: 16px 18px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--color-line);
+  border-top: 2px solid var(--tone, var(--color-ink));
+  background: var(--color-paper);
+  box-shadow: 0 1px 2px rgb(20 19 15 / 0.05), 0 18px 44px -22px rgb(20 19 15 / 0.32);
+  opacity: 0;
+  transform: translate3d(12px, -50%, 0);
+  pointer-events: none;
+  transition:
+    opacity 220ms var(--ease-out-quint),
+    transform 380ms var(--ease-out-quint);
+}
+.island-panel[data-open] {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+  pointer-events: auto;
+  transition-delay: 80ms;
+}
+.island-leader {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out-quint);
+}
+.island-leader[data-open] { opacity: 1; transition-delay: 220ms; }
+.spec-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+/* Field rows with a dotted leader, like a printed spec sheet */
+.spec-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+  background-image: radial-gradient(circle, rgb(20 19 15 / 0.3) 0.6px, transparent 0.9px);
+  background-size: 5px 3px;
+  background-repeat: repeat-x;
+  background-position: 0 calc(100% - 8px);
+}
+.spec-row dt,
+.spec-row dd {
+  background: var(--color-paper);
+  white-space: nowrap;
+}
+.spec-row dt { padding-right: 6px; color: var(--color-ink-2); }
+.spec-row dd { padding-left: 6px; font-weight: 600; }
+.spec-bar { transition: width 600ms var(--ease-out-quint); }
+.spec-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--color-ink-2);
+  transition: background-color 160ms, color 160ms;
+}
+.spec-nav:hover { background: rgb(20 19 15 / 0.05); color: var(--color-ink); }
+.spec-nav:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 1px; }
+@media (max-width: 767px) {
+  .island-panel {
+    inset: auto 12px 12px;
+    top: auto;
+    width: auto;
+    transform: translate3d(0, 12px, 0);
+  }
+  .island-panel[data-open] { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .island-panel, .island-leader, .spec-bar { transition-duration: 1ms; }
+}
+.kbd {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 5px;
+  border: 1px solid var(--color-line-strong);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 16px;
+  color: var(--color-ink-2);
+}
+
+/* System legend chips: each one points at its island */
+.sys-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: rgb(255 255 255 / 0.55);
+  backdrop-filter: blur(8px);
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--color-ink-2);
+  transition: background-color 200ms var(--ease-out-quint), border-color 200ms var(--ease-out-quint), color 200ms, transform 160ms var(--ease-out-quint);
+}
+.sys-chip:hover { background: #fff; border-color: var(--color-line-strong); color: var(--color-ink); }
+.sys-chip:active { transform: scale(0.97); }
+.sys-chip[aria-pressed="true"] { background: var(--color-ink); border-color: var(--color-ink); color: #fff; }
+.sys-chip:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+
+/* An opened system pushes the headline back */
+[data-ch] > .display { transition: opacity 500ms var(--ease-out-quint); }
+[data-dim] [data-ch] > .display { opacity: 0.12; }
+/* Context copy steps back the same way; the panel carries the reading */
+[data-ch] > p, [data-ch] > h2 { transition: opacity 500ms var(--ease-out-quint); }
+[data-dim] [data-ch][data-dims] > p, [data-dim] [data-ch][data-dims] > h2 { opacity: 0.14; }
+
+/* Scale: applications per function, linked to the cards above */
+.scale-col {
+  position: relative;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-line);
+  text-align: left;
+  cursor: default;
+  outline: none;
+  transition: opacity 260ms var(--ease-out-quint);
+}
+.scale-col::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--tone);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 420ms var(--ease-out-quint);
+}
+.scale-col[data-active]::before,
+.scale-col:focus-visible::before { transform: none; }
+.scale-apps[data-any] .scale-col:not([data-active]) { opacity: 0.45; }
+@media (max-width: 767px) {
+  .scale-col { padding-top: 0; border-top: 0; }
+  .scale-col::before { display: none; }
+}
+
+/* Industries index */
+.ind-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13.5px;
+  color: var(--color-ink-soft);
+  transition: color 200ms var(--ease-out-quint);
+}
+.ind-item:hover { color: var(--color-ink); }
+.ind-item[aria-current] { color: var(--color-ink); font-weight: 600; }
+.ind-item:focus-visible { outline: 2px solid var(--color-ink); outline-offset: -2px; border-radius: 6px; }

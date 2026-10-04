@@ -16,8 +16,8 @@ const INK = "#1D1D1F";
 const SOFT = "#6E6E73";
 const LINE = "#E6E6EA";
 const BG2 = "#F5F5F7";
-const LAYER_TONE = [COLORS.signal, TINTS.violet, TINTS.saffron, TINTS.cobalt, TINTS.emerald];
-const FUNCTION_TONE = [TINTS.cobalt, TINTS.emerald, TINTS.tangerine, TINTS.pink, TINTS.violet];
+export const LAYER_TONE = [COLORS.signal, TINTS.violet, TINTS.saffron, TINTS.cobalt, TINTS.emerald];
+export const FUNCTION_TONE = [TINTS.cobalt, TINTS.emerald, TINTS.tangerine, TINTS.pink, TINTS.violet];
 const INDUSTRY_TONE = [TINTS.emerald, TINTS.cobalt, TINTS.pink, TINTS.tangerine, TINTS.violet, TINTS.saffron];
 
 let fonts = { sans: "Inter, Helvetica, Arial, sans-serif", mono: "ui-monospace, Menlo, monospace" };
@@ -299,29 +299,218 @@ function layer(c: C, k: number) {
   }
 }
 
+/* Each function shows its decision through the evidence that function actually works with:
+   a lane between plants, a maintenance schedule, a regional allocation, a case cluster, a ledger. */
+
+const FN_TOP = 520;
+const FN_BOTTOM = 820;
+
+/** Supply chain: the lane between two plants, with the transfer on it. */
+function fnLane(c: C, tone: string) {
+  const y = 650;
+  const a = 200;
+  const b = FACE_W - 200;
+  c.strokeStyle = LINE;
+  c.lineWidth = 10;
+  c.lineCap = "round";
+  c.beginPath();
+  c.moveTo(a, y);
+  c.lineTo(b, y);
+  c.stroke();
+  c.strokeStyle = tone;
+  c.setLineDash([2, 26]);
+  c.lineWidth = 12;
+  c.beginPath();
+  c.moveTo(a, y);
+  c.lineTo(b * 0.62 + a * 0.38, y);
+  c.stroke();
+  c.setLineDash([]);
+  const node = (x: number, name: string, sub: string, col: string) => {
+    c.fillStyle = "#fff";
+    c.beginPath();
+    c.arc(x, y, 34, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = col;
+    c.lineWidth = 10;
+    c.stroke();
+    font(c, 34, 650);
+    c.fillStyle = INK;
+    c.textAlign = "center";
+    c.fillText(name, x, y - 70);
+    font(c, 28, 500);
+    c.fillStyle = SOFT;
+    c.fillText(sub, x, y + 90);
+    c.textAlign = "left";
+  };
+  node(a, "Plant 02", "620 units", TINTS.saffron);
+  node(b, "Plant 01", "140 units", COLORS.signal);
+  // The shipment on the lane
+  const tx = b * 0.62 + a * 0.38;
+  rr(c, tx - 80, y - 34, 160, 68, 34);
+  c.fillStyle = tone;
+  c.fill();
+  font(c, 30, 650);
+  c.fillStyle = "#fff";
+  c.textAlign = "center";
+  c.fillText("240", tx, y + 11);
+  c.textAlign = "left";
+}
+
+/** Operations: Line 04 week plan, the bearing swap slotted before Friday's run. */
+function fnSchedule(c: C, tone: string) {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+  const x0 = 250;
+  const x1 = FACE_W - 90;
+  const dw = (x1 - x0) / days.length;
+  font(c, 30, 500, true);
+  c.fillStyle = SOFT;
+  days.forEach((d, i) => c.fillText(d.toUpperCase(), x0 + i * dw + 12, FN_TOP));
+  const rows: [string, [number, number, string][]][] = [
+    ["Line 03", [[0, 2.4, BG2], [2.6, 4.9, BG2]]],
+    ["Line 04", [[0, 3.1, BG2], [3.15, 3.85, tone], [3.9, 4.9, BG2]]],
+    ["Line 05", [[0.4, 4.6, BG2]]],
+  ];
+  rows.forEach(([name, bars], r) => {
+    const y = FN_TOP + 50 + r * 92;
+    font(c, 30, 600);
+    c.fillStyle = r === 1 ? INK : SOFT;
+    c.fillText(name, 90, y + 44);
+    bars.forEach(([s, e, col]) => {
+      rr(c, x0 + s * dw, y, (e - s) * dw - 8, 62, 16);
+      c.fillStyle = col;
+      c.fill();
+    });
+  });
+  // Label the slot
+  const sx = x0 + 3.15 * dw;
+  font(c, 26, 650);
+  c.fillStyle = "#fff";
+  c.fillText("Swap", sx + 16, FN_TOP + 50 + 92 + 41);
+}
+
+/** Commercial: allocation by region, 12% moving from North to West. */
+function fnAllocation(c: C, tone: string) {
+  const regions: [string, number, number][] = [
+    ["North", 0.38, -0.12],
+    ["West", 0.22, 0.12],
+    ["South", 0.24, 0],
+    ["East", 0.16, 0],
+  ];
+  const x0 = 90;
+  const w = FACE_W - 180;
+  // Before and after, as two stacked bars
+  [0, 1].forEach((row) => {
+    const y = FN_TOP + 20 + row * 150;
+    label(c, row ? "Proposed" : "Today", x0, y);
+    let x = x0;
+    regions.forEach(([name, v, d], i) => {
+      const share = v + (row ? d : 0);
+      const bw = share * w - 8;
+      rr(c, x, y + 22, bw, 70, 16);
+      c.fillStyle = row && d !== 0 ? (d > 0 ? tone : hexA(tone, 0.35)) : i === 0 || i === 1 ? hexA(tone, 0.18) : BG2;
+      c.fill();
+      font(c, 32, 600);
+      c.fillStyle = row && d > 0 ? "#fff" : INK;
+      c.fillText(`${name} ${Math.round(share * 100)}%`, x + 22, y + 67);
+      x += share * w;
+    });
+  });
+}
+
+/** Customer: 14 cases that look separate, traced to one root cause. */
+function fnCases(c: C, tone: string) {
+  const cx = FACE_W - 330;
+  const cy = 680;
+  // Root cause node
+  const dots: [number, number][] = [];
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2 + 0.3;
+    const r = 150 + (i % 3) * 28;
+    dots.push([cx + Math.cos(a) * r * 1.5, cy + Math.sin(a) * r * 0.62]);
+  }
+  c.strokeStyle = hexA(tone, 0.35);
+  c.lineWidth = 3;
+  dots.forEach(([x, y]) => {
+    c.beginPath();
+    c.moveTo(cx, cy);
+    c.lineTo(x, y);
+    c.stroke();
+  });
+  dots.forEach(([x, y]) => {
+    c.fillStyle = "#fff";
+    c.beginPath();
+    c.arc(x, y, 16, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = tone;
+    c.lineWidth = 6;
+    c.stroke();
+  });
+  c.fillStyle = tone;
+  c.beginPath();
+  c.arc(cx, cy, 40, 0, Math.PI * 2);
+  c.fill();
+  font(c, 120, 650);
+  c.fillStyle = INK;
+  c.letterSpacing = "-4px";
+  c.fillText("14", 90, 680);
+  c.letterSpacing = "0px";
+  font(c, 34, 500);
+  c.fillStyle = SOFT;
+  c.fillText("cases, one cause:", 90, 740);
+  c.fillStyle = INK;
+  c.fillText("Batch 2207 seal", 90, 790);
+}
+
+/** Finance and risk: the invoice ledger, three held until goods are received. */
+function fnLedger(c: C, tone: string) {
+  const rows: [string, string, boolean][] = [
+    ["INV-4471", "INR 2.4L", false],
+    ["INV-4472", "INR 86k", true],
+    ["INV-4475", "INR 1.1L", true],
+    ["INV-4478", "INR 64k", true],
+  ];
+  rows.forEach(([id, amt, hold], i) => {
+    const y = FN_TOP - 30 + i * 84;
+    if (hold) {
+      rr(c, 70, y - 8, FACE_W - 140, 72, 18);
+      c.fillStyle = hexA(tone, 0.1);
+      c.fill();
+    }
+    font(c, 30, 500, true);
+    c.fillStyle = hold ? INK : SOFT;
+    c.fillText(id, 100, y + 38);
+    font(c, 32, 600);
+    c.fillText(amt, 520, y + 38);
+    font(c, 28, 600);
+    c.fillStyle = hold ? tone : TINTS.emerald;
+    c.textAlign = "right";
+    c.fillText(hold ? "Hold · no GRN" : "Matched", FACE_W - 100, y + 38);
+    c.textAlign = "left";
+  });
+}
+
+const FN_VISUAL = [fnLane, fnSchedule, fnAllocation, fnCases, fnLedger];
+
 function fn(c: C, k: number) {
   const tone = FUNCTION_TONE[k];
   const f = FUNCTIONS[k];
   pillLeft(c, f.name, 90, 128, tone);
-  label(c, "Recommended action", FACE_W - 90 - 420, 128);
-  title(c, f.decision, 330, 96, INK, FACE_W - 180);
-  // Sparkline of the metric that triggered it.
-  c.strokeStyle = tone;
-  c.lineWidth = 9;
-  c.lineCap = "round";
-  c.beginPath();
-  for (let i = 0; i <= 24; i++) {
-    const x = 90 + (i / 24) * (FACE_W - 180);
-    const y = 760 - Math.sin(i * 0.55 + k) * 40 - (i / 24) * 90 * (k % 2 ? -1 : 1);
-    if (i) c.lineTo(x, y);
-      else c.moveTo(x, y);
-  }
-  c.stroke();
-  check(c, 116, 900, TINTS.emerald);
-  font(c, 34, 600);
-  c.fillStyle = TINTS.emerald;
-  c.fillText("Ready for approval", 160, 912);
+  pill(c, "Ready for approval", FACE_W - 90, 128, TINTS.emerald);
+  title(c, f.decision, 300, 84, INK, FACE_W - 180);
+  FN_VISUAL[k](c, tone);
+  // Footer: the systems this function's decision drew on
+  c.fillStyle = LINE;
+  c.fillRect(90, FN_BOTTOM + 40, FACE_W - 180, 3);
+  label(c, FN_SOURCES[k], 90, FN_BOTTOM + 110);
 }
+
+const FN_SOURCES = [
+  "WMS · ERP · Freight",
+  "MES · CMMS · Stores",
+  "CRM · Planning · POS",
+  "Service desk · Quality · MES",
+  "ERP · AP · Receiving",
+];
 
 function pillLeft(c: C, text: string, x: number, y: number, color: string) {
   font(c, 32, 650);
