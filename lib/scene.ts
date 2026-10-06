@@ -34,8 +34,13 @@ export const RING = (s: number) => {
 };
 export const HUB_Y = 1.45;
 
-export function islandPose(s: number, c: number): Pose | null {
-  const [x, z, ry] = ISLANDS[s];
+const PORTRAIT_ISLANDS: [number, number, number][] = [
+  [-1.5, -4.8, 0.25], [1.5, -4.8, -0.3], [-1.5, -1.2, 0.1],
+  [1.5, -1.2, -0.25], [-1.5, 2.4, 0.4], [1.5, 2.4, -0.45],
+];
+
+export function islandPose(s: number, c: number, portrait = false): Pose | null {
+  const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[s];
   switch (c) {
     case CH.fragments:
       return { p: [x, 0, z], ry, s: 1.1 };
@@ -57,14 +62,15 @@ export const CRATE_ON_ISLAND: Vec3 = [0.48, ISLAND_TOP + CRATE.h * ISLAND_TOTE *
 
 /* ---------------- 03 Problem: crates become the inventory chart ---------------- */
 
-export const DAYS = [6, 5, 5, 4, 4, 4, 2];
+export const DAYS = [6, 6, 5, 4, 4, 3, 2];
 export const STEP_Y = CRATE.h + 0.035;
 export const DAY_X = (d: number) => (d - 3) * 1.0;
 export const SAFETY_Y = 2.5 * STEP_Y;
 /** Stock behind the chart: each tote holds about 70 units; today's count is exact. */
 export const UNITS_PER_CRATE = 70;
 export const SAFETY_UNITS = 175;
-export const dayUnits = (d: number) => (d === 0 ? 410 : DAYS[d] * UNITS_PER_CRATE);
+export const dayUnits = (d: number) => 410 - d * 45;
+export const crateFill = (d: number, level: number) => Math.min(1, Math.max(0, dayUnits(d) / UNITS_PER_CRATE - level));
 export const CHART_CRATES = DAYS.reduce((s, n) => s + n, 0) - 1; // the last one is the signal
 
 /** Chart slot k (0..CHART_CRATES): day column and level. The final slot is the signal. */
@@ -78,11 +84,11 @@ export const chartSlot = (k: number): { d: number; l: number } => {
 };
 export const chartPos = (k: number): Vec3 => {
   const { d, l } = chartSlot(k);
-  return [DAY_X(d), CRATE.h / 2 + l * STEP_Y, 0];
+  return [DAY_X(d), CRATE.h * crateFill(d, l) / 2 + l * STEP_Y, 0];
 };
 
-export function signalCratePose(c: number, t: number): Pose | null {
-  const [x, z, ry] = ISLANDS[WMS];
+export function signalCratePose(c: number, t: number, portrait = false): Pose | null {
+  const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[WMS];
   const [ox, oy, oz] = CRATE_ON_ISLAND;
   switch (c) {
     case CH.fragments: {
@@ -120,6 +126,11 @@ export const BEATS = {
   load: [0.06, 0.5] as const, // three forklift trips
   drive: [0.53, 0.78] as const,
 };
+
+export function transferredUnits(t: number) {
+  const trips = clamp01((t - BEATS.load[0]) / (BEATS.load[1] - BEATS.load[0])) * 3;
+  return Math.min(3, Math.floor(trips) + (trips % 1 >= 0.6 ? 1 : 0)) * 80;
+}
 
 /** Truck x as the decision chapter plays, plus how far it has driven out during the exit. */
 export const truckX = (t: number, exit = 0) =>
@@ -163,9 +174,10 @@ export function cardPose(k: number, c: number, t: number): Pose | null {
 
 export type Cam = { p: Vec3; t: Vec3 };
 
-export function cameraPose(c: number, t: number): Cam {
+export function cameraPose(c: number, t: number, portrait = false): Cam {
   switch (c) {
     case CH.fragments:
+      if (portrait) return { p: [0, 14, 14], t: [0, 0.8, -1.2] };
       return { p: [0, 8.4 - t * 0.5, 16.2 - t * 0.8], t: [0, 1.55, -1.6] };
     case CH.signal:
       return { p: [0.3, 2.4, 7.6 - t * 0.4], t: [-0.55, 1.0, 1.2] };

@@ -109,7 +109,7 @@ export const paint = (color: string, rough = 0.32) =>
 
 /** Powder-coated or industrial enamel: satin, no clear coat. */
 export const enamel = (color: string, rough = 0.5) =>
-  memo(`enamel-${color}-${rough}`, () => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.1 }));
+  memo(`enamel-${color}-${rough}`, () => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.18, bumpMap: grain("enamel", 128, 24), bumpScale: 0.0015 }));
 
 export const rubber = () =>
   memo("rubber", () => new THREE.MeshStandardMaterial({ color: "#1E1F22", roughness: 0.88, metalness: 0 }));
@@ -174,7 +174,7 @@ export const concrete = (color = "#E2DED6") =>
     const r = grain("concrete", 225, 40).clone();
     r.needsUpdate = true;
     r.repeat.set(3, 3);
-    return new THREE.MeshStandardMaterial({ color, roughness: 0.92, roughnessMap: r, metalness: 0 });
+    return new THREE.MeshStandardMaterial({ color, roughness: 0.92, roughnessMap: r, bumpMap: r, bumpScale: 0.012, metalness: 0 });
   });
 
 export const asphalt = () =>
@@ -182,10 +182,26 @@ export const asphalt = () =>
     const r = grain("asphalt", 210, 70).clone();
     r.needsUpdate = true;
     r.repeat.set(8, 2);
-    return new THREE.MeshStandardMaterial({ color: "#4A4C50", roughness: 0.95, roughnessMap: r });
+    return new THREE.MeshStandardMaterial({ color: "#4A4C50", roughness: 0.95, roughnessMap: r, bumpMap: r, bumpScale: 0.008 });
   });
 
-export const wood = () => memo("wood", () => new THREE.MeshStandardMaterial({ color: "#C9A274", roughness: 0.85 }));
+export const wood = () => memo("wood", () => {
+  const texture = canvasTex("wood-grain", 256, 256, (c) => {
+    c.fillStyle = "#C9A274";
+    c.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 160; i++) {
+      c.strokeStyle = `rgba(90, 54, 25, ${0.04 + (i % 5) * 0.018})`;
+      c.lineWidth = 0.5 + (i % 3) * 0.4;
+      c.beginPath();
+      for (let y = 0; y <= 256; y += 8) {
+        const x = i * 1.65 + Math.sin(y * 0.018 + i * 0.7) * 2.4;
+        if (y === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+  });
+  return new THREE.MeshStandardMaterial({ map: texture, roughness: 0.78, bumpMap: texture, bumpScale: 0.003 });
+});
 
 /** Brass for the globe stand. */
 export const brass = () => memo("brass", () => new THREE.MeshStandardMaterial({ color: "#D9B36A", roughness: 0.25, metalness: 1 }));

@@ -17,7 +17,7 @@ import {
   weight,
 } from "@/lib/story";
 import { industryF } from "@/lib/layouts";
-import { BEATS } from "@/lib/scene";
+import { BEATS, transferredUnits } from "@/lib/scene";
 import { DecisionControls } from "./DecisionControls";
 import { IslandPanel } from "./IslandPanel";
 import { SystemChips } from "./SystemChips";
@@ -93,9 +93,8 @@ export function Story() {
 
       // Plant 02's stock counts down as each pallet goes onto the truck.
       if (stock) {
-        const [l0, l1] = BEATS.load;
-        const t = g >= CH.decision + 1 ? 1 : localIn(CH.decision, g);
-        const v = `${Math.round(620 - 240 * smoothstep(l0, l1, t))} units`;
+          const t = g >= CH.decision + 1 ? 1 : localIn(CH.decision, g);
+        const v = `${Math.round(620 - transferredUnits(t))} units`;
         if (v !== lastStock) {
           stock.textContent = v;
           lastStock = v;
@@ -116,7 +115,7 @@ export function Story() {
       // Leave the stage once the story is told.
       const out = 1 - smoothstep(0.72, 1, localIn(CH.final, g));
       if (canvas.current) canvas.current.style.opacity = String(out);
-      if (counter.current) counter.current.style.opacity = String(out * (g > 0.35 ? 1 : 0));
+      if (counter.current) counter.current.style.opacity = String(out * smoothstep(0.8, 1, g));
 
       // The counter names whichever chapter is on screen, switching at the midpoint of each transition.
       const { i: from, j: to, e } = blendAt(g);
@@ -140,13 +139,14 @@ export function Story() {
       {/* Behind the object: the giant statements */}
       <div ref={back} className="pointer-events-none fixed inset-0 z-0 select-none" aria-hidden>
         <div data-ch={CH.fragments} className="absolute inset-x-0 top-[13vh] px-6 text-center">
-          <p className="display text-[clamp(44px,7vw,128px)]">
+          <p className="story-positioning eyebrow intro-fade">Decision intelligence · Your systems, connected</p>
+          <p className="display mt-3 text-[clamp(36px,6.2vw,100px)]">
             <span className="intro-line line-mask">
-              <span>Every system</span>
+              <span>Your operation.</span>
             </span>
             <span className="intro-line line-mask">
               <span>
-                knows <em className="spectrum-text">something.</em>
+                <em className="spectrum-text">Seen as a whole.</em>
               </span>
             </span>
           </p>
@@ -156,8 +156,8 @@ export function Story() {
             {word}
           </p>
         ))}
-        <div data-ch={CH.decision} className="absolute inset-x-0 top-[11vh] px-6 text-center">
-          <p className="display text-[clamp(44px,7.4vw,136px)]">
+        <div data-ch={CH.decision} className="story-decision-heading absolute inset-x-0 top-[11vh] px-6 text-center">
+          <p className="display text-[clamp(36px,6.5vw,108px)]">
             One clear
             <br />
             <em className="spectrum-text" style={{ ["--accent" as string]: "var(--color-emerald)" }}>decision.</em>
@@ -165,11 +165,11 @@ export function Story() {
         </div>
         {INDUSTRIES.map((ind, k) => (
           <div key={ind.name} data-ind={k} className="absolute inset-x-0 top-[12vh] px-6 text-center">
-            <p className="display text-[clamp(44px,7vw,128px)]">{ind.name}</p>
+            <p className="display text-[clamp(36px,6.2vw,100px)]">{ind.name}</p>
           </div>
         ))}
         <div data-ch={CH.final} className="absolute inset-x-0 top-[14vh] px-6 text-center">
-          <p className="display text-[clamp(44px,7vw,128px)]">
+          <p className="display text-[clamp(36px,6.2vw,100px)]">
             Turn information
             <br />
             <em className="spectrum-text">into decisions.</em>
@@ -185,19 +185,18 @@ export function Story() {
       </div>
 
       {/* In front of the object: the explanation */}
-      <div ref={front} className="pointer-events-none fixed inset-0 z-20">
+      <div ref={front} className="story-overlay pointer-events-none fixed inset-0 z-20">
         {/* 01 Fragmented */}
-        <div data-ch={CH.fragments} data-interactive className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
+        <div data-ch={CH.fragments} data-interactive className="story-intro absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
           <div className="intro-fade flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="max-w-[34ch] text-[15px] leading-relaxed text-ink-2 md:text-base">
-                ERP, CRM, MES, warehouse, suppliers, the outside world. Each holds part of the truth.
-                None of them sees the whole.
+                Six systems. One shortage to solve. Follow the evidence from the first signal to the approved action.
               </p>
               <SystemChips className="mt-4 max-w-[520px]" />
             </div>
             <div className="flex items-center gap-5">
-              <span className="eyebrow hidden items-center gap-3 md:inline-flex">
+              <span className="eyebrow hidden items-center gap-3 xl:inline-flex">
                 <ScrollCue />
                 Scroll to see how Decignal works
               </span>
@@ -211,8 +210,7 @@ export function Story() {
 
         {/* 02 Signal */}
         <Copy ch={CH.signal} n="02" eyebrow="Signal" title={<>One signal<br />matters.</>}>
-          Among millions of records, Decignal finds the change that will cost you. Bearing X90 at Plant 01
-          is about to run short.
+          Bearing X90 is running short at Plant 01. Decignal finds the risk while there is time to act.
         </Copy>
 
         {/* 03 Problem */}
@@ -226,28 +224,26 @@ export function Story() {
         </Copy>
 
         {/* 03 Problem: the figures behind the chart */}
-        <div data-ch={CH.problem} className="absolute bottom-8 left-6 md:bottom-10 md:left-10">
+        <div data-ch={CH.problem} className="story-facts absolute bottom-8 left-6 md:bottom-10 md:left-10">
           <Facts
             items={[
               ["Daily usage", "45 units"],
-              ["Cover left", "6 days", true],
+              ["Safety breach", "Day 6", true],
               ["Supplier ETA", "21 days"],
             ]}
           />
         </div>
 
         {/* 04 Context */}
-        <Copy dims ch={CH.context} n="04" eyebrow="Context" title={<>Everything a planner<br />would check.</>}>
-          Decignal connects the evidence across systems: open orders, stock at every plant, production plans,
-          supplier lead times, transfer policy, freight and weather.
+        <Copy dims ch={CH.context} n="04" eyebrow="Context" title={<>Every fact.<br />One picture.</>} after={<EvidenceChecks />}>
+          Stock, supplier timing and the route are checked together. Select a system to inspect its evidence.
         </Copy>
 
         {/* 05 Decision */}
-        <div data-ch={CH.decision} className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
+        <div data-ch={CH.decision} className="story-footer-safe absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
           <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
             <p className="max-w-[36ch] text-[15px] leading-relaxed text-ink-2 md:text-base">
-              Not a dashboard. Not an alert. A recommendation with a quantity, a source, a destination and a
-              cost.
+              Move 240 units from Plant 02 to Plant 01. The source retains its own planned stock.
             </p>
             <div className="flex flex-col gap-3">
             <Stepper />
@@ -282,8 +278,7 @@ export function Story() {
             You decide.
           </h2>
           <p className="mt-5 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">
-            Every recommendation opens into its layers: the signal, the evidence, the context and the policy it
-            was checked against. Nothing moves until someone approves it.
+            Inspect the evidence. Adjust the quantity. Approve the action. Your policy and your team stay in control.
           </p>
           {/* On phones the controls sit at the foot of the screen, leaving the layers visible above. */}
           <div className="max-md:mt-auto">
@@ -298,8 +293,7 @@ export function Story() {
           </div>
           <h2 className="display mt-4 text-[clamp(44px,6vw,96px)]">One layer. Every function.</h2>
           <p className="mx-auto mt-5 max-w-[46ch] text-[15px] leading-relaxed text-ink-2">
-            The same intelligence layer runs across supply chain, operations, commercial, customer, and finance
-            and risk. Each new application reuses the context and controls already in place.
+            From stock transfers to service cases, every application reuses the same context and controls.
           </p>
         </div>
 
@@ -314,7 +308,7 @@ export function Story() {
         </div>
 
         {/* 08 Industries */}
-        <div data-ch={CH.industries} className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
+        <div data-ch={CH.industries} className="story-footer-safe absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
           <div className="flex items-end justify-between gap-6">
             <p className="max-w-[34ch] text-[15px] leading-relaxed text-ink-2">
               One foundation, configured around the systems and decisions of your industry.
@@ -375,6 +369,19 @@ export function Story() {
       <div id="story" style={{ height: `${TOTAL_LEN * 100}svh` }} aria-hidden />
     </>
   );
+}
+
+function EvidenceChecks() {
+  return <div className="evidence-checks" aria-label="Evidence behind this transfer">
+    {[
+      ["saffron", "Stock available", "620 − 380 = 240 units"],
+      ["tangerine", "Supplier timing", "21 days · too late"],
+      ["pink", "Transfer route", "2 days · lane clear"],
+    ].map(([tone, label, value]) => <div key={label}>
+      <span className="evidence-check-dot" style={{background: `var(--color-${tone})`}} />
+      <span>{label}</span><strong>{value}</strong>
+    </div>)}
+  </div>;
 }
 
 /** The transfer order's progress, driven by the same beats as the forklift and the truck. */
@@ -458,7 +465,7 @@ function Copy({
   after?: React.ReactNode;
 }) {
   return (
-    <div data-ch={ch} data-dims={dims ? "" : undefined} data-interactive={after ? "" : undefined} className="absolute left-6 top-[15vh] max-w-[580px] md:left-10 md:top-[18vh]">
+    <div data-copy data-ch={ch} data-dims={dims ? "" : undefined} data-interactive={after ? "" : undefined} className="absolute right-6 left-6 top-[15vh] max-w-[480px] md:left-10 md:top-[18vh]">
       <Tag n={n} tone={TONE[ch]}>
         {eyebrow}
       </Tag>

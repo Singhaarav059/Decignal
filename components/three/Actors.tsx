@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, RoundedBox } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { easing } from "maath";
@@ -15,6 +15,7 @@ import {
   SAFETY_UNITS,
   STEP_Y,
   dayUnits,
+  crateFill,
   DECISION_CARD,
   ISLANDS,
   WMS,
@@ -24,7 +25,6 @@ import {
   PLANT_02,
   PLANT_FRONT,
   ROAD_Z,
-  TRUCK_X0,
   cardPose,
   chartPos,
   chartSlot,
@@ -38,8 +38,9 @@ import { SYSTEMS } from "@/components/ui/systems";
 import { COLORS, TINTS } from "./palette";
 import { Crate, Island, SYSTEM_MODELS, WHITE, clay } from "./kit";
 import { BearingBed, Plant } from "./buildings";
-import { FORK, Forklift, SemiTruck, TRUCK } from "./vehicles";
+import { Forklift, SemiTruck, TRUCK } from "./vehicles";
 import { LoadedPallet } from "./parts";
+import { PALLETS, SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "./transfer-motion";
 import { asphalt, concrete, enamel, fineRibs, plastic } from "./materials";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, faceKey, readFonts, type FaceSpec } from "./faces";
@@ -49,7 +50,7 @@ import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, faceKey, readFonts
 /* ------------------------------------------------------------------ */
 
 const backOut = (x: number) => {
-  const c = 1.4;
+  const c = 0.65;
   return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
 };
 const euler = new THREE.Euler(0, 0, 0, "YXZ");
@@ -367,6 +368,7 @@ function Hover({ i, children }: { i: number; children: React.ReactNode }) {
 }
 
 export function Islands() {
+  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
   return (
     <>
       <IslandFocus />
@@ -374,14 +376,14 @@ export function Islands() {
         const Model = SYSTEM_MODELS[s];
         const tone = TINTS[sys.tone as keyof typeof TINTS];
         return (
-          <Actor key={sys.id} track={(c) => islandPose(s, c)} delay={s * 0.06}>
+          <Actor key={sys.id} track={(c) => islandPose(s, c, portrait)} delay={s * 0.06}>
             <Rise delay={0.25 + s * 0.09}>
               <Hover i={s}>
                 <Island tone={tone}>
                   <Model />
                 </Island>
                 <group position-y={TAG_Y[s]} rotation-y={-ISLANDS[s][2]}>
-                  <Tag title={sys.name} value={`${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 } />
+                  <Tag title={sys.name} value={`${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? .45 * weight(CH.fragments,store.g) : 0) } />
                 </group>
               </Hover>
             </Rise>
@@ -394,6 +396,7 @@ export function Islands() {
 
 /** The one tote that matters: Bearing X90 at Plant 01. */
 export function SignalCrate() {
+  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
   // Same moulded, ribbed plastic as every other tote; only its colour changes.
   const mat = useMemo(
     () => new THREE.MeshPhysicalMaterial({ roughness: 0.5, clearcoat: 0.15, clearcoatRoughness: 0.5, normalMap: fineRibs(), normalScale: new THREE.Vector2(0.6, 0.6) }),
@@ -418,7 +421,7 @@ export function SignalCrate() {
     }
   });
   return (
-    <Actor track={signalCratePose} damp={0.12}>
+    <Actor track={(c,t) => signalCratePose(c,t,portrait)} damp={0.12}>
       {/* Rides in with the warehouse it sits on, and floats with it while it is there. */}
       <Rise delay={0.25 + WMS * 0.09} float={() => weight(CH.fragments, store.g)}>
         <group ref={hover}>
@@ -488,7 +491,7 @@ function ChartCrate({ k }: { k: number }) {
         crateRoots[k] = g;
       }}
     >
-      <Crate color={TINTS.saffron} />
+      <group scale-y={crateFill(d, l)}><Crate color={TINTS.saffron} /></group>
     </group>
   );
 }
@@ -540,88 +543,20 @@ export function ChartCrates() {
 /* ------------------------------------------------------------------ */
 
 const inDecision = (p: Pose): Track => (c) => (c === CH.decision ? p : null);
-const PALLETS = 3;
-const SLOT_X = TRUCK.slots.map((x) => TRUCK_X0 + x * M);
-const STAGE_Z = -0.42; // staged pallets wait here in the Plant 02 yard
-const PICK_Z = STAGE_Z - FORK.load * M; // forklift origin when its forks are under a staged pallet
-const BACK_Z = -0.76; // forklift origin clear of the pallets
-const PLACE_Z = 0.05; // forklift origin when the pallet is over the deck
-const DECK_Z = (PLACE_Z + FORK.load * M - ROAD_Z) / M; // pallet z on the deck, in truck metres
-const PARK: [number, number] = [-3.5, -0.74];
-const FACE_Z = -Math.PI / 2; // the forklift model faces +x; this turns it toward the road
-
-type Lift = { x: number; z: number; yaw: number; h: number; trip: number; carry: boolean };
-
-const bez = (a: number, b: number, c: number, d: number, u: number) => {
-  const v = 1 - u;
-  return v * v * v * a + 3 * v * v * u * b + 3 * v * u * u * c + u * u * u * d;
-};
-
-/** Where the forklift is, how high its forks are, and which pallet it holds, at decision progress t. */
-function liftAt(t: number, out: Lift): Lift {
-  const [l0, l1] = BEATS.load;
-  const all = clamp01((t - l0) / (l1 - l0)) * PALLETS;
-  const k = Math.min(Math.floor(all), PALLETS - 1);
-  const u = t >= l1 ? 1 : all - k;
-  const x = SLOT_X[k];
-  out.trip = t < l0 ? -1 : k;
-  out.yaw = FACE_Z;
-  out.carry = false;
-  if (t < l0) return Object.assign(out, { x: SLOT_X[0], z: BACK_Z, h: 0.06 });
-  if (u < 0.12) {
-    // Forks slide under the staged pallet
-    return Object.assign(out, { x, z: THREE.MathUtils.lerp(BACK_Z, PICK_Z, smoothstep(0, 0.12, u)), h: 0.06 });
-  }
-  if (u < 0.55) {
-    // Lift clear, then drive to the trailer while raising the load over the deck
-    out.carry = true;
-    const h = u < 0.2 ? THREE.MathUtils.lerp(0.06, 0.2, smoothstep(0.12, 0.2, u)) : THREE.MathUtils.lerp(0.2, 1.72, smoothstep(0.24, 0.5, u));
-    return Object.assign(out, { x, z: THREE.MathUtils.lerp(PICK_Z, PLACE_Z, smoothstep(0.2, 0.55, u)), h });
-  }
-  if (u < 0.64) {
-    // Set it down on the deck; the forks drop out of the pallet
-    out.carry = u < 0.6;
-    return Object.assign(out, { x, z: PLACE_Z, h: THREE.MathUtils.lerp(1.72, 1.44, smoothstep(0.55, 0.63, u)) });
-  }
-  // Reverse out on a curve to the next pallet's lane (or to park), lowering the forks
-  const r = smoothstep(0.64, 1, u);
-  const [nx, nz] = k < PALLETS - 1 ? [SLOT_X[k + 1], BACK_Z] : PARK;
-  const px = bez(x, x, nx, nx, r);
-  const pz = bez(PLACE_Z, PLACE_Z - 0.35, nz + 0.3, nz, r);
-  // Heading follows the path: reversing, so the forks point away from the direction of travel.
-  const e = 0.01;
-  const r2 = Math.min(r + e, 1);
-  const r1 = r2 - e;
-  const dx = bez(x, x, nx, nx, r2) - bez(x, x, nx, nx, r1);
-  const dz = bez(PLACE_Z, PLACE_Z - 0.35, nz + 0.3, nz, r2) - bez(PLACE_Z, PLACE_Z - 0.35, nz + 0.3, nz, r1);
-  out.yaw = Math.hypot(dx, dz) > 1e-6 ? Math.atan2(dz, -dx) : FACE_Z;
-  return Object.assign(out, { x: px, z: pz, h: THREE.MathUtils.lerp(1.44, 0.06, smoothstep(0.64, 0.9, u)) });
-}
-
-/** Where each pallet is: 0 staged in the yard, 1 on the forks, 2 on the trailer. */
-function palletStates(t: number, lift: Lift) {
-  return Array.from({ length: PALLETS }, (_, i) => {
-    if (t >= BEATS.load[1] || i < lift.trip) return 2;
-    if (i > lift.trip) return 0;
-    if (lift.carry) return 1;
-    return lift.h > 1 || lift.z > PICK_Z + 0.05 ? 2 : 0;
-  });
-}
-
 /** Arrive with a small overshoot as the chapter comes in, staggered; null once it has gone. */
 const arrive = (e: number, delay: number) => {
   const k = clamp01((e - 0.25 - delay) / (0.75 - delay));
   return k > 0 ? backOut(k) : 0;
 };
 
-function Yard() {
+export function Yard({ roadLength = 16 }: { roadLength?: number }) {
   const lines = useMemo(() => {
     const parts: THREE.BufferGeometry[] = [];
     // Road edge lines and a dashed centre line
-    for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(16, 0.002, 0.018).translate(0, 0.0165, ROAD_Z + s * 0.33));
-    for (let i = 0; i < 30; i++) parts.push(new THREE.BoxGeometry(0.22, 0.002, 0.016).translate(-7.6 + i * 0.52, 0.0165, ROAD_Z));
+    for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(roadLength, 0.002, 0.018).translate(0, 0.0165, ROAD_Z + s * 0.33));
+    for (let i = 0; i < Math.floor(roadLength / 0.52); i++) parts.push(new THREE.BoxGeometry(0.22, 0.002, 0.016).translate(-roadLength / 2 + 0.3 + i * 0.52, 0.0165, ROAD_Z));
     return mergeGeometries(parts.map((p) => p.toNonIndexed()))!;
-  }, []);
+  }, [roadLength]);
   const bays = useMemo(() => {
     // Painted bays where the pallets are staged
     const parts: THREE.BufferGeometry[] = [];
@@ -634,7 +569,7 @@ function Yard() {
   return (
     <group>
       <mesh position={[0, 0.0075, ROAD_Z]} receiveShadow material={asphalt()}>
-        <boxGeometry args={[16, 0.015, 0.72]} />
+        <boxGeometry args={[roadLength, 0.015, 0.72]} />
       </mesh>
       <mesh geometry={lines} material={enamel("#F4F1EA", 0.6)} />
       {[PLANT_02, PLANT_01].map((p) => (
@@ -700,13 +635,13 @@ export function Transfer() {
       <Actor track={inDecision({ p: PLANT_02, s: M })}>
         <Plant accent={TINTS.saffron} name="PLANT 02" />
         <group position={[0, 8.3, 0]} scale={1 / M}>
-          <Tag title="Plant 02" value={states[PALLETS - 1] === 2 ? "380 units · 240 sent" : "620 units · above plan"} tone={TINTS.saffron} width={1.2} />
+          <Tag title="Plant 02" value={`${620 - states.filter((v) => v === 2).length * 80} units · ${states.filter((v) => v === 2).length * 80} sent`} tone={TINTS.saffron} width={1.2} />
         </group>
       </Actor>
       <Actor track={inDecision({ p: PLANT_01, s: M })} delay={0.08}>
         <Plant accent={TINTS.cobalt} name="PLANT 01" />
         <group position={[0, 8.3, 0]} scale={1 / M}>
-          <Tag title="Plant 01" value={arrived ? "380 units · covered" : "140 units · short in 6 days"} tone={arrived ? TINTS.emerald : TINTS.cobalt} width={1.2} />
+          <Tag title="Plant 01" value={arrived ? "Day 6 · 380 projected" : "Day 6 · 140 projected"} tone={arrived ? TINTS.emerald : TINTS.cobalt} width={1.2} />
         </group>
       </Actor>
       <Actor track={inDecision({ p: [0, 0, 0] })} delay={0.04}>

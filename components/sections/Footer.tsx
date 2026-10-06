@@ -45,7 +45,7 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="relative mt-24 overflow-hidden md:mt-32">
+    <footer className="relative mt-16 overflow-hidden md:mt-20">
       {/* Six plate edges: every system, one foundation */}
       <div className="flex h-3" aria-hidden>
         {STRATA.map((c) => (
@@ -53,8 +53,8 @@ export function Footer() {
         ))}
       </div>
 
-      <div className="bg-paper px-6 pt-16 md:px-10 md:pt-24">
-        <div className="mx-auto grid max-w-6xl gap-14 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="bg-paper px-6 pt-16 md:px-10 md:pt-16">
+        <div className="mx-auto grid max-w-6xl gap-9 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <p className="display text-[clamp(32px,3.4vw,52px)]">
               Bring us one decision.
@@ -95,7 +95,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mx-auto mt-20 flex max-w-6xl flex-col gap-4 border-t border-line pt-6 text-[13px] text-ink-soft md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto mt-12 flex max-w-6xl flex-col gap-4 border-t border-line pt-6 text-[13px] text-ink-soft md:flex-row md:items-center md:justify-between">
           <span>Decision intelligence for enterprises across India and Africa.</span>
           <div className="flex items-center gap-6">
             <span>© 2026 Decignal</span>

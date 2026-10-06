@@ -136,7 +136,7 @@ function decision(c: C) {
 
   const stats = [
     ["Units", "240"],
-    ["Cover", "34 days"],
+    ["Arrives", "2 days"],
     ["Cost", "INR 38,000"],
   ];
   const bw = (FACE_W - 180 - 40) / 3;
@@ -182,7 +182,7 @@ function decision(c: C) {
 const LAYER_METRIC: [string, string][] = [
   ["Day 6", "Plant 01 drops below safety stock"],
   ["+18%", "Open orders in three weeks"],
-  ["620", "Units at Plant 02, above plan"],
+  ["240", "Transferable after reserving 380"],
   ["3 / 3", "Policy checks passed"],
 ];
 

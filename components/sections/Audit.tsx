@@ -21,12 +21,12 @@ export function Audit() {
     setData((d) => ({ ...d, [k]: e.target.value }));
 
   return (
-    <section id="audit" className="scroll-mt-24 px-3 pt-24 md:px-5 md:pt-32">
+    <section id="audit" className="scroll-mt-24 px-3 pt-16 md:px-5 md:pt-16">
       <div
-        className="relative overflow-clip rounded-[36px] px-6 py-16 md:rounded-[48px] md:px-14 md:py-24"
+        className="relative overflow-clip rounded-[36px] px-6 py-16 md:rounded-[48px] md:px-14 md:py-16"
         style={{ background: "var(--color-cobalt)" }}
       >
-      <div className="relative mx-auto grid max-w-6xl gap-14 md:grid-cols-[1fr_1.1fr]">
+      <div className="relative mx-auto grid max-w-6xl gap-9 md:grid-cols-[1fr_1.1fr]">
         <div className="text-white">
           <p data-reveal className="eyebrow inline-flex items-center gap-2.5 text-white/85!">
             <span className="size-1.5 rounded-full bg-white" />
@@ -160,11 +160,11 @@ export function Audit() {
                   </button>
                 ) : (
                   <p className="max-w-[34ch] text-[13px] text-ink-soft">
-                    We use these details only to prepare for your audit and reply to you.
+                    Prepare a brief for your audit. Your details stay in this browser until you download them.
                   </p>
                 )}
                 <button type="submit" className="btn btn-primary min-h-12!">
-                  {step === 1 ? "Continue" : "Request my audit"}
+                  {step === 1 ? "Continue" : "Prepare my brief"}
                   <Arrow />
                 </button>
               </div>
@@ -172,15 +172,20 @@ export function Audit() {
           ) : (
             <div className="border-t border-line-strong pt-8">
               <p className="flex items-center gap-2.5 eyebrow text-ok">
-                <span className="size-1.5 rounded-full bg-ok" /> Request received
+                <span className="size-1.5 rounded-full bg-ok" /> Brief prepared
               </p>
               <p className="mt-5 font-serif text-4xl leading-[1.05]">
-                Thank you{data.name ? `, ${data.name.split(" ")[0]}` : ""}. We will reply within one working day.
+                Your starting point is ready{data.name ? `, ${data.name.split(" ")[0]}` : ""}.
               </p>
               <p className="mt-5 max-w-[44ch] text-[16px] leading-relaxed text-ink-2">
-                We will come prepared with questions about {area ? area.toLowerCase() : "your operation"} and the
-                systems involved, so the 30 minutes are spent on your decision.
+                Your brief covers {area ? area.toLowerCase() : "your operation"} and the systems involved. Keep a copy for your audit conversation. These details stay in this browser; no request has been sent.
               </p>
+              <button className="btn btn-primary mt-6" onClick={() => {
+                const brief = ["DECIGNAL · AI AUDIT BRIEF", ...Object.entries(data).map(([key,value]) => `${key}: ${value}`), `Business area: ${area ?? "To discuss"}`, `Systems: ${systems.join(", ") || "To discuss"}`].join("\n");
+                const url = URL.createObjectURL(new Blob([brief], {type:"text/plain"}));
+                const a = document.createElement("a"); a.href=url; a.download="decignal-audit-brief.txt"; a.click(); URL.revokeObjectURL(url);
+              }}>Download brief <Arrow /></button>
+              <button className="mt-4 block text-sm text-ink-soft" onClick={() => setStep(2)}>Edit your brief</button>
             </div>
           )}
         </div>

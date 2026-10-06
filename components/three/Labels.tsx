@@ -186,7 +186,7 @@ export function Labels({ plates }: { plates: PlateRefs }) {
           from Plant 02 to Plant 01
         </Serif>
         <Mono position={[L, B, 0]} anchorY="bottom" color={COLORS.inkSoft} fontSize={0.044}>
-          {"COVER 34 DAYS   ·   INR 38,000   ·   NO EXPEDITE"}
+          {"ARRIVES 2 DAYS   ·   INR 38,000   ·   NO EXPEDITE"}
         </Mono>
       </Face>
 

@@ -24,10 +24,12 @@ export function Nav() {
     const on = () => {
       const y = window.scrollY;
       const past = !!story && y > story.offsetHeight - window.innerHeight * 0.5;
+      const application = document.querySelector('.application-journey')?.getBoundingClientRect();
+      const readingApplication = !!application && application.top < 80 && application.bottom >= window.innerHeight;
       setSolid(past);
       // Past the story the nav steps aside while reading down, and returns on the way up.
       if (Math.abs(y - lastY) > 6) {
-        setHidden(past && y > lastY);
+        setHidden(past && y > lastY && !readingApplication);
         lastY = y;
       }
       const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -70,7 +72,7 @@ export function Nav() {
           className={`mx-3 mt-3 grid h-14 grid-cols-[1fr_auto_1fr] items-center rounded-full px-3 transition-[background-color,box-shadow,border-color] duration-500 md:mx-5 md:px-4 ${
             solid || open
               ? "border border-white/70 bg-white/72 shadow-[0_8px_30px_-12px_rgba(20,19,15,0.18)] backdrop-blur-xl"
-              : "border border-transparent"
+              : "border border-white/60 bg-bg/80 backdrop-blur-xl"
           }`}
         >
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">

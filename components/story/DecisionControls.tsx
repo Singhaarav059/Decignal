@@ -13,7 +13,7 @@ export function DecisionControls() {
   const [mode, setMode] = useState<Mode>("idle");
   const [qty, setQty] = useState(240);
   const [reason, setReason] = useState<string | null>(null);
-  const cover = Math.round((qty / 240) * 34);
+  const sourceLeft = 620 - qty;
 
   return (
     <div
@@ -29,9 +29,15 @@ export function DecisionControls() {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="font-serif text-2xl leading-tight whitespace-nowrap">
-          Transfer <span className="tabular">{qty}</span> units
+          <span className="mb-2 block font-mono text-[8px] tracking-wider text-ink-soft uppercase">Interactive example</span>Transfer <span className="tabular">{qty}</span> units
         </p>
-        <p className="eyebrow tabular whitespace-nowrap">Cover {cover} days</p>
+        <p className="eyebrow tabular whitespace-nowrap">Plant 02 · {sourceLeft} left</p>
+      </div>
+
+      <div className="stock-balance" aria-label={`Plant 02 retains ${sourceLeft} units; Plant 01 receives ${qty} units`}>
+        <div><span>Plant 02</span><strong>{sourceLeft}<small> retained</small></strong><span className="stock-balance-track"><span style={{width: `${sourceLeft / 620 * 100}%`, background: "var(--color-saffron)"}} /><i style={{left: `${380 / 620 * 100}%`}} /></span></div>
+        <span className="stock-balance-arrow" aria-hidden>→</span>
+        <div><span>Plant 01</span><strong>+{qty}<small> incoming</small></strong><span className="stock-balance-track"><span style={{width: `${qty / 400 * 100}%`, background: "var(--color-cobalt)"}} /></span></div>
       </div>
 
       {mode === "idle" && (
@@ -66,10 +72,10 @@ export function DecisionControls() {
           </div>
           <p className="mt-3 text-sm text-ink-soft">
             {qty < 220
-              ? "Plant 01 falls short again before the supplier delivery arrives."
-              : qty > 300
-                ? "Plant 02 drops below its own safety stock."
-                : "Covers the gap until the supplier delivery arrives."}
+              ? "Below the recommended quantity; review the forecast before approving."
+              : qty > 240
+                ? "Plant 02 would retain less than its 380-unit plan."
+                : "Fits the transfer recommendation and Plant 02’s stock plan."}
           </p>
           <div className="mt-4 flex gap-2">
             <Btn primary onClick={() => setMode("approved")}>
@@ -109,8 +115,8 @@ export function DecisionControls() {
       {mode === "approved" && (
         <Result
           tone="ok"
-          title={`Approved. Stock transfer order created in SAP for ${qty} units.`}
-          meta="STO 4500018842 · Approved by R. Iyer, Supply Planner · 09:42"
+          title={`Approval recorded in this example. A ${qty}-unit transfer would be sent to your ERP.`}
+          meta="Example audit trail · Planner approval → ERP transfer order"
           onUndo={() => setMode("idle")}
         />
       )}

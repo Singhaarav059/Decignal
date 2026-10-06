@@ -12,11 +12,14 @@ import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { Plinth } from "./Plinth";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
+import { SystemNetwork } from "./SystemNetwork";
 
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
-const PORTRAIT_DROP = [0, 0.13, 0.13, 0.12, 0.08, 0.09, 0.1, 0, 0];
+const PORTRAIT_DROP = [-0.055, 0.13, 0.13, 0.12, 0.08, 0.09, 0.1, 0, 0];
 // Desktop frames push objects right of the copy column; a portrait screen centres them instead.
 const PORTRAIT_X = [0, 1.0, 0, 1.45, 0, 0.6, 0, 0, 0];
+// Leave room for outer source labels and the supplier marker on a phone.
+const MOBILE_FIT = [0.68, 1, 1.18, 1.22, 1.1, 1.04, 1.1, 1, 1];
 
 function Rig() {
   const { camera, size } = useThree();
@@ -29,17 +32,20 @@ function Rig() {
 
   useFrame((_, dt) => {
     const { i, j, local, e } = blendAt(store.g);
-    const a = cameraPose(i, local);
-    const b = cameraPose(j, 0);
+    const portrait = size.width < 768 || (size.width < 1024 && size.height > size.width * 1.15);
+    const a = cameraPose(i, local, portrait);
+    const b = cameraPose(j, 0, portrait);
     goal.p.set(...a.p).lerp(tmp.p.set(...b.p), e);
     goal.t.set(...a.t).lerp(tmp.t.set(...b.t), e);
 
     // Narrow screens: step back along the view ray so the composition still fits.
     const aspect = size.width / size.height;
-    store.camK = aspect < 1.25 ? Math.pow(1.25 / aspect, 0.92) : 1;
+    const fit = size.width < 768 ? THREE.MathUtils.lerp(MOBILE_FIT[i], MOBILE_FIT[j], e) : portrait ? THREE.MathUtils.lerp(i===0?.68:1,j===0?.68:1,e) : size.width < 1024 ? THREE.MathUtils.lerp(i===0?1.18:1,j===0?1.18:1,e) : 1;
+    const compactHero = size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?1.09:1,j===0?1.09:1,e) : 1;
+    store.camK = (aspect < 1.5 ? Math.pow(1.5 / aspect, 0.92) : 1) * fit * compactHero;
     if (store.camK > 1) goal.p.sub(goal.t).multiplyScalar(store.camK).add(goal.t);
-    if (aspect < 0.9) {
-      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e);
+    if (size.width < 1024) {
+      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?.009:0,j===0?.009:0,e) : 0);
       const dx = THREE.MathUtils.lerp(PORTRAIT_X[i], PORTRAIT_X[j], e);
       goal.p.x += dx;
       goal.t.x += dx;
@@ -128,6 +134,7 @@ function World() {
         <ChartMarks />
       </Suspense>
       <Threads />
+      <SystemNetwork />
       <SignalPing at={[0.55, 0.004, 1.6]} />
       <Plinth />
       <mesh rotation-x={-Math.PI / 2} receiveShadow>

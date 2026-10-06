@@ -76,30 +76,9 @@ export const APPLICATIONS: {
 ];
 
 export const OUTCOMES = [
-  {
-    value: "38%",
-    label: "faster response to shortage risk",
-    sector: "Automotive components",
-    quote:
-      "The shortage signal now reaches purchasing and production while there is still time to respond, not in the next morning review.",
-    context: "SAP ERP · MES · Quality records",
-  },
-  {
-    value: "24%",
-    label: "fewer emergency stock transfers",
-    sector: "Multi-location distribution",
-    quote:
-      "Planners see where inventory is becoming constrained, and the safest movement, before an urgent transfer is requested.",
-    context: "ERP · WMS · Demand plans",
-  },
-  {
-    value: "41%",
-    label: "faster priority-case resolution",
-    sector: "Industrial services",
-    quote:
-      "Service, parts and logistics see the shared issue and coordinate one response across every affected case.",
-    context: "Service CRM · ERP · Parts inventory",
-  },
+  { value: "2 days", label: "to arrive before the day 6 risk", sector: "Earlier intervention", quote: "The transfer reaches Plant 01 before the projected safety-stock breach.", context: "Transfer timing · Stock forecast" },
+  { value: "380", label: "units protected at the source", sector: "Balanced decisions", quote: "Plant 02 gives up its transferable stock while retaining the full quantity reserved for its own plan.", context: "Available stock · Production plan" },
+  { value: "14 → 1", label: "cases, one coordinated escalation", sector: "Shared context", quote: "Related service records travel together, so the owner can address the shared part issue.", context: "Service cases · Part history" },
 ];
 
 export const PATHS = {

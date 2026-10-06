@@ -17,7 +17,7 @@ export const CHAPTERS: Chapter[] = [
   { id: "decision", label: "Decision", len: 2.8, ts: 0.8 },
   { id: "control", label: "Control", len: 1.9, ts: 0.62 },
   { id: "scale", label: "Scale", len: 1.5, ts: 0.55 },
-  { id: "industries", label: "Industries", len: 4.2, ts: 0.9 },
+  { id: "industries", label: "Industries", len: 5.4, ts: 0.9 },
   { id: "final", label: "Decide", len: 1.6, ts: 1 },
 ];
 
@@ -140,7 +140,7 @@ export const CONTEXT = [
 export const LAYERS = [
   { name: "Signal", text: "Plant 01 short in 6 days" },
   { name: "Evidence", text: "Orders up 18% in 3 weeks" },
-  { name: "Context", text: "Plant 02 holds 620 units above plan" },
+  { name: "Context", text: "Plant 02 holds 620 units; 240 above its plan" },
   { name: "Policy", text: "Inter-plant transfer, planner approval" },
   { name: "Decision", text: "Transfer 240 units, Plant 02 to Plant 01" },
 ];
@@ -156,10 +156,10 @@ export const FUNCTIONS = [
 export const INDUSTRIES = [
   {
     name: "Manufacturing",
-    decision: "Move Line 04 maintenance to Thursday night",
+    decision: "Reserve Friday’s service window for Line 04",
     system: "MES · CMMS · IoT",
     challenge: "Downtime, quality drift and schedule risk move faster than the morning review.",
-    decisions: ["Move Line 04 maintenance to Thursday night", "Resequence Line 03 before the 14:00 shift", "Hold Batch 2207 for a seal inspection"],
+    decisions: ["Reserve Friday’s service window for Line 04", "Resequence Line 03 before the 14:00 shift", "Hold Batch 2207 for a seal inspection"],
     start: "Predictive Maintenance",
     weeks: "6 to 10",
   },

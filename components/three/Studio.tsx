@@ -5,14 +5,14 @@
 import { Environment, Lightformer } from "@react-three/drei";
 import { COLORS } from "./palette";
 
-export function Studio() {
+export function Studio({ resolution = 1024 }: { resolution?: number }) {
   return (
-    <Environment resolution={1024} frames={1}>
+    <Environment resolution={resolution} frames={1}>
       <color attach="background" args={[COLORS.envBase]} />
       {/* Overhead softbox: the broad, even top light of a product studio */}
-      <Lightformer form="rect" intensity={2.4} position={[0, 7, 0]} rotation-x={Math.PI / 2} scale={[12, 12, 1]} />
+      <Lightformer form="rect" intensity={1.8} position={[0, 7, 0]} rotation-x={Math.PI / 2} scale={[12, 12, 1]} />
       {/* Key strip from the left and a narrower rim from the right: long highlights on paint and glass */}
-      <Lightformer form="rect" intensity={3.2} position={[-7, 2.5, 3]} rotation-y={Math.PI / 2} scale={[5, 7, 1]} />
+      <Lightformer form="rect" intensity={2.8} position={[-7, 2.5, 3]} rotation-y={Math.PI / 2} scale={[5, 7, 1]} />
       <Lightformer form="rect" intensity={1.8} position={[7, 1.5, -2]} rotation-y={-Math.PI / 2} scale={[2, 6, 1]} />
       <Lightformer form="rect" intensity={0.9} position={[0, 1, 9]} scale={[10, 3, 1]} />
       <Lightformer form="ring" intensity={1.2} position={[3, 5, 6]} scale={2} />
@@ -28,7 +28,7 @@ export function KeyLight({ extent = 11 }: { extent?: number }) {
   return (
     <directionalLight
       position={[5, 11, 7]}
-      intensity={1.15}
+      intensity={1.5}
       castShadow
       shadow-mapSize={[4096, 4096]}
       shadow-bias={-0.0002}

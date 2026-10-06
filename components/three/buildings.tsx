@@ -576,6 +576,20 @@ function useWorldTexture(dot: string) {
     const x = c.getContext("2d")!;
     x.fillStyle = "#FBFAF7";
     x.fillRect(0, 0, W, H);
+    // Printed land silhouettes stay legible at the miniature's display size.
+    x.fillStyle = dot;
+    x.globalAlpha = 0.34;
+    LAND.forEach((polygon) => {
+      x.beginPath();
+      polygon.forEach(([lon, lat], i) => {
+        const px = ((lon + 180) / 360) * W;
+        const py = ((90 - lat) / 180) * H;
+        if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
+      });
+      x.closePath();
+      x.fill();
+    });
+    x.globalAlpha = 1;
     // Graticule
     x.strokeStyle = "rgba(20,19,15,0.07)";
     x.lineWidth = 2;

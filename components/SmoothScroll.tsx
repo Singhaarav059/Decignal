@@ -20,11 +20,12 @@ export const scrollToTarget = (target: string | number) => {
 export function SmoothScroll() {
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const animate = (t: number) => lenis?.raf(t * 1000);
     if (!reduce) {
       lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
       lenis.on("scroll", (l: Lenis) => (store.velocity = l.velocity));
-      gsap.ticker.add((t) => lenis?.raf(t * 1000));
+      gsap.ticker.add(animate);
       gsap.ticker.lagSmoothing(0);
     }
 
@@ -61,6 +62,7 @@ export function SmoothScroll() {
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       document.documentElement.removeEventListener("pointerleave", onLeave);
+      gsap.ticker.remove(animate);
       lenis?.destroy();
       lenis = null;
     };
