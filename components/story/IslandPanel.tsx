@@ -39,8 +39,14 @@ export function IslandPanel() {
   useEffect(() => {
     if (i < 0) return;
     let raf = 0;
+    let rect = panel.current?.getBoundingClientRect();
+    const updateRect = () => { rect = panel.current?.getBoundingClientRect(); };
+    window.addEventListener("resize", updateRect, { passive: true });
+    window.addEventListener("scroll", updateRect, { passive: true });
+    const timer = setTimeout(updateRect, 350);
+
     const tick = () => {
-      const p = panel.current?.getBoundingClientRect();
+      const p = rect || panel.current?.getBoundingClientRect();
       if (p && line.current && dot.current) {
         const { x, y } = store.anchor;
         const phone = window.innerWidth < 768;
@@ -58,7 +64,12 @@ export function IslandPanel() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect);
+    };
   }, [i]);
 
   const sys = SYSTEMS[shown];

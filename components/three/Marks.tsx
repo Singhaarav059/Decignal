@@ -188,7 +188,7 @@ export function Threads() {
   );
 }
 
-/** The moment of detection: rings spread across the floor beneath the signal, like a ping. */
+/** The moment of detection: calibrated radar grid and detection rings beneath the signal. */
 export function SignalPing({ at }: { at: [number, number, number] }) {
   const rings = useRef<(THREE.Mesh | null)[]>([]);
   const mats = useMemo(
@@ -199,19 +199,26 @@ export function SignalPing({ at }: { at: [number, number, number] }) {
     [],
   );
   const group = useRef<THREE.Group>(null);
+  const sweep = useRef<THREE.Group>(null);
+
   useFrame(({ clock }) => {
-    const w = smoothstep(0.55, 1, weight(CH.signal, store.g));
+    const w = smoothstep(0.45, 1, weight(CH.signal, store.g));
     if (!group.current) return;
     group.current.visible = w > 0.01;
     rings.current.forEach((m, i) => {
       if (!m) return;
       const k = (clock.elapsedTime * 0.32 + i / 3) % 1;
-      m.scale.setScalar(0.4 + k * 0.78);
+      m.scale.setScalar(0.3 + k * 0.75);
       mats[i].opacity = w * Math.pow(1 - k, 1.8) * 0.45;
     });
+    if (sweep.current) {
+      sweep.current.rotation.z = -clock.elapsedTime * 0.8;
+    }
   });
+
   return (
     <group ref={group} position={at} rotation-x={-Math.PI / 2} visible={false}>
+      {/* Expanding ping wave rings */}
       {mats.map((m, i) => (
         <mesh
           key={i}
@@ -223,6 +230,39 @@ export function SignalPing({ at }: { at: [number, number, number] }) {
           <ringGeometry args={[0.975, 1, 96]} />
         </mesh>
       ))}
+      {/* Calibrated stationary circular datum scale */}
+      <mesh>
+        <ringGeometry args={[0.42, 0.426, 64]} />
+        <meshBasicMaterial color={COLORS.signal} opacity={0.35} transparent depthWrite={false} />
+      </mesh>
+      <mesh>
+        <ringGeometry args={[0.76, 0.768, 80]} />
+        <meshBasicMaterial color={COLORS.signal} opacity={0.28} transparent depthWrite={false} />
+      </mesh>
+      <mesh>
+        <ringGeometry args={[1.14, 1.148, 96]} />
+        <meshBasicMaterial color={COLORS.signal} opacity={0.20} transparent depthWrite={false} />
+      </mesh>
+      {/* Cardinal crosshairs (0, 90, 180, 270 deg) */}
+      {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, i) => (
+        <group key={i} rotation-z={angle}>
+          <mesh position={[0.58, 0, 0]}>
+            <planeGeometry args={[0.52, 0.007]} />
+            <meshBasicMaterial color={COLORS.signal} opacity={0.28} transparent depthWrite={false} />
+          </mesh>
+          <mesh position={[1.14, 0, 0]}>
+            <planeGeometry args={[0.026, 0.026]} />
+            <meshBasicMaterial color={COLORS.signal} opacity={0.4} transparent depthWrite={false} />
+          </mesh>
+        </group>
+      ))}
+      {/* Subtle sweeping radar needle */}
+      <group ref={sweep}>
+        <mesh position={[0.56, 0, 0]}>
+          <planeGeometry args={[1.12, 0.005]} />
+          <meshBasicMaterial color={COLORS.signal} opacity={0.4} transparent depthWrite={false} />
+        </mesh>
+      </group>
     </group>
   );
 }

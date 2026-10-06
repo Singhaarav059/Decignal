@@ -690,10 +690,184 @@ export function Globe() {
   );
 }
 
-/** Contents of the signal tote: bearings lying in a bed of totes. */
+let bearingEtchTexCache: THREE.CanvasTexture | null = null;
+function useBearingEtchTexture() {
+  return useMemo(() => {
+    if (bearingEtchTexCache) return bearingEtchTexCache;
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, size, size);
+
+    ctx.save();
+    ctx.translate(size / 2, size / 2);
+    ctx.font = "bold 19px monospace";
+    ctx.fillStyle = "rgba(45, 50, 60, 0.85)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const text = "DECIGNAL · X90-6204 · MADE IN GERMANY · C3 · LOT 8842 · ";
+    const radius = size * 0.44;
+    const step = (Math.PI * 2) / text.length;
+    for (let i = 0; i < text.length; i++) {
+      ctx.save();
+      ctx.rotate(i * step);
+      ctx.fillText(text[i], 0, -radius);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 16;
+    bearingEtchTexCache = tex;
+    return tex;
+  }, []);
+}
+
+/** Single high-precision deep-groove ball bearing (SKF 6204 / Decignal X90 specification) */
+export function PrecisionBearing({
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  highlighted = false,
+}: {
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  highlighted?: boolean;
+}) {
+  const etchTex = useBearingEtchTexture();
+
+  // Outer and inner rings with lathe geometry and chamfers
+  const outerRingGeo = useMemo(() => {
+    const ro = 0.06;
+    const ri = 0.047;
+    const wd = 0.026;
+    const pts = [
+      [ri + 0.002, -wd / 2],
+      [ro - 0.002, -wd / 2],
+      [ro, -wd / 2 + 0.002],
+      [ro, wd / 2 - 0.002],
+      [ro - 0.002, wd / 2],
+      [ri + 0.002, wd / 2],
+      [ri, wd / 2 - 0.002],
+      [ri, -wd / 2 + 0.002],
+      [ri + 0.002, -wd / 2],
+    ].map(([a, b]) => new THREE.Vector2(a, b));
+    return new THREE.LatheGeometry(pts, 48);
+  }, []);
+
+  const innerRingGeo = useMemo(() => {
+    const ro = 0.033;
+    const ri = 0.02;
+    const wd = 0.026;
+    const pts = [
+      [ri + 0.002, -wd / 2],
+      [ro - 0.002, -wd / 2],
+      [ro, -wd / 2 + 0.002],
+      [ro, wd / 2 - 0.002],
+      [ro - 0.002, wd / 2],
+      [ri + 0.002, wd / 2],
+      [ri, wd / 2 - 0.002],
+      [ri, -wd / 2 + 0.002],
+      [ri + 0.002, -wd / 2],
+    ].map(([a, b]) => new THREE.Vector2(a, b));
+    return new THREE.LatheGeometry(pts, 48);
+  }, []);
+
+  // Stamped brass retainer cage
+  const cageGeo = useMemo(() => {
+    const parts: THREE.BufferGeometry[] = [];
+    const n = 10;
+    const rCage = 0.04;
+    // Upper and lower annular brass bands
+    const bandUpper = new THREE.RingGeometry(0.0345, 0.0455, 32);
+    bandUpper.rotateX(-Math.PI / 2);
+    bandUpper.translate(0, 0.009, 0);
+    parts.push(bandUpper);
+
+    const bandLower = new THREE.RingGeometry(0.0345, 0.0455, 32);
+    bandLower.rotateX(Math.PI / 2);
+    bandLower.translate(0, -0.009, 0);
+    parts.push(bandLower);
+
+    // Retention bridges between balls
+    for (let i = 0; i < n; i++) {
+      const a = (i + 0.5) * ((Math.PI * 2) / n);
+      parts.push(cylY(0.0025, 0.016, Math.cos(a) * rCage, 0, Math.sin(a) * rCage, 8));
+    }
+    return merge(parts);
+  }, []);
+
+  const steelMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: "#DDE0E5", roughness: 0.12, metalness: 0.94 }),
+    [],
+  );
+
+  return (
+    <group position={position} rotation={rotation}>
+      {/* Outer raceway ring */}
+      <mesh geometry={outerRingGeo} material={steelMat} castShadow receiveShadow />
+
+      {/* Laser-etched ring face marking */}
+      <mesh position-y={0.0131} rotation-x={-Math.PI / 2}>
+        <ringGeometry args={[0.048, 0.0595, 48]} />
+        <meshBasicMaterial map={etchTex} transparent opacity={0.88} depthWrite={false} />
+      </mesh>
+
+      {/* Inner raceway ring & shaft bore */}
+      <mesh geometry={innerRingGeo} material={steelMat} castShadow receiveShadow />
+
+      {/* Stamped brass ball cage */}
+      <mesh geometry={cageGeo} material={brass()} castShadow />
+
+      {/* 10 Precision mirror-chrome bearing balls */}
+      {Array.from({ length: 10 }, (_, i) => {
+        const a = (i / 10) * Math.PI * 2;
+        return (
+          <mesh
+            key={i}
+            position={[Math.cos(a) * 0.04, 0, Math.sin(a) * 0.04]}
+            material={chrome()}
+            castShadow
+          >
+            <sphereGeometry args={[0.0084, 16, 12]} />
+          </mesh>
+        );
+      })}
+
+      {/* Highlight glow ring for active inspection focus */}
+      {highlighted && (
+        <mesh position-y={0.014} rotation-x={-Math.PI / 2}>
+          <ringGeometry args={[0.059, 0.062, 48]} />
+          <meshBasicMaterial color="#F2361F" transparent opacity={0.65} depthWrite={false} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/** Contents of the signal tote: bearings nestled in an anti-static ESD foam tray. */
 export function BearingBed() {
+  const foamTray = useMemo(() => {
+    const parts: THREE.BufferGeometry[] = [];
+    // Base ESD conductive foam block
+    parts.push(rbox(CRATE.w - 0.036, 0.03, CRATE.d - 0.036, 0.008, 0, -0.016, 0));
+    // Raised protective perimeter rim
+    parts.push(box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, CRATE.d / 2 - 0.024));
+    parts.push(box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, -CRATE.d / 2 + 0.024));
+    parts.push(box(0.012, 0.008, CRATE.d - 0.04, CRATE.w / 2 - 0.024, 0.002, 0));
+    parts.push(box(0.012, 0.008, CRATE.d - 0.04, -CRATE.w / 2 + 0.024, 0.002, 0));
+    return merge(parts);
+  }, []);
+  const foamMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: "#181A1E", roughness: 0.88, metalness: 0.06 }),
+    [],
+  );
+
   return (
     <group position-y={CRATE.h / 2 - 0.028}>
+      <mesh geometry={foamTray} material={foamMat} receiveShadow />
       {[
         [-0.17, -0.07, 0.1],
         [0.0, -0.08, 0.6],
@@ -703,7 +877,12 @@ export function BearingBed() {
         [0.21, 0.09, 2.6],
         [-0.22, 0.09, 1.5],
       ].map(([x, z, r], i) => (
-        <Bearing key={i} position={[x, 0, z]} rotation-y={r} />
+        <PrecisionBearing
+          key={i}
+          position={[x, i === 1 ? 0.008 : 0, z]}
+          rotation={[0, r, 0]}
+          highlighted={i === 1}
+        />
       ))}
     </group>
   );

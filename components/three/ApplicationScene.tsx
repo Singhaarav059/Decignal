@@ -17,15 +17,16 @@ function Camera({kind,motion,still}:{kind:DemoKind;motion:Motion;still:boolean})
   const target=useMemo(()=>new THREE.Vector3(),[]);
   useFrame((_,dt)=>{
     const p=motion.current.progress;
-    const close=kind==="maintenance"?1+phase(p,0.15,0.45)*0.12:1;
-    const fit=kind==="inventory"?10.3:kind==="maintenance"?7:9;
-    const viewHeight=kind==="risk"?5.8:kind==="maintenance"?3.9:kind==="finance"?3.8:kind==="customer"?4.4:kind==="inventory"?4.6:5.3;
-    const zoom=Math.min(size.width/fit,size.height/viewHeight,120)*close;
-    const c=camera as THREE.OrthographicCamera;
-    c.zoom=still?zoom:THREE.MathUtils.damp(c.zoom,zoom,6,Math.min(dt,0.05));
-    c.position.set(kind==="maintenance"?4.2:kind==="finance"?0.7:4.6,kind==="maintenance"?3.2:kind==="finance"?7:5.4,8.5);
-    target.set(0,kind==="maintenance"?0.8:kind==="risk"?0.65:0.25,kind==="inventory"?-0.45:kind==="risk"?-0.4:0);
-    c.lookAt(target);c.updateProjectionMatrix();
+    const close = kind === "maintenance" ? 1 + phase(p, 0.15, 0.45) * 0.06 : 1;
+    const fit = kind === "inventory" ? 10.3 : kind === "maintenance" ? 8.4 : 9;
+    const viewHeight = kind === "risk" ? 5.8 : kind === "maintenance" ? 5.2 : kind === "finance" ? 4.2 : kind === "customer" ? 4.6 : kind === "inventory" ? 4.6 : 5.3;
+    const zoom = Math.min(size.width / fit, size.height / viewHeight, 120) * close;
+    const c = camera as THREE.OrthographicCamera;
+    c.zoom = still ? zoom : THREE.MathUtils.damp(c.zoom, zoom, 6, Math.min(dt, 0.05));
+    c.position.set(kind === "maintenance" ? 4.2 : kind === "finance" ? 0.7 : 4.6, kind === "maintenance" ? 3.6 : kind === "finance" ? 7 : 5.4, 8.5);
+    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : 0);
+    c.lookAt(target);
+    c.updateProjectionMatrix();
   });
   return null;
 }

@@ -39,11 +39,12 @@ import { COLORS, TINTS } from "./palette";
 import { Crate, Island, SYSTEM_MODELS, WHITE, clay } from "./kit";
 import { BearingBed, Plant } from "./buildings";
 import { Forklift, SemiTruck, TRUCK } from "./vehicles";
-import { LoadedPallet } from "./parts";
+import { LoadedPallet, box, cylX, cylY, cylZ, rbox, merge } from "./parts";
 import { PALLETS, SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "./transfer-motion";
-import { asphalt, concrete, enamel, fineRibs, plastic } from "./materials";
+import { aluminium, asphalt, concrete, enamel, fineRibs, plastic, steel } from "./materials";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, faceKey, readFonts, type FaceSpec } from "./faces";
+import { Route } from "./SceneKit";
 
 /* ------------------------------------------------------------------ */
 /* Actor: blends between its chapter poses; scales in and out of scenes */
@@ -394,7 +395,219 @@ export function Islands() {
   );
 }
 
-/** The one tote that matters: Bearing X90 at Plant 01. */
+let oledTexCache: THREE.CanvasTexture | null = null;
+function useCameraOledTexture() {
+  return useMemo(() => {
+    if (oledTexCache) return oledTexCache;
+    const w = 256;
+    const h = 128;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const c = canvas.getContext("2d")!;
+    c.fillStyle = "#0C0E12";
+    c.fillRect(0, 0, w, h);
+    c.strokeStyle = "rgba(242, 54, 31, 0.4)";
+    c.lineWidth = 3;
+    c.strokeRect(6, 6, w - 12, h - 12);
+
+    c.font = "bold 20px monospace";
+    c.fillStyle = "#27C97E";
+    c.fillText("● OPTIC-SCAN V4", 18, 34);
+
+    c.font = "bold 24px monospace";
+    c.fillStyle = "#FFFFFF";
+    c.fillText("BEARING X90", 18, 70);
+
+    c.font = "18px monospace";
+    c.fillStyle = "#F2361F";
+    c.fillText("DEFICIT: DAY 6", 18, 102);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 16;
+    oledTexCache = tex;
+    return tex;
+  }, []);
+}
+
+/**
+ * Precision Industrial Machine Vision Optical Inspection Station:
+ * Articulated robotic mounting stanchion, CNC telecentric camera housing,
+ * coaxial optical LED ring illuminator, structured laser sweep, and spatial calipers.
+ */
+function InspectionScanner({ active }: { active: boolean }) {
+  const oled = useCameraOledTexture();
+  const sweepRef = useRef<THREE.Group>(null);
+  const ringRef = useRef<THREE.Group>(null);
+
+  const armGeo = useMemo(() => {
+    const parts: THREE.BufferGeometry[] = [];
+    // Rigid mounting block clamped to rear rail of crate staging
+    parts.push(rbox(0.046, 0.04, 0.046, 0.006, -0.26, 0.08, -0.16));
+    // Upright stanchion mast column
+    parts.push(cylY(0.011, 0.26, -0.26, 0.21, -0.16, 16));
+    // Shoulder swivel turret
+    parts.push(cylX(0.016, 0.038, -0.26, 0.34, -0.16, 16));
+    parts.push(cylX(0.021, 0.008, -0.26 - 0.02, 0.34, -0.16, 16)); // knurled lock dial
+    // Forward cantilever boom reaching from [-0.26, 0.34, -0.16] to [0, 0.32, 0]
+    const p1 = new THREE.Vector3(-0.26, 0.34, -0.16);
+    const p2 = new THREE.Vector3(0, 0.32, 0);
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const len = dir.length();
+    const boom = new THREE.CylinderGeometry(0.009, 0.009, len, 16);
+    boom.rotateX(Math.PI / 2);
+    boom.lookAt(dir);
+    boom.translate((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, (p1.z + p2.z) / 2);
+    parts.push(boom);
+    // Wrist gimbal at boom tip
+    parts.push(rbox(0.032, 0.03, 0.032, 0.005, 0, 0.32, 0));
+    return merge(parts);
+  }, []);
+
+  const cameraGeo = useMemo(() => {
+    const parts: THREE.BufferGeometry[] = [];
+    // Camera main body
+    parts.push(rbox(0.12, 0.06, 0.10, 0.008, 0, 0.28, 0));
+    // Heat dissipation fins
+    for (let i = -2; i <= 2; i++) {
+      parts.push(box(0.09, 0.008, 0.01, 0, 0.315, i * 0.018));
+    }
+    // Telecentric lens barrel extending downward
+    parts.push(cylY(0.028, 0.036, 0, 0.235, 0, 24));
+    // Dual structured laser diode pods
+    parts.push(cylY(0.009, 0.024, -0.065, 0.26, 0, 12));
+    parts.push(cylY(0.009, 0.024, 0.065, 0.26, 0, 12));
+    return merge(parts);
+  }, []);
+
+  // Coaxial LED Ring Illuminator Bezel
+  const ringBezelGeo = useMemo(() => {
+    const parts: THREE.BufferGeometry[] = [];
+    const ro = 0.088;
+    const ri = 0.058;
+    const h = 0.014;
+    const ringPts = [
+      [ri, -h / 2],
+      [ro, -h / 2],
+      [ro, h / 2],
+      [ri, h / 2],
+      [ri, -h / 2],
+    ].map(([a, b]) => new THREE.Vector2(a, b));
+    parts.push(new THREE.LatheGeometry(ringPts, 48).translate(0, 0.218, 0));
+    return merge(parts);
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!active) return;
+    const t = clock.elapsedTime;
+    if (sweepRef.current) {
+      sweepRef.current.position.x = Math.sin(t * 2.2) * 0.18;
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.y = t * 0.12;
+    }
+  });
+
+  return (
+    <group>
+      {/* Articulated mounting arm */}
+      <mesh geometry={armGeo} material={steel("#22252A", 0.4)} castShadow />
+
+      {/* Camera body */}
+      <mesh geometry={cameraGeo} material={steel("#282C34", 0.35)} castShadow />
+
+      {/* Front status OLED display */}
+      <mesh position={[0, 0.28, 0.052]}>
+        <planeGeometry args={[0.08, 0.04]} />
+        <meshBasicMaterial map={oled} />
+      </mesh>
+
+      {/* Sapphire camera objective lens */}
+      <mesh position={[0, 0.216, 0]} rotation-x={Math.PI / 2}>
+        <circleGeometry args={[0.025, 24]} />
+        <meshPhysicalMaterial color="#0A0E14" roughness={0.02} metalness={0.9} clearcoat={1} clearcoatRoughness={0.02} />
+      </mesh>
+
+      {/* Circular LED Ring Illuminator Aluminum Bezel */}
+      <mesh geometry={ringBezelGeo} material={aluminium(0.25)} castShadow />
+
+      {/* Frosted Optical Diffuser Ring */}
+      <mesh position={[0, 0.211, 0]} rotation-x={Math.PI / 2}>
+        <ringGeometry args={[0.062, 0.084, 48]} />
+        <meshStandardMaterial
+          color="#FFF6E8"
+          emissive="#FFE6C4"
+          emissiveIntensity={1.3}
+          roughness={0.35}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* 16 Micro-LED Diodes */}
+      {Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.073, 0.21, Math.sin(a) * 0.073]}>
+            <cylinderGeometry args={[0.002, 0.002, 0.002, 8]} />
+            <meshBasicMaterial color="#FFFFFF" />
+          </mesh>
+        );
+      })}
+
+      {/* Soft Downward Coaxial Light Cone */}
+      <mesh position={[0, 0.13, 0]}>
+        <cylinderGeometry args={[0.08, 0.18, 0.17, 32, 1, true]} />
+        <meshBasicMaterial color="#FFF5E6" transparent opacity={0.035} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+
+      {/* Dual Downward Structured Laser Scanning Sheets */}
+      {[-0.065, 0.065].map((lx, i) => (
+        <mesh key={i} position={[lx, 0.175, 0]}>
+          <coneGeometry args={[0.09, 0.17, 16, 1, true]} />
+          <meshBasicMaterial color={COLORS.signal} transparent opacity={0.06} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+      ))}
+
+      {/* Active Panning Laser Sweep Line */}
+      <group ref={sweepRef} position={[0, 0.138, 0]}>
+        <mesh>
+          <boxGeometry args={[0.0035, 0.002, 0.32]} />
+          <meshBasicMaterial color={COLORS.signal} />
+        </mesh>
+        {/* Soft laser fringe illumination */}
+        <mesh>
+          <planeGeometry args={[0.03, 0.32]} />
+          <meshBasicMaterial color={COLORS.signal} transparent opacity={0.22} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+      </group>
+
+      {/* Holographic Dimensional Calipers directly over the inspected bearing */}
+      <group position={[0, 0.139, -0.08]} rotation-x={-Math.PI / 2} ref={ringRef}>
+        {/* Outer diameter caliper */}
+        <mesh>
+          <ringGeometry args={[0.0605, 0.062, 48]} />
+          <meshBasicMaterial color={COLORS.signal} opacity={0.45} transparent depthWrite={false} />
+        </mesh>
+        {/* Inner bore caliper */}
+        <mesh>
+          <ringGeometry args={[0.019, 0.0205, 32]} />
+          <meshBasicMaterial color={COLORS.signal} opacity={0.45} transparent depthWrite={false} />
+        </mesh>
+        {/* Cardinal crosshairs */}
+        <mesh>
+          <planeGeometry args={[0.16, 0.0015]} />
+          <meshBasicMaterial color={COLORS.signal} opacity={0.35} transparent depthWrite={false} />
+        </mesh>
+        <mesh>
+          <planeGeometry args={[0.0015, 0.16]} />
+          <meshBasicMaterial color={COLORS.signal} opacity={0.35} transparent depthWrite={false} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/** The one tote that matters: Bearing X90 at Plant 01, with optical scan probe and spatial telemetry nodes. */
 export function SignalCrate() {
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
   // Same moulded, ribbed plastic as every other tote; only its colour changes.
@@ -406,22 +619,39 @@ export function SignalCrate() {
   const red = useMemo(() => new THREE.Color(COLORS.signal), []);
   const tag = useRef<THREE.Group>(null);
   const hover = useRef<THREE.Group>(null);
+  const contextGroup = useRef<THREE.Group>(null);
+  const scannerGroup = useRef<THREE.Group>(null);
+
   useFrame(({ clock }) => {
+    const sigWeight = weight(CH.signal, store.g);
     // While it is the subject, it hovers: lifted out of the data, breathing slowly.
-    if (hover.current) hover.current.position.y = Math.sin(clock.elapsedTime * 1.3) * 0.035 * weight(CH.signal, store.g);
+    if (hover.current) hover.current.position.y = Math.sin(clock.elapsedTime * 1.3) * 0.025 * sigWeight;
     // It turns red as the signal is found, then keeps a slow pulse: live, not alarming.
     const r = smoothstep(0.45, 0.95, store.g);
     mat.color.copy(saffron).lerp(red, r);
     mat.emissive.copy(red).multiplyScalar(r * (0.18 + Math.sin(clock.elapsedTime * 2.4) * 0.08));
+
     if (tag.current) {
-      // The label grows in with the chapter instead of popping on.
       const show = smoothstep(0.55, 0.9, Math.max(weight(CH.signal, store.g), weight(CH.context, store.g)));
-      tag.current.scale.setScalar(0.42 * show);
+      tag.current.scale.setScalar(0.36 * show);
       tag.current.visible = show > 0.01;
     }
+
+    if (contextGroup.current) {
+      const showContext = smoothstep(0.6, 0.96, sigWeight);
+      contextGroup.current.scale.setScalar(showContext);
+      contextGroup.current.visible = showContext > 0.01;
+    }
+
+    if (scannerGroup.current) {
+      const showScan = smoothstep(0.5, 0.95, sigWeight);
+      scannerGroup.current.scale.setScalar(showScan);
+      scannerGroup.current.visible = showScan > 0.01;
+    }
   });
+
   return (
-    <Actor track={(c,t) => signalCratePose(c,t,portrait)} damp={0.12}>
+    <Actor track={(c, t) => signalCratePose(c, t, portrait)} damp={0.12}>
       {/* Rides in with the warehouse it sits on, and floats with it while it is there. */}
       <Rise delay={0.25 + WMS * 0.09} float={() => weight(CH.fragments, store.g)}>
         <group ref={hover}>
@@ -429,8 +659,36 @@ export function SignalCrate() {
           <Crate material={mat} open>
             <BearingBed />
           </Crate>
-          <group ref={tag} position={[0, 0.42, 0]} scale={0.42}>
-            <Tag title="Bearing X90 · Plant 01" value="Below safety stock in 6 days" tone={COLORS.signal} width={1.5} alert />
+
+          {/* Primary Signal Tag */}
+          <group ref={tag} position={[0, 0.38, 0]} scale={0.36}>
+            <Tag title="Bearing X90 · Plant 01" value="Below safety stock in 6 days" tone={COLORS.signal} width={1.45} alert />
+          </group>
+
+          {/* Precision Industrial Machine Vision Optical Inspection Station */}
+          <group ref={scannerGroup}>
+            <InspectionScanner active />
+          </group>
+
+          {/* Contextual Spatial Intelligence Network (Fills empty space with authentic operational facts) */}
+          <group ref={contextGroup} visible={false}>
+            {/* Context Node 1 (Upper Left): Plant 01 Production Consumption Rate */}
+            <group position={[-0.86, 0.26, -0.18]} scale={0.30}>
+              <Tag title="PLANT 01 LINE 02" value="Consuming 45 units/day" tone={TINTS.emerald} width={1.48} />
+            </group>
+            <Route points={[[-0.86, 0.26, -0.18], [-0.40, 0.18, -0.08], [0, 0.12, 0]]} color="#A2C8B5" radius={0.005} dashed flow speed={0.35} pulseColor={TINTS.emerald} />
+
+            {/* Context Node 2 (Right Midground): Current On-Hand Balance */}
+            <group position={[0.78, 0.28, -0.20]} scale={0.30}>
+              <Tag title="CURRENT STOCK" value="410 units on hand" tone={TINTS.saffron} width={1.38} />
+            </group>
+            <Route points={[[0.78, 0.28, -0.20], [0.38, 0.18, -0.08], [0, 0.12, 0]]} color="#D6BF8A" radius={0.005} dashed flow speed={0.35} pulseColor={TINTS.saffron} />
+
+            {/* Context Node 3 (Lower Right): Safety Breach Horizon - elevated safely above bottom */}
+            <group position={[0.76, 0.05, 0.12]} scale={0.30}>
+              <Tag title="SAFETY RESERVE" value="Day 6 breach (140 vs 175)" tone={COLORS.signal} width={1.48} alert />
+            </group>
+            <Route points={[[0.76, 0.05, 0.12], [0.38, 0.08, 0.06], [0, 0.12, 0]]} color="#E59A94" radius={0.005} dashed flow speed={0.35} pulseColor={COLORS.signal} />
           </group>
         </group>
       </Rise>
@@ -585,7 +843,7 @@ export function Yard({ roadLength = 16 }: { roadLength?: number }) {
 export function Transfer() {
   const truck = useRef<THREE.Group>(null);
   const fork = useRef<THREE.Group>(null);
-  const lift = useMemo<Lift>(() => ({ x: 0, z: 0, yaw: 0, h: 0, trip: -1, carry: false }), []);
+  const lift = useMemo<Lift>(() => ({ x: 0, z: 0, yaw: 0, h: 0, trip: -1, carry: false, pitch: 0, roll: 0 }), []);
   const [states, setStates] = useState<number[]>([0, 0, 0]);
   const [arrived, setArrived] = useState(false);
   const [order, setOrder] = useState("Approved · loading next");
@@ -612,6 +870,8 @@ export function Transfer() {
       fork.current.visible = here && s > 0.002;
       fork.current.position.set(lift.x, 0, lift.z);
       fork.current.rotation.y = lift.yaw;
+      fork.current.rotation.x = lift.pitch;
+      fork.current.rotation.z = lift.roll;
       fork.current.scale.setScalar(M * s);
     }
     const next = palletStates(t, lift);

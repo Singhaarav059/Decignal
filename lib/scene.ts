@@ -98,7 +98,8 @@ export function signalCratePose(c: number, t: number, portrait = false): Pose | 
       return { p: [x + (ox * cs + oz * sn) * k, oy * k, z + (-ox * sn + oz * cs) * k], ry, s: k * ISLAND_TOTE };
     }
     case CH.signal:
-      return { p: [0.55, 0.9, 1.6], rx: 0.12, ry: -0.55 + t * 0.5, s: 1.7 };
+      if (portrait) return { p: [0, -0.32, 1.1], rx: 0.15, ry: -0.42 + t * 0.3, s: 0.95 };
+      return { p: [0.65, 0.42, 1.35], rx: 0.14, ry: -0.52 + t * 0.45, s: 1.20 };
     case CH.problem:
       return { p: chartPos(CHART_CRATES), s: 1 };
     case CH.context:
@@ -180,7 +181,8 @@ export function cameraPose(c: number, t: number, portrait = false): Cam {
       if (portrait) return { p: [0, 14, 14], t: [0, 0.8, -1.2] };
       return { p: [0, 8.4 - t * 0.5, 16.2 - t * 0.8], t: [0, 1.55, -1.6] };
     case CH.signal:
-      return { p: [0.3, 2.4, 7.6 - t * 0.4], t: [-0.55, 1.0, 1.2] };
+      if (portrait) return { p: [0, 2.6, 9.8 - t * 0.4], t: [0, 0.25, 0.5] };
+      return { p: [0.25, 2.05, 8.3 - t * 0.4], t: [-0.35, 0.65, 0.9] };
     case CH.problem:
       // The chart sits under the copy, never beside it: the whole week reads at once.
       return { p: [-0.35, 3.9, 14.3 - t * 0.4], t: [-0.35, 2.05, 0] };

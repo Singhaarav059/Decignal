@@ -95,8 +95,10 @@ function Rig() {
       look.current.copy(goal.t);
       ready.current = true;
     }
-    easing.damp3(camera.position, goal.p, 0.12, delta);
-    easing.damp3(look.current, goal.t, 0.12, delta);
+    const velK = Math.min(1, Math.abs(store.velocity) / 22);
+    const dampTime = THREE.MathUtils.lerp(0.12, 0.05, velK);
+    easing.damp3(camera.position, goal.p, dampTime, delta);
+    easing.damp3(look.current, goal.t, dampTime, delta);
     camera.lookAt(look.current);
   });
   return null;
@@ -135,7 +137,7 @@ function World() {
       </Suspense>
       <Threads />
       <SystemNetwork />
-      <SignalPing at={[0.55, 0.004, 1.6]} />
+      <SignalPing at={[0.65, 0.004, 1.35]} />
       <Plinth />
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[80, 80]} />

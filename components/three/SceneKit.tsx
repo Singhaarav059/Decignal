@@ -1,7 +1,8 @@
 "use client";
 
 import { Billboard } from "@react-three/drei";
-import { useEffect, useMemo, type RefObject } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { enamel, aluminium, concrete } from "./materials";
 
@@ -9,32 +10,186 @@ export type Motion = RefObject<{ progress: number }>;
 export type Vec = [number, number, number];
 export const phase = (p: number, a: number, b: number) => THREE.MathUtils.smoothstep(p, a, b);
 
-/** Flat, legible equipment tags: attached to an asset, with no decorative pop. */
-export function AssetLabel({ title, detail, position, color = "#6E685E", width = 1.4 }: { title: string; detail?: string; position: Vec; color?: string; width?: number }) {
+/** Linear 0..1 progress between a and b (no easing), for choreography that must stay in step. */
+export const ramp = (p: number, a: number, b: number) => THREE.MathUtils.clamp((p - a) / (b - a), 0, 1);
+
+/** Canvas px → screen px. Labels keep one reading size in every scene, whatever the camera zoom. */
+const LABEL_SCALE = 0.25;
+const LABEL_RES = 3;
+
+/**
+ * Industrial equipment telemetry tag: razor-sharp retina canvas, soft lift, status dot.
+ * Proportioned directly in world units matching the lead story's tags, so it never balloons or clips.
+ */
+export function AssetLabel({
+  title,
+  detail,
+  position,
+  color = "#6E685E",
+  width = 2.1,
+}: {
+  title: string;
+  detail?: string;
+  position: Vec;
+  color?: string;
+  width?: number;
+  pin?: boolean;
+}) {
+  const holder = useRef<THREE.Group>(null);
+  const pop = useRef(0);
+  const first = useRef(true);
+  const [fontsReady, setFontsReady] = useState(0);
+
+  useEffect(() => {
+    let live = true;
+    document.fonts?.ready.then(() => live && setFontsReady((n) => n + 1));
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    pop.current = 1;
+  }, [title, detail, color]);
+
+  const W = 680;
+  const H = detail ? 210 : 126;
+
   const texture = useMemo(() => {
-    const canvas = document.createElement("canvas"); canvas.width = 768; canvas.height = detail ? 190 : 100;
+    const canvas = document.createElement("canvas");
+    canvas.width = W * LABEL_RES;
+    canvas.height = H * LABEL_RES;
     const c = canvas.getContext("2d")!;
-    c.fillStyle = "#FFFDF9"; c.beginPath(); c.roundRect(2,2,764,canvas.height-4,16); c.fill();
-    c.strokeStyle = "#E7E1D8"; c.lineWidth=2; c.stroke();
-    c.fillStyle=color; c.fillRect(24,28,8,canvas.height-56);
-    c.fillStyle="#14130F"; c.font="600 38px Inter, sans-serif"; c.fillText(title,54,detail?70:63);
-    if(detail){c.fillStyle=color;c.font="400 30px Inter, sans-serif";c.fillText(detail,54,132);}
-    const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;
-  },[title,detail,color]);
-  useEffect(()=>()=>texture.dispose(),[texture]);
-  return <group position={position}><Billboard><mesh renderOrder={20}><planeGeometry args={[width,width*(detail?190:100)/768]} /><meshBasicMaterial map={texture} transparent depthTest={false} depthWrite={false} toneMapped={false} /></mesh></Billboard></group>;
+    c.setTransform(LABEL_RES, 0, 0, LABEL_RES, 0, 0);
+
+    // Pill background with subtle elevation shadow
+    c.save();
+    c.shadowColor = "rgba(20, 19, 15, 0.14)";
+    c.shadowBlur = 18;
+    c.shadowOffsetY = 6;
+    c.beginPath();
+    c.roundRect(16, 12, W - 32, H - 24, 36);
+    c.fillStyle = "#FFFFFF";
+    c.fill();
+    c.restore();
+
+    // Precision boundary stroke
+    c.strokeStyle = "rgba(20, 19, 15, 0.09)";
+    c.lineWidth = 2;
+    c.stroke();
+
+    const sans = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    const m = document.createElement("canvas").getContext("2d")!;
+
+    // Status dot
+    const dotY = detail ? 64 : H / 2;
+    c.fillStyle = color;
+    c.beginPath();
+    c.arc(56, dotY, 13, 0, Math.PI * 2);
+    c.fill();
+
+    // Measure and fit title
+    let titleSize = 40;
+    m.font = `650 ${titleSize}px ${sans}`;
+    while (m.measureText(title).width > W - 140 && titleSize > 26) {
+      titleSize -= 2;
+      m.font = `650 ${titleSize}px ${sans}`;
+    }
+    c.font = `650 ${titleSize}px ${sans}`;
+    c.fillStyle = "#14130F";
+    c.fillText(title, 94, detail ? 76 : H / 2 + titleSize * 0.35);
+
+    // Measure and fit detail if present
+    if (detail) {
+      let detailSize = 31;
+      m.font = `500 ${detailSize}px ${sans}`;
+      while (m.measureText(detail).width > W - 90 && detailSize > 22) {
+        detailSize -= 2;
+        m.font = `500 ${detailSize}px ${sans}`;
+      }
+      c.font = `500 ${detailSize}px ${sans}`;
+      c.fillStyle = "#4A463E";
+      c.fillText(detail, 56, 146);
+    }
+
+    const t = new THREE.CanvasTexture(canvas);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 16;
+    return t;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, detail, color, fontsReady, W, H]);
+
+  useEffect(() => () => texture.dispose(), [texture]);
+
+  useFrame((_, dt) => {
+    if (!holder.current) return;
+    pop.current = Math.max(0, pop.current - Math.min(dt, 0.05) * 2.4);
+    const k = pop.current;
+    const bump = Math.sin(Math.min(1, (1 - k) * 2) * Math.PI) * k * 0.12;
+    holder.current.scale.setScalar(1 + bump);
+  });
+
+  return (
+    <group position={position}>
+      <Billboard>
+        <group ref={holder}>
+          <mesh renderOrder={20}>
+            <planeGeometry args={[width, (width * H) / W]} />
+            <meshBasicMaterial map={texture} transparent depthTest={false} depthWrite={false} toneMapped={false} />
+          </mesh>
+        </group>
+      </Billboard>
+    </group>
+  );
 }
 
-export function Route({points,color="#CBC6BD",radius=0.018,dashed=false}:{points:Vec[];color?:string;radius?:number;dashed?:boolean}){
+export function Route({points,color="#CBC6BD",radius=0.018,dashed=false,flow=false,speed=0.28,pulseCount=2,pulseColor}:
+  {points:Vec[];color?:string;radius?:number;dashed?:boolean;flow?:boolean;speed?:number;pulseCount?:number;pulseColor?:string}){
+  const curve=useMemo(()=>{
+    const c=new THREE.CurvePath<THREE.Vector3>();
+    points.slice(1).forEach((p,i)=>c.add(new THREE.LineCurve3(new THREE.Vector3(...points[i]),new THREE.Vector3(...p))));
+    return c;
+  },[points]);
+
   const geometry=useMemo(()=>{
-    const curve=new THREE.CurvePath<THREE.Vector3>();
-    points.slice(1).forEach((p,i)=>curve.add(new THREE.LineCurve3(new THREE.Vector3(...points[i]),new THREE.Vector3(...p))));
     if(!dashed)return [new THREE.TubeGeometry(curve,64,radius,6,false)];
     const n=Math.max(1,Math.ceil(curve.getLength()/0.19));
     return Array.from({length:n},(_,i)=>new THREE.TubeGeometry(new THREE.LineCurve3(curve.getPoint(i/n),curve.getPoint((i+0.56)/n)),2,radius,5,false));
-  },[points,radius,dashed]);
+  },[curve,radius,dashed]);
   useEffect(()=>()=>geometry.forEach(g=>g.dispose()),[geometry]);
-  return <group>{geometry.map((g,i)=><mesh key={i} geometry={g}><meshBasicMaterial color={color} toneMapped={false}/></mesh>)}</group>;
+
+  const pulses = useRef<(THREE.Mesh | null)[]>([]);
+  const tmpPos = useMemo(() => new THREE.Vector3(), []);
+  const pColor = pulseColor || color;
+  const still = useRef(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => { still.current = media.matches; };
+    sync(); media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!flow || still.current) return;
+    const t = clock.elapsedTime * speed;
+    for (let i = 0; i < pulseCount; i++) {
+      const mesh = pulses.current[i];
+      if (!mesh) continue;
+      const frac = (t + i / pulseCount) % 1;
+      curve.getPointAt(frac, tmpPos);
+      mesh.position.copy(tmpPos);
+    }
+  });
+
+  return <group>
+    {geometry.map((g,i)=><mesh key={i} geometry={g}><meshBasicMaterial color={color} toneMapped={false}/></mesh>)}
+    {flow && Array.from({length: pulseCount}, (_, i) => (
+      <mesh key={`p-${i}`} ref={el => { pulses.current[i] = el; }}>
+        <sphereGeometry args={[radius * 1.7, 12, 12]} />
+        <meshBasicMaterial color={pColor} toneMapped={false} />
+      </mesh>
+    ))}
+  </group>;
 }
 
 export function Box({at,size,color="#E7E3DC",metal=false}:{at:Vec;size:Vec;color?:string;metal?:boolean}){
