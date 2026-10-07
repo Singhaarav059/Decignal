@@ -981,3 +981,21 @@ html.ready .intro-stage {
 @media (prefers-reduced-motion: reduce) {
   .scale-col, .scale-col::before { transition-duration: 0ms; }
 }
+
+/* ---- INDUSTRIES pass ---- */
+/* The industry facing the viewer lends its accent to the copy, index and plinth. */
+.ind-detail { --ind-tone: var(--color-emerald); }
+.ind-check { color: color-mix(in srgb, var(--tone) 80%, var(--color-ink)); }
+.ind-eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--tone);
+  vertical-align: 1px;
+}
+.ind-bar { background: var(--ind-tone); transition: background-color var(--dur-3) var(--ease); }
+.ind-item[aria-current] .eyebrow { color: color-mix(in srgb, var(--ind-tone) 70%, var(--color-ink)); }
+@media (prefers-reduced-motion: reduce) { .ind-bar { transition: none; } }

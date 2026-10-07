@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import {
   CH,
   INDUSTRIES,
+  INDUSTRY_TONE,
   TOTAL_LEN,
   clamp01,
   localIn,
@@ -100,9 +101,10 @@ export function Story() {
       const wi = shown(weight(CH.industries, g));
       indEls.forEach((el) => {
         const k = Number(el.dataset.ind);
-        const w = wi * (1 - clamp01(Math.abs(f - k) * 2.4));
+        // One name at a time: the old name clears before the next resolves, never two half-blurred.
+        const w = wi * smoothstep(0.35, 1, 1 - clamp01(Math.abs(f - k) * 2.4));
         el.style.opacity = String(w);
-        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 12}px)`;
+        el.style.filter = w > 0.98 || still ? "none" : `blur(${(1 - w) * 2}px)`;
         el.style.transform = `translate3d(0, ${(f - k) * -40}px, 0)`;
         el.style.visibility = w < 0.005 ? "hidden" : "visible";
       });
@@ -148,7 +150,12 @@ export function Story() {
         </div>
         {INDUSTRIES.map((ind, k) => (
           <div key={ind.name} data-ind={k} className="absolute inset-x-0 top-[12vh] px-6 text-center">
-            <p className="display text-[clamp(36px,6.2vw,100px)]">{ind.name}</p>
+            <p
+              className="display text-[clamp(36px,6.2vw,100px)]"
+              style={{ color: `color-mix(in srgb, var(--color-${INDUSTRY_TONE[k]}) 58%, var(--color-ink))` }}
+            >
+              {ind.name}
+            </p>
           </div>
         ))}
         <div data-ch={CH.final} className="absolute inset-x-0 top-[14vh] px-6 text-center">

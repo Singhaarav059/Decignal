@@ -3,9 +3,12 @@
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { CH, INDUSTRIES, localIn, smoothstep, store, weight } from "@/lib/story";
+import { CH, INDUSTRIES, INDUSTRY_TONE, localIn, smoothstep, store, weight } from "@/lib/story";
 import { industryF, PLINTH_H } from "@/lib/layouts";
-import { COLORS } from "./palette";
+import { COLORS, TINTS } from "./palette";
+
+// Each industry's glaze: its accent deepened toward ink, so the white engraving still reads.
+const GLAZE = INDUSTRY_TONE.map((t) => new THREE.Color(COLORS.ink).lerp(new THREE.Color(TINTS[t]), 0.42));
 
 const R = 2.15;
 const STEP = (Math.PI * 2) / INDUSTRIES.length;
@@ -111,7 +114,11 @@ export function Plinth() {
     typeMat.opacity = smoothstep(0.5, 1, w) * appear;
     g.position.y = (appear - 1) * (leaving ? 0.6 : 0.08);
     // The rim turns with the object: the active industry always sits at the front.
-    top.current.rotation.y = -industryF(localIn(CH.industries, store.g)) * STEP;
+    const f = industryF(localIn(CH.industries, store.g));
+    top.current.rotation.y = -f * STEP;
+    // The glaze turns with the rim, blending between neighbouring industries.
+    const i = Math.min(Math.floor(f), GLAZE.length - 1);
+    body.color.lerpColors(GLAZE[i], GLAZE[Math.min(i + 1, GLAZE.length - 1)], f - i);
   });
 
   return (

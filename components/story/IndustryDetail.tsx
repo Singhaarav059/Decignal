@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CH, INDUSTRIES, clamp01, gToProgress, localIn, subscribe } from "@/lib/story";
+import { CH, INDUSTRIES, INDUSTRY_TONE, clamp01, gToProgress, localIn, subscribe } from "@/lib/story";
 import { industryF } from "@/lib/layouts";
 import { scrollToTarget } from "../SmoothScroll";
 
@@ -32,6 +32,8 @@ export function IndustryDetail() {
       if (now !== last) {
         last = now;
         items.forEach((it, k) => it.toggleAttribute("aria-current", k === now));
+        // The index bar takes the colour of the industry facing the viewer.
+        el.style.setProperty("--ind-tone", `var(--color-${INDUSTRY_TONE[now]})`);
       }
     });
   }, []);
@@ -45,12 +47,17 @@ export function IndustryDetail() {
   };
 
   return (
-    <div ref={root} className="pointer-events-none absolute inset-x-6 top-[25vh] bottom-[13vh] md:inset-x-10 md:bottom-[14vh]">
+    <div ref={root} className="ind-detail pointer-events-none absolute inset-x-6 top-[25vh] bottom-[13vh] md:inset-x-10 md:bottom-[14vh]">
       {/* Left: the industry's challenge, the decisions Decignal makes there, how to start */}
-      <div className="absolute inset-x-0 bottom-0 h-[180px] md:relative md:h-full md:w-[min(310px,24vw)]">
+      <div className="absolute inset-x-0 bottom-0 h-[180px] md:h-[250px] md:max-w-[560px] lg:relative lg:h-full lg:w-[min(310px,24vw)] lg:max-w-none">
         {INDUSTRIES.map((ind, k) => (
-          <div key={ind.name} data-ind-detail className="absolute inset-x-0 max-md:bottom-0 md:top-0" style={{ opacity: 0 }}>
-            <p className="eyebrow tabular max-md:hidden">
+          <div
+            key={ind.name}
+            data-ind-detail
+            className="absolute inset-x-0 max-lg:bottom-0 lg:top-0"
+            style={{ opacity: 0, "--tone": `var(--color-${INDUSTRY_TONE[k]})` } as React.CSSProperties}
+          >
+            <p className="ind-eyebrow eyebrow tabular max-md:hidden">
               {String(k + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")} · The challenge
             </p>
             <p className="mt-2 text-[16px] font-medium max-md:hidden leading-[1.4] tracking-[-0.01em] text-ink">{ind.challenge}</p>
@@ -58,7 +65,7 @@ export function IndustryDetail() {
             <ul className="mt-2 border-t border-line">
               {ind.decisions.map((d) => (
                 <li key={d} className="flex gap-2.5 border-b border-line py-1.5 text-[13px] leading-snug text-ink-2">
-                  <svg width="14" height="14" viewBox="0 0 14 14" className="mt-[3px] shrink-0 text-emerald" aria-hidden>
+                  <svg width="14" height="14" viewBox="0 0 14 14" className="ind-check mt-[3px] shrink-0" aria-hidden>
                     <path d="M3 7.5l2.5 2.5L11 4.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   {d}
@@ -85,7 +92,7 @@ export function IndustryDetail() {
       {/* Right: every industry, the current one marked; click to turn the card to it */}
       <nav aria-label="Industries" className="pointer-events-auto absolute right-0 top-0 max-md:hidden">
         <ol className="relative border-l border-line">
-          <span data-ind-bar className="absolute -left-px top-0 h-[34px] w-[2px] bg-ink transition-none" aria-hidden />
+          <span data-ind-bar className="ind-bar absolute -left-px top-0 h-[34px] w-[2px]" aria-hidden />
           {INDUSTRIES.map((ind, k) => (
             <li key={ind.name}>
               <button type="button" data-ind-item onClick={() => go(k)} className="ind-item">

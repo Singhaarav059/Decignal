@@ -211,3 +211,6 @@ export const INDUSTRIES = [
     weeks: "6 to 10",
   },
 ];
+
+/** Each industry's accent, matching its 3D card badge (components/three/faces.ts INDUSTRY_TONE). */
+export const INDUSTRY_TONE = ["emerald", "cobalt", "pink", "tangerine", "violet", "saffron"] as const;
