@@ -70,9 +70,9 @@ export function ChartMarks() {
         gapSize={0.06}
         transparent
       />
-      {/* Narrow screens have no margin left of the chart, so the label sits on the line instead. */}
-      <Text {...text} color={COLORS.signal} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "bottom" : "middle"} position={narrow ? [-3.7, SAFETY_Y + 0.05, Z] : [-3.8, SAFETY_Y, Z]}>
-        {phone ? `SAFETY ${SAFETY_UNITS}` : `SAFETY STOCK  ${SAFETY_UNITS}`}
+      {/* Narrow screens have no margin left of the chart, so the label joins a legend row under the axis. */}
+      <Text {...text} color={COLORS.signal} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "top" : "middle"} material-depthTest={false} renderOrder={5} position={narrow ? [DAY_X(0) - 0.3, -0.3 * k, Z + 0.15] : [-3.8, SAFETY_Y, Z]}>
+        {narrow ? `- - SAFETY ${SAFETY_UNITS}` : `SAFETY STOCK  ${SAFETY_UNITS}`}
       </Text>
       <Text {...text} color={COLORS.demand} anchorX={phone ? "right" : "left"} anchorY={phone ? "bottom" : "middle"} position={phone ? [tube.end.x, tube.end.y + 0.12, tube.end.z] : [tube.end.x + 0.16, tube.end.y, tube.end.z]}>
         {phone ? "+18%" : "DEMAND +18%"}

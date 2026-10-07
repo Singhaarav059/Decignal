@@ -168,7 +168,8 @@ export function cardPose(k: number, c: number, t: number): Pose | null {
     case CH.final:
       // Keeps the last industry's half turn (5π) and simply lies down; its face is drawn rotated to match.
       // It settles at the hub the six systems feed, as the decision they resolved into.
-      return k === DECISION_CARD ? { p: [0, 0.16, -1.2], rx: 0, ry: Math.PI * 5, s: 1.0 } : null;
+      // Tilted up toward the camera (not flat) so its line reads at the hero angle.
+      return k === DECISION_CARD ? { p: [0, 0.62, -1.2], rx: -0.75, ry: Math.PI * 5, s: 1.2 } : null;
     default:
       return null;
   }

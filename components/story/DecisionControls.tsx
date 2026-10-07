@@ -128,7 +128,7 @@ export function DecisionControls() {
           <div className="decision-commit-result">
             <Result
               tone="ok"
-              title={`Approval recorded in this example. A ${qty}-unit transfer would be sent to your ERP.`}
+              title={`Approved in this example. In a live setup, this becomes a ${qty}-unit ERP transfer order for your team to release.`}
               meta="Example audit trail · Planner approval → ERP transfer order"
               onUndo={() => setMode("idle")}
             />

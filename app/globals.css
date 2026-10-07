@@ -750,7 +750,7 @@ html.ready .intro-stage {
 }
 
 @media (max-width: 767px), (max-width: 1023px) and (orientation: portrait) {
-  .application-copy { top: 13%; left: 5%; width: 90%; max-width: none; }
+  .application-copy { top: max(13%, 132px); left: 5%; width: 90%; max-width: none; }
   .application-copy h3 { font-size: clamp(24px,4.2vw,32px); margin-top: 8px; }
   .application-summary { margin-top: 6px; font-size: 11.5px; }
   .application-phase-nav { margin-top: 12px; gap: 16px; }

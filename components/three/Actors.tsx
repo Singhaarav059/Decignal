@@ -407,7 +407,7 @@ export function Islands() {
                   <Model />
                 </Island>
                 <IslandTag y={TAG_Y[s]} ry={-ISLANDS[s][2]}>
-                  <Tag title={sys.name} value={`${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? .45 * Math.max(weight(CH.fragments, store.g), weight(CH.context, store.g)) : 0) } />
+                  <Tag title={sys.name} value={`${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? .45 * weight(CH.fragments, store.g) + .75 * weight(CH.context, store.g) : 0) } />
                 </IslandTag>
               </Hover>
             </Rise>
