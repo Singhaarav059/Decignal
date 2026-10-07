@@ -51,7 +51,17 @@ export function AssetLabel({
     pop.current = 1;
   }, [title, detail, color]);
 
-  const W = 680;
+  const sans = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  // The tag grows to fit its text instead of clipping it: long titles widen the pill, never cut it.
+  const W = useMemo(() => {
+    const m = document.createElement("canvas").getContext("2d")!;
+    m.font = `650 34px ${sans}`;
+    const t = m.measureText(title).width + 140;
+    m.font = `500 27px ${sans}`;
+    const d = detail ? m.measureText(detail).width + 96 : 0;
+    return Math.ceil(Math.max(680, t, d));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, detail, fontsReady]);
   const H = detail ? 210 : 126;
 
   const texture = useMemo(() => {
@@ -77,7 +87,6 @@ export function AssetLabel({
     c.lineWidth = 2;
     c.stroke();
 
-    const sans = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
     const m = document.createElement("canvas").getContext("2d")!;
 
     // Status dot
@@ -133,7 +142,7 @@ export function AssetLabel({
       <Billboard>
         <group ref={holder}>
           <mesh renderOrder={20}>
-            <planeGeometry args={[width, (width * H) / W]} />
+            <planeGeometry args={[(width * W) / 680, (width * H) / 680]} />
             <meshBasicMaterial map={texture} transparent depthTest={false} depthWrite={false} toneMapped={false} />
           </mesh>
         </group>

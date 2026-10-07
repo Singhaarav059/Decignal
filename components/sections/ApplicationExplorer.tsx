@@ -82,6 +82,23 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
           <span className="application-measure">{frame.step === 2 ? demo.result : demo.sources}</span>
         </div>
         <div className="application-sources"><span className="spec-label">Connected sources</span><p>{app.connects.join(" · ")}</p></div>
+        {/* The decision trail: the three beats of this workflow, filling as the scroll moves through them. */}
+        <div className="application-trail-wrap">
+          <ol className="application-trail" aria-label="Decision trail">
+            {demo.beats.map((beat, i) => (
+              <li key={beat} data-state={i < frame.step ? "done" : i === frame.step ? "now" : "next"}>
+                <i aria-hidden />
+                <span className="tabular">0{i + 1}</span>
+                {beat}
+                <em>{i < frame.step ? "Done" : i === frame.step ? "Now" : "Next"}</em>
+              </li>
+            ))}
+          </ol>
+          <div className="application-outcome" data-done={frame.step === 2 || undefined}>
+            <span className="spec-label">Outcome</span>
+            <strong className="tabular">{demo.metric}</strong>
+          </div>
+        </div>
       </div>
       <div ref={visual} className="application-world" role="img" aria-label={`${app.name}: ${[demo.signal, demo.evidence, demo.result][frame.step]}`}>
         <ApplicationScene kind={demo.kind} step={frame.step} tone={color} active={active} still={still} motion={motion} />

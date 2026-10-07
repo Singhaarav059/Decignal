@@ -129,13 +129,14 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
                   <rect x="95" y="5" width={planW} height="6" rx="2" fill="var(--tone)" opacity="0.38" style={{ transition: "width 600ms var(--ease-out-quint)" }} />
                   <rect x="95" y="13" width={actualW} height="6" rx="2" fill={isWest && !done ? "var(--color-signal)" : "var(--tone)"} style={{ transition: "all 600ms var(--ease-out-quint)" }} />
                   {isWest && !done && (
-                    <g transform="translate(280, 3)">
-                      <rect x="0" y="0" width="60" height="16" rx="3" fill="var(--color-signal)" fillOpacity="0.14" stroke="var(--color-signal)" strokeWidth="1" />
-                      <text x="30" y="11" textAnchor="middle" fill="var(--color-signal)" fontSize="7.5" fontWeight="600">GAP: +1,800</text>
+                    // The gap is drawn where it is: between the plan's end and validated demand.
+                    <g>
+                      <rect x={95 + planW} y="4" width={actualW - planW} height="8" rx="2" fill="var(--color-signal)" fillOpacity="0.1" stroke="var(--color-signal)" strokeWidth="0.9" strokeDasharray="2 2" />
+                      <path d={`M${95 + planW} 1.5 H${95 + actualW}`} stroke="var(--color-signal)" strokeWidth="0.9" />
                     </g>
                   )}
                   <text x="530" y="15" textAnchor="end" fontWeight="600" fontSize="8.5" fill={isWest && done ? "var(--color-emerald)" : isWest ? "var(--color-signal)" : "var(--color-ink)"}>
-                    {isWest ? (done ? "REPLENISHED (+1,800)" : "SHORTFALL") : "BALANCED"}
+                    {isWest ? (done ? "REPLENISHED +1,800" : "GAP +1,800") : "BALANCED"}
                   </text>
                 </g>
               );
@@ -202,12 +203,11 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
               </linearGradient>
             </defs>
             <line x1="0" y1="58" x2="260" y2="58" className="chart-grid" strokeDasharray="3 3" />
-            <text x="0" y="12" fill="var(--color-ink-soft)" fontSize="8">FFT SPECTRUM · BEARING VIBRATION</text>
             <path d="M 0 58 L 20 56 L 40 60 L 60 54 L 80 58 L 100 50 L 120 62 L 140 44 L 160 54 L 180 30 L 195 16 L 210 28 L 230 48 L 250 56 L 260 58" fill="none" stroke="var(--color-signal)" strokeWidth="1.8" />
             <path d="M 140 44 L 160 54 L 180 30 L 195 16 L 210 28 L 230 48 L 230 58 L 140 58 Z" fill="url(#maint-spec-grad)" />
             <circle cx="195" cy="16" r="3.5" fill="var(--color-signal)" />
-            <text x="195" y="9" textAnchor="middle" fill="var(--color-signal)" fontSize="7.5" fontWeight="600">V-04 PEAK · 4.8 mm/s</text>
-            <text x="0" y="76" fill="var(--color-ink-soft)" fontSize="8">DRIVE-END BEARING X90</text>
+            <text x="195" y="7" textAnchor="middle" fill="var(--color-signal)" fontSize="7.5" fontWeight="600">V-04 PEAK 4.8 mm/s</text>
+            <text x="0" y="76" fill="var(--color-ink-soft)" fontSize="8">FFT · DRIVE-END BEARING X90</text>
             <line x1="285" y1="6" x2="285" y2="82" className="chart-grid" />
             <text x="305" y="12" fill="var(--color-ink-soft)" fontSize="8">SERVICE WINDOW SELECTION</text>
             {["THU", "FRI", "SAT"].map((d, i) => {
@@ -242,11 +242,11 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
         {kind === "risk" && (
           <>
             <path d="M 50 36 L 190 24 L 430 52" fill="none" stroke="var(--color-signal)" strokeWidth="1.6" strokeDasharray="4 4" opacity={done ? 0.25 : 0.65} />
-            <path d="M 50 36 L 190 74 L 430 52" className={`chart-action evidence-draw interactive-draw ${step >= 1 ? "is-drawn" : ""}`} strokeWidth="2.2" />
+            <path d="M 50 36 L 190 70 L 430 52" className={`chart-action evidence-draw interactive-draw ${step >= 1 ? "is-drawn" : ""}`} strokeWidth="2.2" />
             {[
               [50, 36, "SUPPLIER 01", "GLOBAL TIER-1", false],
               [190, 24, "PORT PRIMARY LANE", "14-DAY MARITIME DELAY", true],
-              [190, 74, "SUPPLIER 02", "DOMESTIC BACKUP · 4-DAY", false],
+              [190, 70, "SUPPLIER 02", "DOMESTIC · 4-DAY", false],
               [430, 52, "PLANT 01", "DESTINATION", false],
             ].map(([x, y, label, sub, isRisk], i) => (
               <g key={String(label)} transform={`translate(${x}, ${y})`}>
@@ -260,8 +260,8 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
                 </text>
               </g>
             ))}
-            <text x="430" y="94" textAnchor="end" fill={done ? "var(--color-emerald)" : "var(--color-ink-soft)"} fontWeight="600" fontSize="8.5">
-              {done ? "✓ 2 CRITICAL PARTS REROUTED TO SUPPLIER 02" : step === 1 ? "SUPPLIER 02 CAPACITY & LEAD TIME VERIFIED" : "SUPPLY EXCEPTION DETECTED"}
+            <text x="540" y="96" textAnchor="end" fill={done ? "var(--color-emerald)" : "var(--color-ink-soft)"} fontWeight="600" fontSize="8.5">
+              {done ? "✓ 2 PARTS REROUTED" : step === 1 ? "CAPACITY VERIFIED" : "SUPPLY EXCEPTION"}
             </text>
           </>
         )}
@@ -311,7 +311,7 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
               return (
                 <g key={i}>
                   {step >= 1 && (
-                    <line x1={x + 9} y1={y + 11} x2="290" y2="44" stroke="var(--tone)" strokeOpacity="0.28" strokeDasharray="2 2" />
+                    <line x1={x + 9} y1={y + 11} x2="290" y2="40" stroke="var(--tone)" strokeOpacity="0.28" strokeDasharray="2 2" />
                   )}
                   <rect x={x} y={y} width="20" height="23" rx="2.5" fill="var(--tone)" fillOpacity="0.14" stroke="var(--tone)" strokeOpacity="0.55" />
                   <line x1={x + 3} y1={y + 6} x2={x + 14} y2={y + 6} stroke="var(--tone)" strokeOpacity="0.6" />
@@ -319,23 +319,24 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
                 </g>
               );
             })}
-            <g transform="translate(290, 44)">
+            <g transform="translate(290, 40)">
               <circle r="26" fill="none" stroke={step >= 1 ? "var(--color-pink)" : "var(--color-line-strong)"} strokeWidth="1.5" strokeDasharray={step >= 1 ? undefined : "3 3"} style={{ transition: "all 400ms ease" }} />
               <circle r="14" fill="var(--color-pink)" fillOpacity="0.15" stroke="var(--color-pink)" strokeWidth="1.5" />
-              <text x="0" y="3" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="var(--color-ink)">BEARING X90</text>
-              <text x="0" y="36" textAnchor="middle" fontSize="7" fill="var(--color-ink-soft)">COMMON COMPONENT</text>
+              <circle r="7" fill="none" stroke="var(--color-pink)" strokeWidth="1.4" />
+              <circle r="2.5" fill="var(--color-pink)" />
+              <text x="0" y="38" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="var(--color-ink)">BEARING X90</text>
             </g>
-            <path d="M 320 44 H 420" className={`chart-action evidence-draw interactive-draw ${done ? "is-drawn" : ""}`} strokeWidth="2" />
+            <path d="M 320 40 H 424" className={`chart-action evidence-draw interactive-draw ${done ? "is-drawn" : ""}`} strokeWidth="2" />
             {done && (
-              <g transform="translate(440, 44)">
+              <g transform="translate(440, 40)">
                 <circle r="13" fill="var(--color-emerald)" fillOpacity="0.15" stroke="var(--color-emerald)" strokeWidth="1.5" />
                 <path d="M -4 0 L -1 3 L 5 -3" fill="none" stroke="var(--color-emerald)" strokeWidth="1.8" />
                 <text x="0" y="24" textAnchor="middle" fontSize="7.5" fontWeight="600" fill="var(--color-emerald)">ONE ESCALATION</text>
               </g>
             )}
-            <text x="14" y="94" fill="var(--color-ink-soft)" fontSize="8">14 ISOLATED WARRANTY TICKETS</text>
+            <text x="14" y="94" fill="var(--color-ink-soft)" fontSize="8">14 WARRANTY TICKETS</text>
             <text x="530" y="94" textAnchor="end" fill={done ? "var(--color-emerald)" : "var(--color-ink-soft)"} fontWeight="600" fontSize="8">
-              {done ? "✓ 14 CASES CONSOLIDATED TO 1 ENGINEERING ESCALATION" : "CROSS-RECORD PATTERN RECOGNITION"}
+              {done ? "✓ 14 CASES → 1 ESCALATION" : "COMMON PART FOUND"}
             </text>
           </>
         )}

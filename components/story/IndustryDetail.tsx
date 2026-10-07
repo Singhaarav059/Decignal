@@ -26,6 +26,8 @@ export function IndustryDetail() {
         b.style.opacity = String(w);
         b.style.transform = `translate3d(0, ${(k - f) * 14}px, 0)`;
         b.style.visibility = w < 0.01 ? "hidden" : "visible";
+        // Past the midpoint the card unfolds: its rows, checks and figures arrive in sequence.
+        b.toggleAttribute("data-on", w > 0.55);
       });
       const now = Math.round(f);
       if (bar) bar.style.transform = `translateY(${f * 100}%)`;
@@ -57,46 +59,53 @@ export function IndustryDetail() {
             className="absolute inset-x-0 max-lg:bottom-0 lg:top-0"
             style={{ opacity: 0, "--tone": `var(--color-${INDUSTRY_TONE[k]})` } as React.CSSProperties}
           >
-            <p className="ind-eyebrow eyebrow tabular max-md:hidden">
-              {String(k + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")} · The challenge
-            </p>
-            <p className="mt-2 text-[16px] font-medium max-md:hidden leading-[1.4] tracking-[-0.01em] text-ink">{ind.challenge}</p>
-            <p className="eyebrow md:mt-5">Decisions Decignal makes</p>
-            <ul className="mt-2 border-t border-line">
-              {ind.decisions.map((d) => (
-                <li key={d} className="flex gap-2.5 border-b border-line py-1.5 text-[13px] leading-snug text-ink-2">
-                  <svg width="14" height="14" viewBox="0 0 14 14" className="ind-check mt-[3px] shrink-0" aria-hidden>
-                    <path d="M3 7.5l2.5 2.5L11 4.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {d}
-                </li>
-              ))}
-            </ul>
-            <dl className="mt-3 grid grid-cols-2 gap-4 md:mt-4">
-              <div>
-                <dt className="eyebrow">Connects</dt>
-                <dd className="mt-1 text-[13px] text-ink-2">{ind.system}</dd>
-              </div>
-              <div>
-                <dt className="eyebrow">Typical start</dt>
-                <dd className="mt-1 text-[13px] text-ink-2">
-                  {ind.start}
-                  <span className="tabular block text-ink-soft">{ind.weeks} weeks</span>
-                </dd>
-              </div>
-            </dl>
+            <div className="ind-card">
+              <span className="ind-card-rule" aria-hidden />
+              <p className="ind-eyebrow ind-reveal eyebrow tabular max-md:hidden" style={{ ["--d" as string]: 0 }}>
+                {String(k + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")} · The challenge
+              </p>
+              <p className="ind-reveal mt-2 text-[15.5px] font-medium max-md:hidden leading-[1.4] tracking-[-0.01em] text-ink" style={{ ["--d" as string]: 1 }}>{ind.challenge}</p>
+              <p className="ind-reveal eyebrow md:mt-5" style={{ ["--d" as string]: 2 }}>Decisions Decignal makes</p>
+              <ul className="mt-2">
+                {ind.decisions.map((d, i) => (
+                  <li key={d} className="ind-row ind-reveal" style={{ ["--d" as string]: 3 + i }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" className="ind-check shrink-0" aria-hidden>
+                      <circle cx="8" cy="8" r="7" />
+                      <path d="M4.6 8.3l2.2 2.2 4.6-4.8" />
+                    </svg>
+                    {d}
+                  </li>
+                ))}
+              </ul>
+              <dl className="ind-reveal ind-facts" style={{ ["--d" as string]: 3 + ind.decisions.length }}>
+                <div>
+                  <dt className="eyebrow">Connects</dt>
+                  <dd className="ind-chips">
+                    {ind.system.split(/\s*·\s*|,\s*/).map((sys) => <span key={sys}>{sys}</span>)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">Typical start</dt>
+                  <dd className="mt-1.5 text-[13px] font-medium text-ink">
+                    {ind.start}
+                    <span className="tabular block text-[12px] font-normal text-ink-soft">{ind.weeks} weeks</span>
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Right: every industry, the current one marked; click to turn the card to it */}
-      <nav aria-label="Industries" className="pointer-events-auto absolute right-0 top-0 max-md:hidden">
+      <nav aria-label="Industries" className="ind-index pointer-events-auto absolute right-0 top-0 max-md:hidden">
         <ol className="relative border-l border-line">
           <span data-ind-bar className="ind-bar absolute -left-px top-0 h-[34px] w-[2px]" aria-hidden />
           {INDUSTRIES.map((ind, k) => (
             <li key={ind.name}>
               <button type="button" data-ind-item onClick={() => go(k)} className="ind-item">
                 <span className="tabular eyebrow w-6">{String(k + 1).padStart(2, "0")}</span>
+                <span className="ind-item-dot" style={{ background: `var(--color-${INDUSTRY_TONE[k]})` }} aria-hidden />
                 {ind.name}
               </button>
             </li>

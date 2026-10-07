@@ -931,7 +931,7 @@ export function DealerNetwork({ motion, step, tone }: SceneProps) {
       </group>
 
       <Route points={[[-2.3, 0.016, 1.55], [2.3, 0.016, 1.55], [2.3, 0.016, 1.1]]} color={droppedAtWest ? TINTS.emerald : tone} radius={0.014} dashed flow speed={0.32} pulseColor={droppedAtWest ? TINTS.emerald : tone} />
-      <AssetLabel position={[0, 0.25, 1.65]} title={droppedAtWest ? "ALLOC-012 / WEST +12% CONFIRMED" : "ALLOCATION POLICY / SOURCE RESERVE SECURED"} color={droppedAtWest ? TINTS.emerald : tone} width={2.8} />
+      <AssetLabel position={[0, 0.25, 1.65]} title={droppedAtWest ? "WEST +12% CONFIRMED" : "EAST RESERVE SECURED"} color={droppedAtWest ? TINTS.emerald : tone} width={2.2} />
     </group>
   );
 }

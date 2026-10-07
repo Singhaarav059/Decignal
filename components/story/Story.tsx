@@ -177,18 +177,20 @@ export function Story() {
       {/* In front of the object: the explanation */}
       <div ref={front} className="story-overlay pointer-events-none fixed inset-0 z-20">
         {/* 01 Fragmented */}
-        <div data-ch={CH.fragments} data-interactive className="story-intro absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-10">
-          <div className="intro-fade flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="max-w-[34ch] text-[15px] leading-relaxed text-ink-2 md:text-base">
-                Six systems. One shortage to solve. Follow the evidence from the first signal to the approved action.
-              </p>
-              <SystemChips className="mt-4 max-w-[520px]" />
-            </div>
-            <div className="flex items-center gap-5">
+        <div data-ch={CH.fragments} data-interactive className="story-intro absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-8">
+          <div className="intro-fade hero-dock">
+            <p className="hero-dock-copy">
+              <span className="hero-dock-count tabular">6</span>
+              <span>
+                <strong>Six systems. One shortage.</strong>
+                <span className="hero-dock-sub">Follow the evidence from first signal to approved action.</span>
+              </span>
+            </p>
+            <SystemChips className="hero-dock-chips" />
+            <div className="hero-dock-actions">
               <span className="eyebrow hidden items-center gap-3 xl:inline-flex">
                 <ScrollCue />
-                Scroll to see how Decignal works
+                Scroll
               </span>
               <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary">
                 Book a free AI audit
@@ -208,26 +210,26 @@ export function Story() {
           <SignalReadout />
         </div>
 
-        {/* 03 Problem */}
+        {/* 03 Problem: the figures sit with the copy, clear of the chart's day axis */}
         <Copy
           ch={CH.problem}
           n="03"
           eyebrow="Problem"
           title={<>Demand is rising.<br />Stock is falling.</>}
+          after={
+            <div className="mt-6">
+              <Facts
+                items={[
+                  ["Daily usage", "45 units"],
+                  ["Safety breach", "Day 6", true],
+                  ["Supplier ETA", "21 days"],
+                ]}
+              />
+            </div>
+          }
         >
           In six days Plant 01 drops below safety stock. The next supplier delivery is 21 days away.
         </Copy>
-
-        {/* 03 Problem: the figures behind the chart */}
-        <div data-ch={CH.problem} className="story-facts absolute bottom-8 left-6 md:bottom-10 md:left-10">
-          <Facts
-            items={[
-              ["Daily usage", "45 units"],
-              ["Safety breach", "Day 6", true],
-              ["Supplier ETA", "21 days"],
-            ]}
-          />
-        </div>
 
         {/* 04 Context */}
         <Copy dims ch={CH.context} n="04" eyebrow="Context" title={<>Every fact.<br />One picture.</>} after={<EvidenceChecks />}>
@@ -293,7 +295,7 @@ export function Story() {
         </div>
 
         {/* 07 Scale: what Decignal offers in each function */}
-        <div data-ch={CH.scale} data-interactive className="absolute inset-x-0 bottom-[8vh] px-6 md:px-10 lg:bottom-[4vh]">
+        <div data-ch={CH.scale} data-interactive className="absolute inset-x-0 bottom-[8vh] px-6 md:px-10 lg:bottom-[5vh]">
           <ScaleApps />
         </div>
 

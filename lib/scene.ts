@@ -17,13 +17,13 @@ export const CARD = { w: 1.6, t: 0.05, h: 1.0 }; // face is w x h, t thick
 /* ---------------- 01 Fragmented: six systems, six islands ---------------- */
 
 export const ISLANDS: [number, number, number][] = [
-  // x, z, rotation y
-  [-4.3, -0.6, 0.25],
-  [-1.5, 1.5, -0.3],
-  [1.3, -2.2, 0.1],
-  [4.1, 0.8, -0.25],
-  [-2.9, -4.6, 0.4],
-  [3.5, -4.9, -0.45],
+  // x, z, rotation y. A level hexagon around the hub: three near, three far, nothing hidden.
+  [-4.4, -1.5, 0.3],
+  [-2.2, 0.75, 0.12],
+  [4.4, -1.5, -0.3],
+  [2.2, 0.75, -0.12],
+  [-2.2, -3.75, 0.2],
+  [2.2, -3.75, -0.2],
 ];
 export const WMS = 3;
 
@@ -186,26 +186,26 @@ export function cameraPose(c: number, t: number, portrait = false): Cam {
   switch (c) {
     case CH.fragments:
       if (portrait) return { p: [0, 14, 14], t: [0, 0.8, -1.2] };
-      return { p: [0, 8.4 - t * 0.5, 16.2 - t * 0.8], t: [0, 1.55, -1.6] };
+      return { p: [0, 8.4 - t * 0.5, 16.6 - t * 0.8], t: [0, 1.4, -1.6] };
     case CH.signal:
       if (portrait) return { p: [1.7 - t * 0.2, 2.3, 9.6 - t * 0.4], t: [0, 0.25, 0.5] };
       // Low, close three-quarter on the crate: the camera has swung off-axis to the right.
       return { p: [1.85 - t * 0.25, 1.7, 8.1 - t * 0.4], t: [-0.3, 0.68, 0.9] };
     case CH.problem:
-      // The chart sits under the copy, never beside it: the whole week reads at once.
-      return { p: [-0.35, 3.9, 14.3 - t * 0.4], t: [-0.35, 2.05, 0] };
+      // The chart sits to the right of the copy and its figures: the whole week reads at once.
+      return { p: [-1.5, 3.8, 16.0 - t * 0.4], t: [-1.5, 1.95, 0] };
     case CH.context:
       // A higher oblique overview from the left: the orbit rises and swings round to reveal the ring.
-      return { p: [-2.6 + t * 0.3, 10.6 - t * 0.5, 12.8 - t * 0.4], t: [-1.55, 1.0, -0.3] };
+      return { p: [-2.6 + t * 0.3, 11.2 - t * 0.5, 13.9 - t * 0.4], t: [-1.55, 0.55, -0.3] };
     case CH.decision: {
       // A tracking shot on a long lens: it watches the loading at Plant 02, then travels with the truck.
       const cx = truckX(t) + 0.55;
-      return { p: [cx, 2.45, 7.9], t: [cx, 0.78, -0.5] };
+      return { p: [cx, 2.5, 8.7], t: [cx, 0.58, -0.5] };
     }
     case CH.control:
-      return { p: [2.75, 2.3, 9.9], t: [2.3, 0.72, 0.1] };
+      return { p: [2.45, 2.35, 11.2], t: [1.88, 0.72, 0.1] };
     case CH.scale:
-      return { p: [0, 2.6, 13.0 - t * 0.4], t: [0, 1.25, -0.4] };
+      return { p: [0, 2.6, 13.8 - t * 0.4], t: [0, 1.15, -0.4] };
     case CH.industries:
       return { p: [0, 2.45, 8.6], t: [0, 0.85, 0] };
     default:

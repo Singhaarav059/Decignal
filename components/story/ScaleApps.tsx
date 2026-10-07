@@ -41,22 +41,25 @@ export function ScaleApps() {
             className="scale-col"
             style={{ "--tone": tone(CATEGORY_TONE[f.name as Category]) } as React.CSSProperties}
           >
-            <p className="flex min-w-0 items-baseline gap-2 text-[13.5px] font-semibold lg:text-[14px]">
-              <span className="size-[7px] shrink-0 translate-y-[-1px] rounded-full" style={{ background: "var(--tone)" }} aria-hidden />
+            <p className="scale-col-head">
+              <span className="size-[7px] shrink-0 rounded-full" style={{ background: "var(--tone)" }} aria-hidden />
               <span className="whitespace-nowrap">{f.name}</span>
-              <span className="tabular ml-auto text-[11px] font-medium text-ink-soft lg:hidden">{apps.length}</span>
+              <span className="scale-col-count tabular">{apps.length}</span>
             </p>
             <p className="mt-1 pl-[15px] text-[12.5px] leading-snug text-ink-2 lg:hidden">{apps.map((a) => a.name).join(" · ")}</p>
-            <ul className="mt-2.5 space-y-2 max-lg:hidden">
-              {apps.map((a) => (
-                <li key={a.name} className="text-[13.5px] leading-snug">
-                  <span className="font-medium text-ink">{a.name}</span>
-                  <span className="tabular block text-[12px] text-ink-soft">
-                    {a.weeks} weeks · {a.connects.slice(0, 3).join(", ")}
-                  </span>
+            <ul className="scale-col-list max-lg:hidden">
+              {apps.map((a, i) => (
+                <li key={a.name} style={{ ["--i" as string]: i }} title={`Connects ${a.connects.join(", ")}`}>
+                  <span className="scale-app-name">{a.name}</span>
+                  <span className="scale-app-weeks tabular">{a.weeks.replace(" to ", "–")} wk</span>
                 </li>
               ))}
             </ul>
+            <p className="scale-col-foot max-lg:hidden">
+              {[...new Set(apps.flatMap((a) => a.connects))].slice(0, 4).map((c) => (
+                <span key={c}>{c}</span>
+              ))}
+            </p>
           </div>
         );
       })}
