@@ -15,14 +15,14 @@ import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
 
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
-const PORTRAIT_DROP = [-0.055, 0.13, 0.13, 0.12, 0.08, 0.09, 0.1, 0, 0];
+const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, 0.08, 0.09, 0.1, 0, 0];
 // Desktop frames push objects right of the copy column; a portrait screen centres them instead.
-const PORTRAIT_X = [0, 0, 0, 1.45, 0, 0.6, 0, 0, 0];
+const PORTRAIT_X = [0, 0, 0.3, 1.45, 0, 0.6, 0, 0, 0];
 // Leave room for outer source labels and the supplier marker on a phone.
 // Signal frames one object, so portrait screens come in close instead of fitting a wide stage.
-const MOBILE_FIT = [0.68, 0.62, 1.18, 1.22, 1.1, 1.04, 1.1, 1, 1];
+const MOBILE_FIT = [0.68, 0.62, 0.86, 1.22, 1.1, 1.04, 1.1, 1, 1];
 
-const PORTRAIT_FIT = [0.68, 0.7];
+const PORTRAIT_FIT = [0.68, 0.7, 0.9];
 
 function Rig() {
   const { camera, size } = useThree();

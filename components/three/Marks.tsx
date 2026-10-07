@@ -14,6 +14,10 @@ const Z = CRATE.d / 2 + 0.16;
 
 /** Demand curve, safety stock and day scale for the problem chapter. */
 export function ChartMarks() {
+  // Phones fit seven columns into 390px, so labels grow and shorten to stay readable.
+  const phone = useThree((st) => st.size.width < 768);
+  const narrow = useThree((st) => st.size.width < 1024);
+  const k = phone ? 1.9 : 1;
   const group = useRef<THREE.Group>(null);
   const tubeMat = useMemo(
     () => new THREE.MeshBasicMaterial({ color: COLORS.demand, transparent: true, opacity: 0, depthWrite: false }),
@@ -45,7 +49,7 @@ export function ChartMarks() {
   });
 
   const day = (d: number) => (d === 0 ? "TODAY" : `DAY ${d}`);
-  const text = { font: FONTS.mono, fontSize: 0.09, letterSpacing: 0.06 };
+  const text = { font: FONTS.mono, fontSize: 0.09 * k, letterSpacing: phone ? 0.02 : 0.06 };
 
   return (
     <group ref={group} visible={false}>
@@ -66,25 +70,26 @@ export function ChartMarks() {
         gapSize={0.06}
         transparent
       />
-      <Text {...text} color={COLORS.signal} anchorX="right" anchorY="middle" position={[-3.8, SAFETY_Y, Z]}>
-        {`SAFETY STOCK  ${SAFETY_UNITS}`}
+      {/* Narrow screens have no margin left of the chart, so the label sits on the line instead. */}
+      <Text {...text} color={COLORS.signal} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "bottom" : "middle"} position={narrow ? [-3.7, SAFETY_Y + 0.05, Z] : [-3.8, SAFETY_Y, Z]}>
+        {phone ? `SAFETY ${SAFETY_UNITS}` : `SAFETY STOCK  ${SAFETY_UNITS}`}
       </Text>
-      <Text {...text} color={COLORS.demand} anchorX="left" anchorY="middle" position={[tube.end.x + 0.16, tube.end.y, tube.end.z]}>
-        DEMAND +18%
+      <Text {...text} color={COLORS.demand} anchorX={phone ? "right" : "left"} anchorY={phone ? "bottom" : "middle"} position={phone ? [tube.end.x, tube.end.y + 0.12, tube.end.z] : [tube.end.x + 0.16, tube.end.y, tube.end.z]}>
+        {phone ? "+18%" : "DEMAND +18%"}
       </Text>
       {/* Units on hand, read off the top of every column */}
       {DAYS.map((n, d) => (
         <Text
           key={`u${d}`}
           {...text}
-          fontSize={0.105}
+          fontSize={0.105 * k}
           color={d === 6 ? COLORS.signal : COLORS.ink}
           userData={{ alpha: d === 6 ? 1 : 0.75 }}
           anchorX="center"
           anchorY="bottom"
           position={[DAY_X(d), n * STEP_Y + 0.08, 0]}
         >
-          {d === 0 ? `${dayUnits(d)} ON HAND` : String(dayUnits(d))}
+          {d === 0 && !phone ? `${dayUnits(d)} ON HAND` : String(dayUnits(d))}
         </Text>
       ))}
       {/* The day scale, painted on the floor in front of the columns */}
@@ -92,7 +97,7 @@ export function ChartMarks() {
         <Text
           key={d}
           {...text}
-          fontSize={0.1}
+          fontSize={0.1 * k}
           color={d === 6 ? COLORS.signal : COLORS.inkSoft}
           anchorX="center"
           anchorY="top"
@@ -101,27 +106,12 @@ export function ChartMarks() {
           renderOrder={5}
           position={[DAY_X(d), -0.04, Z + 0.15]}
         >
-          {day(d)}
+          {phone ? (d === 0 ? "NOW" : `D${d}`) : day(d)}
         </Text>
       ))}
-      {/* The gap that rules out waiting: the next supplier delivery is far off the chart. */}
-      <Line
-        points={[
-          [DAY_X(6) + 0.45, -0.1, Z + 0.15],
-          [DAY_X(6) + 2.1, -0.1, Z + 0.15],
-        ]}
-        depthTest={false}
-        renderOrder={5}
-        color={COLORS.inkSoft}
-        lineWidth={1.2}
-        dashed
-        dashSize={0.05}
-        gapSize={0.05}
-        transparent
-        opacity={0.7}
-      />
-      <Text {...text} fontSize={0.1} color={COLORS.ink} anchorX="left" anchorY="middle" material-depthTest={false} renderOrder={5} position={[DAY_X(6) + 2.2, -0.1, Z + 0.15]}>
-        DAY 21 · SUPPLIER
+      {/* The gap that rules out waiting: the next supplier delivery lands far beyond the breach. */}
+      <Text {...text} fontSize={0.1 * k} color={COLORS.ink} anchorX="right" anchorY="top" material-depthTest={false} renderOrder={5} position={[DAY_X(6) + 0.3, -0.3 * k, Z + 0.15]}>
+        {phone ? "SUPPLY D21 →" : "NEXT SUPPLY · DAY 21 →"}
       </Text>
     </group>
   );
