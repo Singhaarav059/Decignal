@@ -88,7 +88,9 @@ export function SystemNetwork() {
   const tVec = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(({ clock }) => {
-    const opacity = smoothstep(0.35, 1, weight(CH.fragments, store.g));
+    // At the end the same threads return, held firm: every system connected to the decision.
+    const resolved = smoothstep(0.35, 1, weight(CH.final, store.g));
+    const opacity = Math.max(smoothstep(0.35, 1, weight(CH.fragments, store.g)), resolved);
     if (root.current) root.current.visible = opacity > 0.01;
 
     const time = clock.elapsedTime;
@@ -105,7 +107,7 @@ export function SystemNetwork() {
     items.forEach((item, index) => {
       const isSelected = store.selected === index;
       const isHovered = store.islandHint === index;
-      item.material.opacity = opacity * (isSelected ? 0.85 : isHovered ? 0.6 : 0.22);
+      item.material.opacity = opacity * (isSelected ? 0.85 : isHovered ? 0.6 : 0.22 + resolved * 0.5);
 
       // Packet A
       const pA = packetsA.current[index];

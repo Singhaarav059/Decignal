@@ -640,6 +640,7 @@ export function SignalCrate() {
   );
   const saffron = useMemo(() => new THREE.Color(TINTS.saffron), []);
   const red = useMemo(() => new THREE.Color(COLORS.signal), []);
+  const approved = useMemo(() => new THREE.Color(TINTS.emerald), []);
   const tag = useRef<THREE.Group>(null);
   const hover = useRef<THREE.Group>(null);
   const scannerGroup = useRef<THREE.Group>(null);
@@ -653,8 +654,10 @@ export function SignalCrate() {
     if (hover.current) hover.current.position.y = (Math.sin(clock.elapsedTime * 1.3) * 0.025 + hint.current * 0.08) * sigWeight;
     // It turns red as the signal is found, then keeps a slow pulse: live, not alarming.
     const r = smoothstep(0.45, 0.95, store.g);
-    mat.color.copy(saffron).lerp(red, r);
-    mat.emissive.copy(red).multiplyScalar(r * (0.18 + Math.sin(clock.elapsedTime * 2.4) * 0.08 + hint.current * 0.14));
+    // Back on its island at the end, the same tote reads approved: the shortage is resolved.
+    const ok = smoothstep(0.4, 0.95, weight(CH.final, store.g));
+    mat.color.copy(saffron).lerp(red, r).lerp(approved, ok);
+    mat.emissive.copy(red).multiplyScalar(r * (1 - ok) * (0.18 + Math.sin(clock.elapsedTime * 2.4) * 0.08 + hint.current * 0.14));
 
     if (tag.current) {
       // In the Signal chapter the page carries these facts at reading size; the tag returns for Context.

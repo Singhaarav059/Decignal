@@ -22,6 +22,23 @@ const NAV = [
 
 export function Footer() {
   const word = useRef<HTMLDivElement>(null);
+  const motif = useRef<SVGSVGElement>(null);
+
+  // The six system threads draw in and meet once the footer is in view.
+  useEffect(() => {
+    const el = motif.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        el.classList.add("is-on");
+        io.disconnect();
+      },
+      { threshold: 0.6 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   // The wordmark rises letter by letter as the page ends.
   useEffect(() => {
@@ -56,6 +73,30 @@ export function Footer() {
       <div className="bg-paper px-6 pt-16 md:px-10 md:pt-16">
         <div className="mx-auto grid max-w-6xl gap-9 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
+            {/* Six systems, one resolved decision: the story's opening network, closed. */}
+            <svg ref={motif} className="footer-motif mb-7 block h-[72px] w-[220px]" viewBox="0 0 220 72" aria-hidden>
+              {STRATA.map((c, i) => {
+                const y = 6 + i * 12;
+                return (
+                  <g key={c} style={{ ["--i" as string]: i }}>
+                    <path
+                      d={`M10 ${y} C 90 ${y}, 120 36, 196 36`}
+                      className="footer-thread"
+                      pathLength={1}
+                      fill="none"
+                      stroke={`var(--color-${c})`}
+                      strokeWidth={1.5}
+                      strokeLinecap="round"
+                    />
+                    <circle cx={10} cy={y} r={4} fill={`var(--color-${c})`} />
+                  </g>
+                );
+              })}
+              <g className="footer-motif-node">
+                <circle cx={200} cy={36} r={11} fill="var(--color-emerald)" />
+                <path d="M195 36.5l3.4 3.4 6.4-7" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+            </svg>
             <p className="display text-[clamp(32px,3.4vw,52px)]">
               Bring us one decision.
               <br />

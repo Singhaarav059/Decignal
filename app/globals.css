@@ -999,3 +999,13 @@ html.ready .intro-stage {
 .ind-bar { background: var(--ind-tone); transition: background-color var(--dur-3) var(--ease); }
 .ind-item[aria-current] .eyebrow { color: color-mix(in srgb, var(--ind-tone) 70%, var(--color-ink)); }
 @media (prefers-reduced-motion: reduce) { .ind-bar { transition: none; } }
+/* ---- FOOTER pass ---- */
+/* Six system threads draw in and meet at one approved node. */
+.footer-motif .footer-thread { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.footer-motif-node { transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .footer-motif .footer-thread { stroke-dashoffset: 1; transition: stroke-dashoffset var(--dur-5) var(--ease) calc(var(--i) * var(--stagger)); }
+  .footer-motif-node { opacity: 0; transform: scale(0.6); transition: opacity var(--dur-3) var(--ease) calc(var(--dur-5) + 5 * var(--stagger)), transform var(--dur-3) var(--ease) calc(var(--dur-5) + 5 * var(--stagger)); }
+  .footer-motif.is-on .footer-thread { stroke-dashoffset: 0; }
+  .footer-motif.is-on .footer-motif-node { opacity: 1; transform: none; }
+}
