@@ -4,15 +4,13 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 import {
   CH,
-  CHAPTERS,
   INDUSTRIES,
   TOTAL_LEN,
-  blendAt,
-  gToProgress,
   clamp01,
   localIn,
   onSelect,
   smoothstep,
+  store,
   subscribe,
   weight,
 } from "@/lib/story";
@@ -24,10 +22,9 @@ import { SystemChips } from "./SystemChips";
 import { ScaleApps } from "./ScaleApps";
 import { IndustryDetail } from "./IndustryDetail";
 import { scrollToTarget } from "../SmoothScroll";
+import { TONE } from "./chapters";
 import { Arrow } from "../ui/Arrow";
 
-/** Chapter accent: the colour of what that chapter is about. */
-const TONE = ["", "signal", "cobalt", "violet", "saffron", "emerald", "tangerine", "pink", ""];
 
 /** One word per chapter, set huge and faint behind the 3D. */
 const GHOSTS: [number, string][] = [
@@ -41,25 +38,22 @@ const GHOSTS: [number, string][] = [
 
 const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
-const shown = (w: number) => smoothstep(0.6, 0.98, w);
+// Copy leaves before the next arrives: the gap between them belongs to the object moving.
+const shown = (w: number) => smoothstep(0.7, 1, w);
 
 /** Story text: one dominant idea per chapter, layered behind and in front of the object. */
 export function Story() {
   const back = useRef<HTMLDivElement>(null);
   const front = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
-  const counter = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const roots = [back.current, front.current].filter(Boolean) as HTMLDivElement[];
     const chEls = roots.flatMap((r) => Array.from(r.querySelectorAll<HTMLElement>("[data-ch]")));
     const indEls = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ind]") ?? []);
-    const ticks = Array.from(counter.current?.querySelectorAll<HTMLElement>("[data-tick]") ?? []);
-    const label = counter.current?.querySelector<HTMLElement>("[data-label]");
     const ghosts = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ghost]") ?? []);
     const stock = front.current?.querySelector<HTMLElement>("[data-stock]");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let last = -1;
     let lastStock = "";
     // While a system is open, the giant headline steps back so the island and its panel lead.
     const offSelect = onSelect((n) => {
@@ -72,11 +66,11 @@ export function Story() {
         const w = shown(weight(Number(el.dataset.ch), g));
         el.style.opacity = String(w);
         el.style.transform = `translate3d(0, ${(1 - w) * 18}px, 0)`;
-        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 6}px)`;
+        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`;
         el.style.visibility = w < 0.005 ? "hidden" : "visible";
         // Headings resolve from a red and blue split into one sharp line as they settle.
         if (!still) {
-          el.style.setProperty("--split", `${(1 - w) * 18}px`);
+          el.style.setProperty("--split", `${(1 - w) * 8}px`);
           el.style.setProperty("--split-k", String(Math.min(1, (1 - w) * 3)));
         }
         if (el.dataset.interactive !== undefined) el.style.pointerEvents = w > 0.6 ? "auto" : "none";
@@ -115,18 +109,6 @@ export function Story() {
       // Leave the stage once the story is told.
       const out = 1 - smoothstep(0.72, 1, localIn(CH.final, g));
       if (canvas.current) canvas.current.style.opacity = String(out);
-      if (counter.current) counter.current.style.opacity = String(out * smoothstep(0.8, 1, g));
-
-      // The counter names whichever chapter is on screen, switching at the midpoint of each transition.
-      const { i: from, j: to, e } = blendAt(g);
-      const idx = e < 0.5 ? from : to;
-      if (idx !== last && label) {
-        last = idx;
-        label.textContent = `${String(idx + 1).padStart(2, "0")}  ${CHAPTERS[idx].label}`;
-        ticks.forEach(
-          (t, i) => (t.style.background = i <= idx ? `var(--color-${TONE[i] || "ink"})` : "var(--color-line-strong)"),
-        );
-      }
     });
     return () => {
       off();
@@ -212,6 +194,11 @@ export function Story() {
         <Copy ch={CH.signal} n="02" eyebrow="Signal" title={<>One signal<br />matters.</>}>
           Bearing X90 is running short at Plant 01. Decignal finds the risk while there is time to act.
         </Copy>
+
+        {/* 02 Signal: the facts behind the alert, at reading size, linked to the crate */}
+        <div data-ch={CH.signal} data-interactive className="story-facts absolute bottom-8 left-6 md:bottom-10 md:left-10">
+          <SignalReadout />
+        </div>
 
         {/* 03 Problem */}
         <Copy
@@ -340,27 +327,6 @@ export function Story() {
           </div>
         </div>
 
-        {/* Chapter counter */}
-        <div ref={counter} className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 items-center gap-4 md:flex" style={{ opacity: 0 }}>
-          <nav className="pointer-events-auto flex" aria-label="Story chapters">
-            {CHAPTERS.map((c, i) => (
-              // Each tick jumps to its chapter; the hit area is far taller than the 2px line it draws.
-              <button
-                key={c.id}
-                onClick={() => goToChapter(i)}
-                aria-label={`Go to ${c.label}`}
-                title={c.label}
-                className="group flex h-6 w-[26px] items-center justify-center"
-              >
-                <span
-                  data-tick
-                  className="h-[2px] w-5 rounded-full bg-line-strong transition-[background-color,height,transform] duration-300 ease-out group-hover:h-[4px] group-hover:scale-x-110"
-                />
-              </button>
-            ))}
-          </nav>
-          <span data-label className="eyebrow tabular min-w-[120px]" />
-        </div>
       </div>
 
       <IslandPanel />
@@ -368,6 +334,87 @@ export function Story() {
       {/* The scroll track the story is mapped onto */}
       <div id="story" style={{ height: `${TOTAL_LEN * 100}svh` }} aria-hidden />
     </>
+  );
+}
+
+/** Count up to a value whenever the chapter arrives; reduced motion shows the value at once. */
+function useCountUp(target: number, ch: number) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let raf = 0;
+    let on = false;
+    const run = () => {
+      const t0 = performance.now();
+      const step = (now: number) => {
+        // Ease-out quint over --dur-5 (900ms), matching the page's one curve.
+        const k = Math.min((now - t0) / 900, 1);
+        el.textContent = String(Math.round(target * (1 - Math.pow(1 - k, 5))));
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    const off = subscribe((g) => {
+      const now = weight(ch, g) > 0.75;
+      if (now && !on) {
+        if (still) el.textContent = String(target);
+        else run();
+      }
+      on = now;
+    });
+    return () => {
+      off();
+      cancelAnimationFrame(raf);
+    };
+  }, [target, ch]);
+  return ref;
+}
+
+function SignalReadout() {
+  const onHand = useCountUp(410, CH.signal);
+  const hint = (v: boolean) => () => {
+    store.signalHint = v;
+  };
+  return (
+    <div
+      className="signal-readout"
+      tabIndex={0}
+      aria-label="Bearing X90 at Plant 01: 410 units on hand, safety stock 175, breach on day 6"
+      onPointerEnter={hint(true)}
+      onPointerLeave={hint(false)}
+      onFocus={hint(true)}
+      onBlur={hint(false)}
+    >
+      <p className="eyebrow flex items-center gap-2">
+        <span className="signal-readout-dot" aria-hidden />
+        Bearing X90 · Plant 01
+      </p>
+      <dl className="mt-3 grid grid-cols-3 gap-4">
+        <div>
+          <dt className="eyebrow">On hand</dt>
+          <dd className="tabular mt-1 text-[22px] font-semibold tracking-[-0.02em]"><span ref={onHand}>410</span></dd>
+        </div>
+        <div>
+          <dt className="eyebrow">Safety</dt>
+          <dd className="tabular mt-1 text-[22px] font-semibold tracking-[-0.02em]">175</dd>
+        </div>
+        <div>
+          <dt className="eyebrow">Breach</dt>
+          <dd className="tabular mt-1 text-[22px] font-semibold tracking-[-0.02em] text-signal">Day 6</dd>
+        </div>
+      </dl>
+      {/* The same six days the ring draws around the crate */}
+      <ol className="signal-days" aria-hidden>
+        {[1, 2, 3, 4, 5, 6].map((d) => (
+          <li key={d} data-risk={d === 6 ? "" : undefined} style={{ ["--i" as string]: d - 1 }}>
+            <span />
+            <small>D{d}</small>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -435,16 +482,6 @@ function Stepper() {
       ))}
     </ol>
   );
-}
-
-/** Scrolls to the point where a chapter has settled, before it starts handing over to the next. */
-function goToChapter(i: number) {
-  const el = document.getElementById("story");
-  if (!el) return;
-  const start = el.getBoundingClientRect().top + window.scrollY;
-  const range = el.offsetHeight - window.innerHeight;
-  const settle = Math.min(CHAPTERS[i].ts * 0.5, 0.3);
-  scrollToTarget(start + gToProgress(i + settle) * range);
 }
 
 function Copy({

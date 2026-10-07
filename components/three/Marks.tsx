@@ -1,11 +1,11 @@
 "use client";
 
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Line, Text } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import { CH, clamp01, smoothstep, store, weight } from "@/lib/story";
-import { CRATE, DAYS, DAY_X, HUB_Y, RING, SAFETY_UNITS, SAFETY_Y, STEP_Y, dayUnits } from "@/lib/scene";
+import { signalCratePose, CRATE, DAYS, DAY_X, HUB_Y, RING, SAFETY_UNITS, SAFETY_Y, STEP_Y, dayUnits } from "@/lib/scene";
 import { COLORS, FONTS } from "./palette";
 
 type TroikaText = THREE.Mesh & { fillOpacity: number };
@@ -188,81 +188,64 @@ export function Threads() {
   );
 }
 
-/** The moment of detection: calibrated radar grid and detection rings beneath the signal. */
-export function SignalPing({ at }: { at: [number, number, number] }) {
-  const rings = useRef<(THREE.Mesh | null)[]>([]);
+/**
+ * Six days of cover, drawn around the signal as it is found: five quiet days, then the day
+ * Plant 01 falls below safety stock. It draws in with the chapter instead of pulsing.
+ */
+export function SignalPing() {
+  // Sits on the ground under the crate's Signal pose, sized to the crate, on any screen shape.
+  const portrait = useThree((st) => st.size.width < 768 || (st.size.width < 1024 && st.size.height > st.size.width * 1.15));
+  const pose = signalCratePose(CH.signal, 0, portrait)!;
+  const k = (pose.s ?? 1) / 1.2;
+  const at: [number, number, number] = [pose.p[0], Math.max(0.004, pose.p[1] - 0.416 * k), pose.p[2]];
+  const N = 6;
+  const SEG = 24;
+  const geos = useMemo(
+    () =>
+      Array.from({ length: N }, (_, k) => {
+        const gap = 0.05;
+        const len = (Math.PI * 2) / N - gap;
+        // Clockwise from twelve o'clock, as a countdown reads.
+        return new THREE.RingGeometry(1.0, 1.035, SEG, 1, Math.PI / 2 - k * (len + gap) - len, len);
+      }),
+    [],
+  );
   const mats = useMemo(
     () =>
-      [0, 1, 2].map(
-        () => new THREE.MeshBasicMaterial({ color: COLORS.signal, transparent: true, opacity: 0, depthWrite: false }),
+      Array.from(
+        { length: N },
+        (_, k) =>
+          new THREE.MeshBasicMaterial({
+            color: k === N - 1 ? COLORS.signal : "#14130F",
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+          }),
       ),
     [],
   );
   const group = useRef<THREE.Group>(null);
-  const sweep = useRef<THREE.Group>(null);
+  const still = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
-  useFrame(({ clock }) => {
-    const w = smoothstep(0.45, 1, weight(CH.signal, store.g));
+  useFrame(() => {
+    const w = weight(CH.signal, store.g);
     if (!group.current) return;
     group.current.visible = w > 0.01;
-    rings.current.forEach((m, i) => {
-      if (!m) return;
-      const k = (clock.elapsedTime * 0.32 + i / 3) % 1;
-      m.scale.setScalar(0.3 + k * 0.75);
-      mats[i].opacity = w * Math.pow(1 - k, 1.8) * 0.45;
+    // The ring draws in day by day as the chapter arrives (all at once with reduced motion).
+    const p = still ? (w > 0.5 ? 1 : 0) : smoothstep(0.55, 1, w);
+    geos.forEach((geo, k) => {
+      const f = Math.min(Math.max(p * N - k, 0), 1);
+      // Indices run along the arc, six per segment, so the draw range sweeps it clockwise.
+      geo.setDrawRange(0, 6 * Math.round(f * SEG));
+      mats[k].opacity = (k === N - 1 ? 0.85 : 0.22 + (store.signalHint ? 0.12 : 0)) * Math.min(1, w * 1.4);
     });
-    if (sweep.current) {
-      sweep.current.rotation.z = -clock.elapsedTime * 0.8;
-    }
   });
 
   return (
-    <group ref={group} position={at} rotation-x={-Math.PI / 2} visible={false}>
-      {/* Expanding ping wave rings */}
-      {mats.map((m, i) => (
-        <mesh
-          key={i}
-          material={m}
-          ref={(el) => {
-            rings.current[i] = el;
-          }}
-        >
-          <ringGeometry args={[0.975, 1, 96]} />
-        </mesh>
+    <group ref={group} position={at} scale={k} rotation-x={-Math.PI / 2} visible={false}>
+      {geos.map((geo, k) => (
+        <mesh key={k} geometry={geo} material={mats[k]} />
       ))}
-      {/* Calibrated stationary circular datum scale */}
-      <mesh>
-        <ringGeometry args={[0.42, 0.426, 64]} />
-        <meshBasicMaterial color={COLORS.signal} opacity={0.35} transparent depthWrite={false} />
-      </mesh>
-      <mesh>
-        <ringGeometry args={[0.76, 0.768, 80]} />
-        <meshBasicMaterial color={COLORS.signal} opacity={0.28} transparent depthWrite={false} />
-      </mesh>
-      <mesh>
-        <ringGeometry args={[1.14, 1.148, 96]} />
-        <meshBasicMaterial color={COLORS.signal} opacity={0.20} transparent depthWrite={false} />
-      </mesh>
-      {/* Cardinal crosshairs (0, 90, 180, 270 deg) */}
-      {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, i) => (
-        <group key={i} rotation-z={angle}>
-          <mesh position={[0.58, 0, 0]}>
-            <planeGeometry args={[0.52, 0.007]} />
-            <meshBasicMaterial color={COLORS.signal} opacity={0.28} transparent depthWrite={false} />
-          </mesh>
-          <mesh position={[1.14, 0, 0]}>
-            <planeGeometry args={[0.026, 0.026]} />
-            <meshBasicMaterial color={COLORS.signal} opacity={0.4} transparent depthWrite={false} />
-          </mesh>
-        </group>
-      ))}
-      {/* Subtle sweeping radar needle */}
-      <group ref={sweep}>
-        <mesh position={[0.56, 0, 0]}>
-          <planeGeometry args={[1.12, 0.005]} />
-          <meshBasicMaterial color={COLORS.signal} opacity={0.4} transparent depthWrite={false} />
-        </mesh>
-      </group>
     </group>
   );
 }

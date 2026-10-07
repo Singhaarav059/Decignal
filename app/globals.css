@@ -28,6 +28,15 @@
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Motion system: one curve, five durations. See docs/motion-notes.md. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 600ms;
+  --dur-5: 900ms;
+  --stagger: 60ms;
 }
 
 :root {
@@ -792,4 +801,153 @@ html.ready .intro-stage {
   .operation-evidence svg { height: 60px; margin-top: 4px; }
   .evidence-heading .spec-label, .evidence-state { font-size: 8px; }
   .evidence-conclusion { font-size: 10px; }
+}
+
+/* ---------------- Nav: compresses on scroll and carries the story's progress ---------------- */
+.nav-pill {
+  transition:
+    height var(--dur-3) var(--ease),
+    margin var(--dur-3) var(--ease),
+    background-color var(--dur-3) var(--ease),
+    box-shadow var(--dur-3) var(--ease),
+    border-color var(--dur-3) var(--ease);
+}
+.nav-pill[data-compact] {
+  height: 48px;
+  margin-top: 8px;
+}
+@media (min-width: 1024px) {
+  .nav-pill[data-compact] {
+    margin-inline: max(20px, calc((100vw - 1180px) / 2));
+  }
+}
+.nav-readout {
+  max-width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transition:
+    max-width var(--dur-4) var(--ease),
+    margin var(--dur-4) var(--ease),
+    opacity var(--dur-2) var(--ease);
+}
+.nav-readout[data-show] {
+  max-width: 220px;
+  margin-left: 12px;
+  opacity: 1;
+}
+.nav-roll {
+  display: inline-block;
+  animation: navRoll var(--dur-3) var(--ease) both;
+}
+@keyframes navRoll {
+  from { opacity: 0; transform: translateY(70%); }
+  to { opacity: 1; transform: none; }
+}
+.nav-rail {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: -12px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-3) var(--ease);
+}
+.nav-rail[data-show] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav-rail button {
+  flex: 1;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+.nav-rail-track {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--color-line);
+  transition: height var(--dur-2) var(--ease);
+}
+.nav-rail button:hover .nav-rail-track,
+.nav-rail button:focus-visible .nav-rail-track {
+  height: 4px;
+}
+.nav-rail-fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill, .nav-readout, .nav-rail { transition-duration: 0ms; }
+  .nav-roll { animation: none; }
+}
+
+/* ---------------- Signal readout: the alert at reading size, linked to the crate ---------------- */
+.signal-readout {
+  width: min(400px, calc(100vw - 48px));
+  border: 1px solid rgb(255 255 255 / 0.8);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.62);
+  padding: 14px 16px 12px;
+  box-shadow: 0 10px 40px -20px rgb(20 19 15 / 0.3);
+  backdrop-filter: blur(12px);
+  cursor: default;
+  transition:
+    transform var(--dur-3) var(--ease),
+    box-shadow var(--dur-3) var(--ease),
+    border-color var(--dur-3) var(--ease);
+}
+.signal-readout:hover,
+.signal-readout:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-signal) 35%, white);
+  box-shadow: 0 16px 44px -20px rgb(242 54 31 / 0.35);
+}
+.signal-readout:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+.signal-readout-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-signal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-signal) 18%, transparent);
+}
+.signal-days {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.signal-days li { display: grid; gap: 4px; }
+.signal-days span {
+  height: 3px;
+  border-radius: 3px;
+  background: rgb(20 19 15 / 0.22);
+}
+.signal-days li[data-risk] span { background: var(--color-signal); }
+.signal-days small {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-soft);
+}
+.signal-days li[data-risk] small { color: var(--color-signal); }
+/* Days draw in left to right as the chapter settles. */
+[data-ch][style*="visibility: visible"] .signal-days span {
+  animation: dayIn var(--dur-3) var(--ease) both;
+  animation-delay: calc(var(--i) * var(--stagger));
+}
+@keyframes dayIn { from { transform: scaleX(0); transform-origin: left; } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .signal-readout { transition-duration: 0ms; }
+  [data-ch] .signal-days span { animation: none; }
 }

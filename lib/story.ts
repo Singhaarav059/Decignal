@@ -35,6 +35,8 @@ export const store = {
   focus: -1,
   /** A card the page asks to bring forward (the approval panel points at the decision card). */
   focusHint: -1,
+  /** The page points at the signal crate (hovering its readout), so it lifts and glows. */
+  signalHint: false,
   /** The system island opened for a closer look (click), or -1. */
   selected: -1,
   /** A system the page points at (hovering its chip), lifted as if under the pointer. */

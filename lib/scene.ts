@@ -98,7 +98,7 @@ export function signalCratePose(c: number, t: number, portrait = false): Pose | 
       return { p: [x + (ox * cs + oz * sn) * k, oy * k, z + (-ox * sn + oz * cs) * k], ry, s: k * ISLAND_TOTE };
     }
     case CH.signal:
-      if (portrait) return { p: [0, -0.32, 1.1], rx: 0.15, ry: -0.42 + t * 0.3, s: 0.95 };
+      if (portrait) return { p: [0, -0.1, 1.1], rx: 0.15, ry: -0.42 + t * 0.3, s: 1.2 };
       return { p: [0.65, 0.42, 1.35], rx: 0.14, ry: -0.52 + t * 0.45, s: 1.20 };
     case CH.problem:
       return { p: chartPos(CHART_CRATES), s: 1 };

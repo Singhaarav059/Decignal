@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, RoundedBox } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { easing } from "maath";
-import { CH, INDUSTRIES, blendAt, clamp01, localIn, select, smoothstep, store, weight } from "@/lib/story";
+import { CH, INDUSTRIES, blendAt, clamp01, localIn, select, smootherstep, smoothstep, store, weight } from "@/lib/story";
 import {
   CARD,
   CARDS,
@@ -33,6 +33,7 @@ import {
   signalCratePose,
   truckX,
   type Pose,
+  type Vec3,
 } from "@/lib/scene";
 import { SYSTEMS } from "@/components/ui/systems";
 import { COLORS, TINTS } from "./palette";
@@ -44,7 +45,6 @@ import { PALLETS, SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } fro
 import { aluminium, asphalt, concrete, enamel, fineRibs, plastic, steel } from "./materials";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, faceKey, readFonts, type FaceSpec } from "./faces";
-import { Route } from "./SceneKit";
 
 /* ------------------------------------------------------------------ */
 /* Actor: blends between its chapter poses; scales in and out of scenes */
@@ -58,8 +58,10 @@ const euler = new THREE.Euler(0, 0, 0, "YXZ");
 const tmpV = new THREE.Vector3();
 
 type Track = (c: number, t: number) => Pose | null;
+/** Where an actor travels to as it leaves chapter c, instead of shrinking in place. */
+type Exit = (c: number) => Vec3 | null;
 
-function useActor(ref: React.RefObject<THREE.Group | null>, track: Track, delay = 0, damp = 0.1) {
+function useActor(ref: React.RefObject<THREE.Group | null>, track: Track, delay = 0, damp = 0.1, exit?: Exit) {
   const goal = useMemo(() => ({ p: new THREE.Vector3(), q: new THREE.Quaternion(), s: 0 }), []);
   const ready = useRef(false);
   useFrame((_, dt) => {
@@ -78,10 +80,15 @@ function useActor(ref: React.RefObject<THREE.Group | null>, track: Track, delay 
     } else if (A) {
       // Leaving: shrink away a little ahead of the next scene.
       const k = clamp01(e / (1 - delay * 0.5));
+      const to = exit?.(i);
       goal.p.set(...A.p);
       rx = A.rx ?? 0;
       ry = A.ry ?? 0;
-      goal.s = (A.s ?? 1) * (1 - smoothstep(0, 0.7, k));
+      if (to) {
+        // Converging: travel to the target and fold into it, so the hand-off reads as cause and effect.
+        goal.p.lerp(tmpV.set(...to), smootherstep(0, 0.85, k));
+        goal.s = (A.s ?? 1) * (1 - smoothstep(0.35, 0.9, k));
+      } else goal.s = (A.s ?? 1) * (1 - smoothstep(0, 0.7, k));
     } else if (B) {
       // Arriving: rise into place with a small overshoot, staggered.
       const k = clamp01((e - 0.25 - delay) / (0.75 - delay));
@@ -109,9 +116,9 @@ function useActor(ref: React.RefObject<THREE.Group | null>, track: Track, delay 
   });
 }
 
-function Actor({ track, delay, damp, children }: { track: Track; delay?: number; damp?: number; children: React.ReactNode }) {
+function Actor({ track, delay, damp, exit, children }: { track: Track; delay?: number; damp?: number; exit?: Exit; children: React.ReactNode }) {
   const ref = useRef<THREE.Group>(null);
-  useActor(ref, track, delay, damp);
+  useActor(ref, track, delay, damp, exit);
   return (
     <group ref={ref} visible={false}>
       {children}
@@ -368,6 +375,22 @@ function Hover({ i, children }: { i: number; children: React.ReactNode }) {
   );
 }
 
+/** Island labels step out first when the islands leave, so the converging models stay legible. */
+function IslandTag({ y, ry, children }: { y: number; ry: number; children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(() => {
+    const k = smoothstep(0.8, 1, Math.max(weight(CH.fragments, store.g), weight(CH.context, store.g)));
+    if (!ref.current) return;
+    ref.current.scale.setScalar(k);
+    ref.current.visible = k > 0.01;
+  });
+  return (
+    <group ref={ref} position-y={y} rotation-y={ry}>
+      {children}
+    </group>
+  );
+}
+
 export function Islands() {
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
   return (
@@ -377,15 +400,15 @@ export function Islands() {
         const Model = SYSTEM_MODELS[s];
         const tone = TINTS[sys.tone as keyof typeof TINTS];
         return (
-          <Actor key={sys.id} track={(c) => islandPose(s, c, portrait)} delay={s * 0.06}>
+          <Actor key={sys.id} track={(c) => islandPose(s, c, portrait)} delay={s * 0.06} exit={(c) => (c === CH.fragments ? signalCratePose(CH.signal, 0, portrait)?.p ?? null : null)}>
             <Rise delay={0.25 + s * 0.09}>
               <Hover i={s}>
                 <Island tone={tone}>
                   <Model />
                 </Island>
-                <group position-y={TAG_Y[s]} rotation-y={-ISLANDS[s][2]}>
+                <IslandTag y={TAG_Y[s]} ry={-ISLANDS[s][2]}>
                   <Tag title={sys.name} value={`${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? .45 * weight(CH.fragments,store.g) : 0) } />
-                </group>
+                </IslandTag>
               </Hover>
             </Rise>
           </Actor>
@@ -619,29 +642,27 @@ export function SignalCrate() {
   const red = useMemo(() => new THREE.Color(COLORS.signal), []);
   const tag = useRef<THREE.Group>(null);
   const hover = useRef<THREE.Group>(null);
-  const contextGroup = useRef<THREE.Group>(null);
   const scannerGroup = useRef<THREE.Group>(null);
 
-  useFrame(({ clock }) => {
+  const hint = useRef(0);
+  useFrame(({ clock }, dt) => {
     const sigWeight = weight(CH.signal, store.g);
     // While it is the subject, it hovers: lifted out of the data, breathing slowly.
-    if (hover.current) hover.current.position.y = Math.sin(clock.elapsedTime * 1.3) * 0.025 * sigWeight;
+    // Pointing at its readout on the page lifts it a little more, linking the numbers to the object.
+    hint.current = THREE.MathUtils.damp(hint.current, store.signalHint ? 1 : 0, 9, Math.min(dt, 1 / 30));
+    if (hover.current) hover.current.position.y = (Math.sin(clock.elapsedTime * 1.3) * 0.025 + hint.current * 0.08) * sigWeight;
     // It turns red as the signal is found, then keeps a slow pulse: live, not alarming.
     const r = smoothstep(0.45, 0.95, store.g);
     mat.color.copy(saffron).lerp(red, r);
-    mat.emissive.copy(red).multiplyScalar(r * (0.18 + Math.sin(clock.elapsedTime * 2.4) * 0.08));
+    mat.emissive.copy(red).multiplyScalar(r * (0.18 + Math.sin(clock.elapsedTime * 2.4) * 0.08 + hint.current * 0.14));
 
     if (tag.current) {
-      const show = smoothstep(0.55, 0.9, Math.max(weight(CH.signal, store.g), weight(CH.context, store.g)));
+      // In the Signal chapter the page carries these facts at reading size; the tag returns for Context.
+      const show = smoothstep(0.55, 0.9, weight(CH.context, store.g));
       tag.current.scale.setScalar(0.36 * show);
       tag.current.visible = show > 0.01;
     }
 
-    if (contextGroup.current) {
-      const showContext = smoothstep(0.6, 0.96, sigWeight);
-      contextGroup.current.scale.setScalar(showContext);
-      contextGroup.current.visible = showContext > 0.01;
-    }
 
     if (scannerGroup.current) {
       const showScan = smoothstep(0.5, 0.95, sigWeight);
@@ -670,26 +691,6 @@ export function SignalCrate() {
             <InspectionScanner active />
           </group>
 
-          {/* Contextual Spatial Intelligence Network (Fills empty space with authentic operational facts) */}
-          <group ref={contextGroup} visible={false}>
-            {/* Context Node 1 (Upper Left): Plant 01 Production Consumption Rate */}
-            <group position={[-0.86, 0.26, -0.18]} scale={0.30}>
-              <Tag title="PLANT 01 LINE 02" value="Consuming 45 units/day" tone={TINTS.emerald} width={1.48} />
-            </group>
-            <Route points={[[-0.86, 0.26, -0.18], [-0.40, 0.18, -0.08], [0, 0.12, 0]]} color="#A2C8B5" radius={0.005} dashed flow speed={0.35} pulseColor={TINTS.emerald} />
-
-            {/* Context Node 2 (Right Midground): Current On-Hand Balance */}
-            <group position={[0.78, 0.28, -0.20]} scale={0.30}>
-              <Tag title="CURRENT STOCK" value="410 units on hand" tone={TINTS.saffron} width={1.38} />
-            </group>
-            <Route points={[[0.78, 0.28, -0.20], [0.38, 0.18, -0.08], [0, 0.12, 0]]} color="#D6BF8A" radius={0.005} dashed flow speed={0.35} pulseColor={TINTS.saffron} />
-
-            {/* Context Node 3 (Lower Right): Safety Breach Horizon - elevated safely above bottom */}
-            <group position={[0.76, 0.05, 0.12]} scale={0.30}>
-              <Tag title="SAFETY RESERVE" value="Day 6 breach (140 vs 175)" tone={COLORS.signal} width={1.48} alert />
-            </group>
-            <Route points={[[0.76, 0.05, 0.12], [0.38, 0.08, 0.06], [0, 0.12, 0]]} color="#E59A94" radius={0.005} dashed flow speed={0.35} pulseColor={COLORS.signal} />
-          </group>
         </group>
       </Rise>
     </Actor>

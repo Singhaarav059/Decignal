@@ -17,9 +17,12 @@ import { SystemNetwork } from "./SystemNetwork";
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
 const PORTRAIT_DROP = [-0.055, 0.13, 0.13, 0.12, 0.08, 0.09, 0.1, 0, 0];
 // Desktop frames push objects right of the copy column; a portrait screen centres them instead.
-const PORTRAIT_X = [0, 1.0, 0, 1.45, 0, 0.6, 0, 0, 0];
+const PORTRAIT_X = [0, 0, 0, 1.45, 0, 0.6, 0, 0, 0];
 // Leave room for outer source labels and the supplier marker on a phone.
-const MOBILE_FIT = [0.68, 1, 1.18, 1.22, 1.1, 1.04, 1.1, 1, 1];
+// Signal frames one object, so portrait screens come in close instead of fitting a wide stage.
+const MOBILE_FIT = [0.68, 0.62, 1.18, 1.22, 1.1, 1.04, 1.1, 1, 1];
+
+const PORTRAIT_FIT = [0.68, 0.7];
 
 function Rig() {
   const { camera, size } = useThree();
@@ -40,7 +43,7 @@ function Rig() {
 
     // Narrow screens: step back along the view ray so the composition still fits.
     const aspect = size.width / size.height;
-    const fit = size.width < 768 ? THREE.MathUtils.lerp(MOBILE_FIT[i], MOBILE_FIT[j], e) : portrait ? THREE.MathUtils.lerp(i===0?.68:1,j===0?.68:1,e) : size.width < 1024 ? THREE.MathUtils.lerp(i===0?1.18:1,j===0?1.18:1,e) : 1;
+    const fit = size.width < 768 ? THREE.MathUtils.lerp(MOBILE_FIT[i], MOBILE_FIT[j], e) : portrait ? THREE.MathUtils.lerp(PORTRAIT_FIT[i] ?? 1, PORTRAIT_FIT[j] ?? 1, e) : size.width < 1024 ? THREE.MathUtils.lerp(i===0?1.18:1,j===0?1.18:1,e) : 1;
     const compactHero = size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?1.09:1,j===0?1.09:1,e) : 1;
     store.camK = (aspect < 1.5 ? Math.pow(1.5 / aspect, 0.92) : 1) * fit * compactHero;
     if (store.camK > 1) goal.p.sub(goal.t).multiplyScalar(store.camK).add(goal.t);
@@ -137,7 +140,7 @@ function World() {
       </Suspense>
       <Threads />
       <SystemNetwork />
-      <SignalPing at={[0.65, 0.004, 1.35]} />
+      <SignalPing />
       <Plinth />
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[80, 80]} />
