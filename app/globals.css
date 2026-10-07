@@ -954,3 +954,35 @@ html.ready .intro-stage {
   .signal-readout { transition-duration: 0ms; }
   [data-ch] .signal-days span { animation: none; }
 }
+
+/* ---- Control pass ---- */
+.roll-num { display: inline; }
+.roll-digit { position: relative; display: inline-block; line-height: 1.15; clip-path: inset(0); }
+.roll-ghost { visibility: hidden; }
+.roll-col { position: absolute; inset: 0 0 auto; display: flex; flex-direction: column; transition: transform var(--dur-3) var(--ease); }
+.roll-col > span { display: block; height: 1.15em; text-align: center; }
+.decision-plan { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 8px 10px; padding: 10px 12px; border: 1px solid var(--color-line); border-radius: 14px; background: rgba(255,255,255,.55); }
+.decision-plan-label { font-family: var(--font-mono, ui-monospace); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-soft); }
+.decision-plan-slot { grid-column: 2 / 4; justify-self: start; }
+.decision-plan-chip { display: inline-flex; align-items: center; gap: 2px; padding: 3px 9px; border-radius: 999px; background: var(--color-ink); color: #fff; font-size: 12px; font-weight: 500; animation: plan-travel var(--dur-4) var(--ease) both; }
+.decision-plan-track { grid-column: 1 / 3; height: 4px; border-radius: 2px; background: var(--color-line); overflow: hidden; }
+.decision-plan-track > span { display: block; height: 100%; background: var(--color-ok); transform-origin: left; animation: plan-fill var(--dur-5) var(--ease) var(--dur-3) both; }
+.decision-plan-check { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--color-ok); color: #fff; font-size: 11px; font-weight: 700; animation: plan-pop var(--dur-2) cubic-bezier(.34,1.56,.64,1) calc(var(--dur-3) + var(--dur-5)) both; }
+.decision-commit-result { animation: plan-reveal var(--dur-3) var(--ease) calc(var(--dur-3) + var(--dur-5)) both; }
+.decision-result { animation: plan-reveal var(--dur-3) var(--ease) both; }
+@keyframes plan-travel { from { transform: translateY(-46px) scale(.96); opacity: .4; } to { transform: none; opacity: 1; } }
+@keyframes plan-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes plan-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes plan-reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.decision-commit-result .decision-result { animation: none; }
+@media (max-width: 767px) {
+  .decision-plan { grid-template-columns: auto 1fr auto; grid-template-rows: auto; padding: 8px 10px; }
+  .decision-plan-label { display: none; }
+  .decision-plan-slot { grid-column: auto; }
+  .decision-plan-track { grid-column: auto; }
+  .decision-commit .decision-result p:first-child { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll-col { transition: none; }
+  .decision-plan-chip, .decision-plan-track > span, .decision-plan-check, .decision-commit-result, .decision-result { animation: none; }
+}

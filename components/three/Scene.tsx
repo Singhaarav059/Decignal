@@ -23,6 +23,8 @@ const PORTRAIT_X = [0, 0, 0.3, 1.45, 0, 0.6, 0, 0, 0];
 const MOBILE_FIT = [0.68, 0.62, 0.86, 0.82, 0.62, 1.04, 1.1, 1, 1];
 
 const PORTRAIT_FIT = [0.68, 0.7, 0.9, 1, 0.78];
+// Tablet portrait only: Control's stack sits below the approval widget instead of behind it.
+const TABLET_DROP = [0, 0, 0, 0, 0, 0.3, 0, 0, 0];
 
 function Rig() {
   const { camera, size } = useThree();
@@ -48,7 +50,7 @@ function Rig() {
     store.camK = (aspect < 1.5 ? Math.pow(1.5 / aspect, 0.92) : 1) * fit * compactHero;
     if (store.camK > 1) goal.p.sub(goal.t).multiplyScalar(store.camK).add(goal.t);
     if (size.width < 1024) {
-      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?.009:0,j===0?.009:0,e) : 0);
+      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width >= 768 ? THREE.MathUtils.lerp(TABLET_DROP[i], TABLET_DROP[j], e) : 0) + (size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?.009:0,j===0?.009:0,e) : 0);
       const dx = THREE.MathUtils.lerp(PORTRAIT_X[i], PORTRAIT_X[j], e);
       goal.p.x += dx;
       goal.t.x += dx;
