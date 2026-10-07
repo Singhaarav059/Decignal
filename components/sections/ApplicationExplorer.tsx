@@ -72,8 +72,8 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
       <nav ref={chapterNav} className="application-chapter-bar" aria-label="Application chapters">{indices.map((index,i)=><button key={index} aria-label={`Show ${APPLICATIONS[index].name}`} aria-current={i===frame.chapter?"step":undefined} onClick={()=>jump(i)}><span>{String(i+1).padStart(2,"0")}</span>{CHAPTER_NAMES[index]}<i/></button>)}</nav>
       <div className="application-ghost" aria-hidden>{["STOCK", "DEMAND", "CAPACITY", "HEALTH", "RESILIENCE", "GROWTH", "SERVICE", "CONTROL"][selected]}</div>
       <div className="application-copy" key={selected}>
-        <p className="eyebrow"><span className="diamond" style={{color}} />{String(selected + 1).padStart(2, "0")} / {app.category}</p>
-        <h3 className="display">{demo.headline.split("\n").map((line,i)=><span key={line} className="block">{i===1?<em style={{color}}>{line}</em>:line}</span>)}</h3>
+        <p className="eyebrow"><span className="diamond" style={{color:"var(--tone)"}} />{String(selected + 1).padStart(2, "0")} / {app.category}</p>
+        <h3 className="display">{demo.headline.split("\n").map((line,i)=><span key={line} className="block">{i===1?<em style={{color:"var(--tone)"}}>{line}</em>:line}</span>)}</h3>
         <p className="application-summary">{app.name}</p>
         <nav className="application-phase-nav" aria-label={`${app.name} story stages`}>{["Signal", "Evidence", "Action"].map((label,i)=><button key={label} aria-current={i===frame.step?"step":undefined} onClick={()=>jump(frame.chapter,[0.18,0.48,0.84][i])}><span>0{i+1}</span>{label}</button>)}</nav>
         <div className="application-narrative" key={`${selected}-${frame.step}`}>

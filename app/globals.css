@@ -1009,3 +1009,43 @@ html.ready .intro-stage {
   .footer-motif.is-on .footer-thread { stroke-dashoffset: 0; }
   .footer-motif.is-on .footer-motif-node { opacity: 1; transform: none; }
 }
+/* ---- APPLICATIONS pass ---- */
+/* One accent re-tints the whole application UI; registering --tone lets it interpolate. */
+@property --tone { syntax: '<color>'; inherits: true; initial-value: #2f5bff; }
+.application-journey { transition: --tone var(--dur-3) var(--ease); }
+.operation-readout { border-color: color-mix(in srgb, var(--tone) 24%, var(--color-line)); background: color-mix(in srgb, var(--tone) 3%, rgb(255 253 249 / 0.94)); }
+.operation-readout::before { content: ''; position: absolute; left: 18px; right: 18px; top: 0; height: 2px; border-radius: 0 0 2px 2px; background: var(--tone); opacity: .7; }
+.application-chapter-bar button span, .application-progress > span:first-child { color: var(--tone); }
+/* Every chart draws in on chapter mount and again when a later stage adds its stroke. */
+@keyframes evidenceDrawIn { from { stroke-dashoffset: 800; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
+.evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: evidenceDrawIn 900ms var(--ease-out-quint) both; }
+/* Readings: the one matching the current stage (signal / evidence / action) is lifted. */
+.evidence-reading { position: relative; transition: background-color var(--dur-3) var(--ease); }
+.evidence-reading::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-3) var(--ease); }
+.evidence-reading[data-active] { background: color-mix(in srgb, var(--tone) 8%, transparent); }
+.evidence-reading[data-active]::after { transform: scaleX(1); }
+.evidence-reading-label { display: block; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Legible labels: >= 11px wherever the layout has room. */
+.evidence-heading .spec-label { font-size: 11px; }
+.evidence-state { font-size: 11px; }
+.application-phase-nav button span, .application-chapter-bar button span { font-size: 11px; }
+.application-sources span { font-size: 11px; }
+.application-sources p { font-size: 11px; }
+.application-progress, .application-example { font-size: 11px; }
+@media (max-width: 767px), (max-width: 1023px) and (orientation: portrait) {
+  .evidence-heading .spec-label, .evidence-state { font-size: 10.5px; }
+  .evidence-heading .spec-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .evidence-reading-label { font-size: 10px; letter-spacing: .04em; }
+  .application-progress, .application-example { font-size: 10px; }
+}
+@media (max-width: 767px) and (max-height: 740px) {
+  .evidence-heading .spec-label, .evidence-state { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-journey, .evidence-reading, .evidence-reading::after { transition: none; }
+  .evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: none; stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* ---- OUTCOMES pass ---- */
+.outcome-diagram text { font-size: 10.5px; }
+.outcome-figure figcaption { font-size: 11px; }
