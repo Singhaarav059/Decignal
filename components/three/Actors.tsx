@@ -42,6 +42,9 @@ import { BearingBed, Plant } from "./buildings";
 import { Forklift, SemiTruck, TRUCK } from "./vehicles";
 import { LoadedPallet, box, cylX, cylY, cylZ, rbox, merge } from "./parts";
 import { PALLETS, SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "./transfer-motion";
+
+/** Top of the concrete apron in front of each plant (scene units); the plant's markings and crew stand on it. */
+const APRON_TOP = 0.012;
 import { aluminium, asphalt, concrete, enamel, fineRibs, plastic, steel } from "./materials";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, faceKey, readFonts, type FaceSpec } from "./faces";
@@ -835,8 +838,8 @@ export function Yard({ roadLength = 16 }: { roadLength?: number }) {
       </mesh>
       <mesh geometry={lines} material={enamel("#F4F1EA", 0.6)} />
       {[PLANT_02, PLANT_01].map((p) => (
-        <mesh key={p[0]} position={[p[0], 0.006, (PLANT_FRONT + ROAD_Z - 0.36) / 2]} receiveShadow material={concrete("#E3DFD8")}>
-          <boxGeometry args={[2.9, 0.012, ROAD_Z - 0.36 - PLANT_FRONT + 0.02]} />
+        <mesh key={p[0]} position={[p[0], APRON_TOP / 2, (PLANT_FRONT + ROAD_Z - 0.36) / 2]} receiveShadow material={concrete("#E3DFD8")}>
+          <boxGeometry args={[2.9, APRON_TOP, ROAD_Z - 0.36 - PLANT_FRONT + 0.02]} />
         </mesh>
       ))}
       <mesh geometry={bays} material={enamel(TINTS.saffron, 0.5)} />
@@ -897,13 +900,13 @@ export function Transfer() {
   return (
     <>
       <Actor track={inDecision({ p: PLANT_02, s: M })}>
-        <Plant accent={TINTS.saffron} name="PLANT 02" />
+        <Plant accent={TINTS.saffron} name="PLANT 02" ground={APRON_TOP / M} />
         <group position={[0, 8.3, 0]} scale={1 / M}>
           <Tag title="Plant 02" value={`${620 - states.filter((v) => v === 2).length * 80} units · ${states.filter((v) => v === 2).length * 80} sent`} tone={TINTS.saffron} width={1.2} />
         </group>
       </Actor>
       <Actor track={inDecision({ p: PLANT_01, s: M })} delay={0.08}>
-        <Plant accent={TINTS.cobalt} name="PLANT 01" />
+        <Plant accent={TINTS.cobalt} name="PLANT 01" ground={APRON_TOP / M} />
         <group position={[0, 8.3, 0]} scale={1 / M}>
           <Tag title="Plant 01" value={arrived ? "Day 6 · 380 projected" : "Day 6 · 140 projected"} tone={arrived ? TINTS.emerald : TINTS.cobalt} width={1.2} />
         </group>

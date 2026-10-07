@@ -167,7 +167,11 @@ function PlantCrew() {
   );
 }
 
-export function Plant({ accent, name, crew = true }: { accent: string; name: string; crew?: boolean }) {
+/**
+ * `ground` is the height (m) of whatever paving the scene lays in front of the plant: the bay
+ * lines and the crew stand on top of it rather than underneath.
+ */
+export function Plant({ accent, name, crew = true, ground = 0 }: { accent: string; name: string; crew?: boolean; ground?: number }) {
   const { W, D, H } = PLANT;
   const sign = useSign(name, accent, "#FFFFFF");
   const wall = H - 1.2;
@@ -213,8 +217,12 @@ export function Plant({ accent, name, crew = true }: { accent: string; name: str
       <mesh geometry={bollards()} material={enamel("#FFB21E", 0.4)} castShadow />
       {/* Dock edges in hazard chevrons, and painted bay lines on the apron */}
       <mesh geometry={dockHazard()} material={hazard()} />
-      <mesh geometry={bayLines()} material={enamel("#F2C230", 0.55)} receiveShadow />
-      {crew && <PlantCrew />}
+      <mesh geometry={bayLines()} material={enamel("#F2C230", 0.55)} position-y={ground} receiveShadow />
+      {crew && (
+        <group position-y={ground}>
+          <PlantCrew />
+        </group>
+      )}
     </group>
   );
 }
