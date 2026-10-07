@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { getLenis, scrollToTarget } from "./SmoothScroll";
 import { Logo } from "./ui/Logo";
 import { Arrow } from "./ui/Arrow";
+import { ArrowUpRight } from "lucide-react";
 import { CHAPTERS, blendAt, store, subscribe } from "@/lib/story";
 import { goToChapter, toneVar } from "./story/chapters";
 
@@ -21,6 +22,47 @@ const LINKS = [
   ["How it works", "#how"],
   ["Questions", "#faq"],
 ] as const;
+
+/** Each link keeps its section's colour. */
+const LINK_TONES = ["cobalt", "emerald", "violet", "tangerine"];
+
+/** Primary links in an inner pill; a white highlight slides to the section being read. */
+function NavLinks({ go }: { go: (href: string) => void }) {
+  const root = useRef<HTMLElement>(null);
+  const [active, setActive] = useState(-1);
+  const [box, setBox] = useState({ x: 0, w: 0 });
+  useEffect(() => {
+    const on = () => {
+      const vh = window.innerHeight;
+      let found = -1;
+      LINKS.forEach(([, href], i) => {
+        const el = document.querySelector(href);
+        if (el && el.getBoundingClientRect().top < vh * 0.45) found = i;
+      });
+      const audit = document.getElementById("audit");
+      if (audit && audit.getBoundingClientRect().top < vh * 0.45) found = -1;
+      setActive(found);
+    };
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
+  useEffect(() => {
+    const b = root.current?.querySelectorAll<HTMLElement>("button")[active];
+    if (b) setBox({ x: b.offsetLeft, w: b.offsetWidth });
+  }, [active]);
+  return (
+    <nav ref={root} className="nav-links hidden lg:flex" aria-label="Primary">
+      <span className="nav-links-hl" data-show={active >= 0 || undefined} style={{ transform: `translateX(${box.x}px)`, width: box.w }} aria-hidden />
+      {LINKS.map(([label, href], i) => (
+        <button key={href} onClick={() => go(href)} aria-current={i === active ? "true" : undefined} style={{ ["--tone" as string]: `var(--color-${LINK_TONES[i]})` }}>
+          <i aria-hidden />
+          {label}
+        </button>
+      ))}
+    </nav>
+  );
+}
 
 export function Nav() {
   const [solid, setSolid] = useState(false);
@@ -72,57 +114,44 @@ export function Nav() {
       >
         <div
           data-compact={compact && !open ? "" : undefined}
-          className={`nav-pill relative mx-3 mt-3 grid h-14 grid-cols-[1fr_auto_1fr] items-center rounded-full px-3 md:mx-5 md:px-4 ${
+          className={`nav-pill relative mx-3 mt-3 flex h-14 items-center justify-between gap-3 rounded-full pr-2 pl-3 md:mx-5 md:pl-5 ${
             solid || open || compact
-              ? "border border-white/70 bg-white/68 shadow-[0_8px_30px_-12px_rgba(20,19,15,0.18)] backdrop-blur-xl backdrop-saturate-150"
+              ? "border border-white/70 bg-white/72 shadow-[0_8px_30px_-12px_rgba(20,19,15,0.18)] backdrop-blur-xl backdrop-saturate-150"
               : "border border-white/60 bg-bg/80 backdrop-blur-xl"
           }`}
         >
-          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
-            {LINKS.map(([label, href]) => (
-              <button
-                key={href}
-                onClick={() => go(href)}
-                className="min-h-10 rounded-full px-3.5 text-[13.5px] font-medium text-ink-2 transition-colors duration-200 hover:bg-ink/5 hover:text-ink"
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
-          <button
-            onClick={() => setOpen((o) => !o)}
-            className="flex min-h-10 items-center gap-2.5 justify-self-start rounded-full px-2 text-[13.5px] font-medium lg:hidden"
-            aria-expanded={open}
-            aria-controls="menu"
-          >
-            <span className="relative block h-2.5 w-5" aria-hidden>
-              <span
-                className="absolute inset-x-0 top-0 h-[1.5px] bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
-                style={{ transform: open ? "translateY(4.5px) rotate(45deg)" : "none" }}
-              />
-              <span
-                className="absolute inset-x-0 bottom-0 h-[1.5px] bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
-                style={{ transform: open ? "translateY(-4.5px) rotate(-45deg)" : "none" }}
-              />
-            </span>
-            <span className="hidden sm:inline">{open ? "Close" : "Menu"}</span>
-            <span className="sr-only sm:hidden">{open ? "Close menu" : "Open menu"}</span>
-          </button>
-
-          <div className="flex items-center justify-self-center">
-            <button onClick={() => go(0)} aria-label="Decignal, back to top">
-              <Logo size={23} />
+          <div className="flex min-w-0 items-center gap-1">
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className="flex size-10 items-center justify-center rounded-full lg:hidden"
+              aria-expanded={open}
+              aria-controls="menu"
+            >
+              <span className="relative block h-2.5 w-5" aria-hidden>
+                <span
+                  className="absolute inset-x-0 top-0 h-[1.5px] bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
+                  style={{ transform: open ? "translateY(4.5px) rotate(45deg)" : "none" }}
+                />
+                <span
+                  className="absolute inset-x-0 bottom-0 h-[1.5px] bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
+                  style={{ transform: open ? "translateY(-4.5px) rotate(-45deg)" : "none" }}
+                />
+              </span>
+              <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+            </button>
+            <button onClick={() => go(0)} aria-label="Decignal, back to top" className="flex items-center">
+              <Logo size={22} />
             </button>
             <Readout show={compact && !open} />
           </div>
 
-          <div className="flex justify-end">
-            <button onClick={() => go("#audit")} className="btn btn-primary min-h-10! px-4! text-[13px]! whitespace-nowrap">
-              <span className="hidden sm:inline">Book a free AI audit</span>
-              <span className="sm:hidden">Audit</span>
-              <Arrow />
-            </button>
-          </div>
+          <NavLinks go={go} />
+
+          <button onClick={() => go("#audit")} className="nav-cta">
+            <span className="hidden sm:inline">Book a free AI audit</span>
+            <span className="sm:hidden">Audit</span>
+            <span className="nav-cta-icon" aria-hidden><ArrowUpRight size={15} strokeWidth={2.4} /></span>
+          </button>
           <Rail show={compact && !open} />
         </div>
       </header>

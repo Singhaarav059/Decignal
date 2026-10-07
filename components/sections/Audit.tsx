@@ -174,7 +174,7 @@ export function Audit() {
                 </div>
               )}
 
-              <div className="mt-8 flex items-center justify-between gap-4">
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
                 {step === 2 ? (
                   <button type="button" onClick={() => setStep(1)} className="rounded text-sm text-ink-2 underline-offset-4 hover:text-ink hover:underline">
                     Back
@@ -184,7 +184,7 @@ export function Audit() {
                     Prepare a brief for your audit. Your details stay in this browser until you download them.
                   </p>
                 )}
-                <button type="submit" className="btn btn-primary min-h-12!">
+                <button type="submit" className="btn btn-primary min-h-12! shrink-0 max-sm:w-full max-sm:justify-center">
                   {step === 1 ? "Continue" : "Prepare my brief"}
                   <Arrow />
                 </button>

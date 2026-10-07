@@ -23,6 +23,7 @@ import { IslandPanel } from "./IslandPanel";
 import { SystemChips } from "./SystemChips";
 import { ScaleApps } from "./ScaleApps";
 import { IndustryDetail } from "./IndustryDetail";
+import { FinalEngine } from "./FinalEngine";
 import { scrollToTarget } from "../SmoothScroll";
 import { TONE } from "./chapters";
 import { Arrow } from "../ui/Arrow";
@@ -55,6 +56,7 @@ export function Story() {
     const indEls = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ind]") ?? []);
     const ghosts = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ghost]") ?? []);
     const stock = front.current?.querySelector<HTMLElement>("[data-stock]");
+    const finalEl = front.current?.querySelector<HTMLElement>("[data-final]");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let lastStock = "";
     // While a system is open, the giant headline steps back so the island and its panel lead.
@@ -109,8 +111,11 @@ export function Story() {
         el.style.visibility = w < 0.005 ? "hidden" : "visible";
       });
 
-      // Leave the stage once the story is told.
-      const out = 1 - smoothstep(0.72, 1, localIn(CH.final, g));
+      // The closing board assembles in step with the scroll (sources, links, decision, results).
+      finalEl?.style.setProperty("--fp", still ? "1" : String(clamp01((g - CH.final + 0.4) / 0.7)));
+
+      // The 3D steps aside as the closing board arrives: the story ends on one flat summary.
+      const out = 1 - smoothstep(0.15, 0.75, weight(CH.final, g));
       if (canvas.current) canvas.current.style.opacity = String(out);
     });
     return () => {
@@ -158,13 +163,6 @@ export function Story() {
             </p>
           </div>
         ))}
-        <div data-ch={CH.final} className="absolute inset-x-0 top-[14vh] px-6 text-center">
-          <p className="display text-[clamp(36px,6.2vw,100px)]">
-            Turn information
-            <br />
-            <em className="spectrum-text">into decisions.</em>
-          </p>
-        </div>
       </div>
 
       {/* The object */}
@@ -316,39 +314,8 @@ export function Story() {
           </div>
         </div>
 
-        {/* 09 Final: the story closes on the same dock it opened with, now carrying the results */}
-        <div data-ch={CH.final} data-interactive className="story-intro absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-8">
-          <div className="hero-dock final-dock">
-            <p className="hero-dock-copy">
-              <span className="hero-dock-count tabular">1</span>
-              <span>
-                <strong>Start with one decision.</strong>
-                <span className="hero-dock-sub">We show you what it looks like inside your operation.</span>
-              </span>
-            </p>
-            <dl className="final-proof">
-              {[
-                ["2 days", "to act, not 21", "emerald"],
-                ["380", "units protected", "saffron"],
-                ["14 → 1", "cases linked", "pink"],
-              ].map(([v, k, t]) => (
-                <div key={k} style={{ ["--tone" as string]: `var(--color-${t})` }}>
-                  <dd className="tabular">{v}</dd>
-                  <dt>{k}</dt>
-                </div>
-              ))}
-            </dl>
-            <div className="hero-dock-actions">
-              <button onClick={() => scrollToTarget("#applications")} className="btn btn-ghost">
-                See applications
-              </button>
-              <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary">
-                Book a free AI audit
-                <Arrow />
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* 09 Decide: the story closes on one board, sources to decision to results */}
+        <FinalEngine ch={CH.final} />
 
       </div>
 

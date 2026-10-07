@@ -3,11 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, FAQ, OUTCOMES, PATHS, STACK_ROWS } from "@/lib/content";
+import { APPLICATIONS, FAQ, OUTCOMES, PATHS } from "@/lib/content";
+import { SystemsRibbon } from "./SystemsRibbon";
+import { AreaStack, GlanceGrid, PipelineStrip, Roadmap } from "./GrowlioSections";
 import { Audit } from "./Audit";
 import { Footer } from "./Footer";
 import { ApplicationExplorer } from "./ApplicationExplorer";
 import { CountUp } from "../ui/CountUp";
+import { scrollToTarget } from "../SmoothScroll";
+import { Bot, CalendarClock, CircleCheck, Database, KeyRound, Layers, Lock, MessageCircle, Plug, ScanSearch, ShieldCheck, Target, type LucideIcon } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -102,8 +106,9 @@ export function Editorial() {
     >
       <Systems />
       <Applications />
-      <KineticBand />
+      <PipelineStrip />
       <Outcomes />
+      <GlanceGrid />
       <HowItWorks />
       <Faq />
       <Audit />
@@ -114,35 +119,16 @@ export function Editorial() {
 
 /* ------------------------------------------------------------------ */
 
-const SYSTEM_TONES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
+const CONNECT_STEPS = [
+  { Icon: Plug, t: "Connect", d: "Read-only links to what you run", c: "cobalt" },
+  { Icon: ScanSearch, t: "Read", d: "Live context, refreshed in minutes", c: "violet" },
+  { Icon: CircleCheck, t: "Recommend", d: "One action, sent for approval", c: "emerald" },
+];
 
 function Systems() {
-  const row = (items: (typeof STACK_ROWS)[number], r: number) => (
-    <div className="fade-x overflow-hidden py-2">
-      <ul
-        aria-label={r ? undefined : "Systems Decignal works across"}
-        aria-hidden={r ? true : undefined}
-        className="marquee items-center"
-        style={{ ["--marquee-speed" as string]: r ? "56s" : "48s", animationDirection: r ? "reverse" : "normal" }}
-      >
-        {[...items, ...items, ...items, ...items].map((s, i) => (
-          <li
-            key={i}
-            aria-hidden={i >= items.length || undefined}
-            className="system-chip"
-            style={{ ["--tone" as string]: `var(--color-${SYSTEM_TONES[(i + r * 3) % 6]})` }}
-          >
-            <span className="system-mark" aria-hidden>{s.name.split(" ").map((w) => w[0]).join("").slice(0, 2)}</span>
-            <span className="system-name">{s.name}</span>
-            <span className="system-role">{s.role}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
   return (
-    <section className="pt-20 md:pt-24">
-      <div data-reveal className="works-with mx-auto px-6 text-center">
+    <section className="works-with-section">
+      <div data-reveal className="works-with">
         <p className="eyebrow inline-flex items-center gap-2"><span className="diamond" style={{ color: "var(--color-emerald)" }} />Works with what you run</p>
         <p className="works-with-title">Decignal reads across the systems <em className="spectrum-text">you already run.</em></p>
         <ul className="works-with-pills">
@@ -153,10 +139,18 @@ function Systems() {
             </li>
           ))}
         </ul>
+        <ol className="connect-steps">
+          {CONNECT_STEPS.map(({ Icon, t, d, c }, i) => (
+            <li key={t} style={{ ["--tone" as string]: `var(--color-${c})` }}>
+              <span className="connect-icon"><Icon size={17} strokeWidth={2} /></span>
+              <span className="connect-n tabular">0{i + 1}</span>
+              <strong>{t}</strong>
+              <span>{d}</span>
+            </li>
+          ))}
+        </ol>
       </div>
-      <div data-reveal className="mt-10 space-y-1 md:mt-12">
-        {STACK_ROWS.map((r, i) => <div key={i}>{row(r, i)}</div>)}
-      </div>
+      <SystemsRibbon />
     </section>
   );
 }
@@ -171,6 +165,7 @@ function Applications() {
         lines={["The same intelligence.", <>Every <em className="spectrum-text">part of your operation.</em></>]}
         intro="From the first signal to the right action. Follow the decisions as you scroll."
       /></div>
+      <AreaStack />
       <ApplicationExplorer indices={APPLICATIONS.map((_, i) => i)} />
     </section>
   );
@@ -178,57 +173,6 @@ function Applications() {
 
 /* ------------------------------------------------------------------ */
 
-const BAND = ["Signal", "Evidence", "Context", "Policy", "Decision", "Approval"];
-
-/** The pipeline, written large, sliding with the scroll. */
-function KineticBand() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!ref.current || reduced()) return;
-    const rows = ref.current.querySelectorAll<HTMLElement>("[data-band]");
-    const ctx = gsap.context(() => {
-      rows.forEach((r, i) => {
-        gsap.fromTo(
-          r,
-          { xPercent: i ? -28 : 0 },
-          {
-            xPercent: i ? 0 : -28,
-            ease: "none",
-            scrollTrigger: { trigger: ref.current, start: "top bottom", end: "bottom top", scrub: 0.6 },
-          },
-        );
-      });
-    }, ref);
-    return () => ctx.revert();
-  }, []);
-
-  const words = [...BAND, ...BAND, ...BAND];
-  return (
-    <section ref={ref} className="overflow-hidden py-12 md:py-16" aria-label="Signal, evidence, context, policy, decision, approval">
-      {[0].map((r) => (
-        <div key={r} data-band className="flex w-max items-center gap-[4vw] pr-[4vw]" aria-hidden>
-          {words.map((w, i) => {
-            const k = (i + r * 3) % 6;
-            const tone = SYSTEM_TONES[k];
-            return (
-              <span key={i} className="flex items-center gap-[4vw]">
-                <span
-                  className="display text-[clamp(38px,6vw,88px)] whitespace-nowrap"
-                  style={k % 2 ? { color: `var(--color-${tone})` } : undefined}
-                >
-                  {w}
-                </span>
-                <span className="size-[1.6vw] min-h-3 min-w-3 rotate-45" style={{ background: `var(--color-${tone})` }} />
-              </span>
-            );
-          })}
-        </div>
-      ))}
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 
 const OUTCOME_FILL = ["var(--color-cobalt)", "var(--color-tangerine)", "var(--color-emerald)"];
 
@@ -250,6 +194,7 @@ function OutcomeGraphic({ index }: { index: number }) {
 function Outcomes() {
   const root = useRef<HTMLElement>(null);
   const [seen, setSeen] = useState(false);
+  const [tab, setTab] = useState(0);
   useEffect(() => {
     const grid = root.current?.querySelector(".outcome-grid");
     if (!grid) return;
@@ -269,10 +214,14 @@ function Outcomes() {
   }, []);
   return <section ref={root} id="outcomes" className="scroll-mt-24 px-6 md:px-10">
     <Heading eyebrow="The outcome" tone="emerald" lines={["Know what changed.", <>See <em className="spectrum-text">why it matters.</em></>]} intro="Every recommendation should end in an operating result you can check." />
-    <div className="outcome-grid mx-auto mt-10 grid max-w-6xl gap-4 md:grid-cols-3">
-      {OUTCOMES.map((o,i)=><figure key={o.sector} data-reveal className="outcome-figure" style={{background:OUTCOME_FILL[i]}}>
-        <p className="eyebrow text-white/80!">{o.sector}</p><p className="outcome-number"><CountUp value={o.value} play={seen} duration={1100} /></p><p className="outcome-label">{o.label}</p>
-        <OutcomeGraphic index={i}/><p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption>
+    <div className="outcome-grid outcome-cases mx-auto mt-10 max-w-6xl">
+      <div className="case-tabs" role="tablist" aria-label="Outcomes">
+        {OUTCOMES.map((o,i)=><button key={o.sector} role="tab" aria-selected={tab===i} onClick={()=>setTab(i)} style={{["--tone" as string]:OUTCOME_FILL[i]}}><i />{o.sector}</button>)}
+      </div>
+      {OUTCOMES.map((o,i)=><figure key={o.sector} role="tabpanel" hidden={tab!==i} className="outcome-figure case-card" style={{background:OUTCOME_FILL[i]}}>
+        <div className="case-visual"><p className="eyebrow text-white/80!">{o.sector}</p><OutcomeGraphic index={i}/></div>
+        <div className="case-copy"><p className="outcome-number"><CountUp value={o.value} play={seen && tab===i} duration={1100} /></p><p className="outcome-label">{o.label}</p>
+        <p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption></div>
       </figure>)}
     </div><p className="mx-auto mt-5 max-w-6xl text-[11px] text-ink-soft">Illustrative decisions from the scenes above. Deployment results are measured against your own baseline.</p>
   </section>;
@@ -280,54 +229,8 @@ function Outcomes() {
 
 /* ------------------------------------------------------------------ */
 
-const STEP_TONES = ["cobalt", "violet", "tangerine", "emerald"];
-
 function HowItWorks() {
   const [path, setPath] = useState<keyof typeof PATHS>("custom");
-  const keys = Object.keys(PATHS) as (keyof typeof PATHS)[];
-  const p = PATHS[path];
-  const track = useRef<HTMLDivElement>(null);
-
-  const list = useRef<HTMLOListElement>(null);
-  // Steps count as "reached" once the route gets to them.
-  const [reached, setReached] = useState(0);
-
-  // The route draws itself as you scroll, and each step lights up as the line arrives.
-  useEffect(() => {
-    // Reduced motion: CSS shows every step lit and the route fully drawn.
-    if (!track.current || !list.current || reduced()) return;
-    const mm = gsap.matchMedia();
-    mm.add("(min-width: 768px)", () => {
-      const at = [0.01, 0.33, 0.66, 0.97];
-      gsap.fromTo(
-        track.current,
-        { scaleX: 0 },
-        {
-          scaleX: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: track.current,
-            start: "top 85%",
-            end: "top 35%",
-            scrub: 0.6,
-            onUpdate: (st) => setReached(at.filter((t) => st.progress >= t).length),
-          },
-        },
-      );
-    });
-    mm.add("(max-width: 767px)", () => {
-      // Stacked steps: each lights as it crosses the lower third of the screen.
-      ScrollTrigger.create({
-        trigger: list.current,
-        start: "top 70%",
-        end: "bottom 70%",
-        onUpdate: (st) => setReached(Math.min(4, Math.floor(st.progress * 4) + 1)),
-        onLeaveBack: () => setReached(0),
-      });
-    });
-    return () => mm.revert();
-  }, []);
-
   return (
     <section id="how" className="scroll-mt-24 px-6 pt-16 md:px-10 md:pt-24">
       <Heading
@@ -339,149 +242,80 @@ function HowItWorks() {
             Then <em className="spectrum-text">build from there.</em>
           </>,
         ]}
-        intro="Two practical routes to the same outcome: an application working safely inside your operation."
+        intro="Two practical routes to the same outcome: an application working safely inside your operation. Scroll to walk the route."
       />
-      <div data-reveal className="relative mx-auto mt-9 grid w-fit grid-cols-2 rounded-full border border-line bg-white/60 p-1">
-        <span
-          className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
-          style={{ transform: path === "catalogue" ? "translateX(100%)" : "none" }}
-          aria-hidden
-        />
-        {keys.map((k) => (
-          <button
-            key={k}
-            onClick={() => setPath(k)}
-            aria-pressed={path === k}
-            className={`relative min-h-11 rounded-full px-6 text-sm font-medium transition-colors duration-500 ${
-              path === k ? "text-white" : "text-ink-2 hover:text-ink"
-            }`}
-          >
-            {PATHS[k].label}
-          </button>
-        ))}
-      </div>
-      <p key={p.intro} className="how-swap mx-auto mt-10 max-w-[56ch] text-center text-[16px] leading-relaxed text-ink-2">{p.intro}</p>
-
-      <div className="relative mx-auto mt-10 max-w-6xl">
-        <div className="absolute top-[22px] right-[12%] left-[12%] hidden h-px bg-line md:block" aria-hidden />
-        <div
-          ref={track}
-          className="absolute top-[22px] right-[12%] left-[12%] hidden h-[2px] origin-left md:block"
-          style={{ background: "var(--spectrum)" }}
-          aria-hidden
-        />
-        <ol ref={list} className="relative grid gap-4 md:grid-cols-4 md:gap-5" aria-live="polite">
-          {p.steps.map((s, i) => {
-            const on = i < reached;
-            const tone = `var(--color-${STEP_TONES[i]})`;
-            return (
-              <li key={i} className="how-step flex flex-col items-center text-center" data-on={on || undefined}>
-                <span
-                  className="how-badge tabular relative z-10 flex size-11 items-center justify-center rounded-full text-[13px] font-semibold ring-8 ring-bg"
-                  style={{ ["--tone" as string]: tone }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="mt-5 w-full flex-1 px-3 pb-3">
-                  {/* Keyed by content: only what differs between the two routes re-enters. */}
-                  <p
-                    key={s.when}
-                    className="how-swap eyebrow mt-4"
-                    style={{ color: `color-mix(in oklab, ${tone} 62%, var(--color-ink))`, ["--i" as string]: i, ["--dir" as string]: path === "catalogue" ? 1 : -1 }}
-                  >
-                    {s.when}
-                  </p>
-                  <div
-                    key={s.title}
-                    className="how-swap"
-                    style={{ ["--i" as string]: i + 0.5, ["--dir" as string]: path === "catalogue" ? 1 : -1 }}
-                  >
-                    <p className="mt-3 font-serif text-[23px] leading-[1.1]">{s.title}</p>
-                    <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.text}</p>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-      <p key={p.total} className="how-swap mx-auto mt-10 w-fit rounded-full border border-line bg-white/60 px-5 py-2.5 font-mono text-[11.5px] tracking-[0.1em] text-ink uppercase">
-        {p.total}
-      </p>
+      <Roadmap path={path} setPath={setPath} />
     </section>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
+const FAQ_META: { Icon: LucideIcon; topic: string; tone: string }[] = [
+  { Icon: Layers, topic: "Integration", tone: "cobalt" },
+  { Icon: Database, topic: "Data", tone: "saffron" },
+  { Icon: Lock, topic: "Security", tone: "violet" },
+  { Icon: Bot, topic: "Automation", tone: "emerald" },
+  { Icon: ShieldCheck, topic: "Control", tone: "tangerine" },
+  { Icon: KeyRound, topic: "Ownership", tone: "pink" },
+  { Icon: Target, topic: "Getting started", tone: "cobalt" },
+  { Icon: CalendarClock, topic: "Timeline", tone: "emerald" },
+];
+
 function Faq() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section id="faq" className="scroll-mt-24 px-6 pt-16 md:px-10 md:pt-24">
-      <Heading
-        eyebrow="Before you begin"
-        tone="tangerine"
-        lines={[
-          "Questions enterprise",
-          <>
-            teams <em className="spectrum-text">ask first.</em>
-          </>,
-        ]}
-      />
-      <div data-reveal className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-2 text-sm text-ink-2">
-        {["No rip-and-replace programme", "No perfect data lake required", "Human control stays visible"].map((t, i) => (
-          <span key={t} className="inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-4 py-2">
-            <span className="size-1.5 rounded-full" style={{ background: `var(--color-${["cobalt", "saffron", "emerald"][i]})` }} />
-            {t}
-          </span>
-        ))}
+    <section id="faq" className="faq scroll-mt-24">
+      <div className="faq-side">
+        <div className="faq-sticky">
+          <p data-reveal className="eyebrow inline-flex items-center gap-2.5">
+            <span className="diamond" style={{ color: "var(--color-tangerine)" }} />
+            Before you begin
+          </p>
+          <h2 data-lines className="display faq-title">
+            <Lines lines={["Questions enterprise", <>teams <em className="spectrum-text">ask first.</em></>]} />
+          </h2>
+          <ul className="faq-trust">
+            {[[Layers, "No rip-and-replace programme", "cobalt"], [Database, "No perfect data lake required", "saffron"], [ShieldCheck, "Human control stays visible", "emerald"]].map(([Icon, t, c]) => {
+              const I = Icon as LucideIcon;
+              return (
+                <li key={t as string} style={{ ["--tone" as string]: `var(--color-${c})` }}>
+                  <span><I size={15} /></span>
+                  {t as string}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="faq-help">
+            <div className="faq-help-art" aria-hidden>
+              {["cobalt", "violet", "emerald"].map((t, i) => <span key={t} style={{ ["--tone" as string]: `var(--color-${t})`, ["--i" as string]: i }}>{["RK", "AM", "SN"][i]}</span>)}
+              <i><MessageCircle size={15} /></i>
+            </div>
+            <p className="faq-help-title">Still have a question?</p>
+            <p className="faq-help-text">Bring it to the free AI audit: 30 minutes with the team, about one decision in your operation.</p>
+            <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary">
+              Book a free AI audit
+            </button>
+          </div>
+        </div>
       </div>
-      <ul className="mx-auto mt-9 max-w-4xl border-t border-line">
+      <ul className="faq-list">
         {FAQ.map((f, i) => {
           const on = open === i;
+          const { Icon, topic, tone } = FAQ_META[i];
           return (
-            <li key={f.q} className="border-b border-line">
-              <button
-                id={`faq-q-${i}`}
-                onClick={() => setOpen(on ? null : i)}
-                aria-expanded={on}
-                aria-controls={`faq-a-${i}`}
-                className="group flex w-full items-center gap-6 rounded-xl py-7 text-left"
-              >
-                <span
-                  className="eyebrow tabular w-8 shrink-0 transition-colors duration-[var(--dur-3)] ease-[var(--ease)]"
-                  style={on ? { color: "var(--color-cobalt)" } : undefined}
-                >
-                  {String(i + 1).padStart(2, "0")}
+            <li key={f.q} className="faq-item" data-open={on || undefined} style={{ ["--tone" as string]: `var(--color-${tone})` }}>
+              <button id={`faq-q-${i}`} onClick={() => setOpen(on ? null : i)} aria-expanded={on} aria-controls={`faq-a-${i}`} className="faq-q">
+                <span className="faq-icon"><Icon size={18} /></span>
+                <span className="faq-q-text">
+                  <span className="faq-topic">{String(i + 1).padStart(2, "0")} · {topic}</span>
+                  <span className="faq-q-title">{f.q}</span>
                 </span>
-                <span className="flex-1 font-serif text-[clamp(18px,1.7vw,23px)] leading-[1.25] tracking-[-0.02em]">
-                  {f.q}
-                </span>
-                <span
-                  className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none ${
-                    on ? "rotate-45 border-cobalt bg-cobalt text-white" : "border-line-strong group-hover:border-ink"
-                  }`}
-                  aria-hidden
-                >
-                  <span className="absolute h-px w-3.5 bg-current" />
-                  <span className="absolute h-3.5 w-px bg-current" />
-                </span>
+                <span className="faq-plus" aria-hidden><i /><i /></span>
               </button>
-              <div
-                id={`faq-a-${i}`}
-                role="region"
-                aria-labelledby={`faq-q-${i}`}
-                inert={!on}
-                className="grid transition-[grid-template-rows] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none"
-                style={{ gridTemplateRows: on ? "1fr" : "0fr" }}
-              >
+              <div id={`faq-a-${i}`} role="region" aria-labelledby={`faq-q-${i}`} inert={!on} className="faq-a" style={{ gridTemplateRows: on ? "1fr" : "0fr" }}>
                 <div className="min-h-0 overflow-hidden">
-                  <p
-                    className="max-w-[62ch] pb-8 pl-14 text-[16px] leading-relaxed text-ink-2 transition-[opacity,transform] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none"
-                    style={{ opacity: on ? 1 : 0, transform: on ? "none" : "translateY(-6px)", transitionDelay: on ? "var(--dur-1)" : "0ms" }}
-                  >
-                    {f.a}
-                  </p>
+                  <p>{f.a}</p>
                 </div>
               </div>
             </li>

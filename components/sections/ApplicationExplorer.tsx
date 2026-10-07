@@ -44,6 +44,20 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
     window.setTimeout(() => { go(true); requestAnimationFrame(() => setJumping(false)); }, 180);
   };
 
+  // Area panels above ask for a chapter by application index.
+  useEffect(() => {
+    const onJump = (e: Event) => {
+      const i = indices.indexOf((e as CustomEvent<number>).detail);
+      if (i < 0 || !root.current) return;
+      const top = root.current.getBoundingClientRect().top + window.scrollY;
+      const total = indices.reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
+      const before = indices.slice(0, i).reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
+      scrollToTarget(top + (root.current.offsetHeight - window.innerHeight) * (before + CHAPTER_LENGTHS[indices[i]] * 0.48) / total, true);
+    };
+    window.addEventListener("application-jump", onJump);
+    return () => window.removeEventListener("application-jump", onJump);
+  }, [indices]);
+
   useEffect(() => {
     const nav = chapterNav.current;
     const selectedTab = nav?.querySelector<HTMLElement>('[aria-current="step"]');
