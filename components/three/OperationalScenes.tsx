@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Plant, Storefront } from "./buildings";
 import { Forklift, SemiTruck, TRUCK } from "./vehicles";
+import { Person, Walker } from "./people";
 import { LoadedPallet, Bearing, box, cylX, geo, merge } from "./parts";
 import { aluminium, chrome, enamel, plastic, steel, cladding, darkGlass } from "./materials";
 import { Yard } from "./Actors";
@@ -415,6 +416,16 @@ export function Production({ motion, step }: SceneProps) {
         </group>
       ))}
 
+      {/* Operators at each line's control panel, and a supervisor watching the infeed */}
+      <group position={[2.68, 0, 1.5]} rotation-y={Math.PI / 2 + 0.25} scale={0.5}>
+        <Person look="crew" pose={step === 2 ? "stand" : "point"} seed={0.6} />
+      </group>
+      <group position={[2.68, 0, -0.08]} rotation-y={Math.PI / 2 + 0.25} scale={0.5}>
+        <Person look="warehouse" pose="stand" seed={2.2} />
+      </group>
+      <group position={[-3.1, 0, 1.55]} rotation-y={-0.6} scale={0.5}>
+        <Person look="planner" pose="tablet" seed={4.1} />
+      </group>
       <Route points={[[-1.2, 0.025, 1.65], [-1.2, 0.025, 1.35], [1.5, 0.025, 1.35]]} color={TINTS.saffron} radius={0.012} flow speed={0.4} pulseColor={TINTS.saffron} />
       <AssetLabel position={[-2, 1.45, 0.8]} title="ORDER PO-2207" detail={step === 2 ? "3 lots transferred to Line 02" : "Queue congesting Line 03"} width={2.2} color={step === 2 ? TINTS.emerald : COLORS.signal} />
     </group>
@@ -651,6 +662,12 @@ export function SupplyRisk({ motion, step }: SceneProps) {
         <Container at={[0, 0, 0]} color={TINTS.saffron} />
       </group>
 
+      {/* Port crew: a tally clerk logging the lift, a banksman guiding the crane, a checker walking the stacks */}
+      <group scale={0.11}>
+        <Person look="planner" pose="tablet" seed={0.2} position={[-17, 0, -2.2]} rotation-y={Math.PI / 2 - 0.4} />
+        <Person look="crew" pose="point" seed={1.4} position={[6, 0, -2.4]} rotation-y={Math.PI * 0.75} />
+        <Walker look="warehouse" speed={1.1} path={[[-28, -2.6], [12, -2.6], [12, -1.8], [-28, -1.8]]} />
+      </group>
       {/* Quayside logistics roadway */}
       <Box at={[0, 0.006, 0.5]} size={[7, 0.015, 0.72]} color="#969D9B" />
       {Array.from({ length: 14 }, (_, i) => (
@@ -1022,6 +1039,13 @@ export function Maintenance(props: SceneProps) {
         <group position={[0.18, 0.77, 0.1]} scale={2.8} rotation-x={Math.PI / 2}>
           <Bearing />
         </group>
+      </group>
+      {/* The maintenance technician at the bench, and a reliability engineer pointing at the drive end */}
+      <group position={[2.25, 0, 0.02]} rotation-y={Math.PI / 2} scale={0.72}>
+        <Person look="engineer" pose="tablet" seed={1.1} />
+      </group>
+      <group position={[0.55, 0, 1.3]} rotation-y={Math.PI * 0.6} scale={0.72}>
+        <Person look="crew" pose="point" seed={3.3} />
       </group>
       {/* Motor lowered slightly to guarantee generous camera ceiling headroom */}
       <group position={[0, -0.22, 0]}>

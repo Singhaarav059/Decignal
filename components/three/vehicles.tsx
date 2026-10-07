@@ -4,6 +4,7 @@
 // The truck is a European cab-over tractor with a flatbed trailer; the forklift is a
 // counterbalance truck with a working mast. Wheels roll exactly as far as the vehicle travels.
 import * as THREE from "three";
+import { Person } from "./people";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { aluminium, chrome, darkGlass, enamel, lamp, paint, rubber, steel } from "./materials";
@@ -513,6 +514,8 @@ export function Forklift({ color, lift, children }: { color: string; lift?: () =
         <mesh geometry={forkDark()} material={enamel("#26282D", 0.55)} castShadow />
         <mesh geometry={forkGuardSlats()} material={enamel("#26282D", 0.55)} castShadow />
         <mesh geometry={steeringWheel()} material={rubber()} />
+        {/* The driver, seated, hands on the wheel */}
+        <Person look="warehouse" pose="sit" seed={1.3} position={[-0.47, 1.25, 0]} />
         <mesh position={[-0.82, 2.3, 0.4]} castShadow>
           <cylinderGeometry args={[0.06, 0.07, 0.12, 20]} />
           <meshStandardMaterial ref={beacon} color="#FF8A1E" emissive="#FF8A1E" emissiveIntensity={1} roughness={0.2} />

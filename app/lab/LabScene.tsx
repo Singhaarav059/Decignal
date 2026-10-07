@@ -12,6 +12,7 @@ import { plastic } from "@/components/three/materials";
 import { COLORS, TINTS } from "@/components/three/palette";
 import * as kit from "@/components/three/kit";
 import { Plant } from "@/components/three/buildings";
+import { LOOKS, Person, type Pose } from "@/components/three/people";
 
 const q = () => new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
 
@@ -92,6 +93,16 @@ function Model() {
         <kit.Island tone={Object.values(TINTS)[i]}>
           <M />
         </kit.Island>
+      );
+    }
+    case "people": {
+      const poses: Pose[] = ["stand", "walk", "tablet", "point", "sit", "wave"];
+      return (
+        <group scale={+(p.get("s") ?? 1)}>
+          {Object.keys(LOOKS).map((k, i) => (
+            <Person key={k} look={k} pose={(p.get("pose") as Pose) ?? poses[i]} seed={i * 1.7} position={[0, (p.get("pose") ?? poses[i]) === "sit" ? 0.5 : 0, (i - 2.5) * 0.75]} />
+          ))}
+        </group>
       );
     }
     case "plant":

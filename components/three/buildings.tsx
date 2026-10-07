@@ -3,6 +3,7 @@
 // Buildings and the six source systems, built in code with real materials.
 // Plants are modelled in metres (scaled by the parent); island models in scene units.
 import * as THREE from "three";
+import { Person, Walker } from "./people";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { aluminium, brass, chrome, cladding, clearGlass, concrete, darkGlass, enamel, lamp, paint, plastic, rubber, steel } from "./materials";
@@ -135,7 +136,19 @@ function bollards() {
   return geo("bollards", () => merge([-1, 1].map((s) => cylY(0.12, 1.1, PLANT.door + s * 2.2, 0.55, PLANT.D / 2 + 0.6, 20))));
 }
 
-export function Plant({ accent, name }: { accent: string; name: string }) {
+/** The people who work the plant: a supervisor at the entrance, a marshal by the drive-in door, someone on the apron. */
+function PlantCrew() {
+  const { W, D } = PLANT;
+  return (
+    <group>
+      <Person look="planner" pose="tablet" seed={0.4} position={[W / 2 - 2.9, 0, D / 2 + 0.9]} rotation-y={-Math.PI / 2 - 0.5} />
+      <Person look="crew" pose="point" seed={2.1} position={[PLANT.door + 2.6, 0, D / 2 + 1.3]} rotation-y={Math.PI * 0.85} />
+      <Walker look="engineer" speed={1.1} offset={0.3} path={[[W / 2 - 4.2, D / 2 + 0.8], [-1.6, D / 2 + 0.8], [-1.6, D / 2 + 1.5], [W / 2 - 4.2, D / 2 + 1.5]]} />
+    </group>
+  );
+}
+
+export function Plant({ accent, name, crew = true }: { accent: string; name: string; crew?: boolean }) {
   const { W, D, H } = PLANT;
   const sign = useSign(name, accent, "#FFFFFF");
   const wall = H - 1.2;
@@ -179,6 +192,7 @@ export function Plant({ accent, name }: { accent: string; name: string }) {
         </mesh>
       ))}
       <mesh geometry={bollards()} material={enamel("#FFB21E", 0.4)} castShadow />
+      {crew && <PlantCrew />}
     </group>
   );
 }
@@ -273,6 +287,10 @@ export function ServerRacks() {
   });
   return (
     <group>
+      {/* A data-centre engineer checking the racks on a tablet */}
+      <group position={[0.56, 0.02, 0.44]} rotation-y={2.5} scale={0.34}>
+        <Person look="engineer" pose="tablet" seed={0.8} />
+      </group>
       <mesh geometry={tiles} material={enamel("#E4E6EA", 0.6)} receiveShadow />
       <group position-y={0.02}>
         <mesh geometry={body} material={steel("#202125", 0.45)} castShadow receiveShadow />
@@ -362,6 +380,11 @@ export function Storefront() {
       <group position={[0, 0.47, 0.31]} rotation-x={0.42}>
         <mesh geometry={awning} material={enamel(TINTS.violet, 0.6)} castShadow />
         <mesh geometry={awningB} material={enamel(TINTS.violet, 0.6)} castShadow />
+      </group>
+      {/* Staff at the door and a shopper passing along the pavement */}
+      <group scale={0.13}>
+        <Person look="planner" pose="wave" seed={3.1} position={[1.6, 0, 3.4]} rotation-y={-Math.PI / 2 + 0.3} />
+        <Walker look="shopper" speed={0.9} path={[[-3.6, 4.4], [2.2, 4.4], [2.2, 5.2], [-3.6, 5.2]]} />
       </group>
       {/* A planter by the door and an A-board on the pavement */}
       <mesh position={[0.38, 0.05, 0.42]} material={concrete("#D9D5CD")} castShadow>
@@ -476,6 +499,11 @@ export function Factory() {
           ))}
         </group>
       </group>
+      {/* Line staff: one checks the run on a tablet, one walks the yard */}
+      <group scale={0.065}>
+        <Person look="crew" pose="tablet" seed={1.9} position={[7.2, 0, 8.6]} rotation-y={Math.PI * 0.8} />
+        <Walker look="warehouse" speed={1.0} offset={0.6} path={[[-9, 4.6], [-1, 4.6], [-1, 5.6], [-9, 5.6]]} />
+      </group>
       {[0, 1, 2].map((i) => (
         <mesh
           key={i}
@@ -528,6 +556,8 @@ export function SupplierTruck() {
   return (
     <group rotation-y={0.5} position={[-0.05, 0, 0.05]} scale={0.104}>
       <group position-x={-1.65}>
+        {/* The driver checks the load sheet beside the cab */}
+        <Person look="driver" pose="tablet" seed={2.6} position={[6.2, 0, 1.85]} rotation-y={Math.PI / 2 + 0.6} />
         <SemiTruck accent={TINTS.tangerine}>
           {[3.6, 0.95].map((x) => (
             <group key={x} position={[x, 1.56, 0]} rotation-y={Math.PI / 2}>
