@@ -991,3 +991,20 @@ html.ready .intro-stage {
   .how-step[data-on] .how-badge { transform: none; }
   .how-badge { background: var(--tone); color: #fff; box-shadow: none; }
 }
+
+/* ---- SYSTEMS MARQUEE pass ---- */
+/* The marquee pauses on hover; the system under the pointer takes its marker's colour. */
+.system-item > span:first-child {
+  transition: color var(--dur-3) var(--ease);
+}
+.system-item .diamond {
+  transition: transform var(--dur-3) var(--ease);
+}
+@media (hover: hover) {
+  .system-item:hover > span:first-child {
+    color: color-mix(in oklab, var(--tone) 70%, var(--color-ink));
+  }
+  .system-item:hover .diamond {
+    transform: rotate(135deg) scale(1.4);
+  }
+}

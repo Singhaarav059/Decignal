@@ -119,15 +119,21 @@ function Systems() {
   const row = (reverse: boolean) => (
     <div className="fade-x overflow-hidden">
       <ul
+        aria-label="Systems Decignal works across"
         className="marquee items-center"
         style={{ ["--marquee-speed" as string]: "48s", animationDirection: reverse ? "reverse" : "normal" }}
       >
         {[...STACK, ...STACK].map((s, i) => (
-          <li key={i} className="flex items-center gap-10 pr-10 md:gap-14 md:pr-14">
+          <li
+            key={i}
+            aria-hidden={i >= STACK.length || undefined}
+            className="system-item flex items-center gap-10 pr-10 md:gap-14 md:pr-14"
+            style={{ ["--tone" as string]: `var(--color-${SYSTEM_TONES[i % 6]})` }}
+          >
             <span className="font-serif text-[clamp(28px,3.4vw,48px)] leading-none whitespace-nowrap">
               {s}
             </span>
-            <span className="diamond" style={{ color: `var(--color-${SYSTEM_TONES[i % 6]})` }} />
+            <span aria-hidden className="diamond" style={{ color: "var(--tone)" }} />
           </li>
         ))}
       </ul>
