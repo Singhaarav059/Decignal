@@ -146,14 +146,18 @@ export const DECISION_CARD = 4;
 const UP = Math.PI / 2; // stood up, front face to camera
 const FLIP = -Math.PI / 2; // stood up, back face to camera
 
-export function cardPose(k: number, c: number, t: number, portrait = false): Pose | null {
+export function cardPose(k: number, c: number, t: number, portrait = false, phone = false): Pose | null {
+  // Phones read the layers and functions as a flat deck at full width (components/story/PhoneDeck.tsx);
+  // in 3D they could only be shown a third of that size, so the cards step out for those two chapters.
+  // The decision card only leads into those chapters, so on a phone it waits for Industries.
+  if (phone && (c === CH.decision || c === CH.control || c === CH.scale)) return null;
   switch (c) {
     case CH.decision:
       // Only the decision is shown; the layers wait behind it.
       // Lifted clear of the road, so the truck stays in view as it makes the delivery.
       // Stands in the yard between the two plants, above the road: the truck passes in front of it.
-      // Portrait frames are narrow: set a little further along the yard, so the card is not left cut in half
-      // at the screen's edge while the forklift loads; it passes through in full as the camera follows the truck.
+      // Tablet portrait frames are narrow: set a little further along the yard, so the card is not left cut
+      // in half at the screen's edge while the forklift loads; it passes through as the camera follows the truck.
       return { p: [portrait ? 0.6 : 0, 0.86, -1.25 - (4 - k) * 0.012], rx: UP, ry: 0, s: k === 4 ? 0.85 : 0.81 };
     case CH.control:
       // The decision opens into the layers it was built from.

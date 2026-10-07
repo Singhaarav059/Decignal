@@ -25,6 +25,7 @@ import { ScaleApps } from "./ScaleApps";
 import { IndustryDetail } from "./IndustryDetail";
 import { FinalEngine } from "./FinalEngine";
 import { LayerReadout } from "./LayerReadout";
+import { ScalePhone } from "./ScalePhone";
 import { scrollToTarget } from "../SmoothScroll";
 import { TONE } from "./chapters";
 import { Arrow } from "../ui/Arrow";
@@ -265,7 +266,7 @@ export function Story() {
         <div
           data-ch={CH.control}
           data-interactive
-          className="absolute left-6 top-[15vh] max-w-[560px] max-md:right-6 max-md:bottom-8 max-md:flex max-md:flex-col md:left-10 md:top-[18vh]"
+          className="story-control absolute left-6 top-[15vh] max-w-[560px] max-md:right-6 max-md:bottom-6 max-md:flex max-md:flex-col md:left-10 md:top-[18vh]"
         >
           <Tag n="06" tone={TONE[CH.control]}>Human control</Tag>
           <h2 className="display mt-4 text-[clamp(36px,3.8vw,60px)]">
@@ -278,13 +279,13 @@ export function Story() {
           </p>
           <LayerReadout />
           {/* On phones the controls sit at the foot of the screen, leaving the layers visible above. */}
-          <div className="max-md:mt-auto">
+          <div className="max-md:mt-3">
             <DecisionControls />
           </div>
         </div>
 
         {/* 07 Scale */}
-        <div data-ch={CH.scale} className="absolute inset-x-0 top-[13vh] px-6 text-center">
+        <div data-ch={CH.scale} data-interactive className="story-scale absolute inset-x-0 top-[13vh] px-6 text-center max-md:bottom-6 max-md:flex max-md:flex-col">
           <div className="flex justify-center">
             <Tag n="07" tone={TONE[CH.scale]}>Scale</Tag>
           </div>
@@ -292,10 +293,11 @@ export function Story() {
           <p className="scale-sub mx-auto mt-5 max-w-[46ch] text-[15px] leading-relaxed text-ink-2">
             From stock transfers to service cases, every application reuses the same context and controls.
           </p>
+          <ScalePhone />
         </div>
 
         {/* 07 Scale: what Decignal offers in each function */}
-        <div data-ch={CH.scale} data-interactive className="scale-board absolute inset-x-0 bottom-[8vh] px-6 md:px-10 lg:bottom-[5vh]">
+        <div data-ch={CH.scale} data-interactive className="scale-board absolute inset-x-0 bottom-[8vh] px-6 max-md:hidden md:px-10 lg:bottom-[5vh]">
           <ScaleApps />
         </div>
 

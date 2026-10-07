@@ -340,7 +340,7 @@ function Machine({ at, color, number }: { at: Vec; color: string; number: string
       ))}
       <Box at={[0.44, 1.37, -0.2]} size={[0.035, 0.22, 0.035]} color="#51585B" />
       <Box at={[0.44, 1.49, -0.2]} size={[0.065, 0.07, 0.065]} color={color} />
-      <AssetLabel position={[0, 1.65, 0]} title={number} detail={color === COLORS.signal ? "Capacity constrained" : "Balanced operation"} width={1.5} color={color} />
+      <AssetLabel phone={false} position={[0, 1.65, 0]} title={number} detail={color === COLORS.signal ? "Capacity constrained" : "Balanced operation"} width={1.5} color={color} />
     </group>
   );
 }
@@ -907,6 +907,7 @@ export function DealerNetwork({ motion, step, tone }: SceneProps) {
             <Storefront />
           </group>
           <AssetLabel
+            phone={false}
             position={[0, 1.45, 0]}
             title={`${region} / DEALERS`}
             detail={i === 2 ? (droppedAtWest ? "Allocation +12% fulfilled" : "Orders exceed allocation") : i === 0 ? (droppedAtWest ? "Surplus transferred" : "Surplus within policy") : "Balanced demand"}
@@ -1288,7 +1289,7 @@ export function Finance({ step, motion }: SceneProps) {
         ))}
         {/* Green verified checkmark badge stamp */}
         <Box at={[0.42, 0.025, 0.65]} size={[0.44, 0.008, 0.16]} color={TINTS.emerald} />
-        <AssetLabel position={[0, 0.35, -0.55]} title="PURCHASE ORDER" detail="PO-8842 · 240 units matched" width={1.8} color={TINTS.emerald} />
+        <AssetLabel phone={false} position={[0, 0.35, -0.55]} title="PURCHASE ORDER" detail="PO-8842 · 240 units matched" width={1.8} color={TINTS.emerald} />
       </group>
 
       {/* Document 2 (Middle): GOODS RECEIPT GRN-1049 (MISSING RECEIPT) */}
@@ -1304,7 +1305,7 @@ export function Finance({ step, motion }: SceneProps) {
         {Array.from({ length: 4 }, (_, i) => (
           <Box key={i} at={[0, 0.022, -0.45 + i * 0.14]} size={[1.2, 0.004, 0.02]} color="#D4A7A3" />
         ))}
-        <AssetLabel position={[0, 0.35, -0.55]} title="GOODS RECEIPT" detail="GRN-1049 · Pending delivery" width={1.8} color={COLORS.signal} />
+        <AssetLabel phone={false} position={[0, 0.35, -0.55]} title="GOODS RECEIPT" detail="GRN-1049 · Pending delivery" width={1.8} color={COLORS.signal} />
       </group>
 
       {/* Document 3 (Right Stack): 3 SUPPLIER INVOICES (FANNED PACK) */}
@@ -1329,7 +1330,7 @@ export function Finance({ step, motion }: SceneProps) {
       ))}
 
       {/* Invoice label on top of the pack */}
-      <AssetLabel position={[2.15, 0.45, -0.34]} title="3 SUPPLIER INVOICES" detail={isHeld ? "INV-901..903 · Payment on hold" : "3 invoices received · Awaiting match"} width={2.2} color={isHeld ? COLORS.signal : TINTS.violet} />
+      <AssetLabel phone={false} position={[2.15, 0.45, -0.34]} title="3 SUPPLIER INVOICES" detail={isHeld ? "INV-901..903 · Payment on hold" : "3 invoices received · Awaiting match"} width={2.2} color={isHeld ? COLORS.signal : TINTS.violet} />
 
       {/* Dynamic reconciliation audit vector connections */}
       <Route points={[[-2.05, 0.06, 0.7], [-2.05, 0.06, 1.35], [2.15, 0.06, 1.35], [2.15, 0.06, 0.7]]} color={isHeld ? TINTS.saffron : TINTS.violet} radius={0.022} flow speed={0.32} pulseColor={isHeld ? TINTS.saffron : COLORS.signal} />

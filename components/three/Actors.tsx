@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, RoundedBox } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { easing } from "maath";
-import { CH, INDUSTRIES, blendAt, clamp01, localIn, select, smootherstep, smoothstep, store, weight } from "@/lib/story";
+import { CH, INDUSTRIES, blendAt, clamp01, localIn, select, smootherstep, smoothstep, store, subscribe, weight } from "@/lib/story";
 import {
   CARD,
   CARDS,
@@ -168,7 +168,8 @@ function Tag({ title, value, tone, width = 1.3, alert = false, grow }: { title: 
   const W = 780;
   // Phones see these chips at a third of desktop size: a taller chip lets the text fill it at reading size.
   const compact = useThree((state) => state.size.width < 768);
-  const H = compact ? 300 : 260;
+  // A name-only chip on a phone is one line tall.
+  const H = compact ? (value ? 300 : 150) : 260;
   // When its number changes, the label gives one small pop so the eye catches the update.
   const pop = useRef(0);
   const first = useRef(true);
@@ -195,8 +196,13 @@ function Tag({ title, value, tone, width = 1.3, alert = false, grow }: { title: 
       c.shadowColor = alert ? "rgba(242,54,31,0.35)" : "rgba(20,19,15,0.14)";
       c.shadowBlur = 18;
       c.shadowOffsetY = 6;
+      // A name-only chip hugs its name and sits centred on the label's anchor.
+      const pill = compact && !value;
+      c.font = `700 94px ${sans}`;
+      const pillW = pill ? Math.min(W - 32, c.measureText(title).width + 170) : W - 32;
+      const x0 = pill ? (W - pillW) / 2 : 16;
       c.beginPath();
-      c.roundRect(16, 12, W - 32, H - 34, 52);
+      c.roundRect(x0, 12, pillW, H - 34, 52);
       c.fillStyle = alert ? tone : "#FFFFFF";
       c.fill();
       c.restore();
@@ -217,11 +223,11 @@ function Tag({ title, value, tone, width = 1.3, alert = false, grow }: { title: 
       const vSize = compact ? fit(value, 550, 80, W - 100) : 46;
       c.fillStyle = alert ? "#FFFFFF" : tone;
       c.beginPath();
-      c.arc(74, compact ? 96 : 96, compact ? 22 : 18, 0, Math.PI * 2);
+      c.arc(pill ? x0 + 58 : 74, pill ? 69 : 96, compact ? 22 : 18, 0, Math.PI * 2);
       c.fill();
       c.font = `${compact ? 700 : 650} ${tSize}px ${sans}`;
       c.fillStyle = alert ? "#FFFFFF" : COLORS.ink;
-      c.fillText(title, compact ? 120 : 112, compact ? 96 + tSize * 0.36 : 115);
+      c.fillText(title, pill ? x0 + 104 : compact ? 120 : 112, compact ? (pill ? 69 : 96) + tSize * 0.36 : 115);
       c.font = `${compact ? 550 : 500} ${vSize}px ${sans}`;
       c.fillStyle = alert ? "rgba(255,255,255,0.92)" : compact ? COLORS.ink : COLORS.inkSoft;
       c.globalAlpha = compact && !alert ? 0.72 : 1;
@@ -411,6 +417,10 @@ function IslandTag({ y, ry, children }: { y: number; ry: number; children: React
 export function Islands() {
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
   const phone = useThree((state) => state.size.width < 768);
+  // Context packs the six islands into a tight ring: on a phone the tags carry names only (the facts
+  // are listed above the ring), so neighbouring tags never cover each other.
+  const [ring, setRing] = useState(false);
+  useEffect(() => subscribe((g) => setRing(weight(CH.context, g) > 0.5)), []);
   return (
     <>
       <IslandFocus />
@@ -425,7 +435,7 @@ export function Islands() {
                   <Model />
                 </Island>
                 <IslandTag y={TAG_Y[s]} ry={-ISLANDS[s][2]}>
-                  <Tag title={sys.name} value={phone ? sys.short : `${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? (phone ? .62 : .45) * weight(CH.fragments, store.g) + (phone ? .95 : .75) * weight(CH.context, store.g) : 0) } />
+                  <Tag title={sys.name} value={phone ? (ring ? "" : sys.short) : `${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? (phone ? .62 : .45) * weight(CH.fragments, store.g) + (phone ? .95 : .75) * weight(CH.context, store.g) : 0) } />
                 </IslandTag>
               </Hover>
             </Rise>
@@ -1046,7 +1056,8 @@ function Card({ k }: { k: number }) {
   const ref = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
-  useActor(ref, (c, t) => cardPose(k, c, t, portrait), k * 0.05, 0.11);
+  const phone = useThree((state) => state.size.width < 768);
+  useActor(ref, (c, t) => cardPose(k, c, t, portrait, phone), k * 0.05, 0.11);
   const anim = useRef({ me: 0, other: 0, side: 0 });
   const rim = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), []);
   const rimRef = useRef<THREE.Mesh>(null);

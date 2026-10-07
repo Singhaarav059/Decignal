@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { STACK_ROWS } from "@/lib/content";
 import { BRANDS } from "@/lib/brands";
 
@@ -29,6 +29,12 @@ const READS: Record<string, string> = {
 };
 
 const COUNT = 18;
+const PHONE = "(max-width: 767px)";
+const subscribePhone = (fn: () => void) => {
+  const m = window.matchMedia(PHONE);
+  m.addEventListener("change", fn);
+  return () => m.removeEventListener("change", fn);
+};
 const LOOP_MS = 26000;
 
 /** Growlio-style ribbon: systems flow along one curve, through Decignal, and leave as decisions. */
@@ -40,13 +46,17 @@ export function SystemsRibbon() {
   const tiles = useRef<(HTMLLIElement | null)[]>([]);
   const [feed, setFeed] = useState<number[]>([0, 1, 2]);
   const [reads, setReads] = useState(1284);
+  // Phones run the curve steeply up a narrow stage: each system rides once, spaced out and upright,
+  // so the tiles never touch and their names read level.
+  const phone = useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE).matches, () => false);
+  const count = phone ? SYSTEMS.length : COUNT;
 
   useEffect(() => {
     const p = path.current, el = stage.current, svg = guide.current;
     if (!p || !el || !svg) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const copy = el.parentElement?.querySelector<HTMLElement>(".works-with");
-    const lastZone = new Array(COUNT).fill(-1);
+    const lastZone = new Array(count).fill(-1);
     const t0 = performance.now();
     let raf = 0, visible = true, len = 1;
     // Where the copy sits over the stage, grown by a tile's reach: no tile may pass through it.
@@ -103,10 +113,10 @@ export function SystemsRibbon() {
       const left = c.left - box.left + 12, right = c.right - box.left - 12;
       const top = c.top - box.top + 12, bottom = c.bottom - box.top - 12;
       const phase = reduced ? 0.013 : ((now - t0) % LOOP_MS) / LOOP_MS;
-      for (let i = 0; i < COUNT; i++) {
+      for (let i = 0; i < count; i++) {
         const node = tiles.current[i];
         if (!node) continue;
-        const u = (i / COUNT + phase) % 1;
+        const u = (i / count + phase) % 1;
         const a = p.getPointAtLength(u * len), b = p.getPointAtLength(Math.min(len, u * len + 4));
         const ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
         const zone = a.x >= right ? 2 : a.x > left && a.y > top && a.y < bottom ? 1 : 0;
@@ -115,7 +125,7 @@ export function SystemsRibbon() {
         // over 16px instead of showing through. The paths above keep to the edge or outside it.
         const depth = Math.min(a.x - keep.l, keep.r - a.x, a.y - keep.t, keep.b - a.y);
         const clear = depth <= 0 ? 1 : Math.max(0, 1 - depth / 16);
-        node.style.transform = `translate(${a.x}px, ${a.y}px) translate(-50%, -50%) rotate(${ang}deg)`;
+        node.style.transform = `translate(${a.x}px, ${a.y}px) translate(-50%, -50%) rotate(${phone ? 0 : ang}deg)`;
         node.style.opacity = String(Math.min(1, u / 0.06, (1 - u) / 0.06, clear));
         if (zone !== lastZone[i]) {
           node.dataset.zone = String(zone);
@@ -138,7 +148,7 @@ export function SystemsRibbon() {
     place(t0);
     if (!reduced) raf = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
-  }, []);
+  }, [count, phone]);
 
   return (
     <div ref={stage} className="ribbon-stage">
@@ -148,7 +158,7 @@ export function SystemsRibbon() {
       </svg>
 
       <ul className="ribbon-tiles" aria-label="Systems Decignal reads across">
-        {Array.from({ length: COUNT }, (_, i) => {
+        {Array.from({ length: count }, (_, i) => {
           const s = SYSTEMS[i % SYSTEMS.length];
           return (
             <li

@@ -14,8 +14,10 @@ export const phase = (p: number, a: number, b: number) => THREE.MathUtils.smooth
 export const ramp = (p: number, a: number, b: number) => THREE.MathUtils.clamp((p - a) / (b - a), 0, 1);
 
 /** Canvas px → screen px. Labels keep one reading size in every scene, whatever the camera zoom. */
-const LABEL_SCALE = 0.25;
 const LABEL_RES = 3;
+/** Phones: world width per 680 canvas px for every tag, so all tags share one text size. */
+const PHONE_TAG = 2.8;
+const edge = { c: new THREE.Vector3(), r: new THREE.Vector3() };
 
 /**
  * Industrial equipment telemetry tag: razor-sharp retina canvas, soft lift, status dot.
@@ -23,10 +25,11 @@ const LABEL_RES = 3;
  */
 export function AssetLabel({
   title,
-  detail,
+  detail: detailText,
   position,
   color = "#6E685E",
   width = 2.1,
+  phone = true,
 }: {
   title: string;
   detail?: string;
@@ -34,10 +37,14 @@ export function AssetLabel({
   color?: string;
   width?: number;
   pin?: boolean;
+  /** false: left out on phones, where the scene is too small for every tag and the card lists the fact. */
+  phone?: boolean;
 }) {
   const holder = useRef<THREE.Group>(null);
-  // Phones show the scene at about a third of desktop size: larger type in a slightly larger tag.
+  // Phones show the scene at about a third of desktop size: one line, larger type, the pill hugging its name.
+  // The detail line is left to the evidence card under the scene, which carries the same figures.
   const compact = useThree((state) => state.size.width < 768);
+  const detail = compact ? undefined : detailText;
   const tagK = compact ? 1.22 : 1;
   const ts = compact ? 1.5 : 1;
   const pop = useRef(0);
@@ -59,13 +66,13 @@ export function AssetLabel({
   // The tag grows to fit its text instead of clipping it: long titles widen the pill, never cut it.
   const W = useMemo(() => {
     const m = document.createElement("canvas").getContext("2d")!;
-    m.font = `650 ${34 * ts}px ${sans}`;
+    m.font = `650 ${compact ? 40 * ts : 34}px ${sans}`;
     const t = m.measureText(title).width + 140;
     m.font = `500 ${27 * ts}px ${sans}`;
     const d = detail ? m.measureText(detail).width + 96 : 0;
-    return Math.ceil(Math.max(680, t, d));
+    return Math.ceil(Math.max(compact ? 0 : 680, t, d));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, detail, fontsReady, ts]);
+  }, [title, detail, fontsReady, ts, compact]);
   const H = (detail ? 210 : 126) + (compact ? (detail ? 50 : 30) : 0);
 
   const texture = useMemo(() => {
@@ -133,20 +140,35 @@ export function AssetLabel({
 
   useEffect(() => () => texture.dispose(), [texture]);
 
-  useFrame((_, dt) => {
-    if (!holder.current) return;
+  const plane = ((compact ? PHONE_TAG : width) * W) / 680;
+  useFrame(({ camera, size }, dt) => {
+    const h = holder.current;
+    if (!h) return;
     pop.current = Math.max(0, pop.current - Math.min(dt, 0.05) * 2.4);
     const k = pop.current;
     const bump = Math.sin(Math.min(1, (1 - k) * 2) * Math.PI) * k * 0.12;
-    holder.current.scale.setScalar((1 + bump) * tagK);
+    h.scale.setScalar((1 + bump) * tagK);
+    if (!compact) return;
+    // Phones: a tag near the frame's edge slides along the screen until it sits a margin inside it.
+    // The holder lives under the billboard, so its local x is the camera's right.
+    h.parent!.getWorldPosition(edge.c);
+    edge.r.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(plane * tagK * 0.5).add(edge.c);
+    const cx = edge.c.project(camera).x;
+    const half = Math.abs(edge.r.project(camera).x - cx);
+    if (half < 1e-6) return;
+    const room = 1 - 28 / size.width;
+    const over = Math.max(0, cx + half - room) - Math.max(0, -room - (cx - half));
+    h.position.x = THREE.MathUtils.damp(h.position.x, (-over / half) * plane * tagK * 0.5, 12, Math.min(dt, 0.05));
   });
 
+  if (compact && !phone) return null;
   return (
     <group position={position}>
       <Billboard>
         <group ref={holder}>
           <mesh renderOrder={20}>
-            <planeGeometry args={[(width * W) / 680, (width * H) / 680]} />
+            {/* Phones: one text size for every tag (the pill hugs its text), so long status lines never outgrow the screen. */}
+            <planeGeometry args={[plane, ((compact ? PHONE_TAG : width) * H) / 680]} />
             <meshBasicMaterial map={texture} transparent depthTest={false} depthWrite={false} toneMapped={false} />
           </mesh>
         </group>

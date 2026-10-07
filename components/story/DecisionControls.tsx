@@ -17,7 +17,7 @@ export function DecisionControls() {
 
   return (
     <div
-      className="mt-8 w-[28rem] max-w-full rounded-[22px] border border-white/80 bg-white/65 p-5 shadow-[0_18px_50px_-24px_rgba(20,19,15,0.35)] backdrop-blur-md transition-shadow duration-500 hover:shadow-[0_24px_60px_-24px_rgba(20,19,15,0.42)]"
+      className="mt-8 w-[28rem] max-w-full rounded-[22px] border border-white/80 bg-white/65 p-5 max-md:mt-0 max-md:w-full max-md:p-4 shadow-[0_18px_50px_-24px_rgba(20,19,15,0.35)] backdrop-blur-md transition-shadow duration-500 hover:shadow-[0_24px_60px_-24px_rgba(20,19,15,0.42)]"
       aria-live="polite"
       // While someone is deciding, the decision card in the stack comes forward to be read.
       onPointerEnter={() => (store.focusHint = DECISION_CARD)}

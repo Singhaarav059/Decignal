@@ -20,16 +20,18 @@ const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.06
 const PORTRAIT_X = [0, 0, 0.3, 1.45, 0, 0.6, 0, 0, 0];
 // Leave room for outer source labels and the supplier marker on a phone.
 // Signal frames one object, so portrait screens come in close instead of fitting a wide stage.
-const MOBILE_FIT = [0.68, 0.62, 0.94, 0.9, 0.62, 1.18, 0.8, 0.84, 0.74];
-// Phones only, added to PORTRAIT_X: Problem's chart ran off the right edge, so the week slides left onto the screen.
-const MOBILE_X = [0, 0, 0.42, 0, 0, 0, 0, 0, 0];
+const MOBILE_FIT = [0.68, 0.62, 0.86, 0.9, 0.58, 1.18, 0.8, 0.62, 0.74];
+// Phones only, added to PORTRAIT_X: the signal crate sits on the screen's centre line, and Problem's week of
+// crates is centred (its axis labels hang off the right, so the chart as a whole slides left).
+const MOBILE_X = [0, -0.07, 0.9, 0, 0, 0, 0, 0, 0];
 
 const PORTRAIT_FIT = [0.68, 0.7, 0.9, 1, 0.78];
 // Tablet portrait only: Control's stack sits below the approval widget instead of behind it.
 const TABLET_DROP = [0.035, 0, 0, 0, 0, 0.3, 0, 0, 0];
 // Phones only: Scale's cards sit lower, in the gap between the subtitle and the function board;
-// Problem's chart drops clear of the figures above it.
-const MOBILE_DROP = [0, 0, 0.05, 0, 0, 0, 0.075, 0, 0];
+// the signal crate rises into the middle of the gap between its copy and readout; Problem's chart
+// drops into the middle of the space under its figures.
+const MOBILE_DROP = [0, -0.1, 0.1, 0, 0.05, 0, 0.075, 0, 0];
 // Short phones (under 760 tall): the hero sits a touch lower; Control's stack lifts clear of the approval panel.
 const SHORT_DROP = [0.009, 0, 0, 0, 0, -0.035, 0, 0, 0];
 // Narrow landscape (1024 to 1280 wide): the copy column takes a larger share of the screen, so

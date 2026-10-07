@@ -154,7 +154,7 @@ export function GlanceCards() {
         <strong className="glance-num">8</strong>
         <h3>ready applications</h3>
         <div className="glance-apps" aria-hidden>
-          {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}>{a.name.split(" ").filter((w) => /\w/.test(w)).map((w) => w[0]).join("").slice(0, 2)}</i>)}
+          {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}><b>{a.name.split(" ").filter((w) => /\w/.test(w)).map((w) => w[0]).join("").slice(0, 2)}</b><span>{a.name}</span></i>)}
         </div>
         <p>Inventory to finance, each fitted to your systems and policies.</p>
       </article>
