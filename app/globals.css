@@ -669,7 +669,7 @@ html.ready .intro-stage {
   .story-decision-heading .display { font-size: clamp(32px, 8.6vw, 60px); }
 }
 
-.outcome-figure { display:flex; flex-direction:column; padding:30px; border-radius:24px; color:white; }
+.outcome-figure { display:flex; flex-direction:column; padding:30px; border-radius:26px; color:white; background:var(--fill); }
 .outcome-number { margin-top:28px; font-size:clamp(44px,5vw,68px); font-weight:550; line-height:1; letter-spacing:-0.055em; }
 .outcome-label { margin-top:12px; font-size:14px; line-height:1.5; }
 .outcome-diagram { display:block; width:100%; height:110px; margin-top:24px; overflow:visible; color:white; }
@@ -1402,11 +1402,43 @@ html.ready .intro-stage {
   .ribbon-tile { width: 40px; border-radius: 12px; }
 }
 
+/* Applications head: title left; intro and an index of the five areas right. */
+.apps-head { display: grid; gap: 20px; max-width: 72rem; margin: 0 auto; }
+.apps-title { margin-top: 14px; font-size: clamp(32px, 4vw, 56px); }
+.apps-head-side > p { max-width: 44ch; font-size: 16.5px; line-height: 1.5; color: var(--color-ink-2); }
+.apps-index { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.apps-index button { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 13px; border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--color-ink-2); background: rgb(255 255 255 / .7); box-shadow: inset 0 0 0 1px var(--color-line); transition: color var(--dur-3) var(--ease), background var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease); }
+.apps-index button i { width: 7px; height: 7px; border-radius: 99px; background: var(--tone); transition: transform var(--dur-3) var(--ease); }
+.apps-index button:hover { color: var(--color-ink); background: #fff; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone) 45%, transparent); }
+.apps-index button:hover i { transform: scale(1.35); }
+@media (min-width: 900px) {
+  .apps-head { grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); gap: 40px; align-items: end; padding-inline: 28px; }
+  .apps-title { font-size: clamp(32px, 3.7vw, 54px); }
+  .apps-head-side { padding-bottom: 6px; }
+  .area-stack { margin-top: 36px; }
+}
+
 /* ---- Growlio adaptations ---- */
 /* Area panels: coloured, full width, each sticking a little lower so they stack like cards. */
-.area-stack { display: grid; gap: 24px; max-width: 72rem; margin: 48px auto 0; padding: 0 24px; }
-.area-panel { position: sticky; top: calc(96px + var(--i) * 14px); display: grid; gap: 24px; min-height: 380px; padding: 28px; border-radius: 28px; color: #fff; background: var(--tone); box-shadow: 0 -1px 0 rgb(255 255 255 / .25) inset, 0 30px 60px -40px rgb(20 19 15 / .6); }
-@media (min-width: 900px) { .area-panel { grid-template-columns: 1fr minmax(0, 440px); padding: 40px; min-height: 420px; } }
+.area-stack { --stack-top: 92px; --tab: 14px; display: grid; gap: 24px; max-width: 72rem; margin: 48px auto 0; padding: 0 24px; }
+.area-panel { position: sticky; top: calc(var(--stack-top) + var(--i) * var(--tab)); display: grid; gap: 24px; min-height: 380px; padding: 28px; border-radius: 28px; color: #fff; background: var(--tone); box-shadow: 0 -1px 0 rgb(255 255 255 / .25) inset, 0 30px 60px -40px rgb(20 19 15 / .6); }
+@media (min-width: 900px) {
+  /* Folder stack: every panel sticks one tab lower, so the ones behind stay readable as strips. */
+  /* The bottom pad lets the last panel reach its own tab line, so the finished stack reads as even strips. */
+  .area-stack { --tab: clamp(42px, 6.2svh, 54px); padding-bottom: calc(var(--tab) * 4); }
+  .area-panel { grid-template-columns: 1fr minmax(0, 440px); padding: 18px 40px 40px; min-height: 420px; }
+  .area-copy { min-height: 0; }
+  .area-panel .area-ui { margin-top: 26px; }
+}
+.area-tab { display: flex; align-items: center; gap: 12px; min-height: 28px; text-align: left; color: inherit; cursor: default; }
+.area-tab-name, .area-tab-count { display: none; }
+@media (min-width: 900px) {
+  .area-tab { cursor: pointer; }
+  .area-tab-name { display: inline; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+  .area-tab-count { display: inline; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; background: rgb(255 255 255 / .16); opacity: 0; transition: opacity var(--dur-3) var(--ease); }
+  .area-tab:hover .area-tab-count, .area-tab:focus-visible .area-tab-count { opacity: 1; }
+  .area-tab:hover .area-tab-name { text-decoration: underline; text-underline-offset: 3px; }
+}
 .area-copy { display: flex; flex-direction: column; }
 .area-index { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; opacity: .75; }
 .area-copy h3 { margin-top: auto; padding-top: 20px; font-size: clamp(34px, 4.4vw, 60px); font-weight: 650; letter-spacing: -.045em; line-height: 1; }
@@ -1437,7 +1469,7 @@ html.ready .intro-stage {
 .roadmap-stage { display: none; }
 .roadmap-mobile { display: grid; gap: 14px; }
 .roadmap-mobile > .road-toggle { justify-self: center; }
-.roadmap-mobile > .road-total { justify-self: center; }
+.roadmap-mobile > .road-total { justify-self: center; max-width: 100%; white-space: normal; text-align: center; }
 .roadmap-mobile ol { display: grid; gap: 14px; }
 .roadmap-mobile li { padding: 20px; border-radius: 24px; background: color-mix(in srgb, var(--tone) 7%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 18%, transparent); }
 .roadmap-mobile .eyebrow { margin-top: 12px; }
@@ -1447,7 +1479,17 @@ html.ready .intro-stage {
 @media (min-width: 900px) {
   .roadmap { height: 260svh; }
   .roadmap-mobile { display: none; }
-  .roadmap-stage { display: grid; position: sticky; top: 0; height: 100svh; align-items: start; padding: 96px 0 20px; }
+  .roadmap-stage { display: grid; position: sticky; top: 0; height: 100svh; align-content: start; gap: 22px; padding: 92px 0 20px; }
+  /* The heading rides in the pinned stage, so heading and route share one screen. */
+  .how { padding-top: 0; }
+  .how-head-stacked { display: none; }
+  .roadmap { margin-top: 0; }
+}
+.roadmap-head { display: none; }
+@media (min-width: 900px) {
+  .roadmap-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 30rem); gap: 32px; align-items: end; padding: 0; }
+  .roadmap-title { margin-top: 12px; font-size: clamp(30px, 3.1vw, 46px); }
+  .roadmap-head > p { padding-bottom: 6px; font-size: 15.5px; line-height: 1.5; color: var(--color-ink-2); }
 }
 .roadmap-panel { position: relative; display: grid; gap: 22px; padding: 22px 26px 28px; border-radius: 36px; background: color-mix(in srgb, var(--tone) 7%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 18%, transparent), 0 40px 80px -60px rgb(20 19 15 / .4); transition: background 600ms var(--ease), box-shadow 600ms var(--ease); overflow: hidden; }
 .roadmap-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(color-mix(in srgb, var(--tone) 22%, transparent) 1px, transparent 1.3px); background-size: 20px 20px; mask-image: linear-gradient(180deg, #000, transparent 60%); opacity: .6; }
@@ -1646,13 +1688,69 @@ html.ready .intro-stage {
 @keyframes pipe-dot { from { transform: translateX(0); opacity: 0; } 20% { opacity: 1; } to { transform: translateX(64px); opacity: 0; } }
 
 /* At a glance: every figure gets a picture and a sentence. */
-.glance { max-width: 72rem; margin: 0 auto; padding: 72px 24px 0; }
-.glance-head { text-align: center; }
-.glance-title { margin: 10px auto 0; max-width: 20ch; font-size: clamp(28px, 3.4vw, 46px); font-weight: 650; line-height: 1.04; letter-spacing: -.04em; }
 .glance-title em { font-style: normal; }
-.glance-grid { display: grid; gap: 14px; margin-top: 28px; }
-@media (min-width: 900px) { .glance-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .glance-wide, .glance-card:nth-child(4), .glance-card:nth-child(5) { grid-column: span 2; } .glance-card:nth-child(4), .glance-card:nth-child(5) { display: grid; grid-template-columns: 1fr auto; column-gap: 24px; align-content: start; } .glance-card:nth-child(4) > :is(svg), .glance-card:nth-child(5) > .glance-approve { grid-column: 2; grid-row: 1 / span 3; align-self: center; } .glance-card:nth-child(5) > .glance-approve { min-width: 250px; } }
-@media (min-width: 640px) and (max-width: 899px) { .glance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .glance-wide { grid-column: span 2; } }
+/* Outcome board: the case card and the figures share one screen, bento style. Below 900px the
+   two heads and their content interleave in a single column. */
+.results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 76rem; margin: 0 auto; padding: 72px 24px 0; }
+.results-head, .results-grid { display: contents; }
+.results-head > div:first-child { margin-bottom: 10px; }
+.results-case { order: 1; min-width: 0; }
+.results-head-side { order: 2; margin-top: 48px; margin-bottom: 4px; }
+.results .glance-card { order: 3; }
+.results-note { order: 4; font-size: 11px; color: var(--color-ink-soft); }
+.results-title { margin-top: 14px; font-size: clamp(32px, 3.4vw, 50px); }
+.results-intro { margin-top: 12px; max-width: 46ch; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
+.glance-title { margin-top: 10px; font-size: clamp(24px, 2.2vw, 32px); font-weight: 650; line-height: 1.08; letter-spacing: -.035em; text-wrap: balance; }
+.glance-title em { font-style: normal; }
+@media (min-width: 640px) and (max-width: 899px) {
+  .results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .results-head > div, .results-case, .g-systems, .results-note { grid-column: 1 / -1; }
+}
+@media (min-width: 900px) {
+  .results { display: block; padding: 88px 40px 0; }
+  .results-head { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: end; }
+  .results-head > div:first-child { margin: 0; }
+  .results-head-side { margin: 0; padding: 0 0 4px; }
+  .results-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: auto auto auto; gap: 14px; margin-top: 26px; }
+  .results-case { grid-column: 1 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; min-width: 0; }
+  .g-systems { grid-column: 3 / 5; grid-row: 1; }
+  .results .g-systems { grid-template-columns: .82fr 1.18fr; }
+  .g-weeks { grid-column: 3; grid-row: 2; }
+  .g-apps { grid-column: 4; grid-row: 2; }
+  .g-areas { grid-column: 1 / 3; grid-row: 3; }
+  .g-approver { grid-column: 3 / 5; grid-row: 3; }
+  .results .glance-side { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 28px; align-content: center; }
+  .glance-side > :is(svg, .glance-approve) { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+  .g-approver > .glance-approve { min-width: 236px; margin-top: 0; }
+  .g-areas > .glance-donut { margin-top: 0; }
+  .results .glance-apps i { aspect-ratio: auto; height: 36px; }
+  .results-note { margin-top: 14px; }
+  /* The case card, stacked to fit its half of the board. */
+  /* One coloured card, tabs inside it, so its top edge, radius and inset match the figure tiles. */
+  .results .glance-card { padding: 26px; }
+  .results-case { padding: 18px 26px 26px; border-radius: 26px; color: #fff; background: var(--fill); transition: background 420ms var(--ease); }
+  .results .case-tabs { flex-wrap: wrap; justify-content: flex-start; gap: 6px; padding-bottom: 0; overflow: visible; }
+  .results .case-tabs button { min-height: 34px; padding: 0 13px; font-size: 13px; color: rgb(255 255 255 / .82); background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .22); }
+  .results .case-tabs button:hover { color: #fff; background: rgb(255 255 255 / .18); }
+  .results .case-tabs button i { background: rgb(255 255 255 / .7); }
+  .results .case-tabs button[aria-selected="true"] { color: color-mix(in oklab, var(--tone) 80%, var(--color-ink)); background: #fff; box-shadow: none; }
+  .results .case-tabs button[aria-selected="true"] i { background: var(--tone); }
+  .results .case-visual > .eyebrow { display: none; }
+  .results .case-card:not([hidden]) { display: flex !important; flex-direction: column; justify-content: space-between; flex: 1; gap: 0; padding: 0; min-height: 0; border-radius: 0; background: none; }
+  .results .case-visual { flex: 1; display: flex; flex-direction: column; }
+  .results .case-card .outcome-diagram { flex: 1; height: auto; min-height: 112px; max-height: 190px; margin: auto 0; padding-top: 16px; }
+  .results .case-copy { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 28px; align-items: end; margin-top: 18px; }
+  .results .case-card .outcome-number { margin: 0; font-size: clamp(56px, 5.4vw, 84px); }
+  .results .outcome-label { margin: 0 0 8px; font-size: 15px; font-weight: 550; }
+  .results .outcome-description { grid-column: 1 / -1; margin-top: 16px; }
+  .results .case-copy figcaption { grid-column: 1 / -1; margin-top: 16px; }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  .results .g-systems { grid-template-columns: 1fr; }
+  .results .glance-side { grid-template-columns: 1fr; }
+  .glance-side > :is(svg, .glance-approve) { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 8px; }
+  .g-approver > .glance-approve { min-width: 0; }
+}
 .glance-card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: 26px; overflow: hidden; background: color-mix(in srgb, var(--tone) 8%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 18%, transparent); transition: transform var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease); }
 .glance-card:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone) 40%, transparent), 0 26px 40px -30px var(--tone); }
 .glance-wide { display: grid; grid-template-columns: 1fr 1.1fr; align-items: center; gap: 20px; }
@@ -1719,6 +1817,42 @@ html.ready .intro-stage {
 .faq-a p { max-width: 62ch; padding: 0 22px 20px 74px; font-size: 15.5px; line-height: 1.6; color: var(--color-ink-2); }
 @media (max-width: 640px) { .faq-a p { padding-left: 18px; } .faq-q { padding: 14px; } .faq-icon { width: 36px; height: 36px; } }
 @media (prefers-reduced-motion: reduce) { .faq-a { transition: none; } .faq-help-art span, .faq-help-art i { animation: none; } }
+
+/* FAQ beside the audit brief (wide screens). The FAQ side column unwraps into one column of
+   heading, trust row, questions and a slim help bar; the audit panel stacks its copy over the form. */
+@media (min-width: 1100px) {
+  .ask-board { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 32px; max-width: 80rem; margin: 0 auto; padding: 96px 40px 0; align-items: start; }
+  .ask-board .faq { display: flex; flex-direction: column; gap: 0; max-width: none; margin: 0; padding: 0; }
+  .ask-board :is(.faq-side, .faq-sticky) { display: contents; }
+  .ask-board .faq-title { font-size: clamp(32px, 3vw, 46px); }
+  .ask-board .faq-trust { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 18px; }
+  .ask-board .faq-trust li { font-size: 13px; }
+  .ask-board .faq-trust li span { width: 24px; height: 24px; border-radius: 8px; }
+  .ask-board .faq-list { order: 1; margin-top: 24px; }
+  .ask-board .faq-list { gap: 8px; }
+  .ask-board .faq-q { gap: 12px; padding: 10px 14px; }
+  .ask-board .faq-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .ask-board .faq-q-title { font-size: 16px; }
+  .ask-board .faq-plus { width: 30px; height: 30px; }
+  .ask-board .faq-a p { padding: 0 20px 16px 62px; font-size: 14.5px; line-height: 1.55; }
+  .ask-board .faq-help { order: 2; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 18px; margin-top: 12px; padding: 14px 16px; border-radius: 22px; }
+  .ask-board .faq-help-art { grid-row: 1 / span 2; }
+  .ask-board .faq-help-title { margin: 0; font-size: 15.5px; align-self: end; }
+  .ask-board .faq-help-text { margin: 2px 0 0; font-size: 13px; align-self: start; }
+  .ask-board .faq-help .btn { grid-column: 3; grid-row: 1 / span 2; }
+  .ask-board .audit { padding: 0; }
+  .ask-board .audit-panel { padding: 32px 32px 30px; border-radius: 36px; }
+  .ask-board .audit-grid { grid-template-columns: minmax(0, 1fr); gap: 22px; max-width: none; }
+  .ask-board .audit-title { max-width: 19ch; margin-top: 12px; font-size: clamp(30px, 2.7vw, 40px); }
+  .ask-board .audit-intro { margin-top: 10px; max-width: 52ch; font-size: 15px; }
+  .ask-board .audit-benefits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 18px; border: 0; }
+  .ask-board .audit-benefits li { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 0; border-radius: 16px; background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); }
+  .ask-board .audit-benefits .font-serif { font-size: 14.5px; font-weight: 600; line-height: 1.25; }
+  .ask-board .audit-benefits li > span:last-child > span:last-child { font-size: 12.5px; line-height: 1.4; }
+  .ask-board .audit-card { position: relative; top: auto; padding: 24px 28px 26px; }
+  .ask-board .audit-card .audit-field { padding-block: 12px; }
+  .ask-board .audit-card .audit-form > div:last-child { margin-top: 20px; }
+}
 
 /* Nav: brand left, links in an inner pill with a sliding highlight, one CTA right. */
 .nav-links { position: absolute; left: 50%; translate: -50% 0; align-items: center; gap: 2px; padding: 4px; border-radius: 99px; background: rgb(20 19 15 / .045); box-shadow: inset 0 0 0 1px rgb(20 19 15 / .05); }

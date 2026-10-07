@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, FAQ, OUTCOMES, PATHS } from "@/lib/content";
+import { APPLICATIONS, CATEGORIES, CATEGORY_TONE, FAQ, OUTCOMES, PATHS } from "@/lib/content";
 import { SystemsRibbon } from "./SystemsRibbon";
-import { AreaStack, GlanceGrid, PipelineStrip, Roadmap } from "./GrowlioSections";
+import { AreaStack, GlanceCards, PipelineStrip, Roadmap, showArea } from "./GrowlioSections";
 import { Audit } from "./Audit";
 import { Footer } from "./Footer";
 import { ApplicationExplorer } from "./ApplicationExplorer";
@@ -108,10 +108,12 @@ export function Editorial() {
       <Applications />
       <PipelineStrip />
       <Outcomes />
-      <GlanceGrid />
       <HowItWorks />
-      <Faq />
-      <Audit />
+      {/* Questions and the audit brief share one screen: read an answer, the form stays beside it. */}
+      <div className="ask-board">
+        <Faq />
+        <Audit />
+      </div>
       <Footer />
     </main>
   );
@@ -160,11 +162,25 @@ function Systems() {
 function Applications() {
   return (
     <section id="applications" className="scroll-mt-24 pt-16 md:pt-24">
-      <div className="px-6 md:px-10"><Heading
-        eyebrow="Applications" tone="cobalt"
-        lines={["The same intelligence.", <>Every <em className="spectrum-text">part of your operation.</em></>]}
-        intro="From the first signal to the right action. Follow the decisions as you scroll."
-      /></div>
+      {/* Title left, intro and an index of the five areas right: one row instead of a stacked block. */}
+      <div className="apps-head px-6 md:px-0">
+        <div>
+          <p data-reveal className="eyebrow inline-flex items-center gap-2.5"><span className="diamond" style={{ color: "var(--color-cobalt)" }} />Applications</p>
+          <h2 data-lines className="display apps-title"><Lines lines={["The same intelligence.", <>Every <em className="spectrum-text">part of your operation.</em></>]} /></h2>
+        </div>
+        <div className="apps-head-side">
+          <p data-reveal>From the first signal to the right action. Follow the decisions as you scroll.</p>
+          <ul data-reveal className="apps-index" aria-label="Jump to a business area">
+            {CATEGORIES.map((c, i) => (
+              <li key={c}>
+                <button onClick={() => showArea(i)} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[c]})` }}>
+                  <i aria-hidden />{c}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
       <AreaStack />
       <ApplicationExplorer indices={APPLICATIONS.map((_, i) => i)} />
     </section>
@@ -212,18 +228,34 @@ function Outcomes() {
     }, root);
     return () => ctx.revert();
   }, []);
-  return <section ref={root} id="outcomes" className="scroll-mt-24 px-6 md:px-10">
-    <Heading eyebrow="The outcome" tone="emerald" lines={["Know what changed.", <>See <em className="spectrum-text">why it matters.</em></>]} intro="Every recommendation should end in an operating result you can check." />
-    <div className="outcome-grid outcome-cases mx-auto mt-10 max-w-6xl">
-      <div className="case-tabs" role="tablist" aria-label="Outcomes">
-        {OUTCOMES.map((o,i)=><button key={o.sector} role="tab" aria-selected={tab===i} onClick={()=>setTab(i)} style={{["--tone" as string]:OUTCOME_FILL[i]}}><i />{o.sector}</button>)}
+  // One board, two reads: the case card on the left says what changed, the tiles around it
+  // say what working with Decignal looks like. Below 900px it stacks back into a single column.
+  return <section ref={root} id="outcomes" className="results scroll-mt-24">
+    <div className="results-head">
+      <div>
+        <p data-reveal className="eyebrow inline-flex items-center gap-2.5"><span className="diamond" style={{ color: "var(--color-emerald)" }} />The outcome</p>
+        <h2 data-lines className="display results-title"><Lines lines={["Know what changed.", <>See <em className="spectrum-text">why it matters.</em></>]} /></h2>
+        <p data-reveal className="results-intro">Every recommendation should end in an operating result you can check.</p>
       </div>
-      {OUTCOMES.map((o,i)=><figure key={o.sector} role="tabpanel" hidden={tab!==i} className="outcome-figure case-card" style={{background:OUTCOME_FILL[i]}}>
-        <div className="case-visual"><p className="eyebrow text-white/80!">{o.sector}</p><OutcomeGraphic index={i}/></div>
-        <div className="case-copy"><p className="outcome-number"><CountUp value={o.value} play={seen && tab===i} duration={1100} /></p><p className="outcome-label">{o.label}</p>
-        <p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption></div>
-      </figure>)}
-    </div><p className="mx-auto mt-5 max-w-6xl text-[11px] text-ink-soft">Illustrative decisions from the scenes above. Deployment results are measured against your own baseline.</p>
+      <div className="results-head-side">
+        <p data-reveal className="eyebrow inline-flex items-center gap-2"><span className="diamond" style={{ color: "var(--color-saffron)" }} />At a glance</p>
+        <h3 data-reveal className="glance-title">What working with Decignal <em className="spectrum-text">looks like.</em></h3>
+      </div>
+    </div>
+    <div className="results-grid">
+      <div className="outcome-grid outcome-cases results-case" style={{["--fill" as string]:OUTCOME_FILL[tab]}}>
+        <div className="case-tabs" role="tablist" aria-label="Outcomes">
+          {OUTCOMES.map((o,i)=><button key={o.sector} role="tab" aria-selected={tab===i} onClick={()=>setTab(i)} style={{["--tone" as string]:OUTCOME_FILL[i]}}><i />{o.sector}</button>)}
+        </div>
+        {OUTCOMES.map((o,i)=><figure key={o.sector} role="tabpanel" hidden={tab!==i} className="outcome-figure case-card" style={{["--fill" as string]:OUTCOME_FILL[i]}}>
+          <div className="case-visual"><p className="eyebrow text-white/80!">{o.sector}</p><OutcomeGraphic index={i}/></div>
+          <div className="case-copy"><p className="outcome-number"><CountUp value={o.value} play={seen && tab===i} duration={1100} /></p><p className="outcome-label">{o.label}</p>
+          <p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption></div>
+        </figure>)}
+      </div>
+      <GlanceCards />
+    </div>
+    <p className="results-note">Illustrative decisions from the scenes above. Deployment results are measured against your own baseline.</p>
   </section>;
 }
 
@@ -231,20 +263,27 @@ function Outcomes() {
 
 function HowItWorks() {
   const [path, setPath] = useState<keyof typeof PATHS>("custom");
+  const intro = "Two practical routes to the same outcome: an application working safely inside your operation. Scroll to walk the route.";
+  const title = ["One decision first.", <>Then <em className="spectrum-text">build from there.</em></>];
   return (
-    <section id="how" className="scroll-mt-24 px-6 pt-16 md:px-10 md:pt-24">
-      <Heading
-        eyebrow="How it works"
-        tone="violet"
-        lines={[
-          "One decision first.",
-          <>
-            Then <em className="spectrum-text">build from there.</em>
-          </>,
-        ]}
-        intro="Two practical routes to the same outcome: an application working safely inside your operation. Scroll to walk the route."
+    <section id="how" className="how scroll-mt-24 px-6 pt-16 md:px-10">
+      {/* Phones and tablets read the heading above the stacked steps; wider screens pin it with the panel. */}
+      <div className="how-head-stacked">
+        <Heading eyebrow="How it works" tone="violet" lines={title} intro={intro} />
+      </div>
+      <Roadmap
+        path={path}
+        setPath={setPath}
+        head={
+          <div className="roadmap-head">
+            <div>
+              <p data-reveal className="eyebrow inline-flex items-center gap-2.5"><span className="diamond" style={{ color: "var(--color-violet)" }} />How it works</p>
+              <h2 data-lines className="display roadmap-title"><Lines lines={title} /></h2>
+            </div>
+            <p data-reveal>{intro}</p>
+          </div>
+        }
       />
-      <Roadmap path={path} setPath={setPath} />
     </section>
   );
 }
@@ -293,7 +332,14 @@ function Faq() {
             </div>
             <p className="faq-help-title">Still have a question?</p>
             <p className="faq-help-text">Bring it to the free AI audit: 30 minutes with the team, about one decision in your operation.</p>
-            <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary">
+            <button
+              onClick={() => {
+                scrollToTarget("#audit");
+                // Beside the form, the quickest help is to start it: put the cursor in the first field.
+                window.setTimeout(() => document.querySelector<HTMLInputElement>("#audit input")?.focus({ preventScroll: true }), 900);
+              }}
+              className="btn btn-primary"
+            >
               Book a free AI audit
             </button>
           </div>

@@ -18,18 +18,44 @@ const AREA_COPY: Record<string, { lead: string; signal: string }> = {
 /** Asks the application explorer below to cut to one of its chapters. */
 const openApplication = (index: number) => window.dispatchEvent(new CustomEvent("application-jump", { detail: index }));
 
+/** Asks the area stack to bring one of its panels to the front. */
+export const showArea = (index: number) => window.dispatchEvent(new CustomEvent("area-jump", { detail: index }));
+
 /** Growlio's service panels: one coloured panel per business area, stacking as you scroll. */
 export function AreaStack() {
   const areas = Object.keys(CATEGORY_TONE) as (keyof typeof CATEGORY_TONE)[];
+  const stack = useRef<HTMLDivElement>(null);
+  // Panels stick one tab lower than the one before, so covered panels stay visible as labelled
+  // strips. A strip brings its panel back to the front: scroll to where that panel lands on its sticky line.
+  const bringForward = (i: number) => {
+    const el = stack.current;
+    const panel = el?.children[i] as HTMLElement | undefined;
+    if (!el || !panel) return;
+    // A stuck panel's own offset is where it is pinned, not where it sits in the flow, so add up the panels before it.
+    const gap = parseFloat(getComputedStyle(el).rowGap) || 0;
+    const before = [...el.children].slice(0, i).reduce((sum, p) => sum + (p as HTMLElement).offsetHeight + gap, 0);
+    // Phones do not stack the panels (top is auto), so leave room for the nav instead.
+    const stickTop = parseFloat(getComputedStyle(panel).top);
+    scrollToTarget(el.getBoundingClientRect().top + window.scrollY + before - (Number.isNaN(stickTop) ? 96 : stickTop) + 1);
+  };
+  useEffect(() => {
+    const onJump = (e: Event) => bringForward((e as CustomEvent<number>).detail);
+    window.addEventListener("area-jump", onJump);
+    return () => window.removeEventListener("area-jump", onJump);
+  }, []);
   return (
-    <div className="area-stack" aria-label="Business areas">
+    <div ref={stack} className="area-stack" aria-label="Business areas">
       {areas.map((area, i) => {
         const tone = `var(--color-${CATEGORY_TONE[area]})`;
         const apps = APPLICATIONS.map((a, k) => ({ ...a, k })).filter((a) => a.category === area);
         return (
           <article key={area} className="area-panel" style={{ ["--tone" as string]: tone, ["--i" as string]: i }}>
             <div className="area-copy">
-              <span className="area-index tabular">{String(i + 1).padStart(2, "0")} / {String(areas.length).padStart(2, "0")}</span>
+              <button className="area-tab" onClick={() => bringForward(i)} aria-label={`Show ${area}`}>
+                <span className="area-index tabular">{String(i + 1).padStart(2, "0")} / {String(areas.length).padStart(2, "0")}</span>
+                <span className="area-tab-name">{area}</span>
+                <span className="area-tab-count tabular">{apps.length} {apps.length === 1 ? "application" : "applications"}</span>
+              </button>
               <AreaArt area={area} />
               <h3>{area}</h3>
               <p>{AREA_COPY[area]?.lead}</p>
@@ -96,67 +122,62 @@ export function PipelineStrip() {
 
 /* ------------------------------------------------------------------ */
 
-/** Decignal in figures, each figure with its own small picture and a sentence that explains it. */
-export function GlanceGrid() {
+/** Decignal in figures, each figure with its own small picture and a sentence that explains it.
+ *  Rendered as loose tiles so the outcome board can lay them out around the case card. */
+export function GlanceCards() {
   return (
-    <section className="glance" aria-labelledby="glance-title">
-      <div className="glance-head">
-        <p className="eyebrow inline-flex items-center gap-2"><span className="diamond" style={{ color: "var(--color-saffron)" }} />At a glance</p>
-        <h2 id="glance-title" className="glance-title">What working with Decignal <em className="spectrum-text">looks like.</em></h2>
-      </div>
-      <div className="glance-grid">
-        <article className="glance-card glance-wide" style={{ ["--tone" as string]: "var(--color-cobalt)" }}>
-          <div>
-            <strong className="glance-num">0</strong>
-            <h3>systems replaced</h3>
-            <p>Decignal reads the ERP, MES, CRM and WMS you already run, read-only to start.</p>
-          </div>
-          <div className="glance-systems" aria-hidden>
-            {SYS_ART.map(({ Icon, n, t }, i) => (
-              <span key={n} style={{ ["--tone" as string]: `var(--color-${t})`, ["--i" as string]: i }}><Icon size={16} />{n}</span>
-            ))}
-            <b className="glance-hub"><Sparkles size={18} /></b>
-          </div>
-        </article>
-        <article className="glance-card" style={{ ["--tone" as string]: "var(--color-emerald)" }}>
-          <strong className="glance-num">4–8<small> wks</small></strong>
-          <h3>to the first release</h3>
-          <div className="glance-timeline" aria-hidden>
-            {Array.from({ length: 12 }, (_, w) => <i key={w} data-on={w >= 3 && w < 8 || undefined} />)}
-            <span style={{ left: "29%" }}>W4</span><span style={{ left: "62%" }}>W8</span>
-          </div>
-          <p>From the catalogue. A custom application takes 6 to 12 weeks.</p>
-        </article>
-        <article className="glance-card" style={{ ["--tone" as string]: "var(--color-saffron)" }}>
-          <strong className="glance-num">8</strong>
-          <h3>ready applications</h3>
-          <div className="glance-apps" aria-hidden>
-            {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}>{a.name.split(" ").map((w) => w[0]).join("").slice(0, 2)}</i>)}
-          </div>
-          <p>Inventory to finance, each fitted to your systems and policies.</p>
-        </article>
-        <article className="glance-card" style={{ ["--tone" as string]: "var(--color-violet)" }}>
-          <strong className="glance-num">5</strong>
-          <h3>business areas</h3>
-          <svg className="glance-donut" viewBox="0 0 42 42" aria-hidden>
-            {Object.values(CATEGORY_TONE).map((t, i) => (
-              <circle key={t} r="15.9" cx="21" cy="21" pathLength={100} style={{ stroke: `var(--color-${t})`, strokeDasharray: "18 82", strokeDashoffset: -i * 20 }} />
-            ))}
-          </svg>
-          <p>Supply chain, operations, commercial, customer, finance and risk.</p>
-        </article>
-        <article className="glance-card" style={{ ["--tone" as string]: "var(--color-tangerine)" }}>
-          <strong className="glance-num">1</strong>
-          <h3>named approver per action</h3>
-          <div className="glance-approve" aria-hidden>
-            <span className="glance-avatar">AM</span>
-            <span><b>Transfer 240 units</b><small>Waiting for you</small></span>
-            <span className="glance-btn"><Check size={13} strokeWidth={3} />Approve</span>
-          </div>
-          <p>Human approval can always be required. You set roles and thresholds.</p>
-        </article>
-      </div>
-    </section>
+    <>
+      <article className="glance-card glance-wide g-systems" style={{ ["--tone" as string]: "var(--color-cobalt)" }}>
+        <div>
+          <strong className="glance-num">0</strong>
+          <h3>systems replaced</h3>
+          <p>Decignal reads the ERP, MES, CRM and WMS you already run, read-only to start.</p>
+        </div>
+        <div className="glance-systems" aria-hidden>
+          {SYS_ART.map(({ Icon, n, t }, i) => (
+            <span key={n} style={{ ["--tone" as string]: `var(--color-${t})`, ["--i" as string]: i }}><Icon size={16} />{n}</span>
+          ))}
+          <b className="glance-hub"><Sparkles size={18} /></b>
+        </div>
+      </article>
+      <article className="glance-card g-weeks" style={{ ["--tone" as string]: "var(--color-emerald)" }}>
+        <strong className="glance-num">4–8<small> wks</small></strong>
+        <h3>to the first release</h3>
+        <div className="glance-timeline" aria-hidden>
+          {Array.from({ length: 12 }, (_, w) => <i key={w} data-on={w >= 3 && w < 8 || undefined} />)}
+          <span style={{ left: "29%" }}>W4</span><span style={{ left: "62%" }}>W8</span>
+        </div>
+        <p>From the catalogue. A custom application takes 6 to 12 weeks.</p>
+      </article>
+      <article className="glance-card g-apps" style={{ ["--tone" as string]: "var(--color-saffron)" }}>
+        <strong className="glance-num">8</strong>
+        <h3>ready applications</h3>
+        <div className="glance-apps" aria-hidden>
+          {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}>{a.name.split(" ").map((w) => w[0]).join("").slice(0, 2)}</i>)}
+        </div>
+        <p>Inventory to finance, each fitted to your systems and policies.</p>
+      </article>
+      <article className="glance-card glance-side g-areas" style={{ ["--tone" as string]: "var(--color-violet)" }}>
+        <strong className="glance-num">5</strong>
+        <h3>business areas</h3>
+        <svg className="glance-donut" viewBox="0 0 42 42" aria-hidden>
+          {Object.values(CATEGORY_TONE).map((t, i) => (
+            <circle key={t} r="15.9" cx="21" cy="21" pathLength={100} style={{ stroke: `var(--color-${t})`, strokeDasharray: "18 82", strokeDashoffset: -i * 20 }} />
+          ))}
+        </svg>
+        <p>Supply chain, operations, commercial, customer, finance and risk.</p>
+      </article>
+      <article className="glance-card glance-side g-approver" style={{ ["--tone" as string]: "var(--color-tangerine)" }}>
+        <strong className="glance-num">1</strong>
+        <h3>named approver per action</h3>
+        <div className="glance-approve" aria-hidden>
+          <span className="glance-avatar">AM</span>
+          <span><b>Transfer 240 units</b><small>Waiting for you</small></span>
+          <span className="glance-btn"><Check size={13} strokeWidth={3} />Approve</span>
+        </div>
+        <p>Human approval can always be required. You set roles and thresholds.</p>
+      </article>
+    </>
   );
 }
 
@@ -287,7 +308,7 @@ function StepCard({ index }: { index: number }) {
 }
 
 /** Growlio's roadmap: a pinned panel, a step list with a progress rail, one card per step, advanced by scroll. */
-export function Roadmap({ path, setPath }: { path: keyof typeof PATHS; setPath: (p: keyof typeof PATHS) => void }) {
+export function Roadmap({ path, setPath, head }: { path: keyof typeof PATHS; setPath: (p: keyof typeof PATHS) => void; head?: React.ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const [prog, setProg] = useState(0);
@@ -328,6 +349,7 @@ export function Roadmap({ path, setPath }: { path: keyof typeof PATHS; setPath: 
   return (
     <div ref={root} className="roadmap">
       <div className="roadmap-stage">
+        {head}
         <div className="roadmap-panel" style={{ ["--tone" as string]: tone }}>
           <div className="roadmap-top">
             {toggle}

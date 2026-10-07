@@ -27,25 +27,25 @@ export function Audit() {
   const fill = step === 3 ? 1 : step === 2 ? 0.5 + (done2 / 3) * 0.5 : (done1 / req1.length) * 0.5;
 
   return (
-    <section id="audit" className="scroll-mt-24 px-3 pt-16 md:px-5 md:pt-16">
+    <section id="audit" className="audit scroll-mt-24 px-3 pt-16 md:px-5 md:pt-16">
       <div
-        className="relative overflow-clip rounded-[36px] px-6 py-16 md:rounded-[48px] md:px-14 md:py-16"
+        className="audit-panel relative overflow-clip rounded-[36px] px-6 py-16 md:rounded-[48px] md:px-14 md:py-16"
         style={{ background: "var(--color-cobalt)" }}
       >
-      <div className="relative mx-auto grid max-w-6xl gap-9 md:grid-cols-[1fr_1.1fr]">
-        <div className="text-white">
+      <div className="audit-grid relative mx-auto grid max-w-6xl gap-9 md:grid-cols-[1fr_1.1fr]">
+        <div className="audit-copy text-white">
           <p data-reveal className="eyebrow inline-flex items-center gap-2.5 text-white!">
             <span className="size-1.5 rounded-full bg-white" />
             Free AI audit
           </p>
-          <h2 data-reveal className="display mt-5 max-w-[15ch] text-[clamp(38px,4.4vw,64px)]">
+          <h2 data-reveal className="audit-title display mt-5 max-w-[15ch] text-[clamp(38px,4.4vw,64px)]">
             Bring us the decision that should move faster.
           </h2>
-          <p data-reveal className="mt-7 max-w-[42ch] text-[17px] leading-relaxed text-white/95">
+          <p data-reveal className="audit-intro mt-7 max-w-[42ch] text-[17px] leading-relaxed text-white/95">
             In a focused 30-minute session we identify the workflow, the systems and the measurable outcome worth
             solving first.
           </p>
-          <ol data-reveal className="mt-10 border-t border-white/25">
+          <ol data-reveal className="audit-benefits mt-10 border-t border-white/25">
             {[
               ["A working conversation", "No generic product presentation."],
               ["A practical starting point", "Leave with a clearer first use case."],
