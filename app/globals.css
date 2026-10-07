@@ -699,7 +699,7 @@ html.ready .intro-stage {
 @media(max-width:767px){.outcome-figure{padding:26px}.outcome-number{font-size:52px}.outcome-diagram{max-width:320px;align-self:center}}
 
 /* One stable composition; each chapter has its own physical scene and evidence. */
-.application-journey { position: relative; margin-top: 40px; }
+.application-journey { position: relative; margin-top: 8px; }
 .application-stage { position: sticky; top: 0; height: 100svh; min-height: 620px; overflow: hidden; }
 .application-chapter-bar { position: absolute; top: 82px; left: 5%; right: 5%; z-index: 5; display: flex; border-bottom: 1px solid var(--color-line); overflow-x: auto; scrollbar-width: none; }
 .application-chapter-bar button { flex: 1; position: relative; display: flex; gap: 9px; align-items: center; padding: 12px 10px; white-space: nowrap; font-size: 12.5px; font-weight: 550; color: var(--color-ink-soft); transition: color 300ms; }
@@ -1470,8 +1470,9 @@ html.ready .intro-stage {
 .area-panel { position: sticky; top: calc(var(--stack-top) + var(--i) * var(--tab)); display: grid; gap: 24px; min-height: 380px; padding: 28px; border-radius: 28px; color: #fff; background: var(--tone); box-shadow: 0 -1px 0 rgb(255 255 255 / .25) inset, 0 30px 60px -40px rgb(20 19 15 / .6); }
 @media (min-width: 900px) {
   /* Folder stack: every panel sticks one tab lower, so the ones behind stay readable as strips. */
-  /* The bottom pad lets the last panel reach its own tab line, so the finished stack reads as even strips. */
-  .area-stack { --tab: clamp(42px, 6.2svh, 54px); padding-bottom: calc(var(--tab) * 4); }
+  /* No bottom pad: sticky panels are held by the stack's content box, not its padding, so a pad
+     only left empty space between the last panel and the application explorer. */
+  .area-stack { --tab: clamp(42px, 6.2svh, 54px); }
   .area-panel { grid-template-columns: 1fr minmax(0, 440px); padding: 18px 40px 40px; min-height: 420px; }
   .area-copy { min-height: 0; }
   .area-panel .area-ui { margin-top: 26px; }
@@ -2143,4 +2144,69 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
 @media (prefers-reduced-motion: reduce) {
   html.ready .nav-pill, html.ready .nav-links button, html.ready .nav-cta, .nav-sweep, .nav-links button[aria-current] i::after, .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: none; }
   .nav-peek, .nav-peek-body, .nav-peek-pane, .nav-peek-caret, .nav-links-hl[data-glide] { transition-duration: 0ms; }
+}
+
+/* ---- Phones: one readable composition per screen, nothing behind the copy ---- */
+@media (max-width: 767px) {
+  /* The giant chapter words ran behind the copy and figures on a narrow screen; the headline already names the chapter. */
+  .ghost-word, .application-ghost { display: none; }
+  /* An opened system takes the screen: the headline and Context copy leave rather than show through the islands. */
+  [data-ch][data-dims] > * { transition: opacity 500ms var(--ease-out-quint); }
+  [data-dim] [data-ch] > .display, [data-dim] [data-ch] > .story-positioning, [data-dim] [data-ch][data-dims] > * { opacity: 0; }
+
+  /* Closing board: each result reads in full instead of being cut to two lines. */
+  .fe-outcomes span { display: block; -webkit-line-clamp: none; overflow: visible; font-size: 11.5px; line-height: 1.3; }
+  .fe-outcomes i { margin-top: 8px; }
+
+  /* Application explorer: the 3D scene is the picture and the card carries the figures. The chart's labels
+     drew at 5px here, so the card keeps its readings and conclusion and the scene takes the freed height. */
+  .application-world { top: 35%; height: 37%; }
+  .operation-readout { top: auto; bottom: 58px; padding: 12px 14px; overflow: visible; }
+  .operation-evidence { height: auto; gap: 8px; }
+  .operation-evidence svg { display: none; }
+  .evidence-heading { flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .evidence-heading .spec-label { flex: 1 1 100%; overflow: visible; white-space: normal; text-overflow: clip; font-size: 10px; line-height: 1.35; }
+  .evidence-state { font-size: 10px; }
+  .evidence-metrics { margin-top: 2px; }
+  .evidence-reading { padding-block: 8px; }
+  .evidence-reading-label { font-size: 9.5px; }
+  .evidence-conclusion { font-size: 12.5px; line-height: 1.4; margin-top: 0; }
+  .application-progress { bottom: 12px; font-size: 9.5px; }
+  .application-example { bottom: 34px; font-size: 9.5px; }
+
+  /* Outcome tabs wrap onto a second row instead of running off the right edge. */
+  .results .case-tabs { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; gap: 6px; }
+  .results .case-tabs button { min-height: 36px; padding: 0 13px; font-size: 13px; }
+}
+
+/* Control, phones: the layer the stack is showing, at reading size (components/story/LayerReadout.tsx) */
+.layer-readout { margin-top: 18px; }
+.layer-readout-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.layer-readout-steps button { position: relative; display: grid; gap: 1px; width: 100%; padding: 6px 2px 8px; text-align: left; font-size: 11px; font-weight: 600; color: var(--color-ink-soft); transition: color var(--dur-2) var(--ease); }
+.layer-readout-steps button span { font: 600 9px var(--font-mono); opacity: .8; }
+.layer-readout-steps button::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--color-line-strong); }
+.layer-readout-steps button i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; }
+.layer-readout-steps button[aria-current] { color: var(--color-ink); }
+.layer-readout-steps button[aria-current] span { color: var(--tone); opacity: 1; }
+.layer-readout-steps button[aria-current] i { animation: layer-fill var(--step) linear forwards; }
+.layer-readout[data-held] .layer-readout-steps button[aria-current] i { animation: none; transform: none; }
+.layer-readout-line { margin-top: 10px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.35; color: var(--color-ink); animation: applicationResolve 450ms var(--ease-out-expo) both; }
+@keyframes layer-fill { to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .layer-readout-steps button[aria-current] i { animation: none; transform: none; } .layer-readout-line { animation: none; } }
+
+/* Short phones (iPhone SE, small Androids): drop the second-order copy so nothing stacks into the 3D. */
+@media (max-width: 767px) and (max-height: 760px) {
+  .control-sub { display: none; }
+  .layer-readout { margin-top: 14px; }
+  .final-engine { padding-top: 84px; gap: 12px; }
+  .fe-title { font-size: 30px; }
+  .fe-actions { margin-top: 10px; }
+  .fe-board { gap: 8px; padding: 10px; }
+  .fe-sources li { padding: 7px 8px; gap: 2px; }
+  .fe-sources li > :first-child { display: none; }
+  .fe-core { padding: 10px 12px; }
+  .fe-core-action { font-size: 17px; }
+  .fe-approved { margin-top: 8px; padding: 6px 10px; }
+  .fe-outcomes li { padding: 8px 10px; }
+  .fe-outcomes strong { font-size: 18px; }
 }

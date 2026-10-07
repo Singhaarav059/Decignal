@@ -36,6 +36,10 @@ export function AssetLabel({
   pin?: boolean;
 }) {
   const holder = useRef<THREE.Group>(null);
+  // Phones show the scene at about a third of desktop size: larger type in a slightly larger tag.
+  const compact = useThree((state) => state.size.width < 768);
+  const tagK = compact ? 1.22 : 1;
+  const ts = compact ? 1.5 : 1;
   const pop = useRef(0);
   const first = useRef(true);
   const [fontsReady, setFontsReady] = useState(0);
@@ -55,14 +59,14 @@ export function AssetLabel({
   // The tag grows to fit its text instead of clipping it: long titles widen the pill, never cut it.
   const W = useMemo(() => {
     const m = document.createElement("canvas").getContext("2d")!;
-    m.font = `650 34px ${sans}`;
+    m.font = `650 ${34 * ts}px ${sans}`;
     const t = m.measureText(title).width + 140;
-    m.font = `500 27px ${sans}`;
+    m.font = `500 ${27 * ts}px ${sans}`;
     const d = detail ? m.measureText(detail).width + 96 : 0;
     return Math.ceil(Math.max(680, t, d));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, detail, fontsReady]);
-  const H = detail ? 210 : 126;
+  }, [title, detail, fontsReady, ts]);
+  const H = (detail ? 210 : 126) + (compact ? (detail ? 50 : 30) : 0);
 
   const texture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -90,14 +94,14 @@ export function AssetLabel({
     const m = document.createElement("canvas").getContext("2d")!;
 
     // Status dot
-    const dotY = detail ? 64 : H / 2;
+    const dotY = detail ? 64 * (compact ? 1.25 : 1) : H / 2;
     c.fillStyle = color;
     c.beginPath();
-    c.arc(56, dotY, 13, 0, Math.PI * 2);
+    c.arc(56, dotY, 13 * (compact ? 1.3 : 1), 0, Math.PI * 2);
     c.fill();
 
     // Measure and fit title
-    let titleSize = 40;
+    let titleSize = 40 * ts;
     m.font = `650 ${titleSize}px ${sans}`;
     while (m.measureText(title).width > W - 140 && titleSize > 26) {
       titleSize -= 2;
@@ -105,11 +109,11 @@ export function AssetLabel({
     }
     c.font = `650 ${titleSize}px ${sans}`;
     c.fillStyle = "#14130F";
-    c.fillText(title, 94, detail ? 76 : H / 2 + titleSize * 0.35);
+    c.fillText(title, compact ? 100 : 94, detail ? dotY + titleSize * 0.35 : H / 2 + titleSize * 0.35);
 
     // Measure and fit detail if present
     if (detail) {
-      let detailSize = 31;
+      let detailSize = 31 * ts;
       m.font = `500 ${detailSize}px ${sans}`;
       while (m.measureText(detail).width > W - 90 && detailSize > 22) {
         detailSize -= 2;
@@ -117,7 +121,7 @@ export function AssetLabel({
       }
       c.font = `500 ${detailSize}px ${sans}`;
       c.fillStyle = "#4A463E";
-      c.fillText(detail, 56, 146);
+      c.fillText(detail, 56, compact ? 192 : 146);
     }
 
     const t = new THREE.CanvasTexture(canvas);
@@ -125,7 +129,7 @@ export function AssetLabel({
     t.anisotropy = 16;
     return t;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, detail, color, fontsReady, W, H]);
+  }, [title, detail, color, fontsReady, W, H, compact, ts]);
 
   useEffect(() => () => texture.dispose(), [texture]);
 
@@ -134,7 +138,7 @@ export function AssetLabel({
     pop.current = Math.max(0, pop.current - Math.min(dt, 0.05) * 2.4);
     const k = pop.current;
     const bump = Math.sin(Math.min(1, (1 - k) * 2) * Math.PI) * k * 0.12;
-    holder.current.scale.setScalar(1 + bump);
+    holder.current.scale.setScalar((1 + bump) * tagK);
   });
 
   return (

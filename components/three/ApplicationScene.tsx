@@ -18,7 +18,8 @@ function Camera({kind,motion,still}:{kind:DemoKind;motion:Motion;still:boolean})
   useFrame((_,dt)=>{
     const p=motion.current.progress;
     const close = kind === "maintenance" ? 1 + phase(p, 0.15, 0.45) * 0.06 : 1;
-    const fit = kind === "inventory" ? 10.3 : kind === "maintenance" ? 8.4 : 9;
+    // Phones are width-bound: frame the working area a little tighter so the models and their tags read.
+    const fit = (kind === "inventory" ? 10.3 : kind === "maintenance" ? 8.4 : 9) * (size.width < 768 ? 0.9 : 1);
     const viewHeight = kind === "risk" ? 5.8 : kind === "maintenance" ? 5.2 : kind === "finance" ? 4.2 : kind === "customer" ? 4.6 : kind === "inventory" ? 4.6 : 5.3;
     const zoom = Math.min(size.width / fit, size.height / viewHeight, 120) * close;
     const c = camera as THREE.OrthographicCamera;

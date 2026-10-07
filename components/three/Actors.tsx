@@ -166,7 +166,9 @@ const TAG_RES = 3;
 
 function Tag({ title, value, tone, width = 1.3, alert = false, grow }: { title: string; value: string; tone: string; width?: number; alert?: boolean; grow?: () => number }) {
   const W = 780;
-  const H = 260;
+  // Phones see these chips at a third of desktop size: a taller chip lets the text fill it at reading size.
+  const compact = useThree((state) => state.size.width < 768);
+  const H = compact ? 300 : 260;
   // When its number changes, the label gives one small pop so the eye catches the update.
   const pop = useRef(0);
   const first = useRef(true);
@@ -203,18 +205,30 @@ function Tag({ title, value, tone, width = 1.3, alert = false, grow }: { title: 
         c.lineWidth = 2;
         c.stroke();
       }
+      // Largest size that fits the chip, from the preferred size down.
+      const fit = (text: string, weight: number, size: number, room: number) => {
+        for (; size > 30; size -= 2) {
+          c.font = `${weight} ${size}px ${sans}`;
+          if (c.measureText(text).width <= room) break;
+        }
+        return size;
+      };
+      const tSize = compact ? fit(title, 700, 94, W - 160) : 54;
+      const vSize = compact ? fit(value, 550, 80, W - 100) : 46;
       c.fillStyle = alert ? "#FFFFFF" : tone;
       c.beginPath();
-      c.arc(72, 96, 18, 0, Math.PI * 2);
+      c.arc(74, compact ? 96 : 96, compact ? 22 : 18, 0, Math.PI * 2);
       c.fill();
-      c.font = `650 54px ${sans}`;
+      c.font = `${compact ? 700 : 650} ${tSize}px ${sans}`;
       c.fillStyle = alert ? "#FFFFFF" : COLORS.ink;
-      c.fillText(title, 112, 115);
-      c.font = `500 46px ${sans}`;
-      c.fillStyle = alert ? "rgba(255,255,255,0.88)" : COLORS.inkSoft;
-      c.fillText(value, 56, 192);
+      c.fillText(title, compact ? 120 : 112, compact ? 96 + tSize * 0.36 : 115);
+      c.font = `${compact ? 550 : 500} ${vSize}px ${sans}`;
+      c.fillStyle = alert ? "rgba(255,255,255,0.92)" : compact ? COLORS.ink : COLORS.inkSoft;
+      c.globalAlpha = compact && !alert ? 0.72 : 1;
+      c.fillText(value, 52, compact ? 222 : 192);
+      c.globalAlpha = 1;
     },
-    [title, value, tone, alert],
+    [title, value, tone, alert, compact],
   );
   return (
     <Billboard>
@@ -396,6 +410,7 @@ function IslandTag({ y, ry, children }: { y: number; ry: number; children: React
 
 export function Islands() {
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
+  const phone = useThree((state) => state.size.width < 768);
   return (
     <>
       <IslandFocus />
@@ -410,7 +425,7 @@ export function Islands() {
                   <Model />
                 </Island>
                 <IslandTag y={TAG_Y[s]} ry={-ISLANDS[s][2]}>
-                  <Tag title={sys.name} value={`${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? .45 * weight(CH.fragments, store.g) + .75 * weight(CH.context, store.g) : 0) } />
+                  <Tag title={sys.name} value={phone ? sys.short : `${sys.knows} · ${sys.value}`} tone={tone} width={1.45} grow={() => Math.min(Math.max(0, islandLift[s]), 1) * 0.28 - islandBack[s] * 0.2 + (portrait ? (phone ? .62 : .45) * weight(CH.fragments, store.g) + (phone ? .95 : .75) * weight(CH.context, store.g) : 0) } />
                 </IslandTag>
               </Hover>
             </Rise>

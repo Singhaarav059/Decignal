@@ -24,6 +24,7 @@ import { SystemChips } from "./SystemChips";
 import { ScaleApps } from "./ScaleApps";
 import { IndustryDetail } from "./IndustryDetail";
 import { FinalEngine } from "./FinalEngine";
+import { LayerReadout } from "./LayerReadout";
 import { scrollToTarget } from "../SmoothScroll";
 import { TONE } from "./chapters";
 import { Arrow } from "../ui/Arrow";
@@ -272,9 +273,10 @@ export function Story() {
             <br />
             You decide.
           </h2>
-          <p className="mt-5 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">
+          <p className="control-sub mt-5 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">
             Inspect the evidence. Adjust the quantity. Approve the action. Your policy and your team stay in control.
           </p>
+          <LayerReadout />
           {/* On phones the controls sit at the foot of the screen, leaving the layers visible above. */}
           <div className="max-md:mt-auto">
             <DecisionControls />
@@ -522,7 +524,7 @@ function Facts({ items }: { items: [string, string, boolean?][] }) {
       {items.map(([k, v, risk]) => (
         <div key={k} className="border-line py-3 pr-3 [&+&]:border-l [&+&]:pl-4">
           <dt className="eyebrow">{k}</dt>
-          <dd className="tabular mt-1 text-[22px] font-semibold tracking-[-0.02em]" style={risk ? { color: "var(--color-signal)" } : undefined}>
+          <dd className="tabular mt-1 text-[20px] font-semibold tracking-[-0.02em] whitespace-nowrap md:text-[22px]" style={risk ? { color: "var(--color-signal)" } : undefined}>
             {v}
           </dd>
         </div>

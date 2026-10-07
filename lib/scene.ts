@@ -152,7 +152,9 @@ export function cardPose(k: number, c: number, t: number, portrait = false): Pos
       // Only the decision is shown; the layers wait behind it.
       // Lifted clear of the road, so the truck stays in view as it makes the delivery.
       // Stands in the yard between the two plants, above the road: the truck passes in front of it.
-      return { p: [0, 0.86, -1.25 - (4 - k) * 0.012], rx: UP, ry: 0, s: k === 4 ? 0.85 : 0.81 };
+      // Portrait frames are narrow: set a little further along the yard, so the card is not left cut in half
+      // at the screen's edge while the forklift loads; it passes through in full as the camera follows the truck.
+      return { p: [portrait ? 0.6 : 0, 0.86, -1.25 - (4 - k) * 0.012], rx: UP, ry: 0, s: k === 4 ? 0.85 : 0.81 };
     case CH.control:
       // The decision opens into the layers it was built from.
       // Fanned wide enough that each layer's headline number stays in view.

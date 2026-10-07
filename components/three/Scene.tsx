@@ -20,13 +20,18 @@ const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.06
 const PORTRAIT_X = [0, 0, 0.3, 1.45, 0, 0.6, 0, 0, 0];
 // Leave room for outer source labels and the supplier marker on a phone.
 // Signal frames one object, so portrait screens come in close instead of fitting a wide stage.
-const MOBILE_FIT = [0.68, 0.62, 0.86, 0.82, 0.62, 1.04, 0.8, 1, 0.74];
+const MOBILE_FIT = [0.68, 0.62, 0.94, 0.9, 0.62, 1.18, 0.8, 0.84, 0.74];
+// Phones only, added to PORTRAIT_X: Problem's chart ran off the right edge, so the week slides left onto the screen.
+const MOBILE_X = [0, 0, 0.42, 0, 0, 0, 0, 0, 0];
 
 const PORTRAIT_FIT = [0.68, 0.7, 0.9, 1, 0.78];
 // Tablet portrait only: Control's stack sits below the approval widget instead of behind it.
 const TABLET_DROP = [0.035, 0, 0, 0, 0, 0.3, 0, 0, 0];
-// Phones only: Scale's cards sit lower, in the gap between the subtitle and the function board.
-const MOBILE_DROP = [0, 0, 0, 0, 0, 0, 0.075, 0, 0];
+// Phones only: Scale's cards sit lower, in the gap between the subtitle and the function board;
+// Problem's chart drops clear of the figures above it.
+const MOBILE_DROP = [0, 0, 0.05, 0, 0, 0, 0.075, 0, 0];
+// Short phones (under 760 tall): the hero sits a touch lower; Control's stack lifts clear of the approval panel.
+const SHORT_DROP = [0.009, 0, 0, 0, 0, -0.035, 0, 0, 0];
 // Narrow landscape (1024 to 1280 wide): the copy column takes a larger share of the screen, so
 // Problem's chart steps back and slides right, clear of the stats beside it. Eased in by width.
 // Control's card stack does the same, clear of the approval widget.
@@ -96,8 +101,8 @@ function Rig() {
       goal.t.x += nx;
     }
     if (size.width < 1024) {
-      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width >= 768 ? THREE.MathUtils.lerp(TABLET_DROP[i], TABLET_DROP[j], e) : THREE.MathUtils.lerp(MOBILE_DROP[i], MOBILE_DROP[j], e)) + (size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?.009:0,j===0?.009:0,e) : 0);
-      const dx = THREE.MathUtils.lerp(PORTRAIT_X[i], PORTRAIT_X[j], e);
+      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width >= 768 ? THREE.MathUtils.lerp(TABLET_DROP[i], TABLET_DROP[j], e) : THREE.MathUtils.lerp(MOBILE_DROP[i], MOBILE_DROP[j], e)) + (size.width < 768 && size.height < 760 ? THREE.MathUtils.lerp(SHORT_DROP[i], SHORT_DROP[j], e) : 0);
+      const dx = THREE.MathUtils.lerp(PORTRAIT_X[i], PORTRAIT_X[j], e) + (size.width < 768 ? THREE.MathUtils.lerp(MOBILE_X[i], MOBILE_X[j], e) : 0);
       goal.p.x += dx;
       goal.t.x += dx;
       const d = goal.p.distanceTo(goal.t);
