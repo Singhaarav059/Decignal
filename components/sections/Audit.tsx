@@ -20,6 +20,12 @@ export function Audit() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
 
+  // The progress line fills with the task itself: each required answer moves it on.
+  const req1 = ["name", "email", "company", "role", "country"];
+  const done1 = req1.filter((k) => (k === "email" ? /\S+@\S+\.\S+/.test(data.email ?? "") : (data[k] ?? "").trim())).length;
+  const done2 = [area, (data.decision ?? "").trim(), systems.length ? "y" : ""].filter(Boolean).length;
+  const fill = step === 3 ? 1 : step === 2 ? 0.5 + (done2 / 3) * 0.5 : (done1 / req1.length) * 0.5;
+
   return (
     <section id="audit" className="scroll-mt-24 px-3 pt-16 md:px-5 md:pt-16">
       <div
@@ -28,14 +34,14 @@ export function Audit() {
       >
       <div className="relative mx-auto grid max-w-6xl gap-9 md:grid-cols-[1fr_1.1fr]">
         <div className="text-white">
-          <p data-reveal className="eyebrow inline-flex items-center gap-2.5 text-white/85!">
+          <p data-reveal className="eyebrow inline-flex items-center gap-2.5 text-white!">
             <span className="size-1.5 rounded-full bg-white" />
             Free AI audit
           </p>
           <h2 data-reveal className="display mt-5 max-w-[15ch] text-[clamp(38px,4.4vw,64px)]">
             Bring us the decision that should move faster.
           </h2>
-          <p data-reveal className="mt-7 max-w-[42ch] text-[17px] leading-relaxed text-white/85">
+          <p data-reveal className="mt-7 max-w-[42ch] text-[17px] leading-relaxed text-white/95">
             In a focused 30-minute session we identify the workflow, the systems and the measurable outcome worth
             solving first.
           </p>
@@ -54,7 +60,7 @@ export function Audit() {
                 </span>
                 <span>
                   <span className="block font-serif text-2xl leading-tight">{t}</span>
-                  <span className="mt-1 block text-[15px] text-white/80">{d}</span>
+                  <span className="mt-1 block text-[15px] text-white/95">{d}</span>
                 </span>
               </li>
             ))}
@@ -63,10 +69,25 @@ export function Audit() {
 
         <div
           data-reveal
-          className="self-start rounded-[28px] bg-paper p-6 shadow-[0_40px_80px_-30px_rgba(20,19,15,0.55)] md:sticky md:top-28 md:p-9"
+          className="audit-card relative self-start rounded-[28px] bg-paper p-6 shadow-[0_40px_80px_-30px_rgba(20,19,15,0.55)] md:sticky md:top-28 md:p-9"
         >
+          {/* The card answers each completed step with a brief cobalt ring. */}
+          <span key={step} className="audit-ring" aria-hidden />
+          <div
+            className="audit-progress"
+            role="progressbar"
+            aria-label="Brief progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(fill * 100)}
+          >
+            <span style={{ transform: `scaleX(${fill})` }} />
+            <i data-done={step > 1 || undefined} style={{ left: "50%" }} />
+            <i data-done={step > 2 || undefined} style={{ left: "100%" }} />
+          </div>
           {step < 3 ? (
             <form
+              className="audit-form"
               onSubmit={(e) => {
                 e.preventDefault();
                 // TODO: connect to the CRM / booking backend. Nothing is sent yet.
@@ -79,7 +100,7 @@ export function Audit() {
               </div>
 
               {step === 1 && (
-                <div className="grid gap-x-6 sm:grid-cols-2">
+                <div key="s1" className="audit-step grid gap-x-6 sm:grid-cols-2">
                   <Field label="Full name" placeholder="Priya Raman" name="name" required autoComplete="name" value={data.name} onChange={set("name")} />
                   <Field
                     label="Work email"
@@ -93,7 +114,7 @@ export function Audit() {
                   />
                   <Field label="Company" placeholder="Company name" name="company" required autoComplete="organization" value={data.company} onChange={set("company")} />
                   <Field label="Role" placeholder="Head of Supply Chain" name="role" required autoComplete="organization-title" value={data.role} onChange={set("role")} />
-                  <label className="block border-b border-line py-4">
+                  <label className="audit-field block border-b border-line py-4 transition-colors duration-[var(--dur-3)] focus-within:border-cobalt">
                     <span className="eyebrow">Country</span>
                     <select
                       required
@@ -114,7 +135,7 @@ export function Audit() {
               )}
 
               {step === 2 && (
-                <div>
+                <div key="s2" className="audit-step">
                   <fieldset className="border-b border-line py-5">
                     <legend className="eyebrow">Area</legend>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -125,7 +146,7 @@ export function Audit() {
                       ))}
                     </div>
                   </fieldset>
-                  <label className="block border-b border-line py-5">
+                  <label className="audit-field block border-b border-line py-5 transition-colors duration-[var(--dur-3)] focus-within:border-cobalt">
                     <span className="eyebrow">The decision you want to move faster</span>
                     <textarea
                       required
@@ -133,7 +154,7 @@ export function Audit() {
                       value={data.decision ?? ""}
                       onChange={set("decision")}
                       placeholder="For example: rebalancing stock between plants before shortages hit"
-                      className="mt-2 block w-full resize-none bg-transparent text-[17px] leading-relaxed outline-none placeholder:text-ink-soft/70"
+                      className="mt-2 block w-full resize-none bg-transparent text-[17px] leading-relaxed outline-none placeholder:text-ink-soft/80"
                     />
                   </label>
                   <fieldset className="border-b border-line py-5">
@@ -155,7 +176,7 @@ export function Audit() {
 
               <div className="mt-8 flex items-center justify-between gap-4">
                 {step === 2 ? (
-                  <button type="button" onClick={() => setStep(1)} className="text-sm text-ink-2 hover:text-ink">
+                  <button type="button" onClick={() => setStep(1)} className="rounded text-sm text-ink-2 underline-offset-4 hover:text-ink hover:underline">
                     Back
                   </button>
                 ) : (
@@ -170,9 +191,13 @@ export function Audit() {
               </div>
             </form>
           ) : (
-            <div className="border-t border-line-strong pt-8">
-              <p className="flex items-center gap-2.5 eyebrow text-ok">
-                <span className="size-1.5 rounded-full bg-ok" /> Brief prepared
+            <div className="audit-step pt-2" role="status">
+              <p className="flex items-center gap-2.5 eyebrow audit-ok">
+                <svg className="audit-check" viewBox="0 0 24 24" width="22" height="22" aria-hidden>
+                  <circle cx="12" cy="12" r="10.5" />
+                  <path d="M7.2 12.4l3.2 3.2 6.4-7" />
+                </svg>
+                Brief prepared
               </p>
               <p className="mt-5 font-serif text-4xl leading-[1.05]">
                 Your starting point is ready{data.name ? `, ${data.name.split(" ")[0]}` : ""}.
@@ -185,7 +210,7 @@ export function Audit() {
                 const url = URL.createObjectURL(new Blob([brief], {type:"text/plain"}));
                 const a = document.createElement("a"); a.href=url; a.download="decignal-audit-brief.txt"; a.click(); URL.revokeObjectURL(url);
               }}>Download brief <Arrow /></button>
-              <button className="mt-4 block text-sm text-ink-soft" onClick={() => setStep(2)}>Edit your brief</button>
+              <button className="mt-4 block rounded text-sm text-ink-soft underline-offset-4 hover:text-ink hover:underline" onClick={() => setStep(2)}>Edit your brief</button>
             </div>
           )}
         </div>
@@ -200,12 +225,12 @@ function Field({
   ...p
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="block border-b border-line py-4 transition-colors duration-300 focus-within:border-cobalt">
+    <label className="audit-field block border-b border-line py-4 transition-colors duration-[var(--dur-3)] focus-within:border-cobalt">
       <span className="eyebrow">{label}</span>
       <input
         {...p}
         value={p.value ?? ""}
-        className="mt-2 block w-full bg-transparent text-[17px] outline-none placeholder:text-ink-soft/45"
+        className="mt-2 block w-full bg-transparent text-[17px] outline-none placeholder:text-ink-soft/60"
       />
     </label>
   );
