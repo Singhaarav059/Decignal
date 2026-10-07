@@ -1,6 +1,7 @@
 "use client";
 
 import { APPLICATION_DEMOS, type DemoKind } from "@/lib/application-demos";
+import { CountUp } from "../ui/CountUp";
 
 const STATUS: Record<DemoKind, [string, string, string]> = {
   inventory: ["Day 6 falls below the 175-unit reserve", "240 units available after source reserves", "Day 2 arrival restores the projected balance"],
@@ -373,11 +374,11 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
       {/* Decision Impact Metric Cards (matching Decision section's 3-column card) */}
       {demo?.readings && (
         <dl className="evidence-metrics mt-2 grid grid-cols-3 divide-x divide-line overflow-hidden rounded-xl border border-line bg-paper/90 text-left shadow-[0_2px_8px_-4px_rgba(20,19,15,0.06)]">
-          {demo.readings.map(([k, v]) => (
-            <div key={k} className="min-w-0 px-2.5 py-1.5 md:px-3">
-              <dt className="eyebrow truncate text-[9px] text-ink-soft leading-none">{k}</dt>
+          {demo.readings.map(([k, v], i) => (
+            <div key={k} className="evidence-reading min-w-0 px-2.5 py-1.5 md:px-3" data-active={i === step || undefined}>
+              <dt className="eyebrow evidence-reading-label text-ink-soft leading-none">{k}</dt>
               <dd className="tabular mt-0.5 font-serif text-[12.5px] font-semibold text-ink whitespace-nowrap leading-tight md:text-[14px]">
-                {v}
+                {/^\+?\d/.test(v) && !v.includes(":") ? <CountUp value={v} duration={700} /> : v}
               </dd>
             </div>
           ))}
