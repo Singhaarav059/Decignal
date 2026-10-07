@@ -244,7 +244,9 @@ function Outcomes() {
   useEffect(() => {
     const grid = root.current?.querySelector(".outcome-grid");
     if (!grid) return;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0.35 });
+    // Fires once the grid's top clears the lower quarter of the viewport. A ratio threshold
+    // never trips on phones, where the stacked cards are taller than the screen.
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0, rootMargin: "0px 0px -25% 0px" });
     io.observe(grid);
     return () => io.disconnect();
   }, []);
