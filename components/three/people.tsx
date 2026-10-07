@@ -3,7 +3,7 @@
 // People, built in code and modelled in metres like the vehicles (1.76 m tall, facing +x).
 // Each body segment is one merged, vertex-coloured mesh, so a person costs about a dozen draw calls.
 import * as THREE from "three";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -129,6 +129,9 @@ type PersonProps = React.ComponentProps<"group"> & {
   speed?: number;
 };
 
+const P0 = new THREE.Vector3(), P1 = new THREE.Vector3(), SC = new THREE.Vector3();
+const INV = new THREE.Matrix4(), M4 = new THREE.Matrix4();
+
 const still = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** One person. Joints are groups; the pose drives them each frame, with breathing and small glances. */
@@ -139,8 +142,31 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, .
   const thighLJ = useRef<THREE.Group>(null), thighRJ = useRef<THREE.Group>(null), shinLJ = useRef<THREE.Group>(null), shinRJ = useRef<THREE.Group>(null);
   const upLJ = useRef<THREE.Group>(null), upRJ = useRef<THREE.Group>(null), foLJ = useRef<THREE.Group>(null), foRJ = useRef<THREE.Group>(null);
   const calm = useMemo(() => still(), []);
+  const rootJ = useRef<THREE.Group>(null);
+  const statueJ = useRef<THREE.Mesh>(null);
+  useEffect(() => () => statueJ.current?.geometry.dispose(), []);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, camera, size }) => {
+    // Distance LOD: small on screen, the person is one merged mesh in their last pose (one draw call).
+    const root = rootJ.current, statue = statueJ.current;
+    let far = false;
+    if (root && statue) {
+      root.getWorldPosition(P0);
+      root.getWorldScale(SC);
+      P1.copy(P0);
+      P1.y += 1.76 * SC.y;
+      P0.project(camera);
+      P1.project(camera);
+      const px = (Math.abs(P1.y - P0.y) * size.height) / 2;
+      far = px < (pose === "walk" ? 16 : 30);
+      if (far && statue.userData.ready) {
+        statue.visible = true;
+        if (pelvisJ.current) pelvisJ.current.visible = false;
+        return;
+      }
+      statue.visible = false;
+      if (pelvisJ.current) pelvisJ.current.visible = true;
+    }
     const j = { pelvis: pelvisJ.current, torso: torsoJ.current, head: headJ.current, thighL: thighLJ.current, thighR: thighRJ.current, shinL: shinLJ.current, shinR: shinRJ.current, upL: upLJ.current, upR: upRJ.current, foL: foLJ.current, foR: foRJ.current };
     if (!j.pelvis) return;
     const t = calm ? seed : clock.elapsedTime + seed;
@@ -198,6 +224,17 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, .
     j.upR!.rotation.set(-spread, 0, upR);
     j.foL!.rotation.z = foL;
     j.foR!.rotation.z = foR;
+    if (far && root && statue && !statue.userData.ready) {
+      root.updateMatrixWorld(true);
+      INV.copy(root.matrixWorld).invert();
+      const parts: THREE.BufferGeometry[] = [];
+      j.pelvis.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) parts.push((o as THREE.Mesh).geometry.clone().applyMatrix4(M4.multiplyMatrices(INV, o.matrixWorld)));
+      });
+      statue.geometry = mergeGeometries(parts, false)!;
+      parts.forEach((p) => p.dispose());
+      statue.userData.ready = true;
+    }
   });
 
   const m = skinMat();
@@ -220,7 +257,8 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, .
     </group>
   );
   return (
-    <group {...props}>
+    <group ref={rootJ} {...props}>
+      <mesh ref={statueJ} material={m} visible={false} castShadow />
       <group ref={pelvisJ} position-y={L.hip}>
         <mesh geometry={g.pelvis} material={m} castShadow />
         {side(-1, "L")}

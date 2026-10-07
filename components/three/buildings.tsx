@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Person, Walker } from "./people";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { aluminium, brass, chrome, cladding, clearGlass, concrete, darkGlass, enamel, lamp, paint, plastic, rubber, steel } from "./materials";
+import { aluminium, brass, chrome, cladding, clearGlass, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, rubber, steel } from "./materials";
 import { Bearing, LoadedPallet, Tote, box, cylY, geo, merge, rbox } from "./parts";
 import { Forklift, SemiTruck } from "./vehicles";
 import { CRATE, ISLAND_TOTE } from "@/lib/scene";
@@ -131,6 +131,25 @@ function plantTrim() {
   });
 }
 
+function dockHazard() {
+  return geo("dock-hazard", () => {
+    const { D } = PLANT;
+    return merge([0.6, 4.6].map((x) => new THREE.PlaneGeometry(3.4, 0.26).translate(x, 1.06, D / 2 + 0.035)));
+  });
+}
+
+function bayLines() {
+  return geo("bay-lines", () => {
+    const { D } = PLANT;
+    const parts: THREE.BufferGeometry[] = [];
+    // A truck bay in front of each dock, and a pedestrian walkway along the facade
+    for (const x of [0.6, 4.6]) for (const s of [-1, 1]) parts.push(box(0.12, 0.012, 5.5, x + s * 1.75, 0.006, D / 2 + 3.0));
+    parts.push(box(10.6, 0.012, 0.1, 1.2, 0.006, D / 2 + 0.55));
+    for (let i = 0; i < 9; i++) parts.push(box(0.5, 0.012, 0.32, -1.4 + i * 0.62, 0.006, D / 2 + 0.3));
+    return merge(parts);
+  });
+}
+
 /** Yellow bollards guarding the drive-in door. */
 function bollards() {
   return geo("bollards", () => merge([-1, 1].map((s) => cylY(0.12, 1.1, PLANT.door + s * 2.2, 0.55, PLANT.D / 2 + 0.6, 20))));
@@ -192,6 +211,9 @@ export function Plant({ accent, name, crew = true }: { accent: string; name: str
         </mesh>
       ))}
       <mesh geometry={bollards()} material={enamel("#FFB21E", 0.4)} castShadow />
+      {/* Dock edges in hazard chevrons, and painted bay lines on the apron */}
+      <mesh geometry={dockHazard()} material={hazard()} />
+      <mesh geometry={bayLines()} material={enamel("#F2C230", 0.55)} receiveShadow />
       {crew && <PlantCrew />}
     </group>
   );

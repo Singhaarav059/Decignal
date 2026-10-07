@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { Person } from "./people";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { aluminium, chrome, darkGlass, enamel, lamp, paint, rubber, steel } from "./materials";
+import { aluminium, cabTint, chrome, enamel, lamp, paint, rubber, steel } from "./materials";
 import { Wheel, box, cylX, cylY, cylZ, geo, merge, profile, rbox } from "./parts";
 
 /* ------------------------------------------------------------------ */
@@ -61,15 +61,33 @@ export const TRUCK = {
   axles: [-2.75, -4.06], // trailer axles
 };
 
-function cabShell() {
-  return geo("cab-shell", () =>
+// The cab is built hollow so the driver shows through the glass: a solid lower body up to the
+// beltline (y 2.3), a roof cap above the windows (y 3.18), thin side walls with window openings,
+// a back wall and A-pillars. Outer surfaces match the original one-piece profile.
+const BELT = 2.3;
+const ROOF = 3.18;
+
+function cabLower() {
+  return geo("cab-lower", () =>
     profile(
       [
         [5.95, 1.22],
         [8.08, 1.22],
         [8.22, 1.34],
-        [8.25, 2.3],
-        [8.14, 3.18],
+        [8.25, BELT],
+        [5.95, BELT],
+      ],
+      2.46,
+      0.09,
+    ),
+  );
+}
+
+function cabRoof() {
+  return geo("cab-roof", () =>
+    profile(
+      [
+        [8.14, ROOF],
         [8.06, 3.42],
         [7.9, 3.62],
         [7.62, 3.78],
@@ -77,11 +95,67 @@ function cabShell() {
         [6.15, 3.88],
         [6.0, 3.8],
         [5.95, 3.6],
+        [5.95, ROOF],
       ],
       2.46,
-      0.09,
+      0.06,
     ),
   );
+}
+
+function cabWalls() {
+  return geo("cab-walls", () => {
+    const parts: THREE.BufferGeometry[] = [];
+    const shape = new THREE.Shape();
+    shape.moveTo(5.95, BELT - 0.02);
+    shape.lineTo(8.05, BELT - 0.02);
+    shape.lineTo(7.98, ROOF + 0.02);
+    shape.lineTo(5.95, ROOF + 0.02);
+    shape.closePath();
+    // Door window opening
+    const hole = new THREE.Path();
+    hole.moveTo(7.07, 2.46);
+    hole.lineTo(7.93, 2.46);
+    hole.lineTo(7.88, 3.12);
+    hole.lineTo(7.07, 3.12);
+    hole.closePath();
+    shape.holes.push(hole);
+    for (const s of [-1, 1]) {
+      const g = new THREE.ExtrudeGeometry(shape, { depth: 0.06, bevelEnabled: false, curveSegments: 1 });
+      g.translate(0, 0, s > 0 ? 1.17 : -1.23);
+      parts.push(g);
+    }
+    // Back wall of the sleeper
+    parts.push(box(0.06, ROOF - BELT + 0.04, 2.4, 5.98, (ROOF + BELT) / 2, 0));
+    // A-pillars along the raked windshield edges
+    const a = Math.atan2(0.11, 0.88);
+    for (const s of [-1, 1]) parts.push(rbox(0.09, 0.98, 0.1, 0.03).rotateZ(a).translate(8.17, 2.74, s * 1.18));
+    // Slim B-pillar behind the door window
+    for (const s of [-1, 1]) parts.push(box(0.08, ROOF - BELT, 0.06, 7.03, (ROOF + BELT) / 2, s * 1.2));
+    return merge(parts);
+  });
+}
+
+/** What shows through the glass: dashboard, steering wheel, two seats. */
+function cabInterior() {
+  return geo("cab-interior", () => {
+    const parts: THREE.BufferGeometry[] = [];
+    // Dashboard and instrument binnacle
+    parts.push(rbox(0.42, 0.24, 2.3, 0.06, 7.98, BELT + 0.1, 0));
+    parts.push(rbox(0.2, 0.14, 0.6, 0.05, 7.82, BELT + 0.26, -0.55));
+    // Steering column and wheel (left-hand drive: the driver sits on -z)
+    parts.push(cylX(0.035, 0.36, 7.68, BELT + 0.22, -0.55, 12).rotateZ(0));
+    parts.push(new THREE.TorusGeometry(0.21, 0.025, 10, 36).rotateY(Math.PI / 2).rotateZ(-0.55).translate(7.55, BELT + 0.36, -0.55));
+    // Seats: cushion and backrest, driver and passenger
+    for (const z of [-0.55, 0.55]) {
+      parts.push(rbox(0.5, 0.1, 0.52, 0.05, 7.22, BELT + 0.02, z));
+      parts.push(rbox(0.12, 0.7, 0.52, 0.06, 6.92, BELT + 0.38, z).rotateZ(0));
+      parts.push(rbox(0.1, 0.16, 0.3, 0.04, 6.9, BELT + 0.84, z));
+    }
+    // Sleeper bunk behind the seats
+    parts.push(rbox(0.7, 0.14, 2.2, 0.05, 6.35, BELT + 0.1, 0));
+    return merge(parts);
+  });
 }
 
 function cabDark() {
@@ -328,9 +402,14 @@ export function SemiTruck({ cab = "#30343B", accent, children }: TruckProps) {
       <group ref={body}>
         <Exhaust at={[5.78, 4.08, -0.98]} />
         {/* Tractor */}
-        <mesh geometry={cabShell()} material={paint(cab)} castShadow receiveShadow />
+        <mesh geometry={cabLower()} material={paint(cab)} castShadow receiveShadow />
+        <mesh geometry={cabRoof()} material={paint(cab)} castShadow receiveShadow />
+        <mesh geometry={cabWalls()} material={paint(cab)} castShadow receiveShadow />
+        <mesh geometry={cabInterior()} material={enamel("#2B2D32", 0.8)} />
+        {/* The driver, through the glass */}
+        <Person look="driver" pose="sit" seed={0.9} position={[7.24, BELT + 0.16, -0.55]} />
         <mesh geometry={cabDark()} material={enamel("#2E3035", 0.55)} castShadow />
-        <mesh geometry={cabGlass()} material={darkGlass()} />
+        <mesh geometry={cabGlass()} material={cabTint()} renderOrder={2} />
         <mesh geometry={cabChrome()} material={chrome()} castShadow />
         <mesh geometry={cabMirrors()} material={paint(cab)} castShadow />
         <mesh geometry={chassis()} material={steel("#2A2C31", 0.55)} castShadow />

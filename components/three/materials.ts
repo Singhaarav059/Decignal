@@ -137,6 +137,12 @@ export const darkGlass = () =>
     new THREE.MeshPhysicalMaterial({ color: "#1B232C", roughness: 0.03, metalness: 0.25, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6 }),
   );
 
+/** Vehicle side and windscreen glass: tinted and glossy, but you can see the driver through it. */
+export const cabTint = () =>
+  memo("cabtint", () =>
+    new THREE.MeshPhysicalMaterial({ color: "#26323D", roughness: 0.04, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, opacity: 0.42, depthWrite: false, envMapIntensity: 1.5 }),
+  );
+
 /** Shopfront / skylight glass: pale and reflective. */
 export const clearGlass = () =>
   memo("clearglass", () =>
@@ -177,12 +183,106 @@ export const concrete = (color = "#E2DED6") =>
     return new THREE.MeshStandardMaterial({ color, roughness: 0.92, roughnessMap: r, bumpMap: r, bumpScale: 0.012, metalness: 0 });
   });
 
+/** Road surface: aggregate speckle, two polished tyre tracks, sealed cracks and patch repairs. */
+const asphaltMap = () =>
+  canvasTex("asphalt-map", 1024, 256, (c) => {
+    c.fillStyle = "#4C4E52";
+    c.fillRect(0, 0, 1024, 256);
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    // Patch repairs: slightly darker, crisp-edged rectangles
+    for (let i = 0; i < 4; i++) {
+      c.fillStyle = `rgba(30, 31, 34, ${0.18 + rnd() * 0.12})`;
+      c.fillRect(rnd() * 900, 20 + rnd() * 160, 60 + rnd() * 90, 30 + rnd() * 50);
+    }
+    // Aggregate speckle
+    for (let i = 0; i < 14000; i++) {
+      const v = rnd();
+      c.fillStyle = v > 0.5 ? `rgba(255,255,255,${0.03 + rnd() * 0.05})` : `rgba(0,0,0,${0.05 + rnd() * 0.08})`;
+      c.fillRect(rnd() * 1024, rnd() * 256, 1 + rnd() * 1.5, 1 + rnd() * 1.5);
+    }
+    // Tyre tracks: two darker, smoother bands along the lane
+    for (const y of [0.3, 0.68]) {
+      const g = c.createLinearGradient(0, y * 256 - 22, 0, y * 256 + 22);
+      g.addColorStop(0, "rgba(20,20,22,0)");
+      g.addColorStop(0.5, "rgba(20,20,22,0.22)");
+      g.addColorStop(1, "rgba(20,20,22,0)");
+      c.fillStyle = g;
+      c.fillRect(0, y * 256 - 22, 1024, 44);
+    }
+    // Sealed cracks: thin, dark, wandering lines
+    c.strokeStyle = "rgba(18,18,20,0.55)";
+    c.lineWidth = 1.4;
+    for (let i = 0; i < 7; i++) {
+      let x = rnd() * 1024, y = rnd() * 256;
+      c.beginPath();
+      c.moveTo(x, y);
+      for (let k = 0; k < 8; k++) {
+        x += (rnd() - 0.3) * 30;
+        y += (rnd() - 0.5) * 22;
+        c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+  });
+
 export const asphalt = () =>
   memo("asphalt", () => {
     const r = grain("asphalt", 210, 70).clone();
     r.needsUpdate = true;
     r.repeat.set(8, 2);
-    return new THREE.MeshStandardMaterial({ color: "#4A4C50", roughness: 0.95, roughnessMap: r, bumpMap: r, bumpScale: 0.008 });
+    const map = asphaltMap().clone();
+    map.needsUpdate = true;
+    map.repeat.set(4, 1);
+    return new THREE.MeshStandardMaterial({ color: "#FFFFFF", map, roughness: 0.95, roughnessMap: r, bumpMap: r, bumpScale: 0.008 });
+  });
+
+/** Yellow and black chevrons for dock edges and kerbs. */
+export const hazard = () =>
+  memo("hazard", () => {
+    const map = canvasTex("hazard", 256, 64, (c) => {
+      c.fillStyle = "#F2B91E";
+      c.fillRect(0, 0, 256, 64);
+      c.fillStyle = "#1D1E21";
+      for (let x = -64; x < 320; x += 48) {
+        c.beginPath();
+        c.moveTo(x, 64);
+        c.lineTo(x + 24, 64);
+        c.lineTo(x + 88, 0);
+        c.lineTo(x + 64, 0);
+        c.closePath();
+        c.fill();
+      }
+    });
+    return new THREE.MeshStandardMaterial({ map, roughness: 0.6 });
+  });
+
+/** A printed shipping label: consignee, transfer number, contents and a barcode. */
+export const shipLabel = () =>
+  memo("shiplabel", () => {
+    const map = canvasTex("shiplabel", 256, 176, (c) => {
+      c.fillStyle = "#FFFFFF";
+      c.fillRect(0, 0, 256, 176);
+      c.fillStyle = "#16171A";
+      c.font = "700 22px Arial, sans-serif";
+      c.fillText("TRF-0240", 14, 32);
+      c.font = "500 14px Arial, sans-serif";
+      c.fillText("PLANT 02 > PLANT 01", 14, 54);
+      c.fillText("BEARING X90 · 80 PCS", 14, 74);
+      c.fillRect(14, 84, 228, 2);
+      let x = 16;
+      let k = 3;
+      while (x < 236) {
+        const w = 1 + ((k = (k * 7 + 3) % 11) % 4);
+        c.fillRect(x, 96, w, 56);
+        x += w + 1 + (k % 3);
+      }
+      c.font = "500 11px Arial, sans-serif";
+      c.fillText("4  006381  33393  1", 52, 168);
+      c.fillStyle = "#2F6DF6";
+      c.fillRect(210, 12, 32, 32);
+    });
+    return new THREE.MeshStandardMaterial({ map, roughness: 0.55 });
   });
 
 export const wood = () => memo("wood", () => {

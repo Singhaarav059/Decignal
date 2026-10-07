@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CRATE } from "@/lib/scene";
-import { aluminium, chrome, darkGlass, plastic, rubber, steel, tyre, wood, wrap } from "./materials";
+import { aluminium, chrome, darkGlass, plastic, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
 
 /* ---------------- Geometry helpers ---------------- */
 
@@ -321,6 +321,14 @@ function loadGeometry() {
   });
 }
 
+function labelGeometry() {
+  return geo("pallet-labels", () => {
+    const side = new THREE.PlaneGeometry(0.21, 0.145).translate(0.28, 0.64, 0.408);
+    const end = new THREE.PlaneGeometry(0.21, 0.145).rotateY(Math.PI / 2).translate(0.608, 0.64, -0.14);
+    return merge([side, end]);
+  });
+}
+
 export function LoadedPallet({ tote, wrapped = true }: { tote: THREE.Material; wrapped?: boolean }) {
   return (
     <group>
@@ -331,6 +339,8 @@ export function LoadedPallet({ tote, wrapped = true }: { tote: THREE.Material; w
           <boxGeometry args={[1.21, 0.92, 0.81]} />
         </mesh>
       )}
+      {/* Shipping labels on the long side and one end */}
+      <mesh geometry={labelGeometry()} material={shipLabel()} />
     </group>
   );
 }

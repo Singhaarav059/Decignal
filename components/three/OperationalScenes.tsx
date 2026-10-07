@@ -5,9 +5,9 @@ import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Plant, Storefront } from "./buildings";
 import { Forklift, SemiTruck, TRUCK } from "./vehicles";
-import { Person, Walker } from "./people";
+import { LOOKS, Person, Walker } from "./people";
 import { LoadedPallet, Bearing, box, cylX, geo, merge } from "./parts";
-import { aluminium, chrome, enamel, plastic, steel, cladding, darkGlass } from "./materials";
+import { aluminium, brass, chrome, enamel, paint, plastic, steel, cladding, darkGlass } from "./materials";
 import { Yard } from "./Actors";
 import { SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "./transfer-motion";
 import { M, ROAD_Z, truckX } from "@/lib/scene";
@@ -736,6 +736,15 @@ export function Distribution({ motion, step, tone, commercial = false }: ScenePr
       {/* Pedestrian sidewalk in front of storefronts */}
       <Box at={[1.62, 0.02, -0.05]} size={[3.4, 0.03, 0.6]} color="#DFDCD4" />
 
+      {/* Shoppers on the pavement, and the store's receiver waiting at the pad */}
+      <group scale={0.1}>
+        <Walker look="shopper" speed={0.9} path={[[1, -1.7], [32, -1.7], [32, 0.4], [1, 0.4]]} />
+        <Walker look="planner" speed={1.1} offset={0.5} path={[[1, -1.7], [32, -1.7], [32, 0.4], [1, 0.4]]} />
+        <Walker look={{ ...LOOKS.shopper, shirt: "#2F6DF6", skin: "#8A5A3C", hair: "#141210" }} speed={0.8} offset={0.25} path={[[1, -1.7], [32, -1.7], [32, 0.4], [1, 0.4]]} />
+      </group>
+      <group position={[2.3, 0, 0.3]} rotation-y={Math.PI - 0.3} scale={0.11}>
+        <Person look="warehouse" pose={commercial ? "stand" : "tablet"} seed={2.4} />
+      </group>
       {/* Dedicated Storefront receiving staging pad in front of West Store (NOT inside the building!) */}
       <Box at={[1.62, 0.035, 0.16]} size={[0.95, 0.012, 0.62]} color="#C9AA62" />
 
@@ -930,6 +939,13 @@ export function DealerNetwork({ motion, step, tone }: SceneProps) {
         </group>
       )}
 
+      {/* Dealer staff: the West account manager checks the allocation, East signs off the surplus */}
+      <group position={[2.95, 0, 0.32]} rotation-y={Math.PI * 0.85} scale={0.15}>
+        <Person look="planner" pose={droppedAtWest ? "wave" : "tablet"} seed={1.7} />
+      </group>
+      <group position={[-1.6, 0, 0.36]} rotation-y={Math.PI * 1.15} scale={0.15}>
+        <Person look="crew" pose="tablet" seed={0.3} />
+      </group>
       {/* Central transit corridor track */}
       <Box at={[0, 0.002, 0.95]} size={[7, 0.01, 0.65]} color="#AAAFAA" />
       {Array.from({ length: 14 }, (_, i) => (
@@ -1140,6 +1156,13 @@ export function Customer({ motion, step }: SceneProps) {
         <Bearing />
       </group>
 
+      {/* A quality engineer inspects the part; a service lead briefs from the far side */}
+      <group position={[2.95, 0, 0.95]} rotation-y={Math.PI * 0.9} scale={0.78}>
+        <Person look="engineer" pose="tablet" seed={0.7} />
+      </group>
+      <group position={[-3.0, 0, -0.7]} rotation-y={-0.25} scale={0.78}>
+        <Person look="planner" pose={step === 2 ? "point" : "stand"} seed={2.9} />
+      </group>
       {/* The 14 Service Case Ticket Cards (CAS-01 through CAS-14) */}
       {Array.from({ length: 14 }, (_, i) => (
         <group
@@ -1183,6 +1206,42 @@ export function Customer({ motion, step }: SceneProps) {
 /* ------------------------------------------------------------------ */
 /* 08. FINANCE: Three-way Match & Held Disbursement Ledger            */
 /* ------------------------------------------------------------------ */
+/** A ceramic cup on a saucer with a wisp of steam. */
+function DeskCup({ at }: { at: Vec }) {
+  const steam = useRef<THREE.Mesh[]>([]);
+  useFrame(({ clock }) => {
+    steam.current.forEach((m, i) => {
+      if (!m) return;
+      const k = (clock.elapsedTime * 0.35 + i / 3) % 1;
+      m.position.set(Math.sin(k * 6 + i) * 0.04, 0.42 + k * 0.5, 0);
+      m.scale.setScalar(0.5 + k);
+      (m.material as THREE.MeshStandardMaterial).opacity = Math.sin(k * Math.PI) * 0.35;
+    });
+  });
+  return (
+    <group position={at}>
+      <mesh material={enamel("#F4F2EE", 0.35)} receiveShadow castShadow>
+        <cylinderGeometry args={[0.36, 0.3, 0.035, 40]} />
+      </mesh>
+      <mesh position-y={0.2} material={enamel("#F7F6F3", 0.3)} castShadow>
+        <cylinderGeometry args={[0.24, 0.19, 0.36, 40]} />
+      </mesh>
+      <mesh position-y={0.37} rotation-x={-Math.PI / 2} material={enamel("#4A2E1E", 0.25)}>
+        <circleGeometry args={[0.215, 32]} />
+      </mesh>
+      <mesh position={[0.26, 0.21, 0]} rotation-x={Math.PI / 2} material={enamel("#F7F6F3", 0.3)} castShadow>
+        <torusGeometry args={[0.08, 0.022, 10, 24, Math.PI * 1.3]} />
+      </mesh>
+      {[0, 1, 2].map((i) => (
+        <mesh key={i} ref={(m) => { if (m) steam.current[i] = m; }}>
+          <sphereGeometry args={[0.07, 12, 10]} />
+          <meshStandardMaterial color="#FFFFFF" transparent opacity={0} depthWrite={false} roughness={1} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export function Finance({ step, motion }: SceneProps) {
   const isHeld = step === 2;
 
@@ -1204,6 +1263,19 @@ export function Finance({ step, motion }: SceneProps) {
         </mesh>
       </group>
 
+      {/* Life on the desk: a coffee going cold and the reviewer's pen */}
+      <DeskCup at={[2.65, 0.03, 1.12]} />
+      <group position={[-2.3, 0.07, 1.08]} rotation-y={0.35}>
+        <mesh rotation-z={Math.PI / 2} material={paint("#1F2228", 0.25)} castShadow>
+          <cylinderGeometry args={[0.045, 0.04, 0.78, 20]} />
+        </mesh>
+        <mesh position-x={0.43} rotation-z={-Math.PI / 2} material={brass()} castShadow>
+          <coneGeometry args={[0.04, 0.1, 20]} />
+        </mesh>
+        <mesh position={[-0.22, 0.05, 0]} material={brass()}>
+          <boxGeometry args={[0.3, 0.012, 0.02]} />
+        </mesh>
+      </group>
       {/* Document 1 (Left): PURCHASE ORDER PO-8842 */}
       <group position={[-2.05, 0.05, -0.4]}>
         <Box at={[0, 0, 0]} size={[1.65, 0.035, 1.95]} color="#FFFDF9" />
