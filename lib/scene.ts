@@ -43,6 +43,7 @@ export function islandPose(s: number, c: number, portrait = false): Pose | null 
   const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[s];
   switch (c) {
     case CH.fragments:
+    case CH.final: // The story ends where it began: the same six systems, now connected.
       return { p: [x, 0, z], ry, s: 1.1 };
     case CH.context: {
       const [rx, rz] = RING(s);
@@ -91,7 +92,8 @@ export function signalCratePose(c: number, t: number, portrait = false): Pose | 
   const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[WMS];
   const [ox, oy, oz] = CRATE_ON_ISLAND;
   switch (c) {
-    case CH.fragments: {
+    case CH.fragments:
+    case CH.final: {
       const cs = Math.cos(ry);
       const sn = Math.sin(ry);
       const k = 1.1; // island scale
@@ -165,7 +167,8 @@ export function cardPose(k: number, c: number, t: number): Pose | null {
         : null;
     case CH.final:
       // Keeps the last industry's half turn (5π) and simply lies down; its face is drawn rotated to match.
-      return k === DECISION_CARD ? { p: [0, (CARD.t / 2) * 1.6, 0.2], rx: 0, ry: 0.18 + Math.PI * 5, s: 1.6 } : null;
+      // It settles at the hub the six systems feed, as the decision they resolved into.
+      return k === DECISION_CARD ? { p: [0, 0.16, -1.2], rx: 0, ry: Math.PI * 5, s: 1.0 } : null;
     default:
       return null;
   }
@@ -200,7 +203,9 @@ export function cameraPose(c: number, t: number, portrait = false): Cam {
     case CH.industries:
       return { p: [0, 2.45, 8.6], t: [0, 0.85, 0] };
     default:
-      return { p: [0, 4.2, 7.0], t: [0, 0.15, -0.1] };
+      // Decide: back to the opening angle, stepped out so the resolved network sits between headline and actions.
+      if (portrait) return { p: [0, 15.5, 15.5], t: [0, 0.3, -1.2] };
+      return { p: [0, 10.4 - t * 0.3, 20.4 - t * 0.5], t: [0, 0.72, -1.4] };
   }
 }
 
