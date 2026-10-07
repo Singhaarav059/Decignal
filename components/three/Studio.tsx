@@ -23,12 +23,15 @@ export function Studio({ resolution = 1024 }: { resolution?: number }) {
   );
 }
 
-/** Key light: one sun-like source with a crisp, slightly softened shadow. */
+/** Key light: warm late-morning sun with a crisp, slightly softened shadow, and a cool sky fill. */
 export function KeyLight({ extent = 11 }: { extent?: number }) {
   return (
+    <>
+    <hemisphereLight args={["#DCE6F5", "#F3E6D3", 0.35]} />
     <directionalLight
-      position={[5, 11, 7]}
-      intensity={1.5}
+      position={[6, 10, 7]}
+      color="#FFE8CC"
+      intensity={1.65}
       castShadow
       shadow-mapSize={[4096, 4096]}
       shadow-bias={-0.0002}
@@ -41,5 +44,6 @@ export function KeyLight({ extent = 11 }: { extent?: number }) {
       shadow-camera-near={1}
       shadow-camera-far={40}
     />
+    </>
   );
 }

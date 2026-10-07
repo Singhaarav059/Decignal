@@ -66,3 +66,20 @@ Verified with headless Chromium at DPR 2, at 1440×900, 768×1024 and 390×844, 
 - **Open:**
   - When an island is opened from the list, the scene slides left under the dimmed copy (pre-existing).
   - The empty band under the phone ring.
+
+## 5. Decision (05) (4 iterations, cap reached)
+
+- **Baseline:**
+  - Desktop tracking shot was clear.
+  - On phones the scene was a thin strip, about 20% of the screen.
+  - Lighting was neutral studio white.
+- **Built:**
+  - Warm late-morning key light (#FFE8CC) plus a cool hemisphere sky fill. This is global, so every chapter warms slightly.
+  - Closer portrait tracking shot (`MOBILE_FIT` 0.62, `PORTRAIT_FIT` 0.78).
+  - Scene lifted on portrait (`PORTRAIT_DROP` −0.12). The first try (+0.2) pushed it into the controls and was reverted.
+  - The "Plant 02 left" label wraps instead of truncating at 390.
+- **Evidence:** CLS 0.008 / 0.005 / 0.001. 0 errors. Reduced-motion run clean.
+- **Scores:** clarity 9 · layout 8 · polish 8 · motion 8 · cohesion 8 · performance 8.
+- **Open:**
+  - The brief's camera tilt between Signal, Context and Approval is not built yet.
+  - The warmth is subtle; judge it at DPR 2 on a real screen.

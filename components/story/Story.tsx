@@ -242,7 +242,7 @@ export function Story() {
                 ["Cost", "INR 38k"],
               ].map(([k, v]) => (
                 <div key={k} className="min-w-0 px-3 py-3 md:px-5">
-                  <dt className="eyebrow truncate md:whitespace-nowrap">{k}</dt>
+                  <dt className="eyebrow md:whitespace-nowrap">{k}</dt>
                   <dd data-stock={k === "Plant 02 left" ? "" : undefined} className="tabular mt-1 font-serif text-xl whitespace-nowrap md:text-[26px]">
                     {v}
                   </dd>
