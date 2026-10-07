@@ -1178,6 +1178,8 @@ html.ready .intro-stage {
   .audit-ring, .audit-step { animation: none; }
   .audit-progress > span, .audit-progress > i { transition: none; }
   .audit-check circle, .audit-check path { animation: none; stroke-dashoffset: 0; }
+}
+
 /* ---- Control pass ---- */
 .roll-num { display: inline; }
 .roll-digit { position: relative; display: inline-block; line-height: 1.15; clip-path: inset(0); }
