@@ -26,8 +26,9 @@ export function IndustryDetail() {
         b.style.opacity = String(w);
         b.style.transform = `translate3d(0, ${(k - f) * 14}px, 0)`;
         b.style.visibility = w < 0.01 ? "hidden" : "visible";
-        // Past the midpoint the card unfolds: its rows, checks and figures arrive in sequence.
-        b.toggleAttribute("data-on", w > 0.55);
+        // The card unfolds as soon as its frame starts to appear, so the glass is never seen empty:
+        // rows, checks and figures arrive in sequence while the frame fades in, and leave as it fades out.
+        b.toggleAttribute("data-on", w > 0.08);
       });
       const now = Math.round(f);
       if (bar) bar.style.transform = `translateY(${f * 100}%)`;

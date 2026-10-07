@@ -11,7 +11,9 @@ import { TINTS } from "../three/palette";
 import { OperationEvidence } from "./OperationEvidence";
 
 gsap.registerPlugin(ScrollTrigger);
-const CHAPTER_LENGTHS = [2.2, 1.4, 1.8, 1.9, 1.8, 1.4, 1.5, 1.5];
+// Viewport heights per application, about 0.7 of the first cut: every stop (signal, evidence, action) still
+// gets its own stretch of scroll, the run through all eight just reads faster. Inventory keeps the most for its truck.
+const CHAPTER_LENGTHS = [1.55, 1.0, 1.25, 1.35, 1.25, 1.0, 1.05, 1.05];
 const CHAPTER_NAMES = ["Inventory", "Demand", "Production", "Maintenance", "Supply risk", "Sales", "Service", "Finance"];
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 
@@ -79,7 +81,9 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
       const step = local < 0.32 ? 0 : local < 0.62 ? 1 : 2;
       setFrame((previous) => previous.chapter === chapter && previous.step === step ? previous : { chapter, step });
       if (visual.current) {
-        const edge = Math.min(1, chapter === 0 ? 1 : local / 0.08, chapter === indices.length - 1 ? 1 : (1 - local) / 0.07);
+        // Edge fades last a fixed distance (about an eighth of a screen), whatever the chapter's length.
+        const len = CHAPTER_LENGTHS[indices[chapter]];
+        const edge = Math.min(1, chapter === 0 ? 1 : local / (0.125 / len), chapter === indices.length - 1 ? 1 : (1 - local) / (0.11 / len));
         visual.current.style.opacity = String(edge);
         visual.current.style.transform = media.matches ? "none" : `translate3d(0, ${(1 - edge) * 22}px,0)`;
       }
