@@ -316,24 +316,37 @@ export function Story() {
           </div>
         </div>
 
-        {/* 09 Final */}
-        <div
-          data-ch={CH.final}
-          data-interactive
-          className="absolute inset-x-0 bottom-[10vh] flex flex-col items-center gap-6 px-6 text-center"
-        >
-          <p className="max-w-[44ch] text-[15px] leading-relaxed text-ink-2">
-            Start with one decision that should move faster. We will show you what it looks like inside your
-            operation.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary">
-              Book a free AI audit
-              <Arrow />
-            </button>
-            <button onClick={() => scrollToTarget("#applications")} className="btn btn-ghost">
-              See applications
-            </button>
+        {/* 09 Final: the story closes on the same dock it opened with, now carrying the results */}
+        <div data-ch={CH.final} data-interactive className="story-intro absolute inset-x-0 bottom-0 px-6 pb-8 md:px-10 md:pb-8">
+          <div className="hero-dock final-dock">
+            <p className="hero-dock-copy">
+              <span className="hero-dock-count tabular">1</span>
+              <span>
+                <strong>Start with one decision.</strong>
+                <span className="hero-dock-sub">We show you what it looks like inside your operation.</span>
+              </span>
+            </p>
+            <dl className="final-proof">
+              {[
+                ["2 days", "to act, not 21", "emerald"],
+                ["380", "units protected", "saffron"],
+                ["14 → 1", "cases linked", "pink"],
+              ].map(([v, k, t]) => (
+                <div key={k} style={{ ["--tone" as string]: `var(--color-${t})` }}>
+                  <dd className="tabular">{v}</dd>
+                  <dt>{k}</dt>
+                </div>
+              ))}
+            </dl>
+            <div className="hero-dock-actions">
+              <button onClick={() => scrollToTarget("#applications")} className="btn btn-ghost">
+                See applications
+              </button>
+              <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary">
+                Book a free AI audit
+                <Arrow />
+              </button>
+            </div>
           </div>
         </div>
 

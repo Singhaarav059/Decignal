@@ -1077,7 +1077,7 @@ function Card({ k }: { k: number }) {
     // Edge cards also drift toward the middle of the stack, clear of the copy and the screen edge.
     // Cards to the left only shift a little: the copy column sits on that side.
     const aside = a.side > 0 ? 0.62 : 0.26;
-    n.position.set(a.side * a.other * aside + (2 - k) * 0.3 * a.me, s * (a.me * 0.62 - a.other * 0.06), 0);
+    n.position.set(a.side * a.other * aside + (2 - k) * 0.3 * a.me, s * (a.me * 1.05 - a.other * 0.1), 0);
     n.rotation.set(0, 0, s * ry * a.me);
     n.scale.setScalar(1 + a.me * 0.2 - a.other * 0.03);
     rim.color.set(toneOf(k));

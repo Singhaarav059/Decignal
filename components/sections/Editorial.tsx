@@ -142,10 +142,19 @@ function Systems() {
   );
   return (
     <section className="pt-20 md:pt-24">
-      <p data-reveal className="mx-auto max-w-[46ch] px-6 text-center text-[17px] leading-relaxed text-ink-2">
-        Decignal works across the systems you already run. No rip-and-replace programme, no perfect data lake.
-      </p>
-      <div data-reveal className="mt-12 space-y-4 md:mt-10">
+      <div data-reveal className="works-with mx-auto px-6 text-center">
+        <p className="eyebrow inline-flex items-center gap-2"><span className="diamond" style={{ color: "var(--color-emerald)" }} />Works with what you run</p>
+        <p className="works-with-title">Decignal reads across the systems <em className="spectrum-text">you already run.</em></p>
+        <ul className="works-with-pills">
+          {[["No rip-and-replace programme", "cobalt"], ["No perfect data lake", "saffron"], ["Read-only to start", "emerald"]].map(([t, c]) => (
+            <li key={t} style={{ ["--tone" as string]: `var(--color-${c})` }}>
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden><circle cx="8" cy="8" r="7" /><path d="M4.6 8.3l2.2 2.2 4.6-4.8" /></svg>
+              {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div data-reveal className="mt-12 space-y-4 md:mt-14">
         {row(false)}
       </div>
     </section>

@@ -707,7 +707,7 @@ html.ready .intro-stage {
 .application-sources span { font-size: 9px; font-weight: 600; }
 .application-sources p { margin-top: 4px; font: 9.5px/1.5 var(--font-mono); font-weight: 500; }
 
-.application-world { position: absolute; left: 38%; right: 4%; top: 14%; height: 44%; will-change: opacity, transform; }
+.application-world { position: absolute; left: 38%; right: 4%; top: max(17%, 150px); height: 41%; will-change: opacity, transform; }
 .application-ghost { position: absolute; top: 32%; left: 42%; font-size: 9vw; font-weight: 700; letter-spacing: -.07em; color: transparent; -webkit-text-stroke: 1px var(--color-line); opacity: .08; pointer-events: none; }
 
 .operation-readout { position: absolute; left: 38%; right: 4%; top: 59%; bottom: 5%; background: rgb(255 253 249 / 0.92); border: 1px solid var(--color-line); border-radius: 18px; padding: 12px 18px; box-shadow: 0 10px 32px -16px rgba(20, 19, 15, 0.12); backdrop-filter: blur(14px); overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; justify-content: space-between; }
@@ -1315,3 +1315,22 @@ html.ready .intro-stage {
 .application-outcome[data-done] strong { color: var(--tone); }
 @media (max-width: 1023px), (max-height: 760px) { .application-trail-wrap { display: none; } }
 @media (prefers-reduced-motion: reduce) { .application-trail li[data-state="now"] i { animation: none; } }
+
+/* Final chapter: the closing dock, with the three results the story proved. */
+.final-proof { display: flex; justify-content: center; gap: 8px; }
+.final-proof > div { display: flex; flex-direction: column; padding: 8px 14px; border-radius: 14px; background: color-mix(in srgb, var(--tone) 9%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 22%, transparent); }
+.final-proof dd { font-size: 20px; font-weight: 650; letter-spacing: -.03em; line-height: 1.1; color: color-mix(in srgb, var(--tone) 75%, var(--color-ink)); }
+.final-proof dt { font: 500 10px var(--font-mono); color: var(--color-ink-soft); }
+@media (min-width: 1024px) { .final-dock .hero-dock-chips, .final-proof { padding-inline: 20px; border-inline: 1px solid var(--color-line); } }
+@media (max-width: 767px) { .final-proof dd { font-size: 16px; } .final-proof > div { padding: 6px 10px; } }
+
+/* Integrations intro: a statement and three promises instead of a plain line. */
+.works-with-title { margin: 14px auto 0; max-width: 22ch; font-size: clamp(26px, 3.2vw, 44px); font-weight: 650; line-height: 1.08; letter-spacing: -.035em; color: var(--color-ink); }
+.works-with-title em { font-style: normal; }
+.works-with-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+.works-with-pills li { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px; font-size: 13.5px; color: var(--color-ink-2); background: rgb(255 255 255 / .7); box-shadow: inset 0 0 0 1px var(--color-line), 0 8px 24px -18px rgb(20 19 15 / .4); }
+.works-with-pills circle { fill: color-mix(in srgb, var(--tone) 16%, transparent); }
+.works-with-pills path { fill: none; stroke: var(--tone); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Industries: the detail card stays left of the plinth ring. */
+@media (min-width: 1024px) { .ind-detail > div:first-child { width: min(290px, 21vw); } .ind-card { padding: 16px; } .ind-row { padding: 6px 0; font-size: 12.5px; } }

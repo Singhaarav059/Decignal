@@ -207,7 +207,7 @@ export function cameraPose(c: number, t: number, portrait = false): Cam {
     case CH.scale:
       return { p: [0, 2.6, 13.8 - t * 0.4], t: [0, 1.15, -0.4] };
     case CH.industries:
-      return { p: [0, 2.45, 8.6], t: [0, 0.85, 0] };
+      return { p: [0, 2.75, 11.4], t: [0, 0.7, 0] };
     default:
       // Decide: back to the opening angle, stepped out so the resolved network sits between headline and actions.
       if (portrait) return { p: [0, 15.5, 15.5], t: [0, 0.3, -1.2] };
