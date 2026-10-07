@@ -160,6 +160,12 @@ export function cardPose(k: number, c: number, t: number, portrait = false): Pos
     case CH.scale:
       // Flip: the back of each card is a different business function.
       // A shallow arc, every card turned a little toward the viewer.
+      if (portrait) {
+        // Portrait: two rows (three, then two) so each card gets a readable share of the width.
+        const row = k < 3 ? 0 : 1;
+        const col = row === 0 ? k - 1 : k - 3.5;
+        return { p: [col * 1.78, (CARD.h / 2) * 1.12 + 0.03 + (row === 0 ? 1.25 : 0), row === 0 ? -0.9 : 0.4], rx: FLIP, ry: -col * 0.1, s: 1.05 };
+      }
       return { p: [(k - 2) * 1.82, (CARD.h / 2) * 1.12 + 0.03, -Math.pow(Math.abs(k - 2), 1.5) * 0.42], rx: FLIP, ry: -(k - 2) * 0.13, s: 1.12 };
     case CH.industries:
       return k === DECISION_CARD

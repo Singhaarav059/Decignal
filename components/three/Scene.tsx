@@ -20,7 +20,7 @@ const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.06
 const PORTRAIT_X = [0, 0, 0.3, 1.45, 0, 0.6, 0, 0, 0];
 // Leave room for outer source labels and the supplier marker on a phone.
 // Signal frames one object, so portrait screens come in close instead of fitting a wide stage.
-const MOBILE_FIT = [0.68, 0.62, 0.86, 0.82, 0.62, 1.04, 1.1, 1, 0.74];
+const MOBILE_FIT = [0.68, 0.62, 0.86, 0.82, 0.62, 1.04, 0.8, 1, 0.74];
 
 const PORTRAIT_FIT = [0.68, 0.7, 0.9, 1, 0.78];
 // Tablet portrait only: Control's stack sits below the approval widget instead of behind it.

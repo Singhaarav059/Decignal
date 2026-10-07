@@ -2,9 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { STACK_ROWS } from "@/lib/content";
+import { BRANDS } from "@/lib/brands";
 
-const TONES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
-const SYSTEMS = STACK_ROWS.flat().map((s, i) => ({ ...s, tone: TONES[i % 6], mark: s.name.split(" ").map((w) => w[0]).join("").slice(0, 2) }));
+const SYSTEMS = STACK_ROWS.flat().map((s) => ({ ...s, ...BRANDS[s.name] }));
+
+/** A system's own mark, drawn in its brand colour. */
+function BrandMark({ path, className }: { path: string; className: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path d={path} />
+    </svg>
+  );
+}
 
 /** What the card reads from each system as its tile passes through. */
 const READS: Record<string, string> = {
@@ -98,10 +107,10 @@ export function SystemsRibbon() {
               ref={(n) => { tiles.current[i] = n; }}
               className="ribbon-tile"
               aria-hidden={i >= SYSTEMS.length || undefined}
-              style={{ ["--tone" as string]: `var(--color-${s.tone})` }}
+              style={{ ["--tone" as string]: s.hex }}
               title={`${s.name} · ${s.role}`}
             >
-              <span className="ribbon-mark">{s.mark}<small>{s.role}</small></span>
+              <span className="ribbon-mark"><BrandMark path={s.path} className="ribbon-logo" /><small>{s.role}</small></span>
               <span className="ribbon-done" aria-hidden>
                 <svg viewBox="0 0 16 16"><path d="M4 8.4l2.6 2.6L12 5.4" /></svg>
               </span>
@@ -120,8 +129,8 @@ export function SystemsRibbon() {
           {feed.map((k, j) => {
             const s = SYSTEMS[k];
             return (
-              <li key={s.name} style={{ ["--tone" as string]: `var(--color-${s.tone})`, opacity: 1 - j * 0.28 }}>
-                <span className="ribbon-feed-mark">{s.mark}</span>
+              <li key={s.name} style={{ ["--tone" as string]: s.hex, opacity: 1 - j * 0.28 }}>
+                <span className="ribbon-feed-mark"><BrandMark path={s.path} className="ribbon-feed-logo" /></span>
                 <span>
                   <span className="ribbon-feed-src">{s.name} · {s.role}</span>
                   <span className="ribbon-feed-read">{READS[s.name]}</span>
