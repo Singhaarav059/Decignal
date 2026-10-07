@@ -146,7 +146,7 @@ export const DECISION_CARD = 4;
 const UP = Math.PI / 2; // stood up, front face to camera
 const FLIP = -Math.PI / 2; // stood up, back face to camera
 
-export function cardPose(k: number, c: number, t: number): Pose | null {
+export function cardPose(k: number, c: number, t: number, portrait = false): Pose | null {
   switch (c) {
     case CH.decision:
       // Only the decision is shown; the layers wait behind it.
@@ -169,7 +169,10 @@ export function cardPose(k: number, c: number, t: number): Pose | null {
       // Keeps the last industry's half turn (5π) and simply lies down; its face is drawn rotated to match.
       // It settles at the hub the six systems feed, as the decision they resolved into.
       // Tilted up toward the camera (not flat) so its line reads at the hero angle.
-      return k === DECISION_CARD ? { p: [0, 0.62, -1.2], rx: -0.75, ry: Math.PI * 5, s: 1.2 } : null;
+      if (k !== DECISION_CARD) return null;
+      // Portrait stacks the islands in two columns, so the card stands in front of the stack instead.
+      if (portrait) return { p: [0, 0.9, 4.5], rx: -1.05, ry: Math.PI * 5, s: 1.7 };
+      return { p: [0, 0.62, -1.2], rx: -0.75, ry: Math.PI * 5, s: 1.2 };
     default:
       return null;
   }

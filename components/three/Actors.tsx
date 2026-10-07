@@ -1025,7 +1025,8 @@ const FACE_BASE = new THREE.Color("#F7F7F7").r;
 function Card({ k }: { k: number }) {
   const ref = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
-  useActor(ref, (c, t) => cardPose(k, c, t), k * 0.05, 0.11);
+  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
+  useActor(ref, (c, t) => cardPose(k, c, t, portrait), k * 0.05, 0.11);
   const anim = useRef({ me: 0, other: 0, side: 0 });
   const rim = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), []);
   const rimRef = useRef<THREE.Mesh>(null);

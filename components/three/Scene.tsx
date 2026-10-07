@@ -15,7 +15,7 @@ import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
 
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
-const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.05];
+const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.06];
 // Desktop frames push objects right of the copy column; a portrait screen centres them instead.
 const PORTRAIT_X = [0, 0, 0.3, 1.45, 0, 0.6, 0, 0, 0];
 // Leave room for outer source labels and the supplier marker on a phone.
