@@ -52,9 +52,11 @@ export function SystemsRibbon() {
     // Where the copy sits over the stage, grown by a tile's reach: no tile may pass through it.
     let keep = { l: 0, t: 0, r: 0, b: 0 };
 
-    // The path is drawn in the stage's own pixels from where the copy and the card actually are.
-    // Beside the copy (wide screens) it runs under the copy's last line and enters the card low on
-    // its left edge, rises behind the card and leaves top right; stacked, it is one long sweep.
+    // The path is drawn in the stage's own pixels from where the copy and the card actually are, so
+    // a tile never crosses the copy and always meets a card edge square on, a full tile clear of the
+    // corners: it never rides along an edge half hidden. Beside the copy (wide screens) it runs under
+    // the copy and enters the card's left side; when the copy reaches too low for that, it runs on
+    // under the card and rises into it through the bottom edge. Stacked, it is one long sweep.
     const shape = () => {
       const box = el.getBoundingClientRect(), c = card.current!.getBoundingClientRect();
       const W = box.width, H = box.height;
@@ -66,11 +68,18 @@ export function SystemsRibbon() {
         ? { l: k.left - box.left - reach, t: k.top - box.top - reach, r: k.right - box.left + reach, b: k.bottom - box.top + reach }
         : { l: 0, t: 0, r: 0, b: 0 };
       const x0 = -0.06 * W, y0 = H - 4, end = `${1.06 * W} ${0.095 * H}`;
+      const yOut = ct + (cb - ct) * 0.32;
+      const exit = `S ${cr - 40} ${yOut}, ${cr} ${yOut} S ${0.86 * W} ${0.143 * H}, ${end}`;
+      const yIn = Math.max(keep.b, ct + reach);
+      const yLow = Math.max(keep.b, cb + reach);
       let d: string;
-      const yIn = Math.min(Math.max(keep.b, ct + 40), cb - 36);
-      if (beside && yIn < y0 - 10) {
-        const yOut = ct + (cb - ct) * 0.32;
-        d = `M ${x0} ${y0} C ${x0 + (cl - x0) * 0.45} ${y0}, ${cl - (cl - x0) * 0.3} ${yIn}, ${cl} ${yIn} S ${cr - 40} ${yOut}, ${cr} ${yOut} S ${0.86 * W} ${0.143 * H}, ${end}`;
+      if (beside && yIn <= cb - reach && yIn < y0 - 10) {
+        // Side entry: level under the copy, square into the card's left edge.
+        d = `M ${x0} ${y0} C ${x0 + (cl - x0) * 0.45} ${y0}, ${cl - (cl - x0) * 0.3} ${yIn}, ${cl} ${yIn} ${exit}`;
+      } else if (beside && yLow < y0 - 6) {
+        // Bottom entry: level under the copy and the card's corner, then up through the bottom edge.
+        const ex = cl + Math.min(90, (cr - cl) * 0.3);
+        d = `M ${x0} ${y0} C ${x0 + (ex - x0) * 0.4} ${y0}, ${ex - 160} ${yLow}, ${ex - 70} ${yLow} C ${ex - 20} ${yLow}, ${ex} ${yLow - 20}, ${ex} ${cb - 40} ${exit}`;
       } else {
         d = `M ${x0} ${y0} C ${0.22 * W} ${y0}, ${0.33 * W} ${0.786 * H}, ${0.52 * W} ${0.548 * H} S ${0.86 * W} ${0.143 * H}, ${end}`;
       }
@@ -90,8 +99,9 @@ export function SystemsRibbon() {
 
     const place = (now: number) => {
       const box = el.getBoundingClientRect(), c = card.current!.getBoundingClientRect();
-      // Tiles between the card's edges are behind it; past the right edge they leave as decisions.
+      // Tiles inside the card's box are behind it; past its right edge they leave as decisions.
       const left = c.left - box.left + 12, right = c.right - box.left - 12;
+      const top = c.top - box.top + 12, bottom = c.bottom - box.top - 12;
       const phase = reduced ? 0.013 : ((now - t0) % LOOP_MS) / LOOP_MS;
       for (let i = 0; i < COUNT; i++) {
         const node = tiles.current[i];
@@ -99,12 +109,14 @@ export function SystemsRibbon() {
         const u = (i / COUNT + phase) % 1;
         const a = p.getPointAtLength(u * len), b = p.getPointAtLength(Math.min(len, u * len + 4));
         const ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
-        const x = a.x;
-        const zone = x < left ? 0 : x < right ? 1 : 2;
-        // Safety net for layouts with no room under the copy: a tile never shows through it.
-        const hidden = a.x > keep.l && a.x < keep.r && a.y > keep.t && a.y < keep.b;
+        const zone = a.x >= right ? 2 : a.x > left && a.y > top && a.y < bottom ? 1 : 0;
+        // Safety net for layouts with no clean path past the copy. The zone is already padded by a
+        // tile's reach, so a tile on its edge does not touch the copy; one going deeper fades out
+        // over 16px instead of showing through. The paths above keep to the edge or outside it.
+        const depth = Math.min(a.x - keep.l, keep.r - a.x, a.y - keep.t, keep.b - a.y);
+        const clear = depth <= 0 ? 1 : Math.max(0, 1 - depth / 16);
         node.style.transform = `translate(${a.x}px, ${a.y}px) translate(-50%, -50%) rotate(${ang}deg)`;
-        node.style.opacity = hidden ? "0" : String(Math.min(1, u / 0.06, (1 - u) / 0.06));
+        node.style.opacity = String(Math.min(1, u / 0.06, (1 - u) / 0.06, clear));
         if (zone !== lastZone[i]) {
           node.dataset.zone = String(zone);
           if (zone === 1 && lastZone[i] === 0) {

@@ -1,28 +1,23 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Bot,
-  Boxes,
   CalendarClock,
-  CheckCheck,
   Database,
-  Factory,
   Layers,
   Lock,
-  Radar,
-  ScanSearch,
-  ShieldCheck,
-  TrendingDown,
-  Truck,
   type LucideIcon,
 } from "lucide-react";
 import { APPLICATIONS, CATEGORIES, CATEGORY_TONE, FAQ, OUTCOMES, PATHS } from "@/lib/content";
 import { CHAPTERS, subscribe } from "@/lib/story";
 import { showOutcome, showQuestion, showStep } from "@/lib/jump";
-import { showArea } from "./sections/GrowlioSections";
+import { showArea, StepArt } from "./sections/GrowlioSections";
+import { AreaArt } from "./sections/AreaArt";
+import { OUTCOME_FILL, OutcomeGraphic } from "./sections/OutcomeGraphic";
 import { goToChapter, toneVar } from "./story/chapters";
+import { ChapterArt } from "./ChapterArt";
 import { scrollToTarget } from "./SmoothScroll";
 
 export type PeekId = "apps" | "outcomes" | "how" | "faq" | "story";
@@ -36,7 +31,6 @@ export const PEEKS: Record<Exclude<PeekId, "story">, { blurb: string; tone: stri
 };
 
 const ORDER: PeekId[] = ["story", "apps", "outcomes", "how", "faq"];
-const OUTCOME_TONES = ["cobalt", "tangerine", "emerald"];
 const STEP_TONES = ["cobalt", "violet", "tangerine", "emerald"];
 const FAQ_ICONS: [LucideIcon, string][] = [[Layers, "cobalt"], [Database, "saffron"], [Lock, "violet"], [Bot, "emerald"], [CalendarClock, "emerald"]];
 const FAQ_PICK = [0, 1, 2, 3, 7];
@@ -62,6 +56,13 @@ export function NavPeek({
   const [last, setLast] = useState<PeekId>("apps");
   const [dir, setDir] = useState(1);
   const [left, setLeft] = useState(0);
+  // Counts openings, so the glance's drawings replay each time it opens rather than once at load.
+  const [epoch, setEpoch] = useState(0);
+  const [wasOpen, setWasOpen] = useState(false);
+  if (!!peek !== wasOpen) {
+    setWasOpen(!!peek);
+    if (peek) setEpoch((n) => n + 1);
+  }
 
   if (peek && peek !== last) {
     setDir(ORDER.indexOf(peek) > ORDER.indexOf(last) ? 1 : -1);
@@ -85,7 +86,7 @@ export function NavPeek({
   useLayoutEffect(() => {
     const place = () => {
       const vw = document.documentElement.clientWidth;
-      const w = Math.min(wide ? 840 : 780, vw - 40);
+      const w = Math.min(wide ? 840 : 820, vw - 40);
       setLeft(wide ? Math.max(20, (vw - 1180) / 2) : (vw - w) / 2);
     };
     place();
@@ -125,11 +126,13 @@ export function NavPeek({
             style={{ ["--dir" as string]: dir }}
             aria-hidden={id !== shown}
           >
-            {id === "story" && <StoryPeek act={act} />}
-            {id === "apps" && <AppsPeek act={act} />}
-            {id === "outcomes" && <OutcomesPeek act={act} />}
-            {id === "how" && <HowPeek act={act} />}
-            {id === "faq" && <FaqPeek act={act} />}
+            <Fragment key={id === shown ? `${id}-${epoch}` : id}>
+              {id === "story" && <StoryPeek act={act} />}
+              {id === "apps" && <AppsPeek act={act} />}
+              {id === "outcomes" && <OutcomesPeek act={act} />}
+              {id === "how" && <HowPeek act={act} />}
+              {id === "faq" && <FaqPeek act={act} />}
+            </Fragment>
           </div>
         ))}
       </div>
@@ -139,14 +142,16 @@ export function NavPeek({
 
 type Act = (fn: () => void) => () => void;
 
-/** The tinted card on the right of each glance: what the section is and a way into it. */
-function Side({ id, act, figure, label }: { id: Exclude<PeekId, "story">; act: Act; figure: string; label: string }) {
+/** The strip under a visual glance: what the section holds, and a way into it. */
+function Foot({ id, act, figure, label }: { id: Exclude<PeekId, "story">; act: Act; figure: string; label: string }) {
   const p = PEEKS[id];
   return (
-    <div className="peek-side" style={{ ["--tone" as string]: `var(--color-${p.tone})` }}>
-      <p className="peek-side-figure tabular">{figure}</p>
-      <p className="peek-side-label">{label}</p>
-      <p className="peek-side-blurb">{p.blurb}</p>
+    <div className="peek-foot" style={{ ["--tone" as string]: `var(--color-${p.tone})`, ["--k" as string]: 6 }}>
+      <p>
+        <b className="tabular">{figure}</b>
+        <span>{label}</span>
+        <small>{p.blurb}</small>
+      </p>
       <button className="peek-go" onClick={act(() => scrollToTarget(p.href))}>
         Open section
         <ArrowRight size={14} strokeWidth={2.2} aria-hidden />
@@ -155,80 +160,73 @@ function Side({ id, act, figure, label }: { id: Exclude<PeekId, "story">; act: A
   );
 }
 
+/** Each business area as its own coloured tile with its line art: the picture says what it does. */
 function AppsPeek({ act }: { act: Act }) {
   return (
-    <div className="peek-grid">
-      <ul className="peek-list" aria-label="Business areas">
+    <div className="peek-visual">
+      <ul className="peek-areas" aria-label="Business areas">
         {CATEGORIES.map((c, i) => {
           const apps = APPLICATIONS.filter((a) => a.category === c);
           return (
             <li key={c} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[c]})`, ["--k" as string]: i }}>
-              <button className="peek-row" onClick={act(() => showArea(i))}>
-                <span className="peek-dot" aria-hidden />
-                <span className="peek-row-text">
+              <button className="peek-tile peek-area" onClick={act(() => showArea(i))} aria-label={`${c}: ${apps.map((a) => a.name).join(", ")}`}>
+                <AreaArt area={c} />
+                <span className="peek-tile-meta">
                   <b>{c}</b>
-                  <small>{apps[0].example}</small>
+                  <span className="peek-tile-chip tabular">{apps.length} {apps.length === 1 ? "app" : "apps"}</span>
                 </span>
-                <span className="peek-count tabular">{apps.length} {apps.length === 1 ? "app" : "apps"}</span>
-                <ArrowRight className="peek-arrow" size={14} strokeWidth={2.2} aria-hidden />
+                <small className="peek-tile-hint">{apps[0].example}</small>
               </button>
             </li>
           );
         })}
       </ul>
-      <Side id="apps" act={act} figure={String(APPLICATIONS.length)} label="ready applications" />
+      <Foot id="apps" act={act} figure={String(APPLICATIONS.length)} label="ready applications" />
     </div>
   );
 }
 
+/** Each outcome as the diagram that proves it, with its number on top. */
 function OutcomesPeek({ act }: { act: Act }) {
   return (
-    <div className="peek-grid">
-      <div className="peek-cases">
+    <div className="peek-visual">
+      <ul className="peek-outcomes">
         {OUTCOMES.map((o, i) => (
-          <button
-            key={o.sector}
-            className="peek-case"
-            style={{ ["--tone" as string]: `var(--color-${OUTCOME_TONES[i]})`, ["--k" as string]: i }}
-            onClick={act(() => showOutcome(i))}
-          >
-            <span className="peek-case-sector">{o.sector}</span>
-            <span className="peek-case-value tabular">{o.value}</span>
-            <span className="peek-case-label">{o.label}</span>
-          </button>
+          <li key={o.sector} style={{ ["--tone" as string]: OUTCOME_FILL[i], ["--k" as string]: i }}>
+            <button className="peek-tile peek-outcome" onClick={act(() => showOutcome(i))}>
+              <span className="peek-outcome-sector">{o.sector}</span>
+              <span className="peek-outcome-value tabular">{o.value}</span>
+              <OutcomeGraphic index={i} />
+              <span className="peek-outcome-label">{o.label}</span>
+            </button>
+          </li>
         ))}
-        <p className="peek-note" style={{ ["--k" as string]: 3 }}>
-          <span><b>0</b> systems replaced</span>
-          <span><b>1</b> named approver per action</span>
-        </p>
-      </div>
-      <Side id="outcomes" act={act} figure="3" label="decisions, measured" />
+      </ul>
+      <Foot id="outcomes" act={act} figure="0" label="systems replaced" />
     </div>
   );
 }
 
+/** The route to production as four pictures, joined by the dotted line the roadmap uses. */
 function HowPeek({ act }: { act: Act }) {
   const steps = PATHS.custom.steps;
+  // "4 to 8 weeks to the first production release" reads as 4–8.
+  const [lo, , hi] = PATHS.catalogue.total.split(" ");
+  const fastest = `${lo}–${hi}`;
   return (
-    <div className="peek-grid">
-      <div>
-        <ol className="peek-steps">
-          {steps.map((s, i) => (
-            <li key={s.title} style={{ ["--tone" as string]: `var(--color-${STEP_TONES[i]})`, ["--k" as string]: i }}>
-              <button onClick={act(() => showStep(i))}>
-                <span className="peek-step-n tabular">0{i + 1}</span>
-                <b>{s.title}</b>
-                <small>{s.when}</small>
-              </button>
-            </li>
-          ))}
-        </ol>
-        <p className="peek-routes" style={{ ["--k" as string]: 4 }}>
-          <span><i style={{ background: "var(--color-violet)" }} />Custom · {PATHS.custom.total.split(" to the")[0]}</span>
-          <span><i style={{ background: "var(--color-emerald)" }} />Catalogue · {PATHS.catalogue.total.split(" to the")[0]}</span>
-        </p>
-      </div>
-      <Side id="how" act={act} figure="4" label="steps to production" />
+    <div className="peek-visual">
+      <ol className="peek-route">
+        {steps.map((s, i) => (
+          <li key={s.title} style={{ ["--tone" as string]: `var(--color-${STEP_TONES[i]})`, ["--k" as string]: i }}>
+            <button className="peek-tile peek-step" onClick={act(() => showStep(i))}>
+              <StepArt index={i} />
+              <span className="peek-step-n tabular">0{i + 1} · {s.when}</span>
+              <b>{s.title}</b>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <Foot id="how" act={act} figure={fastest} label="weeks to a first release" />
     </div>
   );
 }
@@ -265,17 +263,17 @@ function FaqPeek({ act }: { act: Act }) {
   );
 }
 
-/** What each chapter shows, so the list reads as a table of contents rather than a row of names. */
-const CHAPTER_INFO: [LucideIcon, string][] = [
-  [Boxes, "Six systems, six partial views"],
-  [Radar, "One shortage worth acting on"],
-  [TrendingDown, "Demand rises while stock runs low"],
-  [ScanSearch, "Every fact, checked in one view"],
-  [Truck, "Move 240 units, Plant 02 to 01"],
-  [ShieldCheck, "A named person approves it"],
-  [Layers, "The same layer, five functions"],
-  [Factory, "Configured for your industry"],
-  [CheckCheck, "Information, turned into decisions"],
+/** What each chapter shows: the tile's tooltip and its spoken name, while the picture carries it. */
+const CHAPTER_INFO = [
+  "Six systems, six partial views",
+  "One shortage worth acting on",
+  "Demand rises while stock runs low",
+  "Every fact, checked in one view",
+  "Move 240 units, Plant 02 to 01",
+  "A named person approves it",
+  "The same layer, five functions",
+  "Configured for your industry",
+  "Information, turned into decisions",
 ];
 
 /** The story in three acts: what goes wrong, how Decignal answers, and how far it reaches. */
@@ -327,20 +325,16 @@ function StoryPeek({ act }: { act: Act }) {
             <ol>
               {CHAPTERS.slice(a.from, a.from + 3).map((c, j) => {
                 const i = a.from + j;
-                const [Icon, blurb] = CHAPTER_INFO[i];
+                const blurb = CHAPTER_INFO[i];
                 return (
                   <li key={c.id} data-chapter style={{ ["--tone" as string]: toneVar(i) }}>
-                    <button onClick={act(() => goToChapter(i))}>
-                      <span className="peek-chapter-icon" aria-hidden>
-                        <Icon size={16} strokeWidth={2} />
-                      </span>
-                      <span className="peek-chapter-text">
-                        <span className="peek-chapter-top">
-                          <span className="peek-step-n tabular">{String(i + 1).padStart(2, "0")}</span>
-                          <b>{c.label}</b>
-                          <em className="peek-chapter-now">Now</em>
-                        </span>
-                        <small>{blurb}</small>
+                    <button onClick={act(() => goToChapter(i))} title={blurb}>
+                      <ChapterArt i={i} />
+                      <span className="peek-chapter-top">
+                        <span className="peek-step-n tabular">{String(i + 1).padStart(2, "0")}</span>
+                        <b>{c.label}</b>
+                        <em className="peek-chapter-now">Now</em>
+                        <span className="sr-only">: {blurb}</span>
                       </span>
                       <span className="peek-chapter-bar" aria-hidden><span /></span>
                     </button>

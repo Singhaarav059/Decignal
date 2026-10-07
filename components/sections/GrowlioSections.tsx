@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { onStep } from "@/lib/jump";
 import { Check, Clock, Database, Factory, FileSearch, Globe, Network, Radar, Scale, ShieldCheck, Sparkles, TrendingUp, Truck, Users, Warehouse } from "lucide-react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -212,7 +212,8 @@ const DELIVERS: Record<keyof typeof PATHS, string[][]> = {
 };
 
 /** A small picture for each step, drawn in the step's colour. */
-function StepArt({ index }: { index: number }) {
+export function StepArt({ index }: { index: number }) {
+  const pipe = `sa-pipe-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   if (index === 0)
     return (
       <svg className="step-art" viewBox="0 0 320 120" aria-hidden>
@@ -250,7 +251,7 @@ function StepArt({ index }: { index: number }) {
   if (index === 2)
     return (
       <svg className="step-art" viewBox="0 0 320 120" aria-hidden>
-        <path id="sa-pipe" d="M30 60H290" className="sa-rail" />
+        <path id={pipe} d="M30 60H290" className="sa-rail" />
         {["Test", "Validate", "Release"].map((n, i) => (
           <g key={n} transform={`translate(${40 + i * 100} 38)`}>
             <rect width="80" height="44" rx="12" className={i === 2 ? "sa-core" : "sa-sheet"} />
@@ -258,7 +259,7 @@ function StepArt({ index }: { index: number }) {
           </g>
         ))}
         <circle r="6" className="sa-dot">
-          <animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#sa-pipe" /></animateMotion>
+          <animateMotion dur="3.2s" repeatCount="indefinite"><mpath href={`#${pipe}`} /></animateMotion>
         </circle>
       </svg>
     );

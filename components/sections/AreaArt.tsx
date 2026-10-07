@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 /** Line art for each business area, drawn in white on the area's colour, with a little motion. */
 export function AreaArt({ area }: { area: string }) {
   return (
@@ -23,19 +25,23 @@ function Plant({ x, label }: { x: number; label: string }) {
   );
 }
 
+/** A path id unique to this drawing: the same art also appears in the nav's glance. */
+const useSvgId = (name: string) => `${name}-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+
 function SupplyChain() {
+  const road = useSvgId("road");
   return (
     <>
       <Plant x={6} label="PLANT 02" />
       <Plant x={290} label="PLANT 01" />
-      <path id="road" d="M74 96 C 140 96, 150 60, 210 60 S 260 96, 290 96" className="line dash" />
+      <path id={road} d="M74 96 C 140 96, 150 60, 210 60 S 260 96, 290 96" className="line dash" />
       <g className="truck">
         <rect x="-16" y="-9" width="20" height="12" rx="2" className="fill" />
         <path d="M4 -6h7l4 5v4H4z" className="fill" />
         <circle cx="-10" cy="5" r="2.6" className="wheel" />
         <circle cx="10" cy="5" r="2.6" className="wheel" />
         <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
-          <mpath href="#road" />
+          <mpath href={`#${road}`} />
         </animateMotion>
       </g>
       <g transform="translate(188 108)">
