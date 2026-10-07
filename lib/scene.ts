@@ -181,13 +181,15 @@ export function cameraPose(c: number, t: number, portrait = false): Cam {
       if (portrait) return { p: [0, 14, 14], t: [0, 0.8, -1.2] };
       return { p: [0, 8.4 - t * 0.5, 16.2 - t * 0.8], t: [0, 1.55, -1.6] };
     case CH.signal:
-      if (portrait) return { p: [0, 2.6, 9.8 - t * 0.4], t: [0, 0.25, 0.5] };
-      return { p: [0.25, 2.05, 8.3 - t * 0.4], t: [-0.35, 0.65, 0.9] };
+      if (portrait) return { p: [1.7 - t * 0.2, 2.3, 9.6 - t * 0.4], t: [0, 0.25, 0.5] };
+      // Low, close three-quarter on the crate: the camera has swung off-axis to the right.
+      return { p: [1.85 - t * 0.25, 1.7, 8.1 - t * 0.4], t: [-0.3, 0.68, 0.9] };
     case CH.problem:
       // The chart sits under the copy, never beside it: the whole week reads at once.
       return { p: [-0.35, 3.9, 14.3 - t * 0.4], t: [-0.35, 2.05, 0] };
     case CH.context:
-      return { p: [-0.95, 10.6 - t * 0.5, 13.2 - t * 0.4], t: [-1.55, 1.0, -0.3] };
+      // A higher oblique overview from the left: the orbit rises and swings round to reveal the ring.
+      return { p: [-2.6 + t * 0.3, 10.6 - t * 0.5, 12.8 - t * 0.4], t: [-1.55, 1.0, -0.3] };
     case CH.decision: {
       // A tracking shot on a long lens: it watches the loading at Plant 02, then travels with the truck.
       const cx = truckX(t) + 0.55;

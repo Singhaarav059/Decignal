@@ -32,14 +32,44 @@ function Rig() {
   const tmp = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), []);
   const ready = useRef(false);
   const lean = useRef(0);
+  const reduced = useRef(false);
+  const lastI = useRef(-1);
+  const [sa, sb, sc] = useMemo(() => [new THREE.Spherical(), new THREE.Spherical(), new THREE.Spherical()], []);
+  useEffect(() => {
+    const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const on = () => (reduced.current = m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
 
   useFrame((_, dt) => {
     const { i, j, local, e } = blendAt(store.g);
     const portrait = size.width < 768 || (size.width < 1024 && size.height > size.width * 1.15);
     const a = cameraPose(i, local, portrait);
     const b = cameraPose(j, 0, portrait);
-    goal.p.set(...a.p).lerp(tmp.p.set(...b.p), e);
-    goal.t.set(...a.t).lerp(tmp.t.set(...b.t), e);
+    const still = reduced.current;
+    // Reduced motion: no orbit, the camera cuts at the midpoint and settles.
+    const k = still ? (e < 0.5 ? 0 : 1) : e;
+    goal.t.set(...a.t).lerp(tmp.t.set(...b.t), k);
+    if (i < 4 && !still) {
+      // Hero -> Signal -> Problem -> Context -> Decision: orbit around the subject instead of
+      // sliding in a straight line. Azimuth, elevation and distance ease independently (k is
+      // smootherstep), so each move tilts/swings and decelerates into its hold.
+      sa.setFromVector3(tmp.p.set(...a.p).sub(tmp.t.set(...a.t)));
+      sb.setFromVector3(tmp.p.set(...b.p).sub(tmp.t.set(...b.t)));
+      let dth = sb.theta - sa.theta;
+      if (dth > Math.PI) dth -= 2 * Math.PI;
+      if (dth < -Math.PI) dth += 2 * Math.PI;
+      sc.set(
+        Math.exp(THREE.MathUtils.lerp(Math.log(sa.radius), Math.log(sb.radius), k)),
+        THREE.MathUtils.lerp(sa.phi, sb.phi, k),
+        sa.theta + dth * k,
+      );
+      goal.p.setFromSpherical(sc).add(goal.t);
+    } else {
+      goal.p.set(...a.p).lerp(tmp.p.set(...b.p), k);
+    }
 
     // Narrow screens: step back along the view ray so the composition still fits.
     const aspect = size.width / size.height;
@@ -93,13 +123,17 @@ function Rig() {
     goal.p.y += store.pointer.y * 0.12;
 
     const delta = Math.min(dt, 1 / 30);
-    if (!ready.current) {
+    const side = e < 0.5 ? i : i + 1;
+    const cut = reduced.current && side !== lastI.current;
+    lastI.current = side;
+    if (!ready.current || cut) {
       camera.position.copy(goal.p);
       look.current.copy(goal.t);
       ready.current = true;
     }
     const velK = Math.min(1, Math.abs(store.velocity) / 22);
-    const dampTime = THREE.MathUtils.lerp(0.12, 0.05, velK);
+    // A touch more lag than before so the orbit lands softly into its hold.
+    const dampTime = reduced.current ? 0.05 : THREE.MathUtils.lerp(0.16, 0.06, velK);
     easing.damp3(camera.position, goal.p, dampTime, delta);
     easing.damp3(look.current, goal.t, dampTime, delta);
     camera.lookAt(look.current);
