@@ -974,7 +974,6 @@ html.ready .intro-stage {
 /* Legible labels: >= 11px wherever the layout has room. */
 .evidence-heading .spec-label { font-size: 11px; }
 .evidence-state { font-size: 11px; }
-.operation-evidence svg text { font-size: 10.5px; }
 .application-phase-nav button span, .application-chapter-bar button span { font-size: 11px; }
 .application-sources span { font-size: 11px; }
 .application-sources p { font-size: 11px; }
