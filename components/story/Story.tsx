@@ -286,7 +286,7 @@ export function Story() {
         </div>
 
         {/* 07 Scale: what Decignal offers in each function */}
-        <div data-ch={CH.scale} data-interactive className="absolute inset-x-0 bottom-[8vh] px-6 md:px-10">
+        <div data-ch={CH.scale} data-interactive className="absolute inset-x-0 bottom-[8vh] px-6 md:px-10 lg:bottom-[4vh]">
           <ScaleApps />
         </div>
 

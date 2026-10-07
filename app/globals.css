@@ -954,3 +954,30 @@ html.ready .intro-stage {
   .signal-readout { transition-duration: 0ms; }
   [data-ch] .signal-days span { animation: none; }
 }
+
+/* ---- SCALE pass ---- */
+/* Each function reads as its own tinted card, in the colour of its 3D card above. */
+.scale-col {
+  padding: 14px 16px 16px;
+  border-top: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tone) 7%, var(--color-paper));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 20%, transparent);
+  overflow: hidden;
+  transition: opacity var(--dur-3) var(--ease), background-color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
+}
+.scale-col::before { top: 0; height: 3px; transform: scaleX(0.18); }
+@media (min-width: 1024px) { .scale-col { padding: 12px 14px 14px; } }
+.scale-col[data-active],
+.scale-col:focus-visible {
+  background: color-mix(in srgb, var(--tone) 13%, var(--color-paper));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 45%, transparent);
+}
+.scale-col:focus-visible { outline: 2px solid var(--tone); outline-offset: 2px; }
+@media (max-width: 1023px) {
+  .scale-col { padding: 9px 12px 10px; border-top: 0; border-radius: 12px; }
+  .scale-col::before { display: block; top: 0; left: 0; width: 3px; height: 100%; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scale-col, .scale-col::before { transition-duration: 0ms; }
+}

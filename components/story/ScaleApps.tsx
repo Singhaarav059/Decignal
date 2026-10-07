@@ -26,7 +26,7 @@ export function ScaleApps() {
   }, []);
 
   return (
-    <div ref={root} className="scale-apps mx-auto grid max-w-[1280px] grid-cols-1 gap-y-2 md:grid-cols-5 md:gap-6">
+    <div ref={root} className="scale-apps mx-auto grid max-w-[1280px] grid-cols-1 gap-y-2 lg:grid-cols-5 lg:gap-5">
       {FUNCTIONS.map((f, k) => {
         const apps = APPLICATIONS.filter((a) => a.category === (f.name as Category));
         return (
@@ -41,16 +41,17 @@ export function ScaleApps() {
             className="scale-col"
             style={{ "--tone": tone(CATEGORY_TONE[f.name as Category]) } as React.CSSProperties}
           >
-            <p className="flex min-w-0 items-center gap-2 whitespace-nowrap text-[13px] font-semibold">
-              <span className="size-[7px] rounded-full" style={{ background: "var(--tone)" }} aria-hidden />
-              {f.name}
-              <span className="truncate font-normal text-ink-soft md:hidden">· {apps.map((a) => a.name).join(", ")}</span>
+            <p className="flex min-w-0 items-baseline gap-2 text-[13.5px] font-semibold lg:text-[14px]">
+              <span className="size-[7px] shrink-0 translate-y-[-1px] rounded-full" style={{ background: "var(--tone)" }} aria-hidden />
+              <span className="whitespace-nowrap">{f.name}</span>
+              <span className="tabular ml-auto text-[11px] font-medium text-ink-soft lg:hidden">{apps.length}</span>
             </p>
-            <ul className="mt-2 space-y-1.5 max-md:hidden">
+            <p className="mt-1 pl-[15px] text-[12.5px] leading-snug text-ink-2 lg:hidden">{apps.map((a) => a.name).join(" · ")}</p>
+            <ul className="mt-2.5 space-y-2 max-lg:hidden">
               {apps.map((a) => (
-                <li key={a.name} className="text-[12.5px] leading-snug">
-                  <span className="text-ink-2">{a.name}</span>
-                  <span className="tabular block text-[11px] text-ink-soft">
+                <li key={a.name} className="text-[13.5px] leading-snug">
+                  <span className="font-medium text-ink">{a.name}</span>
+                  <span className="tabular block text-[12px] text-ink-soft">
                     {a.weeks} weeks · {a.connects.slice(0, 3).join(", ")}
                   </span>
                 </li>
