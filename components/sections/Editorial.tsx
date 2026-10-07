@@ -262,22 +262,44 @@ function HowItWorks() {
   const p = PATHS[path];
   const track = useRef<HTMLDivElement>(null);
 
-  // The route draws itself as the steps come into view.
+  const list = useRef<HTMLOListElement>(null);
+  // Steps count as "reached" once the route gets to them.
+  const [reached, setReached] = useState(0);
+
+  // The route draws itself as you scroll, and each step lights up as the line arrives.
   useEffect(() => {
-    if (!track.current || reduced()) return;
-    const t = gsap.fromTo(
-      track.current,
-      { scaleX: 0 },
-      {
-        scaleX: 1,
-        ease: "none",
-        scrollTrigger: { trigger: track.current, start: "top 85%", end: "top 35%", scrub: 0.6 },
-      },
-    );
-    return () => {
-      t.scrollTrigger?.kill();
-      t.kill();
-    };
+    // Reduced motion: CSS shows every step lit and the route fully drawn.
+    if (!track.current || !list.current || reduced()) return;
+    const mm = gsap.matchMedia();
+    mm.add("(min-width: 768px)", () => {
+      const at = [0.01, 0.33, 0.66, 0.97];
+      gsap.fromTo(
+        track.current,
+        { scaleX: 0 },
+        {
+          scaleX: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: track.current,
+            start: "top 85%",
+            end: "top 35%",
+            scrub: 0.6,
+            onUpdate: (st) => setReached(at.filter((t) => st.progress >= t).length),
+          },
+        },
+      );
+    });
+    mm.add("(max-width: 767px)", () => {
+      // Stacked steps: each lights as it crosses the lower third of the screen.
+      ScrollTrigger.create({
+        trigger: list.current,
+        start: "top 70%",
+        end: "bottom 70%",
+        onUpdate: (st) => setReached(Math.min(4, Math.floor(st.progress * 4) + 1)),
+        onLeaveBack: () => setReached(0),
+      });
+    });
+    return () => mm.revert();
   }, []);
 
   return (
@@ -312,7 +334,7 @@ function HowItWorks() {
           </button>
         ))}
       </div>
-      <p className="mx-auto mt-10 max-w-[56ch] text-center text-[16px] leading-relaxed text-ink-2">{p.intro}</p>
+      <p key={p.intro} className="how-swap mx-auto mt-10 max-w-[56ch] text-center text-[16px] leading-relaxed text-ink-2">{p.intro}</p>
 
       <div className="relative mx-auto mt-10 max-w-6xl">
         <div className="absolute top-[22px] right-[12%] left-[12%] hidden h-px bg-line md:block" aria-hidden />
@@ -322,31 +344,42 @@ function HowItWorks() {
           style={{ background: "var(--spectrum)" }}
           aria-hidden
         />
-        <ol key={path} className="relative grid gap-4 md:grid-cols-4 md:gap-5">
-          {p.steps.map((s, i) => (
-            <li
-              key={s.title}
-              className="flex flex-col items-center text-center"
-              style={{ animation: `fadeUp 700ms ${i * 80}ms var(--ease-out-quint) both` }}
-            >
-              <span
-                className="tabular relative z-10 flex size-11 items-center justify-center rounded-full text-[13px] font-semibold text-white ring-8 ring-bg"
-                style={{ background: `var(--color-${STEP_TONES[i]})` }}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="mt-5 w-full flex-1 px-3 pb-3">
-                <p className="eyebrow mt-4" style={{ color: `var(--color-${STEP_TONES[i]})` }}>
-                  {s.when}
-                </p>
-                <p className="mt-3 font-serif text-[23px] leading-[1.1]">{s.title}</p>
-                <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.text}</p>
-              </div>
-            </li>
-          ))}
+        <ol ref={list} className="relative grid gap-4 md:grid-cols-4 md:gap-5" aria-live="polite">
+          {p.steps.map((s, i) => {
+            const on = i < reached;
+            const tone = `var(--color-${STEP_TONES[i]})`;
+            return (
+              <li key={i} className="how-step flex flex-col items-center text-center" data-on={on || undefined}>
+                <span
+                  className="how-badge tabular relative z-10 flex size-11 items-center justify-center rounded-full text-[13px] font-semibold ring-8 ring-bg"
+                  style={{ ["--tone" as string]: tone }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="mt-5 w-full flex-1 px-3 pb-3">
+                  {/* Keyed by content: only what differs between the two routes re-enters. */}
+                  <p
+                    key={s.when}
+                    className="how-swap eyebrow mt-4"
+                    style={{ color: `color-mix(in oklab, ${tone} 62%, var(--color-ink))`, ["--i" as string]: i, ["--dir" as string]: path === "catalogue" ? 1 : -1 }}
+                  >
+                    {s.when}
+                  </p>
+                  <div
+                    key={s.title}
+                    className="how-swap"
+                    style={{ ["--i" as string]: i + 0.5, ["--dir" as string]: path === "catalogue" ? 1 : -1 }}
+                  >
+                    <p className="mt-3 font-serif text-[23px] leading-[1.1]">{s.title}</p>
+                    <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.text}</p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </div>
-      <p className="mx-auto mt-10 w-fit rounded-full border border-line bg-white/60 px-5 py-2.5 font-mono text-[11.5px] tracking-[0.1em] text-ink uppercase">
+      <p key={p.total} className="how-swap mx-auto mt-10 w-fit rounded-full border border-line bg-white/60 px-5 py-2.5 font-mono text-[11.5px] tracking-[0.1em] text-ink uppercase">
         {p.total}
       </p>
     </section>

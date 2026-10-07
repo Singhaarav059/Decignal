@@ -954,3 +954,40 @@ html.ready .intro-stage {
   .signal-readout { transition-duration: 0ms; }
   [data-ch] .signal-days span { animation: none; }
 }
+
+/* ---- HOW pass ---- */
+/* Step badges light up as the route reaches them. */
+.how-badge {
+  background: var(--color-paper);
+  color: var(--color-ink-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+  transition:
+    background-color var(--dur-4) var(--ease),
+    color var(--dur-3) var(--ease),
+    box-shadow var(--dur-4) var(--ease),
+    transform var(--dur-4) var(--ease);
+}
+.how-step[data-on] .how-badge {
+  background: var(--tone);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px transparent;
+  transform: scale(1.06);
+}
+/* Route switch: only content that changed re-enters, from the side of the chosen route. */
+.how-swap {
+  animation: howSwap var(--dur-4) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+@keyframes howSwap {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--dir, 1) * 14px));
+    filter: blur(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .how-swap { animation: none; }
+  .how-badge { transition: none; }
+  .how-step[data-on] .how-badge { transform: none; }
+  .how-badge { background: var(--tone); color: #fff; box-shadow: none; }
+}
