@@ -120,15 +120,21 @@ function Systems() {
   const row = (reverse: boolean) => (
     <div className="fade-x overflow-hidden">
       <ul
+        aria-label="Systems Decignal works across"
         className="marquee items-center"
         style={{ ["--marquee-speed" as string]: "48s", animationDirection: reverse ? "reverse" : "normal" }}
       >
         {[...STACK, ...STACK].map((s, i) => (
-          <li key={i} className="flex items-center gap-10 pr-10 md:gap-14 md:pr-14">
+          <li
+            key={i}
+            aria-hidden={i >= STACK.length || undefined}
+            className="system-item flex items-center gap-10 pr-10 md:gap-14 md:pr-14"
+            style={{ ["--tone" as string]: `var(--color-${SYSTEM_TONES[i % 6]})` }}
+          >
             <span className="font-serif text-[clamp(28px,3.4vw,48px)] leading-none whitespace-nowrap">
               {s}
             </span>
-            <span className="diamond" style={{ color: `var(--color-${SYSTEM_TONES[i % 6]})` }} />
+            <span aria-hidden className="diamond" style={{ color: "var(--tone)" }} />
           </li>
         ))}
       </ul>
@@ -271,22 +277,44 @@ function HowItWorks() {
   const p = PATHS[path];
   const track = useRef<HTMLDivElement>(null);
 
-  // The route draws itself as the steps come into view.
+  const list = useRef<HTMLOListElement>(null);
+  // Steps count as "reached" once the route gets to them.
+  const [reached, setReached] = useState(0);
+
+  // The route draws itself as you scroll, and each step lights up as the line arrives.
   useEffect(() => {
-    if (!track.current || reduced()) return;
-    const t = gsap.fromTo(
-      track.current,
-      { scaleX: 0 },
-      {
-        scaleX: 1,
-        ease: "none",
-        scrollTrigger: { trigger: track.current, start: "top 85%", end: "top 35%", scrub: 0.6 },
-      },
-    );
-    return () => {
-      t.scrollTrigger?.kill();
-      t.kill();
-    };
+    // Reduced motion: CSS shows every step lit and the route fully drawn.
+    if (!track.current || !list.current || reduced()) return;
+    const mm = gsap.matchMedia();
+    mm.add("(min-width: 768px)", () => {
+      const at = [0.01, 0.33, 0.66, 0.97];
+      gsap.fromTo(
+        track.current,
+        { scaleX: 0 },
+        {
+          scaleX: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: track.current,
+            start: "top 85%",
+            end: "top 35%",
+            scrub: 0.6,
+            onUpdate: (st) => setReached(at.filter((t) => st.progress >= t).length),
+          },
+        },
+      );
+    });
+    mm.add("(max-width: 767px)", () => {
+      // Stacked steps: each lights as it crosses the lower third of the screen.
+      ScrollTrigger.create({
+        trigger: list.current,
+        start: "top 70%",
+        end: "bottom 70%",
+        onUpdate: (st) => setReached(Math.min(4, Math.floor(st.progress * 4) + 1)),
+        onLeaveBack: () => setReached(0),
+      });
+    });
+    return () => mm.revert();
   }, []);
 
   return (
@@ -321,7 +349,7 @@ function HowItWorks() {
           </button>
         ))}
       </div>
-      <p className="mx-auto mt-10 max-w-[56ch] text-center text-[16px] leading-relaxed text-ink-2">{p.intro}</p>
+      <p key={p.intro} className="how-swap mx-auto mt-10 max-w-[56ch] text-center text-[16px] leading-relaxed text-ink-2">{p.intro}</p>
 
       <div className="relative mx-auto mt-10 max-w-6xl">
         <div className="absolute top-[22px] right-[12%] left-[12%] hidden h-px bg-line md:block" aria-hidden />
@@ -331,31 +359,42 @@ function HowItWorks() {
           style={{ background: "var(--spectrum)" }}
           aria-hidden
         />
-        <ol key={path} className="relative grid gap-4 md:grid-cols-4 md:gap-5">
-          {p.steps.map((s, i) => (
-            <li
-              key={s.title}
-              className="flex flex-col items-center text-center"
-              style={{ animation: `fadeUp 700ms ${i * 80}ms var(--ease-out-quint) both` }}
-            >
-              <span
-                className="tabular relative z-10 flex size-11 items-center justify-center rounded-full text-[13px] font-semibold text-white ring-8 ring-bg"
-                style={{ background: `var(--color-${STEP_TONES[i]})` }}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="mt-5 w-full flex-1 px-3 pb-3">
-                <p className="eyebrow mt-4" style={{ color: `var(--color-${STEP_TONES[i]})` }}>
-                  {s.when}
-                </p>
-                <p className="mt-3 font-serif text-[23px] leading-[1.1]">{s.title}</p>
-                <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.text}</p>
-              </div>
-            </li>
-          ))}
+        <ol ref={list} className="relative grid gap-4 md:grid-cols-4 md:gap-5" aria-live="polite">
+          {p.steps.map((s, i) => {
+            const on = i < reached;
+            const tone = `var(--color-${STEP_TONES[i]})`;
+            return (
+              <li key={i} className="how-step flex flex-col items-center text-center" data-on={on || undefined}>
+                <span
+                  className="how-badge tabular relative z-10 flex size-11 items-center justify-center rounded-full text-[13px] font-semibold ring-8 ring-bg"
+                  style={{ ["--tone" as string]: tone }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="mt-5 w-full flex-1 px-3 pb-3">
+                  {/* Keyed by content: only what differs between the two routes re-enters. */}
+                  <p
+                    key={s.when}
+                    className="how-swap eyebrow mt-4"
+                    style={{ color: `color-mix(in oklab, ${tone} 62%, var(--color-ink))`, ["--i" as string]: i, ["--dir" as string]: path === "catalogue" ? 1 : -1 }}
+                  >
+                    {s.when}
+                  </p>
+                  <div
+                    key={s.title}
+                    className="how-swap"
+                    style={{ ["--i" as string]: i + 0.5, ["--dir" as string]: path === "catalogue" ? 1 : -1 }}
+                  >
+                    <p className="mt-3 font-serif text-[23px] leading-[1.1]">{s.title}</p>
+                    <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{s.text}</p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </div>
-      <p className="mx-auto mt-10 w-fit rounded-full border border-line bg-white/60 px-5 py-2.5 font-mono text-[11.5px] tracking-[0.1em] text-ink uppercase">
+      <p key={p.total} className="how-swap mx-auto mt-10 w-fit rounded-full border border-line bg-white/60 px-5 py-2.5 font-mono text-[11.5px] tracking-[0.1em] text-ink uppercase">
         {p.total}
       </p>
     </section>
@@ -392,12 +431,14 @@ function Faq() {
           return (
             <li key={f.q} className="border-b border-line">
               <button
+                id={`faq-q-${i}`}
                 onClick={() => setOpen(on ? null : i)}
                 aria-expanded={on}
-                className="group flex w-full items-center gap-6 py-7 text-left"
+                aria-controls={`faq-a-${i}`}
+                className="group flex w-full items-center gap-6 rounded-xl py-7 text-left"
               >
                 <span
-                  className="eyebrow tabular w-8 shrink-0 transition-colors duration-300"
+                  className="eyebrow tabular w-8 shrink-0 transition-colors duration-[var(--dur-3)] ease-[var(--ease)]"
                   style={on ? { color: "var(--color-cobalt)" } : undefined}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -406,7 +447,7 @@ function Faq() {
                   {f.q}
                 </span>
                 <span
-                  className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,transform] duration-500 ease-[var(--ease-out-expo)] ${
+                  className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none ${
                     on ? "rotate-45 border-cobalt bg-cobalt text-white" : "border-line-strong group-hover:border-ink"
                   }`}
                   aria-hidden
@@ -416,13 +457,17 @@ function Faq() {
                 </span>
               </button>
               <div
-                className="grid transition-[grid-template-rows] duration-500 ease-[var(--ease-out-expo)]"
+                id={`faq-a-${i}`}
+                role="region"
+                aria-labelledby={`faq-q-${i}`}
+                inert={!on}
+                className="grid transition-[grid-template-rows] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none"
                 style={{ gridTemplateRows: on ? "1fr" : "0fr" }}
               >
-                <div className="overflow-hidden">
+                <div className="min-h-0 overflow-hidden">
                   <p
-                    className="max-w-[62ch] pb-8 pl-14 text-[16px] leading-relaxed text-ink-2 transition-[opacity,transform] duration-500 ease-[var(--ease-out-quint)]"
-                    style={{ opacity: on ? 1 : 0, transform: on ? "none" : "translateY(-6px)", transitionDelay: on ? "120ms" : "0ms" }}
+                    className="max-w-[62ch] pb-8 pl-14 text-[16px] leading-relaxed text-ink-2 transition-[opacity,transform] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none"
+                    style={{ opacity: on ? 1 : 0, transform: on ? "none" : "translateY(-6px)", transitionDelay: on ? "var(--dur-1)" : "0ms" }}
                   >
                     {f.a}
                   </p>
