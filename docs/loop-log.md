@@ -83,3 +83,24 @@ Verified with headless Chromium at DPR 2, at 1440×900, 768×1024 and 390×844, 
 - **Open:**
   - The brief's camera tilt between Signal, Context and Approval is not built yet.
   - The warmth is subtle; judge it at DPR 2 on a real screen.
+
+## 6–9 and editorial sections (parallel agents, merged 2026-10-07)
+
+Logs per section are in `docs/loop-log-{control,scale-industries,final,applications,how-faq-audit,camera}.md`.
+
+## Consistency pass (main session)
+
+- All six branches are merged.
+- **CSS merge fix:** the merges dropped the closing brace of the Audit reduced-motion block, which broke the build. I fixed it and verified that every agent's CSS lines are present.
+- **Outcomes fix:** the count-up never triggered on phones because a 35% visibility threshold can't be met by a grid taller than the screen. It now uses a rootMargin trigger. Verified at 1440 and 390: values end as 2 days / 380 / 14 → 1.
+- **Story checks:** captured every chapter at 1440 / 768 / 390, with 0 console errors, CLS ≤ 0.008 and no horizontal overflow.
+- **Editorial checks:** captured every editorial section at all three widths, with motion and with reduced motion. 0 errors and no overflow.
+- **Retina:** checked at DPR 2 (1440 and 390) for hero, Decision and Decide. Sharp.
+
+### Still open
+- Phone 3D labels in Context and Scale are small (the DOM copy carries the facts).
+- The "SAFETY 175" chart label overlaps the first column on 768 and 390.
+- The Applications phone chapter bar touches the "01 / SUPPLY CHAIN" eyebrow on the first frame.
+- The approved message says "would be sent to your ERP". Softer wording is proposed in docs/copy-proposals.md and needs the owner's decision.
+- The decision card at the Decide hub is too small to read.
+- Real-device 60fps check of the camera orbit.
