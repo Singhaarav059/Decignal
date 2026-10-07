@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhone } from "@/lib/device";
 import { CH, LAYERS } from "@/lib/story";
 import { DECK_STEP_MS, LAYER_FACES, PhoneDeck, useDeckCycle } from "./PhoneDeck";
 
@@ -10,6 +11,11 @@ const TONES = ["signal", "violet", "saffron", "cobalt", "emerald"];
  * through them on their own, and tapping a tab (or the deck) holds that layer.
  */
 export function LayerReadout() {
+  // Built only on a phone: elsewhere the cards are read in 3D, and the decks would draw for nothing.
+  return usePhone() ? <LayerReadoutDeck /> : null;
+}
+
+function LayerReadoutDeck() {
   const { at, held, pick } = useDeckCycle(LAYERS.length, CH.control);
   return (
     <div className="layer-readout md:hidden" data-held={held || undefined} style={{ ["--step" as string]: `${DECK_STEP_MS}ms` }}>

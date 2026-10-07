@@ -43,9 +43,15 @@ function Face({ spec }: { spec: FaceSpec }) {
   useEffect(() => {
     let live = true;
     document.fonts.ready.then(() => {
-      if (!live || !ref.current) return;
+      const canvas = ref.current;
+      if (!live || !canvas) return;
+      // Drawn at the exact device pixels the card fills (it is never wider than the screen), so the
+      // browser shows it 1:1 instead of resampling a larger bitmap.
+      const scale = Math.min(1, (Math.min(window.innerWidth, 480) * window.devicePixelRatio) / FACE_W);
+      canvas.width = Math.round(FACE_W * scale);
+      canvas.height = Math.round(FACE_H * scale);
       readFonts();
-      drawFace(ref.current, spec);
+      drawFace(canvas, spec, false, scale);
     });
     return () => {
       live = false;

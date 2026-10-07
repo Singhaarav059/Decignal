@@ -4,6 +4,7 @@
 // sharp shadow. Contact shadows (in the scene) ground every object.
 import { Environment, Lightformer } from "@react-three/drei";
 import { COLORS } from "./palette";
+import { isPhone } from "@/lib/device";
 
 export function Studio({ resolution = 1024 }: { resolution?: number }) {
   return (
@@ -25,6 +26,9 @@ export function Studio({ resolution = 1024 }: { resolution?: number }) {
 
 /** Key light: warm late-morning sun with a crisp, slightly softened shadow, and a cool sky fill. */
 export function KeyLight({ extent = 11 }: { extent?: number }) {
+  // A phone shows the scene at about a third of desktop size, so a 2048 map gives its shadows the same
+  // sharpness per screen pixel that 4096 gives a desktop, at a quarter of the cost per frame.
+  const map = isPhone() ? 2048 : 4096;
   return (
     <>
     <hemisphereLight args={["#DCE6F5", "#F3E6D3", 0.35]} />
@@ -33,7 +37,7 @@ export function KeyLight({ extent = 11 }: { extent?: number }) {
       color="#FFE8CC"
       intensity={1.65}
       castShadow
-      shadow-mapSize={[4096, 4096]}
+      shadow-mapSize={[map, map]}
       shadow-bias={-0.0002}
       shadow-normalBias={0.012}
       shadow-radius={3}

@@ -9,6 +9,7 @@ import { COLORS } from "./palette";
 import type { DemoKind } from "@/lib/application-demos";
 import { Logistics, Maintenance, Production, SupplyRisk, Distribution, DealerNetwork, Customer, Finance, type SceneProps } from "./OperationalScenes";
 import { phase, type Motion } from "./SceneKit";
+import { canvasQuality } from "@/lib/device";
 
 type Props=SceneProps&{kind:DemoKind;active:boolean};
 
@@ -25,7 +26,7 @@ function Camera({kind,motion,still}:{kind:DemoKind;motion:Motion;still:boolean})
     const c = camera as THREE.OrthographicCamera;
     c.zoom = still ? zoom : THREE.MathUtils.damp(c.zoom, zoom, 6, Math.min(dt, 0.05));
     c.position.set(kind === "maintenance" ? 4.2 : kind === "finance" ? 0.7 : 4.6, kind === "maintenance" ? 3.6 : kind === "finance" ? 7 : 5.4, 8.5);
-    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : 0);
+    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : kind === "finance" ? 0.45 : 0);
     c.lookAt(target);
     c.updateProjectionMatrix();
   });
@@ -36,15 +37,17 @@ function Stage(props:Props){
   return <group dispose={null}>{model}</group>;
 }
 export default function ApplicationScene(props:Props){
-  return <Canvas dpr={[1,2]} shadows="percentage" frameloop={props.active&&!props.still?"always":"demand"} orthographic camera={{position:[4.6,5.4,8.5],zoom:80,near:0.1,far:50}}
-    gl={{antialias:true,alpha:true,powerPreference:"high-performance"}}
+  // Full device density on phones too; the shadow maps are sized to the scene's on-screen size.
+  const q=useMemo(()=>canvasQuality(),[]);
+  return <Canvas dpr={q.dpr} shadows="percentage" frameloop={props.active&&!props.still?"always":"demand"} orthographic camera={{position:[4.6,5.4,8.5],zoom:80,near:0.1,far:50}}
+    gl={{antialias:q.antialias,alpha:true,powerPreference:"high-performance"}}
     onCreated={({gl})=>{gl.toneMapping=THREE.NeutralToneMapping;gl.toneMappingExposure=0.95;}}>
     <Suspense fallback={null}>
       <Studio resolution={512}/><Camera kind={props.kind} motion={props.motion} still={props.still}/>
-      <directionalLight position={[4,9,6]} intensity={1.5} castShadow shadow-mapSize={[2048,2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7}/>
+      <directionalLight position={[4,9,6]} intensity={1.5} castShadow shadow-mapSize={q.phone?[1024,1024]:[2048,2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7}/>
       <Stage key={props.kind} {...props}/>
       <mesh rotation-x={-Math.PI/2} position-y={-0.065} receiveShadow><planeGeometry args={[30,30]}/><shadowMaterial color={COLORS.shadow} opacity={0.12}/></mesh>
-      <ContactShadows position={[0,-0.05,0]} scale={14} blur={1.8} opacity={0.36} far={1.5} resolution={512} frames={props.active?Infinity:1} color={COLORS.shadow}/>
+      <ContactShadows position={[0,-0.05,0]} scale={14} blur={1.8} opacity={0.36} far={1.5} resolution={q.phone?256:512} frames={props.active?Infinity:1} color={COLORS.shadow}/>
     </Suspense>
   </Canvas>;
 }

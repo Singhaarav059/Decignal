@@ -573,10 +573,11 @@ function final(c: C) {
   pillLeft(c, "Free AI audit · 30 minutes", 90, 880, TINTS.cobalt);
 }
 
-/** Draws a face. rotate turns it upside down for faces seen after a half turn. */
-export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = false) {
+/** Draws a face. rotate turns it upside down for faces seen after a half turn; scale draws it into a
+ *  canvas of a different size (FACE_W * scale wide) with the same layout. */
+export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = false, scale = 1) {
   const c = canvas.getContext("2d")!;
-  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.setTransform(scale, 0, 0, scale, 0, 0);
   c.clearRect(0, 0, FACE_W, FACE_H);
   if (rotate) {
     c.translate(FACE_W, FACE_H);

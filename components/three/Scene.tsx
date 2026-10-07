@@ -13,6 +13,7 @@ import { Plinth } from "./Plinth";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
+import { canvasQuality, isPhone } from "@/lib/device";
 
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
 const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.06];
@@ -206,7 +207,8 @@ function World() {
         <shadowMaterial color={COLORS.shadow} opacity={0.16} transparent />
       </mesh>
       {/* Tight contact shadows: every object sits on the ground, none of them float */}
-      <ContactShadows position={[0, 0.001, 0]} scale={30} resolution={1024} blur={1.1} far={0.7} opacity={0.42} color={COLORS.shadow} />
+      {/* Phones: half the map for a third of the on-screen size, so the shadow is as fine per pixel as on desktop. */}
+      <ContactShadows position={[0, 0.001, 0]} scale={30} resolution={isPhone() ? 512 : 1024} blur={1.1} far={0.7} opacity={0.42} color={COLORS.shadow} />
       <Rig />
       <Pause />
     </>
@@ -230,13 +232,15 @@ function Pause() {
 }
 
 export default function Scene() {
+  const q = useMemo(() => canvasQuality(), []);
   return (
     <Canvas
       shadows="percentage"
-      // Always the screen's full pixel density (capped at 2x): the scene never trades sharpness for speed.
-      dpr={[1, 2]}
+      // Always the screen's full pixel density (2x on desktop, up to 3x on a phone): the scene never
+      // trades sharpness for speed.
+      dpr={q.dpr}
       camera={{ fov: 26, near: 0.1, far: 80, position: [0, 7, 15] }}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 0.95;

@@ -2261,3 +2261,26 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
   .glance-apps i > b { display: none; }
   .glance-apps i > span { display: inline; }
 }
+
+/* ---- Phones: no live blur over the moving 3D ----
+   A frosted panel over the canvas re-blurs everything behind it on every frame, which a phone GPU pays
+   for once per panel per frame. Phones get the same panels as solid surfaces at the same tone, so they
+   look alike at rest and cost nothing while the scene moves. */
+@media (max-width: 767px) {
+  *, *::before, *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .nav-glass { background: rgb(251 246 239 / .96); }
+  .btn-ghost { background: rgb(255 255 255 / .9); }
+  .sys-chip { background: rgb(255 255 255 / .92); }
+  .stepper, .stepper-step { background: rgb(255 255 255 / .94); }
+  .signal-readout { background: rgb(255 255 255 / .94); }
+  .decision-panel, .decision-facts { background: rgb(255 255 255 / .94); }
+  .ind-card, .ind-index { background: rgb(255 255 255 / .94); }
+  .fe-board { background-color: rgb(255 255 255 / .9); }
+  .operation-readout, .ribbon-card { background: rgb(255 253 249 / .97); }
+  .scale-phone-tabs button { background: rgb(255 255 255 / .92); }
+
+  /* Copy and headings move on opacity and position only: a blur or colour-split mid-transition read as
+     out of focus on a small screen, and repainting text through a filter every frame is what stuttered. */
+  [data-ch] { will-change: transform, opacity; }
+  [data-ch] .display { text-shadow: none; }
+}

@@ -29,6 +29,7 @@ import { ScalePhone } from "./ScalePhone";
 import { scrollToTarget } from "../SmoothScroll";
 import { TONE } from "./chapters";
 import { Arrow } from "../ui/Arrow";
+import { isPhone } from "@/lib/device";
 
 
 /** One word per chapter, set huge and faint behind the 3D. */
@@ -60,6 +61,8 @@ export function Story() {
     const stock = front.current?.querySelector<HTMLElement>("[data-stock]");
     const finalEl = front.current?.querySelector<HTMLElement>("[data-final]");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Phones move the copy on opacity and position only: a filter repaints the text every frame.
+    const flat = still || isPhone();
     let lastStock = "";
     // While a system is open, the giant headline steps back so the island and its panel lead.
     const offSelect = onSelect((n) => {
@@ -72,10 +75,10 @@ export function Story() {
         const w = shown(weight(Number(el.dataset.ch), g));
         el.style.opacity = String(w);
         el.style.transform = `translate3d(0, ${(1 - w) * 18}px, 0)`;
-        el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`;
+        if (!flat) el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`;
         el.style.visibility = w < 0.005 ? "hidden" : "visible";
         // Headings resolve from a red and blue split into one sharp line as they settle.
-        if (!still) {
+        if (!flat) {
           el.style.setProperty("--split", `${(1 - w) * 8}px`);
           el.style.setProperty("--split-k", String(Math.min(1, (1 - w) * 3)));
         }
@@ -108,7 +111,7 @@ export function Story() {
         // One name at a time: the old name clears before the next resolves, never two half-blurred.
         const w = wi * smoothstep(0.35, 1, 1 - clamp01(Math.abs(f - k) * 2.4));
         el.style.opacity = String(w);
-        el.style.filter = w > 0.98 || still ? "none" : `blur(${(1 - w) * 2}px)`;
+        if (!flat) el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`;
         el.style.transform = `translate3d(0, ${(f - k) * -40}px, 0)`;
         el.style.visibility = w < 0.005 ? "hidden" : "visible";
       });
@@ -244,7 +247,7 @@ export function Story() {
             </p>
             <div className="flex flex-col gap-3">
             <Stepper />
-            <dl className="grid grid-cols-3 divide-x divide-line overflow-hidden rounded-2xl border border-white/80 bg-white/60 text-left shadow-[0_10px_40px_-20px_rgba(20,19,15,0.3)] backdrop-blur-md">
+            <dl className="decision-facts grid grid-cols-3 divide-x divide-line overflow-hidden rounded-2xl border border-white/80 bg-white/60 text-left shadow-[0_10px_40px_-20px_rgba(20,19,15,0.3)] backdrop-blur-md">
               {[
                 ["Arrives", "2 days"],
                 ["Plant 02 left", "380 units"],

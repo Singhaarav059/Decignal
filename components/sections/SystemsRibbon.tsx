@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePhone } from "@/lib/device";
 import { STACK_ROWS } from "@/lib/content";
 import { BRANDS } from "@/lib/brands";
 
@@ -29,12 +30,7 @@ const READS: Record<string, string> = {
 };
 
 const COUNT = 18;
-const PHONE = "(max-width: 767px)";
-const subscribePhone = (fn: () => void) => {
-  const m = window.matchMedia(PHONE);
-  m.addEventListener("change", fn);
-  return () => m.removeEventListener("change", fn);
-};
+
 const LOOP_MS = 26000;
 
 /** Growlio-style ribbon: systems flow along one curve, through Decignal, and leave as decisions. */
@@ -48,7 +44,7 @@ export function SystemsRibbon() {
   const [reads, setReads] = useState(1284);
   // Phones run the curve steeply up a narrow stage: each system rides once, spaced out and upright,
   // so the tiles never touch and their names read level.
-  const phone = useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE).matches, () => false);
+  const phone = usePhone();
   const count = phone ? SYSTEMS.length : COUNT;
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhone } from "@/lib/device";
 import { CH, FUNCTIONS } from "@/lib/story";
 import { APPLICATIONS, CATEGORY_TONE, type Category } from "@/lib/content";
 import { tone } from "../ui/systems";
@@ -10,6 +11,11 @@ import { DECK_STEP_MS, FUNCTION_FACES, PhoneDeck, useDeckCycle } from "./PhoneDe
  * and see the applications Decignal offers there underneath.
  */
 export function ScalePhone() {
+  // Built only on a phone: elsewhere the cards are read in 3D, and the decks would draw for nothing.
+  return usePhone() ? <ScalePhoneDeck /> : null;
+}
+
+function ScalePhoneDeck() {
   const { at, held, pick } = useDeckCycle(FUNCTIONS.length, CH.scale);
   const fn = FUNCTIONS[at];
   const apps = APPLICATIONS.filter((a) => a.category === (fn.name as Category));
