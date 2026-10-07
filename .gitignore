@@ -40,3 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 references/*.mp4
+.claude/worktrees/
