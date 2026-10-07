@@ -35,40 +35,76 @@ const LOOP_MS = 26000;
 export function SystemsRibbon() {
   const stage = useRef<HTMLDivElement>(null);
   const path = useRef<SVGPathElement>(null);
+  const guide = useRef<SVGSVGElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const tiles = useRef<(HTMLLIElement | null)[]>([]);
   const [feed, setFeed] = useState<number[]>([0, 1, 2]);
   const [reads, setReads] = useState(1284);
 
   useEffect(() => {
-    const p = path.current, el = stage.current;
-    if (!p || !el) return;
+    const p = path.current, el = stage.current, svg = guide.current;
+    if (!p || !el || !svg) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const len = p.getTotalLength();
+    const copy = el.parentElement?.querySelector<HTMLElement>(".works-with");
     const lastZone = new Array(COUNT).fill(-1);
     const t0 = performance.now();
-    let raf = 0, visible = true;
+    let raf = 0, visible = true, len = 1;
+    // Where the copy sits over the stage, grown by a tile's reach: no tile may pass through it.
+    let keep = { l: 0, t: 0, r: 0, b: 0 };
+
+    // The path is drawn in the stage's own pixels from where the copy and the card actually are.
+    // Beside the copy (wide screens) it runs under the copy's last line and enters the card low on
+    // its left edge, rises behind the card and leaves top right; stacked, it is one long sweep.
+    const shape = () => {
+      const box = el.getBoundingClientRect(), c = card.current!.getBoundingClientRect();
+      const W = box.width, H = box.height;
+      const reach = (tiles.current[0]?.offsetWidth ?? 56) * 0.75 + 12;
+      const k = copy?.getBoundingClientRect();
+      const cl = c.left - box.left, cr = c.right - box.left, ct = c.top - box.top, cb = c.bottom - box.top;
+      const beside = !!k && k.bottom - box.top > 0 && k.right - box.left > 0 && k.right - box.left < cl + 40;
+      keep = k
+        ? { l: k.left - box.left - reach, t: k.top - box.top - reach, r: k.right - box.left + reach, b: k.bottom - box.top + reach }
+        : { l: 0, t: 0, r: 0, b: 0 };
+      const x0 = -0.06 * W, y0 = H - 4, end = `${1.06 * W} ${0.095 * H}`;
+      let d: string;
+      const yIn = Math.min(Math.max(keep.b, ct + 40), cb - 36);
+      if (beside && yIn < y0 - 10) {
+        const yOut = ct + (cb - ct) * 0.32;
+        d = `M ${x0} ${y0} C ${x0 + (cl - x0) * 0.45} ${y0}, ${cl - (cl - x0) * 0.3} ${yIn}, ${cl} ${yIn} S ${cr - 40} ${yOut}, ${cr} ${yOut} S ${0.86 * W} ${0.143 * H}, ${end}`;
+      } else {
+        d = `M ${x0} ${y0} C ${0.22 * W} ${y0}, ${0.33 * W} ${0.786 * H}, ${0.52 * W} ${0.548 * H} S ${0.86 * W} ${0.143 * H}, ${end}`;
+      }
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      p.setAttribute("d", d);
+      len = p.getTotalLength();
+    };
 
     const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
     io.observe(el);
+    const ro = new ResizeObserver(() => {
+      shape();
+      if (reduced) place(performance.now());
+    });
+    ro.observe(el);
+    if (copy) ro.observe(copy);
 
     const place = (now: number) => {
       const box = el.getBoundingClientRect(), c = card.current!.getBoundingClientRect();
-      const { width, height } = box;
       // Tiles between the card's edges are behind it; past the right edge they leave as decisions.
       const left = c.left - box.left + 12, right = c.right - box.left - 12;
-      const sx = width / 1000, sy = height / 420;
       const phase = reduced ? 0.013 : ((now - t0) % LOOP_MS) / LOOP_MS;
       for (let i = 0; i < COUNT; i++) {
         const node = tiles.current[i];
         if (!node) continue;
         const u = (i / COUNT + phase) % 1;
         const a = p.getPointAtLength(u * len), b = p.getPointAtLength(Math.min(len, u * len + 4));
-        const ang = (Math.atan2((b.y - a.y) * sy, (b.x - a.x) * sx) * 180) / Math.PI;
-        const x = a.x * sx;
+        const ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+        const x = a.x;
         const zone = x < left ? 0 : x < right ? 1 : 2;
-        node.style.transform = `translate(${a.x * sx}px, ${a.y * sy}px) translate(-50%, -50%) rotate(${ang}deg)`;
-        node.style.opacity = String(Math.min(1, u / 0.06, (1 - u) / 0.06));
+        // Safety net for layouts with no room under the copy: a tile never shows through it.
+        const hidden = a.x > keep.l && a.x < keep.r && a.y > keep.t && a.y < keep.b;
+        node.style.transform = `translate(${a.x}px, ${a.y}px) translate(-50%, -50%) rotate(${ang}deg)`;
+        node.style.opacity = hidden ? "0" : String(Math.min(1, u / 0.06, (1 - u) / 0.06));
         if (zone !== lastZone[i]) {
           node.dataset.zone = String(zone);
           if (zone === 1 && lastZone[i] === 0) {
@@ -86,15 +122,16 @@ export function SystemsRibbon() {
       if (visible) place(now);
       raf = requestAnimationFrame(tick);
     };
+    shape();
     place(t0);
     if (!reduced) raf = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(raf); io.disconnect(); };
+    return () => { cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
   }, []);
 
   return (
     <div ref={stage} className="ribbon-stage">
       <div className="ribbon-backdrop" aria-hidden />
-      <svg className="ribbon-guide" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden>
+      <svg ref={guide} className="ribbon-guide" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden>
         <path ref={path} d="M -60 418 C 220 418, 330 330, 520 230 S 860 60, 1060 40" />
       </svg>
 

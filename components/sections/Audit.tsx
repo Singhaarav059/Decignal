@@ -32,7 +32,7 @@ export function Audit() {
         className="audit-panel relative overflow-clip rounded-[36px] px-6 py-16 md:rounded-[48px] md:px-14 md:py-16"
         style={{ background: "var(--color-cobalt)" }}
       >
-      <div className="audit-grid relative mx-auto grid max-w-6xl gap-9 md:grid-cols-[1fr_1.1fr]">
+      <div className="audit-grid relative mx-auto grid max-w-6xl gap-9 lg:grid-cols-[1fr_1.1fr]">
         <div className="audit-copy text-white">
           <p data-reveal className="eyebrow inline-flex items-center gap-2.5 text-white!">
             <span className="size-1.5 rounded-full bg-white" />
@@ -42,14 +42,13 @@ export function Audit() {
             Bring us the decision that should move faster.
           </h2>
           <p data-reveal className="audit-intro mt-7 max-w-[42ch] text-[17px] leading-relaxed text-white/95">
-            In a focused 30-minute session we identify the workflow, the systems and the measurable outcome worth
-            solving first.
+            30 minutes on one workflow: the systems behind it and the outcome worth solving first.
           </p>
           <ol data-reveal className="audit-benefits mt-10 border-t border-white/25">
             {[
-              ["A working conversation", "No generic product presentation."],
-              ["A practical starting point", "Leave with a clearer first use case."],
-              ["No commitment required", "We decide together if the next step makes sense."],
+              ["A working session", "No generic product presentation."],
+              ["A clear first use case", "Leave with a practical starting point."],
+              ["No commitment", "We decide together if the next step makes sense."],
             ].map(([t, d], i) => (
               <li key={t} className="grid grid-cols-[48px_1fr] items-start border-b border-white/25 py-5">
                 <span className="flex size-8 items-center justify-center rounded-xl bg-white/15 text-white" aria-hidden>
@@ -60,7 +59,7 @@ export function Audit() {
                 </span>
                 <span>
                   <span className="block font-serif text-2xl leading-tight">{t}</span>
-                  <span className="mt-1 block text-[15px] text-white/95">{d}</span>
+                  <span className="audit-benefit-d mt-1 block text-[15px] text-white/95">{d}</span>
                 </span>
               </li>
             ))}
@@ -69,7 +68,7 @@ export function Audit() {
 
         <div
           data-reveal
-          className="audit-card relative self-start rounded-[28px] bg-paper p-6 shadow-[0_40px_80px_-30px_rgba(20,19,15,0.55)] md:sticky md:top-28 md:p-9"
+          className="audit-card relative self-start rounded-[28px] bg-paper p-6 shadow-[0_40px_80px_-30px_rgba(20,19,15,0.55)] md:p-9 lg:sticky lg:top-28"
         >
           {/* The card answers each completed step with a brief cobalt ring. */}
           <span key={step} className="audit-ring" aria-hidden />

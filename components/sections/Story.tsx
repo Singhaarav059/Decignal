@@ -54,7 +54,7 @@ export function Systems() {
                 </div>
               </div>
               <p className="mt-10 text-[13px] text-ink-soft">{s.knows}</p>
-              <p className="tabular mt-1 text-[34px] font-semibold tracking-[-0.03em]" style={{ color: tone(s.tone) }}>
+              <p className="tabular mt-1 text-[34px] font-semibold tracking-[-0.017em]" style={{ color: tone(s.tone) }}>
                 {s.value}
               </p>
               <p className="mt-1 text-[14px] text-ink-2">{s.detail}</p>
@@ -107,11 +107,11 @@ export function Signal() {
           <dl data-reveal className="mt-10 grid max-w-[460px] grid-cols-2 gap-6 border-t border-line pt-8">
             <div>
               <dt className="text-[13px] text-ink-soft">Records read today</dt>
-              <dd className="tabular mt-1 text-[32px] font-semibold tracking-[-0.03em]">4.1M</dd>
+              <dd className="tabular mt-1 text-[32px] font-semibold tracking-[-0.017em]">4.1M</dd>
             </div>
             <div>
               <dt className="text-[13px] text-ink-soft">Signals raised</dt>
-              <dd className="tabular mt-1 text-[32px] font-semibold tracking-[-0.03em]" style={{ color: tone("signal") }}>
+              <dd className="tabular mt-1 text-[32px] font-semibold tracking-[-0.017em]" style={{ color: tone("signal") }}>
                 1
               </dd>
             </div>
@@ -291,7 +291,7 @@ export function Trend() {
             ["Day 21", "Next supplier delivery arrives", "tangerine"],
           ].map(([v, l, t]) => (
             <li key={l} className="rounded-[24px] bg-white p-6">
-              <p className="tabular text-[30px] font-semibold tracking-[-0.03em]" style={{ color: tone(t) }}>
+              <p className="tabular text-[30px] font-semibold tracking-[-0.017em]" style={{ color: tone(t) }}>
                 {v}
               </p>
               <p className="mt-1 text-[15px] text-ink-2">{l}</p>

@@ -24,7 +24,16 @@ const MOBILE_FIT = [0.68, 0.62, 0.86, 0.82, 0.62, 1.04, 0.8, 1, 0.74];
 
 const PORTRAIT_FIT = [0.68, 0.7, 0.9, 1, 0.78];
 // Tablet portrait only: Control's stack sits below the approval widget instead of behind it.
-const TABLET_DROP = [0, 0, 0, 0, 0, 0.3, 0, 0, 0];
+const TABLET_DROP = [0.035, 0, 0, 0, 0, 0.3, 0, 0, 0];
+// Phones only: Scale's cards sit lower, in the gap between the subtitle and the function board.
+const MOBILE_DROP = [0, 0, 0, 0, 0, 0, 0.075, 0, 0];
+// Narrow landscape (1024 to 1280 wide): the copy column takes a larger share of the screen, so
+// Problem's chart steps back and slides right, clear of the stats beside it. Eased in by width.
+// Control's card stack does the same, clear of the approval widget.
+const NARROW_FIT = [1, 1, 1.2, 1, 1, 1.32, 1, 1, 1];
+const NARROW_X = [0, 0, -0.9, 0, 0, -1.1, 0, 0, 0];
+// Tablet portrait only: the hero's six islands step back so they sit under the headline, not over it.
+const TABLET_FIT = [1.24, 1, 1, 1, 1, 1, 1, 1, 1];
 
 function Rig() {
   const { camera, size } = useThree();
@@ -75,12 +84,19 @@ function Rig() {
 
     // Narrow screens: step back along the view ray so the composition still fits.
     const aspect = size.width / size.height;
-    const fit = size.width < 768 ? THREE.MathUtils.lerp(MOBILE_FIT[i], MOBILE_FIT[j], e) : portrait ? THREE.MathUtils.lerp(PORTRAIT_FIT[i] ?? 1, PORTRAIT_FIT[j] ?? 1, e) : size.width < 1024 ? THREE.MathUtils.lerp(i===0?1.18:1,j===0?1.18:1,e) : 1;
+    const fit = size.width < 768 ? THREE.MathUtils.lerp(MOBILE_FIT[i], MOBILE_FIT[j], e) : portrait ? THREE.MathUtils.lerp(PORTRAIT_FIT[i] ?? 1, PORTRAIT_FIT[j] ?? 1, e) * THREE.MathUtils.lerp(TABLET_FIT[i], TABLET_FIT[j], e) : size.width < 1024 ? THREE.MathUtils.lerp(i===0?1.18:1,j===0?1.18:1,e) : 1;
     const compactHero = size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?1.09:1,j===0?1.09:1,e) : 1;
-    store.camK = (aspect < 1.5 ? Math.pow(1.5 / aspect, 0.92) : 1) * fit * compactHero;
+    const narrow = !portrait && size.width >= 1024 ? THREE.MathUtils.clamp((1280 - size.width) / 256, 0, 1) : 0;
+    const narrowFit = 1 + (THREE.MathUtils.lerp(NARROW_FIT[i], NARROW_FIT[j], e) - 1) * narrow;
+    store.camK = (aspect < 1.5 ? Math.pow(1.5 / aspect, 0.92) : 1) * fit * compactHero * narrowFit;
     if (store.camK > 1) goal.p.sub(goal.t).multiplyScalar(store.camK).add(goal.t);
+    if (narrow > 0) {
+      const nx = THREE.MathUtils.lerp(NARROW_X[i], NARROW_X[j], e) * narrow;
+      goal.p.x += nx;
+      goal.t.x += nx;
+    }
     if (size.width < 1024) {
-      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width >= 768 ? THREE.MathUtils.lerp(TABLET_DROP[i], TABLET_DROP[j], e) : 0) + (size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?.009:0,j===0?.009:0,e) : 0);
+      const drop = THREE.MathUtils.lerp(PORTRAIT_DROP[i], PORTRAIT_DROP[j], e) + (size.width >= 768 ? THREE.MathUtils.lerp(TABLET_DROP[i], TABLET_DROP[j], e) : THREE.MathUtils.lerp(MOBILE_DROP[i], MOBILE_DROP[j], e)) + (size.width < 768 && size.height < 740 ? THREE.MathUtils.lerp(i===0?.009:0,j===0?.009:0,e) : 0);
       const dx = THREE.MathUtils.lerp(PORTRAIT_X[i], PORTRAIT_X[j], e);
       goal.p.x += dx;
       goal.t.x += dx;

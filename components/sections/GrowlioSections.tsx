@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { onStep } from "@/lib/jump";
 import { Check, Clock, Database, Factory, FileSearch, Globe, Network, Radar, Scale, ShieldCheck, Sparkles, TrendingUp, Truck, Users, Warehouse } from "lucide-react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { APPLICATIONS, CATEGORY_TONE, PATHS } from "@/lib/content";
@@ -141,7 +142,7 @@ export function GlanceCards() {
         </div>
       </article>
       <article className="glance-card g-weeks" style={{ ["--tone" as string]: "var(--color-emerald)" }}>
-        <strong className="glance-num">4–8<small> wks</small></strong>
+        <strong className="glance-num" aria-label="4 to 8 weeks">4<span className="glance-dash" aria-hidden>–</span>8<small> wks</small></strong>
         <h3>to the first release</h3>
         <div className="glance-timeline" aria-hidden>
           {Array.from({ length: 12 }, (_, w) => <i key={w} data-on={w >= 3 && w < 8 || undefined} />)}
@@ -153,7 +154,7 @@ export function GlanceCards() {
         <strong className="glance-num">8</strong>
         <h3>ready applications</h3>
         <div className="glance-apps" aria-hidden>
-          {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}>{a.name.split(" ").map((w) => w[0]).join("").slice(0, 2)}</i>)}
+          {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}>{a.name.split(" ").filter((w) => /\w/.test(w)).map((w) => w[0]).join("").slice(0, 2)}</i>)}
         </div>
         <p>Inventory to finance, each fitted to your systems and policies.</p>
       </article>
@@ -335,6 +336,9 @@ export function Roadmap({ path, setPath, head }: { path: keyof typeof PATHS; set
     const top = el.getBoundingClientRect().top + window.scrollY;
     scrollToTarget(top + (el.offsetHeight - window.innerHeight) * ((i + 0.5) / 4));
   };
+
+  // The nav's How it works preview walks straight to a step. Phones read the steps as a list.
+  useEffect(() => onStep((i) => (window.matchMedia("(min-width: 900px)").matches ? go(i) : scrollToTarget("#how"))), []);
 
   const s = steps[step];
   const tone = `var(--color-${STEP_TONES[step]})`;

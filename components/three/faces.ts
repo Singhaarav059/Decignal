@@ -20,18 +20,24 @@ export const LAYER_TONE = [COLORS.signal, TINTS.violet, TINTS.saffron, TINTS.cob
 export const FUNCTION_TONE = [TINTS.cobalt, TINTS.emerald, TINTS.tangerine, TINTS.pink, TINTS.violet];
 const INDUSTRY_TONE = [TINTS.emerald, TINTS.cobalt, TINTS.pink, TINTS.tangerine, TINTS.violet, TINTS.saffron];
 
-let fonts = { sans: "Inter, Helvetica, Arial, sans-serif", mono: "ui-monospace, Menlo, monospace" };
+let fonts = { sans: "Figtree, Helvetica, Arial, sans-serif", display: "Helvetica, Arial, sans-serif", mono: "ui-monospace, Menlo, monospace" };
 export function readFonts() {
   const root = getComputedStyle(document.documentElement);
   const sans = getComputedStyle(document.body).fontFamily;
+  const display = root.getPropertyValue("--font-display").trim();
   const mono = root.getPropertyValue("--font-label").trim();
-  fonts = { sans: sans || fonts.sans, mono: mono ? `${mono}, ui-monospace, monospace` : fonts.mono };
+  fonts = {
+    sans: sans || fonts.sans,
+    display: display ? `${display}, ${fonts.display}` : sans || fonts.sans,
+    mono: mono ? `${mono}, ui-monospace, monospace` : fonts.mono,
+  };
 }
 
 type C = CanvasRenderingContext2D;
 
+/** Headline weights set in the display face, like the page; labels in the label face. */
 const font = (c: C, size: number, weight = 600, mono = false) => {
-  c.font = `${weight} ${size}px ${mono ? fonts.mono : fonts.sans}`;
+  c.font = `${weight} ${size}px ${mono ? fonts.mono : weight >= 650 ? fonts.display : fonts.sans}`;
 };
 
 function rr(c: C, x: number, y: number, w: number, h: number, r: number) {

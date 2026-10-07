@@ -11,6 +11,7 @@ import { Footer } from "./Footer";
 import { ApplicationExplorer } from "./ApplicationExplorer";
 import { CountUp } from "../ui/CountUp";
 import { scrollToTarget } from "../SmoothScroll";
+import { onOutcome, onQuestion } from "@/lib/jump";
 import { Bot, CalendarClock, CircleCheck, Database, KeyRound, Layers, Lock, MessageCircle, Plug, ScanSearch, ShieldCheck, Target, type LucideIcon } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -211,6 +212,8 @@ function Outcomes() {
   const root = useRef<HTMLElement>(null);
   const [seen, setSeen] = useState(false);
   const [tab, setTab] = useState(0);
+  // The nav's Outcomes preview opens a case directly.
+  useEffect(() => onOutcome((i) => { setTab(i); scrollToTarget("#outcomes"); }), []);
   useEffect(() => {
     const grid = root.current?.querySelector(".outcome-grid");
     if (!grid) return;
@@ -302,7 +305,9 @@ const FAQ_META: { Icon: LucideIcon; topic: string; tone: string }[] = [
 ];
 
 function Faq() {
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
+  // The nav's Questions preview opens one answer and brings it into view.
+  useEffect(() => onQuestion((i) => { setOpen(i); scrollToTarget(`#faq-q-${i}`); }), []);
   return (
     <section id="faq" className="faq scroll-mt-24">
       <div className="faq-side">
@@ -314,24 +319,13 @@ function Faq() {
           <h2 data-lines className="display faq-title">
             <Lines lines={["Questions enterprise", <>teams <em className="spectrum-text">ask first.</em></>]} />
           </h2>
-          <ul className="faq-trust">
-            {[[Layers, "No rip-and-replace programme", "cobalt"], [Database, "No perfect data lake required", "saffron"], [ShieldCheck, "Human control stays visible", "emerald"]].map(([Icon, t, c]) => {
-              const I = Icon as LucideIcon;
-              return (
-                <li key={t as string} style={{ ["--tone" as string]: `var(--color-${c})` }}>
-                  <span><I size={15} /></span>
-                  {t as string}
-                </li>
-              );
-            })}
-          </ul>
           <div className="faq-help">
             <div className="faq-help-art" aria-hidden>
               {["cobalt", "violet", "emerald"].map((t, i) => <span key={t} style={{ ["--tone" as string]: `var(--color-${t})`, ["--i" as string]: i }}>{["RK", "AM", "SN"][i]}</span>)}
               <i><MessageCircle size={15} /></i>
             </div>
             <p className="faq-help-title">Still have a question?</p>
-            <p className="faq-help-text">Bring it to the free AI audit: 30 minutes with the team, about one decision in your operation.</p>
+            <p className="faq-help-text">Bring it to the free 30-minute audit.</p>
             <button
               onClick={() => {
                 scrollToTarget("#audit");
@@ -340,7 +334,7 @@ function Faq() {
               }}
               className="btn btn-primary"
             >
-              Book a free AI audit
+              Ask the team
             </button>
           </div>
         </div>
@@ -354,7 +348,7 @@ function Faq() {
               <button id={`faq-q-${i}`} onClick={() => setOpen(on ? null : i)} aria-expanded={on} aria-controls={`faq-a-${i}`} className="faq-q">
                 <span className="faq-icon"><Icon size={18} /></span>
                 <span className="faq-q-text">
-                  <span className="faq-topic">{String(i + 1).padStart(2, "0")} · {topic}</span>
+                  <span className="sr-only">{topic}: </span>
                   <span className="faq-q-title">{f.q}</span>
                 </span>
                 <span className="faq-plus" aria-hidden><i /><i /></span>

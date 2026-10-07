@@ -13,7 +13,7 @@ export function Logo({ size = 26 }: { size?: number }) {
   return (
     <span className="logo inline-flex items-center gap-2.5">
       <LogoMark className="shrink-0" />
-      <span className="font-serif leading-none tracking-[-0.035em]" style={{ fontSize: size }}>
+      <span className="font-serif leading-none tracking-[-0.019em]" style={{ fontSize: size }}>
         decignal
       </span>
       <style>{`

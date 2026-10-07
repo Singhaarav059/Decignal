@@ -79,7 +79,7 @@ export function Loader() {
       </div>
       <div className="flex items-end justify-between px-6 pb-7 md:px-10 md:pb-9">
         <p className="eyebrow max-w-[30ch]">Decision intelligence for enterprises across India and Africa</p>
-        <span ref={count} className="tabular font-serif text-[clamp(48px,7vw,96px)] leading-[0.8] tracking-[-0.04em]">
+        <span ref={count} className="tabular font-serif text-[clamp(48px,7vw,96px)] leading-[0.8] tracking-[-0.022em]">
           000
         </span>
       </div>

@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import "./globals.css";
 
-// One clean family. Optical sizing keeps headlines tight and body text open.
-const sans = Inter({
-  variable: "--font-body",
+// Bricolage Grotesque carries headlines and labels (optical size tightens it at display sizes,
+// width lets labels run a touch condensed); Figtree carries everything people read.
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
-  axes: ["opsz"],
+  axes: ["opsz", "wdth"],
 });
 
-const mono = Geist_Mono({
-  variable: "--font-label",
+const body = Figtree({
+  variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} antialiased`}>
+    <html lang="en" className={`${display.variable} ${body.variable} antialiased`}>
       <body>{children}</body>
     </html>
   );

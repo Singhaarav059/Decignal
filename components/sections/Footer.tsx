@@ -3,22 +3,24 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { CATEGORIES, CATEGORY_TONE } from "@/lib/content";
+import { APPLICATIONS, CATEGORIES, CATEGORY_TONE } from "@/lib/content";
 import { scrollToTarget } from "../SmoothScroll";
 import { LogoMark } from "../ui/Logo";
 import { Arrow } from "../ui/Arrow";
+import { showArea } from "./GrowlioSections";
+import { ArrowUp, ArrowUpRight, LayoutGrid, MessageCircleQuestion, Route, Sparkles, TrendingUp, type LucideIcon } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const STRATA = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
 
-const NAV = [
-  ["Applications", "#applications"],
-  ["Outcomes", "#outcomes"],
-  ["How it works", "#how"],
-  ["Questions", "#faq"],
-  ["Free AI audit", "#audit"],
-] as const;
+/** Each section of the page as a card: its colour, what it holds, and a way in. */
+const NAV: { label: string; href: string; tone: string; Icon: LucideIcon; blurb: string }[] = [
+  { label: "Applications", href: "#applications", tone: "cobalt", Icon: LayoutGrid, blurb: "Eight applications across five business areas" },
+  { label: "Outcomes", href: "#outcomes", tone: "emerald", Icon: TrendingUp, blurb: "What changed, measured in three operations" },
+  { label: "How it works", href: "#how", tone: "violet", Icon: Route, blurb: "One decision first, live in weeks" },
+  { label: "Questions", href: "#faq", tone: "tangerine", Icon: MessageCircleQuestion, blurb: "What enterprise teams ask first" },
+];
 
 export function Footer() {
   const word = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export function Footer() {
       </div>
 
       <div className="bg-paper px-6 pt-16 md:px-10 md:pt-16">
-        <div className="mx-auto grid max-w-6xl gap-9 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="mx-auto grid max-w-[71rem] gap-9 gap-y-12 lg:grid-cols-[1fr_1.35fr] lg:gap-x-16">
           <div>
             {/* Six systems, one resolved decision: the story's opening network, closed. */}
             <svg ref={motif} className="footer-motif mb-7 block h-[72px] w-[220px]" viewBox="0 0 220 72" aria-hidden>
@@ -110,43 +112,59 @@ export function Footer() {
             </button>
           </div>
 
-          <nav aria-label="Footer">
+          <nav aria-label="Footer" className="footer-nav">
             <p className="eyebrow">Explore</p>
-            <ul className="mt-5 space-y-3 text-[15px]">
-              {NAV.map(([label, href]) => (
-                <li key={href}>
-                  <button onClick={() => scrollToTarget(href)} className="link text-ink-2 hover:text-ink">
-                    {label}
+            <ul className="footer-cards mt-4">
+              {NAV.map(({ label, href, tone, Icon, blurb }, i) => (
+                <li key={href} style={{ ["--tone" as string]: `var(--color-${tone})` }}>
+                  <button onClick={() => scrollToTarget(href)} className="footer-card">
+                    <span className="footer-card-icon" aria-hidden><Icon size={18} strokeWidth={2} /></span>
+                    <span className="footer-card-n tabular" aria-hidden>0{i + 1}</span>
+                    <strong>{label}</strong>
+                    <small>{blurb}</small>
+                    <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
                   </button>
                 </li>
               ))}
+              <li className="footer-cards-wide" style={{ ["--tone" as string]: "var(--color-saffron)" }}>
+                <button onClick={() => scrollToTarget("#audit")} className="footer-card footer-card-audit">
+                  <span className="footer-card-icon" aria-hidden><Sparkles size={18} strokeWidth={2} /></span>
+                  <span>
+                    <strong>Free AI audit</strong>
+                    <small>30 minutes on one decision in your operation. No commitment.</small>
+                  </span>
+                  <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
+                </button>
+              </li>
+            </ul>
+
+            <p className="eyebrow mt-9">Where Decignal works</p>
+            {/* Each area opens its panel in Applications. */}
+            <ul className="footer-areas mt-4">
+              {CATEGORIES.map((c, i) => {
+                const n = APPLICATIONS.filter((a) => a.category === c).length;
+                return (
+                  <li key={c}>
+                    <button onClick={() => showArea(i)} className="footer-area" style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[c]})` }}>
+                      <i aria-hidden />
+                      {c}
+                      <span className="tabular">{n}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
-
-          <div>
-            <p className="eyebrow">Where Decignal works</p>
-            <ul className="mt-5 space-y-3 text-[15px] text-ink-2">
-              {CATEGORIES.map((c) => (
-                <li key={c} className="flex items-center gap-2.5">
-                  <span className="size-2 rounded-full" style={{ background: `var(--color-${CATEGORY_TONE[c]})` }} />
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
-        <div className="mx-auto mt-12 flex max-w-6xl flex-col gap-4 border-t border-line pt-6 text-[13px] text-ink-soft md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto mt-12 flex max-w-[71rem] flex-col gap-4 border-t border-line pt-6 text-[13px] text-ink-soft md:flex-row md:items-center md:justify-between">
           <span>Decision intelligence for enterprises across India and Africa.</span>
           <div className="flex items-center gap-6">
             <span>© 2026 Decignal</span>
-            <button
-              onClick={() => scrollToTarget(0)}
-              className="inline-flex items-center gap-2 text-ink transition-colors hover:text-cobalt"
-            >
+            <button onClick={() => scrollToTarget(0)} className="footer-top">
               Back to top
-              <span className="inline-flex size-8 items-center justify-center rounded-full border border-line-strong" aria-hidden>
-                ↑
+              <span aria-hidden>
+                <ArrowUp size={14} strokeWidth={2.2} />
               </span>
             </button>
           </div>
@@ -157,7 +175,7 @@ export function Footer() {
           <span data-letter className="inline-block">
             <LogoMark className="block h-[13vw] w-[13vw]" />
           </span>
-          <span className="flex font-serif text-[20vw] leading-[0.9] tracking-[-0.06em]">
+          <span className="flex font-serif text-[20vw] leading-[0.9] tracking-[-0.033em]">
             {"decignal".split("").map((ch, i) => (
               <span key={i} data-letter className="inline-block">
                 {ch}

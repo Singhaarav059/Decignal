@@ -998,7 +998,11 @@ function CardFocus() {
   const lost = useRef(0);
   useFrame(({ camera }, dt) => {
     let hit = -1;
-    if (readable() && store.pointerIn) {
+    // Pointing at the page's own controls (the approval panel, a Scale column) reads the card they
+    // name. Those controls sit over the canvas, so the cards behind them are not under the pointer:
+    // skip the ray, or a card peeking out behind a column steals focus back and forth every frame.
+    const hint = readable() && store.focusHint >= 0 ? store.focusHint : -1;
+    if (hint < 0 && readable() && store.pointerIn) {
       ndc.set(store.pointer.x, store.pointer.y);
       ray.setFromCamera(ndc, camera);
       const live = bodies.filter((b): b is THREE.Mesh => !!b && b.parent?.parent?.visible !== false);
@@ -1008,9 +1012,7 @@ function CardFocus() {
     // Hold focus briefly when the pointer slips into a gap, so a moving card never flickers.
     if (hit >= 0) lost.current = 0;
     else lost.current += dt;
-    // Pointing at the approval panel reads the decision card it acts on.
-    const hint = readable() && store.focusHint >= 0 ? store.focusHint : -1;
-    const next = hit >= 0 ? hit : hint >= 0 ? hint : lost.current > 0.18 || !readable() ? -1 : store.focus;
+    const next = hint >= 0 ? hint : hit >= 0 ? hit : lost.current > 0.18 || !readable() ? -1 : store.focus;
     if (next !== store.focus) {
       store.focus = next;
       document.body.style.cursor = next >= 0 ? "pointer" : "";

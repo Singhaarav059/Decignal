@@ -130,7 +130,7 @@ export function Story() {
       <div ref={back} className="pointer-events-none fixed inset-0 z-0 select-none" aria-hidden>
         <div data-ch={CH.fragments} className="absolute inset-x-0 top-[13vh] px-6 text-center">
           <p className="story-positioning eyebrow intro-fade">Decision intelligence · Your systems, connected</p>
-          <p className="display mt-3 text-[clamp(36px,6.2vw,100px)]">
+          <p className="display mt-3 text-[clamp(36px,min(6.2vw,11.5vh),100px)]">
             <span className="intro-line line-mask">
               <span>Your operation.</span>
             </span>
@@ -147,7 +147,7 @@ export function Story() {
           </p>
         ))}
         <div data-ch={CH.decision} className="story-decision-heading absolute inset-x-0 top-[11vh] px-6 text-center">
-          <p className="display text-[clamp(36px,6.5vw,108px)]">
+          <p className="display text-[clamp(36px,min(6.5vw,10vh),108px)]">
             One clear
             <br />
             <em className="spectrum-text" style={{ ["--accent" as string]: "var(--color-emerald)" }}>decision.</em>
@@ -286,14 +286,14 @@ export function Story() {
           <div className="flex justify-center">
             <Tag n="07" tone={TONE[CH.scale]}>Scale</Tag>
           </div>
-          <h2 className="display mt-4 text-[clamp(44px,6vw,96px)]">One layer. Every function.</h2>
-          <p className="mx-auto mt-5 max-w-[46ch] text-[15px] leading-relaxed text-ink-2">
+          <h2 className="display mt-4 text-[clamp(40px,min(6vw,10.5vh),96px)]">One layer. Every function.</h2>
+          <p className="scale-sub mx-auto mt-5 max-w-[46ch] text-[15px] leading-relaxed text-ink-2">
             From stock transfers to service cases, every application reuses the same context and controls.
           </p>
         </div>
 
         {/* 07 Scale: what Decignal offers in each function */}
-        <div data-ch={CH.scale} data-interactive className="absolute inset-x-0 bottom-[8vh] px-6 md:px-10 lg:bottom-[5vh]">
+        <div data-ch={CH.scale} data-interactive className="scale-board absolute inset-x-0 bottom-[8vh] px-6 md:px-10 lg:bottom-[5vh]">
           <ScaleApps />
         </div>
 

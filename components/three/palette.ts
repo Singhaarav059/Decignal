@@ -36,8 +36,9 @@ export const INK_ON: Record<keyof typeof TINTS, { ink: string; soft: string }> =
 };
 
 export const FONTS = {
-  serif: "/fonts/bodoni-moda-latin-500-normal.woff",
-  serifItalic: "/fonts/bodoni-moda-latin-400-italic.woff",
-  sans: "/fonts/manrope-latin-600-normal.woff",
-  mono: "/fonts/geist-mono-latin-500-normal.woff",
+  // Bricolage Grotesque for headings and labels, Figtree for running text: the page's two families.
+  serif: "/fonts/bricolage-grotesque-latin-700-normal.woff",
+  serifItalic: "/fonts/bricolage-grotesque-latin-600-normal.woff",
+  sans: "/fonts/figtree-latin-600-normal.woff",
+  mono: "/fonts/bricolage-grotesque-latin-600-normal.woff",
 };

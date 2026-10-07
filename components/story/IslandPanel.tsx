@@ -104,7 +104,7 @@ export function IslandPanel() {
               </span>
             </div>
 
-            <p className="mt-3 text-[30px] font-semibold max-md:mt-2 max-md:text-[24px] leading-none tracking-[-0.03em]">{sys.name}</p>
+            <p className="mt-3 text-[30px] font-semibold max-md:mt-2 max-md:text-[24px] leading-none tracking-[-0.017em]">{sys.name}</p>
             <p className="mt-1.5 text-[13px] text-ink-soft">
               {sys.full} · {sys.product}
             </p>
