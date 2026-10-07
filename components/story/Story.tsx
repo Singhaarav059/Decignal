@@ -9,6 +9,7 @@ import {
   clamp01,
   localIn,
   onSelect,
+  select,
   smoothstep,
   store,
   subscribe,
@@ -418,17 +419,29 @@ function SignalReadout() {
   );
 }
 
+/** Each check names the system it came from: pointing at it lifts that island, clicking opens its evidence. */
 function EvidenceChecks() {
-  return <div className="evidence-checks" aria-label="Evidence behind this transfer">
-    {[
-      ["saffron", "Stock available", "620 − 380 = 240 units"],
-      ["tangerine", "Supplier timing", "21 days · too late"],
-      ["pink", "Transfer route", "2 days · lane clear"],
-    ].map(([tone, label, value]) => <div key={label}>
-      <span className="evidence-check-dot" style={{background: `var(--color-${tone})`}} />
-      <span>{label}</span><strong>{value}</strong>
-    </div>)}
-  </div>;
+  return <ul className="evidence-checks" aria-label="Evidence behind this transfer">
+    {([
+      ["saffron", "Stock available", "620 − 380 = 240 units", 3, "WMS"],
+      ["tangerine", "Supplier timing", "21 days · too late", 4, "Suppliers"],
+      ["pink", "Transfer route", "2 days · lane clear", 5, "External"],
+    ] as const).map(([tone, label, value, sys, name]) => <li key={label}>
+      <button
+        type="button"
+        aria-label={`${label}: ${value}. From ${name}. Open its evidence.`}
+        onPointerEnter={() => (store.islandHint = sys)}
+        onPointerLeave={() => (store.islandHint = -1)}
+        onFocus={() => (store.islandHint = sys)}
+        onBlur={() => (store.islandHint = -1)}
+        onClick={() => select(store.selected === sys ? -1 : sys)}
+        style={{ ["--tone" as string]: `var(--color-${tone})` }}
+      >
+        <span className="evidence-check-dot" />
+        <span>{label}</span><strong>{value}</strong>
+      </button>
+    </li>)}
+  </ul>;
 }
 
 /** The transfer order's progress, driven by the same beats as the forklift and the truck. */

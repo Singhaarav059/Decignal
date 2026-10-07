@@ -49,3 +49,20 @@ Verified with headless Chromium at DPR 2, at 1440×900, 768×1024 and 390×844, 
 - **Evidence:** console errors 0. CLS 0.008 / 0.005 / 0.001. Reduced-motion run clean.
 - **Scores:** clarity 8 (desktop 9, phone 7) · layout 8 · polish 8 · motion 8 · cohesion 8 · performance 8.
 - **Open:** on 768 and 390 the "SAFETY 175" label overlaps the first column. It needs a clear slot, or a DOM label in the consistency pass.
+
+## 4. Context (04) (3 iterations)
+
+- **Baseline:**
+  - Desktop was clear.
+  - The evidence list and the islands were unconnected.
+  - On phones the ring was small, with a large empty band.
+- **Built:**
+  - Evidence rows are buttons tied to their source systems: Stock available → WMS, Supplier timing → Suppliers, Transfer route → External.
+  - Hovering or focusing a row tints it in the system's colour and lifts that island. Clicking opens the system's evidence panel.
+  - The phone camera comes closer (`MOBILE_FIT` 1.22 → 0.82).
+  - The portrait island-label boost now applies in Context too.
+- **Evidence:** hover and click tested in Playwright, with 0 console errors. CLS 0.008 / 0.004 / 0.001. Reduced-motion run clean.
+- **Scores:** clarity 8 · layout 8 (phone 7: island labels are still small, though the DOM list carries the facts) · polish 8 · motion 9 · cohesion 9 · performance 8.
+- **Open:**
+  - When an island is opened from the list, the scene slides left under the dimmed copy (pre-existing).
+  - The empty band under the phone ring.
