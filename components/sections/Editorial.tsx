@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, FAQ, OUTCOMES, PATHS, STACK } from "@/lib/content";
+import { APPLICATIONS, FAQ, OUTCOMES, PATHS, STACK_ROWS } from "@/lib/content";
 import { Audit } from "./Audit";
 import { Footer } from "./Footer";
 import { ApplicationExplorer } from "./ApplicationExplorer";
@@ -117,24 +117,24 @@ export function Editorial() {
 const SYSTEM_TONES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
 
 function Systems() {
-  const row = (reverse: boolean) => (
-    <div className="fade-x overflow-hidden">
+  const row = (items: (typeof STACK_ROWS)[number], r: number) => (
+    <div className="fade-x overflow-hidden py-2">
       <ul
-        aria-label="Systems Decignal works across"
+        aria-label={r ? undefined : "Systems Decignal works across"}
+        aria-hidden={r ? true : undefined}
         className="marquee items-center"
-        style={{ ["--marquee-speed" as string]: "48s", animationDirection: reverse ? "reverse" : "normal" }}
+        style={{ ["--marquee-speed" as string]: r ? "56s" : "48s", animationDirection: r ? "reverse" : "normal" }}
       >
-        {[...STACK, ...STACK].map((s, i) => (
+        {[...items, ...items, ...items, ...items].map((s, i) => (
           <li
             key={i}
-            aria-hidden={i >= STACK.length || undefined}
-            className="system-item flex items-center gap-10 pr-10 md:gap-14 md:pr-14"
-            style={{ ["--tone" as string]: `var(--color-${SYSTEM_TONES[i % 6]})` }}
+            aria-hidden={i >= items.length || undefined}
+            className="system-chip"
+            style={{ ["--tone" as string]: `var(--color-${SYSTEM_TONES[(i + r * 3) % 6]})` }}
           >
-            <span className="font-serif text-[clamp(28px,3.4vw,48px)] leading-none whitespace-nowrap">
-              {s}
-            </span>
-            <span aria-hidden className="diamond" style={{ color: "var(--tone)" }} />
+            <span className="system-mark" aria-hidden>{s.name.split(" ").map((w) => w[0]).join("").slice(0, 2)}</span>
+            <span className="system-name">{s.name}</span>
+            <span className="system-role">{s.role}</span>
           </li>
         ))}
       </ul>
@@ -154,8 +154,8 @@ function Systems() {
           ))}
         </ul>
       </div>
-      <div data-reveal className="mt-12 space-y-4 md:mt-14">
-        {row(false)}
+      <div data-reveal className="mt-10 space-y-1 md:mt-12">
+        {STACK_ROWS.map((r, i) => <div key={i}>{row(r, i)}</div>)}
       </div>
     </section>
   );

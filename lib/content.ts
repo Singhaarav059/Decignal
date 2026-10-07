@@ -145,6 +145,18 @@ export const FAQ = [
 
 export const STACK = ["SAP", "Snowflake", "Databricks", "Google Cloud", "MongoDB", "PostgreSQL", "HubSpot", "Atlassian", "Zendesk"];
 
+/** What each system contributes, grouped by the kind of signal it carries. */
+export const STACK_ROWS: { name: string; role: string }[][] = [
+  [
+    { name: "SAP", role: "ERP" }, { name: "Snowflake", role: "Warehouse" }, { name: "Databricks", role: "Lakehouse" },
+    { name: "Google Cloud", role: "Cloud" }, { name: "MongoDB", role: "Database" },
+  ],
+  [
+    { name: "PostgreSQL", role: "Database" }, { name: "HubSpot", role: "CRM" }, { name: "Atlassian", role: "Work" },
+    { name: "Zendesk", role: "Service" },
+  ],
+];
+
 /** Each business area keeps one colour everywhere it appears. */
 export const CATEGORY_TONE: Record<Category, string> = {
   "Supply Chain": "cobalt",

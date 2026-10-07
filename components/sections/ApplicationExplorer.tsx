@@ -28,12 +28,20 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
   const demo = APPLICATION_DEMOS[selected];
   const color = TINTS[CATEGORY_TONE[app.category] as keyof typeof TINTS];
   const chapterNav = useRef<HTMLElement>(null);
+  const [jumping, setJumping] = useState(false);
   const jump = (chapter: number, local = 0.48) => {
     const el = root.current;
     if (!el) return;
+    const go = (immediate: boolean) => {
     const total = indices.reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
     const before = indices.slice(0, chapter).reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
-    scrollToTarget(el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) * (before + CHAPTER_LENGTHS[indices[chapter]] * local) / total);
+    scrollToTarget(el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) * (before + CHAPTER_LENGTHS[indices[chapter]] * local) / total, immediate);
+    };
+    // Within a chapter, glide. Across chapters, a smooth scroll would replay every chapter in
+    // between (and the edge fades at each boundary read as a flicker), so the stage dips, cuts, and returns.
+    if (chapter === frame.chapter || still) return go(still);
+    setJumping(true);
+    window.setTimeout(() => { go(true); requestAnimationFrame(() => setJumping(false)); }, 180);
   };
 
   useEffect(() => {
@@ -68,7 +76,7 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
   }, [indices]);
 
   return <div ref={root} className="application-journey" style={{ height: `${indices.reduce((total,i) => total + CHAPTER_LENGTHS[i] * 100, 100)}svh`, ["--tone" as string]: color }}>
-    <div className="application-stage" data-step={frame.step}>
+    <div className="application-stage" data-step={frame.step} data-jumping={jumping || undefined}>
       <nav ref={chapterNav} className="application-chapter-bar" aria-label="Application chapters">{indices.map((index,i)=><button key={index} aria-label={`Show ${APPLICATIONS[index].name}`} aria-current={i===frame.chapter?"step":undefined} onClick={()=>jump(i)}><span>{String(i+1).padStart(2,"0")}</span>{CHAPTER_NAMES[index]}<i/></button>)}</nav>
       <div className="application-ghost" aria-hidden>{["STOCK", "DEMAND", "CAPACITY", "HEALTH", "RESILIENCE", "GROWTH", "SERVICE", "CONTROL"][selected]}</div>
       <div className="application-copy" key={selected}>

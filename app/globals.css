@@ -1334,3 +1334,18 @@ html.ready .intro-stage {
 
 /* Industries: the detail card stays left of the plinth ring. */
 @media (min-width: 1024px) { .ind-detail > div:first-child { width: min(290px, 21vw); } .ind-card { padding: 16px; } .ind-row { padding: 6px 0; font-size: 12.5px; } }
+
+/* Chapter jumps: copy, scene and readout dip together while the scroll cuts to the new chapter. */
+.application-stage > :is(.application-copy, .application-world, .operation-readout) { transition: filter 220ms var(--ease); }
+.application-stage[data-jumping] > :is(.application-copy, .application-world, .operation-readout) { opacity: 0 !important; filter: blur(6px); transition: opacity 170ms var(--ease), filter 170ms var(--ease); }
+
+/* Systems: each one a chip with its monogram and the kind of signal it carries. */
+.system-chip { display: flex; align-items: center; gap: 12px; margin-right: 14px; padding: 10px 18px 10px 10px; border-radius: 18px; background: rgb(255 255 255 / .72); box-shadow: inset 0 0 0 1px var(--color-line), 0 10px 28px -20px rgb(20 19 15 / .45); white-space: nowrap; transition: transform var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease); }
+.system-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; font-size: 14px; font-weight: 700; letter-spacing: -.02em; color: var(--tone); background: color-mix(in srgb, var(--tone) 13%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 24%, transparent); }
+.system-name { font-size: clamp(18px, 1.7vw, 24px); font-weight: 600; letter-spacing: -.03em; line-height: 1.25; color: var(--color-ink); }
+.system-role { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-soft); padding-left: 12px; border-left: 1px solid var(--color-line); }
+@media (hover: hover) {
+  .system-chip:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent), 0 16px 32px -20px color-mix(in srgb, var(--tone) 60%, transparent); }
+  .system-chip:hover .system-name { color: color-mix(in oklab, var(--tone) 70%, var(--color-ink)); }
+}
+@media (max-width: 640px) { .system-chip { padding: 8px 14px 8px 8px; gap: 10px; } .system-mark { width: 34px; height: 34px; font-size: 12px; } }

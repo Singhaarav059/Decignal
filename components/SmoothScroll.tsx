@@ -10,8 +10,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 let lenis: Lenis | null = null;
 export const getLenis = () => lenis;
-export const scrollToTarget = (target: string | number) => {
-  if (lenis) lenis.scrollTo(target, { duration: 1.6 });
+export const scrollToTarget = (target: string | number, immediate = false) => {
+  if (lenis) lenis.scrollTo(target, immediate ? { immediate: true, force: true } : { duration: 1.6 });
+  else if (immediate && typeof target === "number") window.scrollTo({ top: target, behavior: "instant" });
   else if (typeof target === "string") document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
   else window.scrollTo({ top: target, behavior: "smooth" });
 };
