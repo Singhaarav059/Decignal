@@ -422,12 +422,14 @@ function Faq() {
           return (
             <li key={f.q} className="border-b border-line">
               <button
+                id={`faq-q-${i}`}
                 onClick={() => setOpen(on ? null : i)}
                 aria-expanded={on}
-                className="group flex w-full items-center gap-6 py-7 text-left"
+                aria-controls={`faq-a-${i}`}
+                className="group flex w-full items-center gap-6 rounded-xl py-7 text-left"
               >
                 <span
-                  className="eyebrow tabular w-8 shrink-0 transition-colors duration-300"
+                  className="eyebrow tabular w-8 shrink-0 transition-colors duration-[var(--dur-3)] ease-[var(--ease)]"
                   style={on ? { color: "var(--color-cobalt)" } : undefined}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -436,7 +438,7 @@ function Faq() {
                   {f.q}
                 </span>
                 <span
-                  className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,transform] duration-500 ease-[var(--ease-out-expo)] ${
+                  className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-[background-color,border-color,color,transform] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none ${
                     on ? "rotate-45 border-cobalt bg-cobalt text-white" : "border-line-strong group-hover:border-ink"
                   }`}
                   aria-hidden
@@ -446,13 +448,17 @@ function Faq() {
                 </span>
               </button>
               <div
-                className="grid transition-[grid-template-rows] duration-500 ease-[var(--ease-out-expo)]"
+                id={`faq-a-${i}`}
+                role="region"
+                aria-labelledby={`faq-q-${i}`}
+                inert={!on}
+                className="grid transition-[grid-template-rows] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none"
                 style={{ gridTemplateRows: on ? "1fr" : "0fr" }}
               >
-                <div className="overflow-hidden">
+                <div className="min-h-0 overflow-hidden">
                   <p
-                    className="max-w-[62ch] pb-8 pl-14 text-[16px] leading-relaxed text-ink-2 transition-[opacity,transform] duration-500 ease-[var(--ease-out-quint)]"
-                    style={{ opacity: on ? 1 : 0, transform: on ? "none" : "translateY(-6px)", transitionDelay: on ? "120ms" : "0ms" }}
+                    className="max-w-[62ch] pb-8 pl-14 text-[16px] leading-relaxed text-ink-2 transition-[opacity,transform] duration-[var(--dur-4)] ease-[var(--ease)] motion-reduce:transition-none"
+                    style={{ opacity: on ? 1 : 0, transform: on ? "none" : "translateY(-6px)", transitionDelay: on ? "var(--dur-1)" : "0ms" }}
                   >
                     {f.a}
                   </p>
