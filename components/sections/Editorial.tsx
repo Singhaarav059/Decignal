@@ -7,6 +7,7 @@ import { APPLICATIONS, FAQ, OUTCOMES, PATHS, STACK } from "@/lib/content";
 import { Audit } from "./Audit";
 import { Footer } from "./Footer";
 import { ApplicationExplorer } from "./ApplicationExplorer";
+import { CountUp } from "../ui/CountUp";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -233,6 +234,14 @@ function OutcomeGraphic({ index }: { index: number }) {
 
 function Outcomes() {
   const root = useRef<HTMLElement>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const grid = root.current?.querySelector(".outcome-grid");
+    if (!grid) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0.35 });
+    io.observe(grid);
+    return () => io.disconnect();
+  }, []);
   useEffect(() => {
     if (!root.current || reduced()) return;
     const ctx = gsap.context(() => {
@@ -243,9 +252,9 @@ function Outcomes() {
   }, []);
   return <section ref={root} id="outcomes" className="scroll-mt-24 px-6 md:px-10">
     <Heading eyebrow="The outcome" tone="emerald" lines={["Know what changed.", <>See <em className="spectrum-text">why it matters.</em></>]} intro="Every recommendation should end in an operating result you can check." />
-    <div className="mx-auto mt-10 grid max-w-6xl gap-4 md:grid-cols-3">
+    <div className="outcome-grid mx-auto mt-10 grid max-w-6xl gap-4 md:grid-cols-3">
       {OUTCOMES.map((o,i)=><figure key={o.sector} data-reveal className="outcome-figure" style={{background:OUTCOME_FILL[i]}}>
-        <p className="eyebrow text-white/80!">{o.sector}</p><p className="outcome-number">{o.value}</p><p className="outcome-label">{o.label}</p>
+        <p className="eyebrow text-white/80!">{o.sector}</p><p className="outcome-number"><CountUp value={o.value} play={seen} duration={1100} /></p><p className="outcome-label">{o.label}</p>
         <OutcomeGraphic index={i}/><p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption>
       </figure>)}
     </div><p className="mx-auto mt-5 max-w-6xl text-[11px] text-ink-soft">Illustrative decisions from the scenes above. Deployment results are measured against your own baseline.</p>

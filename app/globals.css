@@ -992,3 +992,7 @@ html.ready .intro-stage {
   .application-journey, .evidence-reading, .evidence-reading::after { transition: none; }
   .evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: none; stroke-dashoffset: 0; opacity: 1; }
 }
+
+/* ---- OUTCOMES pass ---- */
+.outcome-diagram text { font-size: 10.5px; }
+.outcome-figure figcaption { font-size: 11px; }
