@@ -707,17 +707,17 @@ html.ready .intro-stage {
 .application-chapter-bar button i { position: absolute; bottom: 0; left: 10px; right: 10px; height: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; transition: transform 450ms var(--ease-out-expo); }
 .application-chapter-bar button[aria-current] { color: var(--color-ink); font-weight: 650; }
 .application-chapter-bar button[aria-current] i { transform: scaleX(1); }
-.application-chapter-bar button:hover { color: var(--tone); }
+.application-chapter-bar button:hover { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
 
 .application-copy { position: absolute; z-index: 2; left: 5%; top: 16%; width: 31%; max-width: 440px; animation: applicationResolve 600ms var(--ease-out-expo) both; }
 .application-copy .eyebrow { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; }
 .application-copy h3 { margin-top: 10px; font-size: clamp(26px,2.8vw,42px); line-height: 1.08; font-weight: 650; }
 .application-copy h3 em { font-style: normal; }
-.application-summary { margin-top: 8px; font-size: 13px; color: var(--tone); font-weight: 600; }
+.application-summary { margin-top: 8px; font-size: 13px; color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); font-weight: 600; }
 .application-phase-nav { display: flex; margin-top: 16px; border-bottom: 1px solid var(--color-line); gap: 18px; }
 .application-phase-nav button { padding: 0 0 8px; display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 550; color: var(--color-ink-soft); position: relative; }
 .application-phase-nav button span { font: 11px var(--font-mono); font-weight: 600; opacity: .75; }
-.application-phase-nav button[aria-current] { color: var(--tone); font-weight: 650; }
+.application-phase-nav button[aria-current] { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); font-weight: 650; }
 .application-phase-nav button[aria-current]::after { content: ''; position: absolute; height: 2px; background: var(--tone); bottom: -1px; left: 0; right: 0; }
 .application-narrative { margin-top: 12px; min-height: 72px; animation: applicationResolve 500ms var(--ease-out-expo) both; }
 .application-narrative > .spec-label { font-size: 11px; font-weight: 600; color: var(--color-ink-soft); letter-spacing: 0.08em; }
@@ -734,7 +734,7 @@ html.ready .intro-stage {
 .operation-evidence { height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
 .evidence-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .evidence-heading .spec-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--color-ink-soft); }
-.evidence-state { display: inline-flex; align-items: center; gap: 6px; font: 11px var(--font-mono); font-weight: 600; color: var(--tone); white-space: nowrap; }
+.evidence-state { display: inline-flex; align-items: center; gap: 6px; font: 11px var(--font-mono); font-weight: 600; color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); white-space: nowrap; }
 .evidence-state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .operation-evidence svg { width: 100%; height: 90px; display: block; margin-top: 4px; overflow: visible; }
 .operation-evidence svg text { font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; }
@@ -754,7 +754,7 @@ html.ready .intro-stage {
 .evidence-draw:not(.interactive-draw) { animation: evidenceDraw 1100ms var(--ease-out-quint) forwards; }
 .evidence-metrics { margin-top: 6px; }
 .evidence-conclusion { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 550; margin-top: 4px; color: var(--color-ink-2); line-height: 1.35; animation: applicationResolve 400ms var(--ease-out-expo); }
-.evidence-conclusion > span { color: var(--tone); font-weight: 600; }
+.evidence-conclusion > span { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); font-weight: 600; }
 
 .application-progress { position: absolute; left: 5%; right: 5%; bottom: 1.8%; display: flex; align-items: center; justify-content: space-between; gap: 24px; color: var(--color-ink-soft); font: 11px var(--font-mono); font-weight: 600; }
 .application-scroll-note { display: flex; align-items: center; gap: 10px; }
@@ -1065,7 +1065,7 @@ html.ready .intro-stage {
 .application-journey { transition: --tone var(--dur-3) var(--ease); }
 .operation-readout { border-color: color-mix(in srgb, var(--tone) 24%, var(--color-line)); background: color-mix(in srgb, var(--tone) 3%, rgb(255 253 249 / 0.94)); }
 .operation-readout::before { content: ''; position: absolute; left: 18px; right: 18px; top: 0; height: 2px; border-radius: 0 0 2px 2px; background: var(--tone); opacity: .7; }
-.application-chapter-bar button span, .application-progress > span:first-child { color: var(--tone); }
+.application-chapter-bar button span, .application-progress > span:first-child { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
 /* Every chart draws in on chapter mount and again when a later stage adds its stroke. */
 @keyframes evidenceDrawIn { from { stroke-dashoffset: 800; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
 .evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: evidenceDrawIn 900ms var(--ease-out-quint) both; }
@@ -1348,13 +1348,13 @@ html.ready .intro-stage {
 .application-trail li[data-state="done"] i { background: var(--tone); border-color: var(--tone); }
 .application-trail li[data-state="now"] { color: var(--color-ink); background: color-mix(in srgb, var(--tone) 10%, transparent); }
 .application-trail li[data-state="now"] i { border-color: var(--tone); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 18%, transparent); animation: trailPulse 1.8s var(--ease-out-quint) infinite; }
-.application-trail li[data-state="now"] em { color: var(--tone); opacity: 1; }
+.application-trail li[data-state="now"] em { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); opacity: 1; }
 @keyframes trailPulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--tone) 6%, transparent); } }
 .application-outcome { min-width: 110px; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--tone) 7%, var(--color-paper)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 22%, transparent); transition: background-color 500ms var(--ease-out-quint); }
 .application-outcome .spec-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--color-ink-soft); }
 .application-outcome strong { font-size: 24px; line-height: 1; font-weight: 650; letter-spacing: -0.017em; color: var(--color-ink-soft); transition: color 500ms var(--ease-out-quint); }
 .application-outcome[data-done] { background: color-mix(in srgb, var(--tone) 16%, var(--color-paper)); }
-.application-outcome[data-done] strong { color: var(--tone); }
+.application-outcome[data-done] strong { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
 @media (max-width: 1023px), (max-height: 760px) { .application-trail-wrap { display: none; } }
 @media (prefers-reduced-motion: reduce) { .application-trail li[data-state="now"] i { animation: none; } }
 
@@ -2025,7 +2025,7 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
 .peek-steps button::before { content: ""; width: 12px; height: 12px; margin: 2px 0 10px 2px; border-radius: 99px; background: var(--tone); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 16%, white); transition: transform var(--dur-3) var(--ease); }
 .peek-steps button:hover, .peek-steps button:focus-visible { background: color-mix(in srgb, var(--tone) 8%, transparent); }
 .peek-steps button:hover::before { transform: scale(1.2); }
-.peek-step-n { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--tone); }
+.peek-step-n { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
 .peek-steps b { font-size: 14px; font-weight: 600; line-height: 1.25; letter-spacing: -.015em; }
 .peek-steps small { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-soft); }
 .peek-routes { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 6px 2px; }
@@ -2140,7 +2140,7 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
 .peek-chapter-bar { display: block; height: 2px; margin-inline: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--tone) 12%, var(--color-line)); }
 .peek-chapter-bar span { display: block; height: 100%; background: var(--tone); transform: scaleX(var(--fill, 0)); transform-origin: left; }
 
-.menu-link-n { color: var(--tone); }
+.menu-link-n { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
 
 @media (prefers-reduced-motion: reduce) {
   html.ready .nav-pill, html.ready .nav-links button, html.ready .nav-cta, .nav-sweep, .nav-links button[aria-current] i::after, .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: none; }
@@ -2189,7 +2189,7 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
 .layer-readout-steps button::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--color-line-strong); }
 .layer-readout-steps button i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; }
 .layer-readout-steps button[aria-current] { color: var(--color-ink); }
-.layer-readout-steps button[aria-current] span { color: var(--tone); opacity: 1; }
+.layer-readout-steps button[aria-current] span { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); opacity: 1; }
 .layer-readout-steps button[aria-current] i { animation: layer-fill var(--step) linear forwards; }
 .layer-readout[data-held] .layer-readout-steps button[aria-current] i { animation: none; transform: none; }
 @keyframes layer-fill { to { transform: scaleX(1); } }
@@ -2283,4 +2283,11 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
      out of focus on a small screen, and repainting text through a filter every frame is what stuttered. */
   [data-ch] { will-change: transform, opacity; }
   [data-ch] .display { text-shadow: none; }
+}
+
+/* Mid-width desktops: the evidence list stacks label over value so it stays clear of the left island. */
+@media (min-width: 768px) and (max-width: 1180px) {
+  .evidence-checks { max-width: 250px; }
+  .evidence-checks button { grid-template-columns: 7px 1fr; row-gap: 1px; }
+  .evidence-checks button strong { grid-column: 2; }
 }

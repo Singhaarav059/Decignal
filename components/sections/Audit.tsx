@@ -153,7 +153,7 @@ export function Audit() {
                       value={data.decision ?? ""}
                       onChange={set("decision")}
                       placeholder="For example: rebalancing stock between plants before shortages hit"
-                      className="mt-2 block w-full resize-none bg-transparent text-[17px] leading-relaxed outline-none placeholder:text-ink-soft/80"
+                      className="mt-2 block w-full resize-none bg-transparent text-[17px] leading-relaxed outline-none placeholder:text-ink-soft/95"
                     />
                   </label>
                   <fieldset className="border-b border-line py-5">
@@ -229,7 +229,7 @@ function Field({
       <input
         {...p}
         value={p.value ?? ""}
-        className="mt-2 block w-full bg-transparent text-[17px] outline-none placeholder:text-ink-soft/60"
+        className="mt-2 block w-full bg-transparent text-[17px] outline-none placeholder:text-ink-soft/90"
       />
     </label>
   );

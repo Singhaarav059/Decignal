@@ -8,6 +8,7 @@ import {
   INDUSTRY_TONE,
   TOTAL_LEN,
   clamp01,
+  gToProgress,
   localIn,
   onSelect,
   select,
@@ -70,6 +71,16 @@ export function Story() {
       front.current?.toggleAttribute("data-dim", n >= 0);
     });
 
+    // Keyboard focus inside a faded chapter brings that chapter into view, so a focused control is never invisible.
+    const onFocusIn = (e: FocusEvent) => {
+      const ch = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-ch]");
+      const track = document.getElementById("story");
+      if (!ch || !track || weight(Number(ch.dataset.ch), store.g) > 0.9) return;
+      const top = track.getBoundingClientRect().top + window.scrollY;
+      scrollToTarget(top + gToProgress(Number(ch.dataset.ch) + 0.8) * (track.offsetHeight - window.innerHeight), true);
+    };
+    roots.forEach((r) => r.addEventListener("focusin", onFocusIn));
+
     const off = subscribe((g) => {
       chEls.forEach((el) => {
         const w = shown(weight(Number(el.dataset.ch), g));
@@ -126,6 +137,7 @@ export function Story() {
     return () => {
       off();
       offSelect();
+      roots.forEach((r) => r.removeEventListener("focusin", onFocusIn));
     };
   }, []);
 

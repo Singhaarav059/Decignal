@@ -14,10 +14,10 @@ export const CHAPTERS: Chapter[] = [
   { id: "signal", label: "Signal", len: 1.3, ts: 0.5 },
   { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
   { id: "context", label: "Context", len: 1.5, ts: 0.55 },
-  { id: "decision", label: "Decision", len: 2.8, ts: 0.8 },
-  { id: "control", label: "Control", len: 1.9, ts: 0.62 },
+  { id: "decision", label: "Decision", len: 2.3, ts: 0.8 },
+  { id: "control", label: "Control", len: 1.7, ts: 0.62 },
   { id: "scale", label: "Scale", len: 1.5, ts: 0.55 },
-  { id: "industries", label: "Industries", len: 3.9, ts: 0.9 },
+  { id: "industries", label: "Industries", len: 3.2, ts: 0.9 },
   { id: "final", label: "Decide", len: 1.6, ts: 1 },
 ];
 

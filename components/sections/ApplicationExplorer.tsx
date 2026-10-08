@@ -13,7 +13,7 @@ import { OperationEvidence } from "./OperationEvidence";
 gsap.registerPlugin(ScrollTrigger);
 // Viewport heights per application, about 0.7 of the first cut: every stop (signal, evidence, action) still
 // gets its own stretch of scroll, the run through all eight just reads faster. Inventory keeps the most for its truck.
-const CHAPTER_LENGTHS = [1.55, 1.0, 1.25, 1.35, 1.25, 1.0, 1.05, 1.05];
+const CHAPTER_LENGTHS = [1.35, 0.9, 1.1, 1.2, 1.1, 0.9, 0.95, 0.95];
 const CHAPTER_NAMES = ["Inventory", "Demand", "Production", "Maintenance", "Supply risk", "Sales", "Service", "Finance"];
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 
