@@ -1,9 +1,9 @@
 # Decignal design direction
 
-Preserve the warm miniature operational world, the current logo, Inter typography, and chapter colour changes. Improve the existing story; do not replace it with a generic SaaS landing page.
+Preserve the warm miniature operational world, the current logo, Bricolage Grotesque (headlines) and Figtree (body) typography, and chapter colour changes. Improve the existing story; do not replace it with a generic SaaS landing page.
 
 - Palette: background #FBF6EF, paper #FFFDF9, ink #14130F. Cobalt #2E5BFF, violet #7C5CFF, emerald #0FA874, saffron #FFB21E, tangerine #FF7438, pink #FF5FA2. Red #F2361F means risk; emerald means a valid or approved outcome. Source systems retain their existing colours.
-- Hierarchy: section headlines 32–60px, weight 620, tracking -0.045em; body 13–17px; labels 9–11px in Geist Mono. One primary statement per scene. Copy names the decision; the object explains it.
+- Hierarchy: section headlines 32–60px, weight 620, tracking -0.045em; body 13–17px; labels 11px minimum in the label face. One primary statement per scene. Copy names the decision; the object explains it.
 - Spacing: 4/8/12/16/24/32/48px increments; content max-width 1152px; page gutters 24px mobile, 40px desktop. Preserve breathing room around the 3D subject while keeping controls and metadata compact.
 - Surfaces: quiet hairlines and paper, satin paint, metal, concrete and ribbed plastic. Use rounded corners for buttons and physical objects, not for every section. No decorative glow or unrelated gradient backgrounds.
 - Motion: animate cause and effect—stock moves, evidence connects, an object resolves into focus. Applications continue the scroll narrative on a sticky, borderless stage. Signal, context and decision unfold automatically, with continuous scroll progress driving stock movement. Interaction feedback 200–400ms; object positioning uses damped easing. Avoid constant bouncing or motion that competes with reading.
