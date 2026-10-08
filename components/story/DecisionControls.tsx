@@ -29,7 +29,7 @@ export function DecisionControls() {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="font-serif text-2xl leading-tight whitespace-nowrap">
-          <span className="mb-2 block font-mono text-[8px] tracking-wider text-ink-soft uppercase">Interactive example</span>Transfer <RollNum value={qty} /> units
+          <span className="mb-2 block font-mono text-[11px] tracking-wider text-ink-soft uppercase">Interactive example</span>Transfer <RollNum value={qty} /> units
         </p>
         <p className="eyebrow tabular whitespace-nowrap">Plant 02 · <RollNum value={sourceLeft} /> left</p>
       </div>

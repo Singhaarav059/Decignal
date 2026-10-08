@@ -131,7 +131,7 @@ export function GlanceCards() {
       <article className="glance-card glance-wide g-systems" style={{ ["--tone" as string]: "var(--color-cobalt)" }}>
         <div>
           <strong className="glance-num">0</strong>
-          <h3>systems replaced</h3>
+          <p className="glance-label">systems replaced</p>
           <p>Decignal reads the ERP, MES, CRM and WMS you already run, read-only to start.</p>
         </div>
         <div className="glance-systems" aria-hidden>
@@ -143,7 +143,7 @@ export function GlanceCards() {
       </article>
       <article className="glance-card g-weeks" style={{ ["--tone" as string]: "var(--color-emerald)" }}>
         <strong className="glance-num" aria-label="4 to 8 weeks">4<span className="glance-dash" aria-hidden>–</span>8<small> wks</small></strong>
-        <h3>to the first release</h3>
+        <p className="glance-label">to the first release</p>
         <div className="glance-timeline" aria-hidden>
           {Array.from({ length: 12 }, (_, w) => <i key={w} data-on={w >= 3 && w < 8 || undefined} />)}
           <span style={{ left: "29%" }}>W4</span><span style={{ left: "62%" }}>W8</span>
@@ -152,7 +152,7 @@ export function GlanceCards() {
       </article>
       <article className="glance-card g-apps" style={{ ["--tone" as string]: "var(--color-saffron)" }}>
         <strong className="glance-num">8</strong>
-        <h3>ready applications</h3>
+        <p className="glance-label">ready applications</p>
         <div className="glance-apps" aria-hidden>
           {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}><b>{a.name.split(" ").filter((w) => /\w/.test(w)).map((w) => w[0]).join("").slice(0, 2)}</b><span>{a.name}</span></i>)}
         </div>
@@ -160,7 +160,7 @@ export function GlanceCards() {
       </article>
       <article className="glance-card glance-side g-areas" style={{ ["--tone" as string]: "var(--color-violet)" }}>
         <strong className="glance-num">5</strong>
-        <h3>business areas</h3>
+        <p className="glance-label">business areas</p>
         <svg className="glance-donut" viewBox="0 0 42 42" aria-hidden>
           {Object.values(CATEGORY_TONE).map((t, i) => (
             <circle key={t} r="15.9" cx="21" cy="21" pathLength={100} style={{ stroke: `var(--color-${t})`, strokeDasharray: "18 82", strokeDashoffset: -i * 20 }} />
@@ -170,7 +170,7 @@ export function GlanceCards() {
       </article>
       <article className="glance-card glance-side g-approver" style={{ ["--tone" as string]: "var(--color-tangerine)" }}>
         <strong className="glance-num">1</strong>
-        <h3>named approver per action</h3>
+        <p className="glance-label">named approver per action</p>
         <div className="glance-approve" aria-hidden>
           <span className="glance-avatar">AM</span>
           <span><b>Transfer 240 units</b><small>Waiting for you</small></span>

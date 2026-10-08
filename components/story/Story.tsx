@@ -272,7 +272,7 @@ export function Story() {
           className="story-control absolute left-6 top-[15vh] max-w-[560px] max-md:right-6 max-md:bottom-6 max-md:flex max-md:flex-col md:left-10 md:top-[18vh]"
         >
           <Tag n="06" tone={TONE[CH.control]}>Human control</Tag>
-          <h2 className="display mt-4 text-[clamp(36px,3.8vw,60px)]">
+          <h2 className="display mt-4 text-[clamp(32px,3.8vw,54px)]">
             You see why.
             <br />
             You decide.
@@ -292,7 +292,7 @@ export function Story() {
           <div className="flex justify-center">
             <Tag n="07" tone={TONE[CH.scale]}>Scale</Tag>
           </div>
-          <h2 className="display mt-4 text-[clamp(40px,min(6vw,10.5vh),96px)]">One layer. Every function.</h2>
+          <h2 className="display mt-4 text-[clamp(40px,min(5vw,9vh),72px)]">One layer. Every function.</h2>
           <p className="scale-sub mx-auto mt-5 max-w-[46ch] text-[15px] leading-relaxed text-ink-2">
             From stock transfers to service cases, every application reuses the same context and controls.
           </p>
@@ -515,7 +515,7 @@ function Copy({
       <Tag n={n} tone={TONE[ch]}>
         {eyebrow}
       </Tag>
-      <h2 className="display mt-4 text-[clamp(36px,3.8vw,60px)]">{title}</h2>
+      <h2 className="display mt-4 text-[clamp(32px,3.8vw,54px)]">{title}</h2>
       <p className="mt-5 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">{children}</p>
       {after}
     </div>
@@ -543,7 +543,7 @@ function Tag({ n, tone, children }: { n: string; tone: string; children: React.R
   return (
     <p className="eyebrow inline-flex items-center gap-2.5">
       <span
-        className="tabular inline-flex h-5 items-center rounded-full px-2 text-[10px] tracking-[0.08em] text-white"
+        className="tabular inline-flex h-5 items-center rounded-full px-2 text-[11px] tracking-[0.08em] text-white"
         style={{ background: `var(--color-${tone || "ink"})` }}
       >
         {n}

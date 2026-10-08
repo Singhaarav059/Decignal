@@ -92,7 +92,7 @@ function Heading({
         <span className="diamond" style={{ color: `var(--color-${tone})` }} />
         {eyebrow}
       </p>
-      <h2 data-lines className="display mt-5 text-[clamp(32px,4.2vw,60px)]">
+      <h2 data-lines className="display mt-5 text-[clamp(32px,3.8vw,54px)]">
         <Lines lines={lines} />
       </h2>
       {intro && (
@@ -323,7 +323,7 @@ function Faq() {
               }}
               className="btn btn-primary"
             >
-              Ask the team
+              Book a free AI audit
             </button>
           </div>
         </div>

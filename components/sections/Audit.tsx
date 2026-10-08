@@ -38,7 +38,7 @@ export function Audit() {
             <span className="size-1.5 rounded-full bg-white" />
             Free AI audit
           </p>
-          <h2 data-reveal className="audit-title display mt-5 max-w-[15ch] text-[clamp(38px,4.4vw,64px)]">
+          <h2 data-reveal className="audit-title display mt-5 max-w-[15ch] text-[clamp(32px,3.8vw,54px)]">
             Bring us the decision that should move faster.
           </h2>
           <p data-reveal className="audit-intro mt-7 max-w-[42ch] text-[17px] leading-relaxed text-white/95">

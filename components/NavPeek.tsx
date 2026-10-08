@@ -234,7 +234,7 @@ function HowPeek({ act }: { act: Act }) {
 function FaqPeek({ act }: { act: Act }) {
   return (
     <div className="peek-grid">
-      <ul className="peek-list" aria-label="Questions">
+      <ul className="peek-list" aria-label="FAQ">
         {FAQ_PICK.map((q, k) => {
           const [Icon, t] = FAQ_ICONS[k];
           return (

@@ -13,7 +13,7 @@ const SECTIONS = [
   ["applications", "Applications"],
   ["outcomes", "Outcomes"],
   ["how", "How it works"],
-  ["faq", "Questions"],
+  ["faq", "FAQ"],
   ["audit", "Free audit"],
 ] as const;
 
@@ -21,7 +21,7 @@ const LINKS = [
   ["Applications", "#applications", "apps"],
   ["Outcomes", "#outcomes", "outcomes"],
   ["How it works", "#how", "how"],
-  ["Questions", "#faq", "faq"],
+  ["FAQ", "#faq", "faq"],
 ] as const;
 
 /** Each link keeps its section's colour. */
