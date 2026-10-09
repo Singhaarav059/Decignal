@@ -51,7 +51,7 @@ export function Bake({ children }: { children: React.ReactNode }) {
     performance.mark("world:bake-start");
     g.updateWorldMatrix(true, true);
     inv.copy(g.matrixWorld).invert();
-    const buckets = new Map<string, { mat: THREE.Material; cast: boolean; receive: boolean; order: number; parts: THREE.BufferGeometry[]; meshes: THREE.Mesh[] }>();
+    const buckets = new Map<string, { mat: THREE.Material; cast: boolean; receive: boolean; order: number; layers: number; parts: THREE.BufferGeometry[]; meshes: THREE.Mesh[] }>();
     g.traverse((o) => {
       const m = o as THREE.Mesh;
       if (!m.isMesh || !bakeable(m) || isLive(m, g)) return;
@@ -59,9 +59,9 @@ export function Bake({ children }: { children: React.ReactNode }) {
       rel.multiplyMatrices(inv, m.matrixWorld);
       if (rel.determinant() < 0) return;
       const mat = m.material as THREE.Material;
-      const key = `${mat.uuid}|${m.castShadow}|${m.receiveShadow}|${m.renderOrder}|${signature(m.geometry)}`;
+      const key = `${mat.uuid}|${m.castShadow}|${m.receiveShadow}|${m.renderOrder}|${m.layers.mask}|${signature(m.geometry)}`;
       let b = buckets.get(key);
-      if (!b) buckets.set(key, (b = { mat, cast: m.castShadow, receive: m.receiveShadow, order: m.renderOrder, parts: [], meshes: [] }));
+      if (!b) buckets.set(key, (b = { mat, cast: m.castShadow, receive: m.receiveShadow, order: m.renderOrder, layers: m.layers.mask, parts: [], meshes: [] }));
       const part = m.geometry.clone();
       part.clearGroups();
       part.applyMatrix4(rel);
@@ -83,18 +83,40 @@ export function Bake({ children }: { children: React.ReactNode }) {
       mesh.castShadow = b.cast;
       mesh.receiveShadow = b.receive;
       mesh.renderOrder = b.order;
+      mesh.layers.mask = b.layers;
       mesh.userData.baked = true;
+      mesh.matrixAutoUpdate = false;
       g.add(mesh);
       baked.push(mesh);
-      b.meshes.forEach((m) => (m.visible = false));
+      // The originals are only kept for unmounting: stop recomposing their matrices every frame.
+      b.meshes.forEach((m) => {
+        m.visible = false;
+        m.matrixAutoUpdate = false;
+        m.userData.bakedAway = true;
+      });
     }
+    // Nothing here moves except the live subtrees: stop recomposing every static group's matrix
+    // each frame (a group that recomposes also forces every descendant to recompute its own).
+    const frozen: THREE.Object3D[] = [];
+    g.traverse((o) => {
+      if (o.matrixAutoUpdate && !isLive(o, g)) {
+        o.matrixAutoUpdate = false;
+        frozen.push(o);
+      }
+    });
     performance.mark("world:bake-end");
     return () => {
+      frozen.forEach((o) => (o.matrixAutoUpdate = true));
       baked.forEach((m) => {
         g.remove(m);
         m.geometry.dispose();
       });
-      buckets.forEach((b) => b.meshes.forEach((m) => (m.visible = true)));
+      buckets.forEach((b) =>
+        b.meshes.forEach((m) => {
+          m.visible = true;
+          m.matrixAutoUpdate = true;
+        }),
+      );
     };
   }, []);
   return <group ref={root}>{children}</group>;

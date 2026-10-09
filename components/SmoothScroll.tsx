@@ -6,8 +6,8 @@ import gsap from "gsap";
 
 let lenis: Lenis | null = null;
 export const getLenis = () => lenis;
-export const scrollToTarget = (target: string | number, immediate = false) => {
-  if (lenis) lenis.scrollTo(target, immediate ? { immediate: true, force: true } : { duration: 1.6 });
+export const scrollToTarget = (target: string | number, immediate = false, offset = 0) => {
+  if (lenis) lenis.scrollTo(target, immediate ? { immediate: true, force: true, offset } : { duration: 1.6, offset });
   else if (immediate && typeof target === "number") window.scrollTo({ top: target, behavior: "instant" });
   else if (typeof target === "string") document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
   else window.scrollTo({ top: target, behavior: "smooth" });

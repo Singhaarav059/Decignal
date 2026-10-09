@@ -1,6 +1,6 @@
 "use client";
 
-// The harbour the plants work beside: the water, the sea wall the whole site stands on, the
+// The harbour the plants work beside: the sea wall the whole site stands on, the
 // container quay behind the plants with its two cranes and a moored ship, an inbound ship out in
 // the bay (the suppliers' delivery, due on day 21), a wooden pier and a small fishing boat.
 // Metres, ground at y = 0, the water a little below it.
@@ -9,12 +9,12 @@ import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { box, cylY, geo, merge } from "../three/parts";
 import { cladding, steel } from "../three/materials";
-import { SKY_GLSL, skyUniforms } from "./sky";
 import { nightGlow } from "./glow";
-import { daylight } from "@/lib/daylight";
+import { canvasTexture } from "./sets";
 import { S, reel, story } from "@/lib/reel";
+import { WATER_Y } from "./water";
 
-export const WATER_Y = -1.7;
+export { WATER_Y };
 
 /** The site, as the sea wall draws it: the industrial island and the land running on east. */
 export const SITE = {
@@ -38,95 +38,174 @@ function mat<T extends THREE.Material>(key: string, make: () => T): T {
 const flat = (color: string, rough = 0.8, metal = 0) => mat(`flat-${color}-${rough}-${metal}`, () => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal }));
 
 /* ------------------------------------------------------------------ */
-/* Water                                                                */
-/* ------------------------------------------------------------------ */
-
-export function Water() {
-  const mesh = useRef<THREE.Mesh>(null);
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: { ...skyUniforms, uWater: { value: new THREE.Color() } },
-        fog: false,
-        vertexShader: /* glsl */ `
-          varying vec3 vWorld;
-          void main() {
-            vec4 w = modelMatrix * vec4(position, 1.0);
-            vWorld = w.xyz;
-            gl_Position = projectionMatrix * viewMatrix * w;
-          }`,
-        fragmentShader: /* glsl */ `
-          ${SKY_GLSL}
-          uniform vec3 uWater;
-          uniform float uTime;
-          varying vec3 vWorld;
-
-          float noise(vec2 p) {
-            vec2 i = floor(p);
-            vec2 f = fract(p);
-            vec2 u = f * f * (3.0 - 2.0 * f);
-            float a = hash13(vec3(i, 1.0));
-            float b = hash13(vec3(i + vec2(1.0, 0.0), 1.0));
-            float c = hash13(vec3(i + vec2(0.0, 1.0), 1.0));
-            float d = hash13(vec3(i + vec2(1.0, 1.0), 1.0));
-            return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-          }
-
-          void main() {
-            vec3 toCam = cameraPosition - vWorld;
-            float dist = length(toCam);
-            vec3 V = toCam / dist;
-            // Calm water: long, low swells stretched along the shore, finer ripples on top. Ripples
-            // fade with distance so the far bay settles into a smooth mirror.
-            vec2 p = vWorld.xz;
-            float t = uTime;
-            float fade = 1.0 - smoothstep(120.0, 900.0, dist);
-            float e = 0.6;
-            float h0 = noise(p * vec2(0.035, 0.12) + vec2(t * 0.05, t * 0.02));
-            float h1 = noise(p * vec2(0.09, 0.32) - vec2(t * 0.08, -t * 0.03));
-            float h2 = noise(p * vec2(0.25, 0.8) + vec2(t * 0.12, t * 0.05));
-            float hx = noise((p + vec2(e, 0.0)) * vec2(0.035, 0.12) + vec2(t * 0.05, t * 0.02)) * 0.5
-                     + noise((p + vec2(e, 0.0)) * vec2(0.09, 0.32) - vec2(t * 0.08, -t * 0.03)) * 0.3
-                     + noise((p + vec2(e, 0.0)) * vec2(0.25, 0.8) + vec2(t * 0.12, t * 0.05)) * 0.2;
-            float hz = noise((p + vec2(0.0, e)) * vec2(0.035, 0.12) + vec2(t * 0.05, t * 0.02)) * 0.5
-                     + noise((p + vec2(0.0, e)) * vec2(0.09, 0.32) - vec2(t * 0.08, -t * 0.03)) * 0.3
-                     + noise((p + vec2(0.0, e)) * vec2(0.25, 0.8) + vec2(t * 0.12, t * 0.05)) * 0.2;
-            float h = h0 * 0.5 + h1 * 0.3 + h2 * 0.2;
-            vec3 n = normalize(vec3(-(hx - h) * 0.9 * fade, 1.0, -(hz - h) * 2.2 * fade));
-            vec3 R = reflect(-V, n);
-            R.y = abs(R.y);
-            vec3 sky = skyColour(R, true);
-            float fres = 0.05 + 0.95 * pow(1.0 - max(dot(V, n), 0.0), 4.0);
-            vec3 c = mix(uWater, sky, clamp(fres * 0.9 + 0.12, 0.0, 1.0));
-            // Shimmer: thin bright dashes drifting on the swell, like the light on a painted sea.
-            float dash = smoothstep(0.78, 0.96, noise(p * vec2(0.06, 0.9) + vec2(t * 0.03, 0.0))) * smoothstep(0.55, 0.9, h1);
-            c += dash * 0.10 * fade * mix(vec3(1.0), uGlow, 0.4) * (1.0 - uNight * 0.6);
-            // Mist over the far water, the colour of the air.
-            vec3 air = mix(uHaze, uHorizon, 0.6);
-            c = mix(c, air, smoothstep(260.0, 2600.0, dist) * 0.9);
-            gl_FragColor = vec4(c, 1.0);
-            #include <colorspace_fragment>
-          }`,
-      }),
-    [],
-  );
-  useFrame(({ camera }) => {
-    material.uniforms.uWater.value.copy(daylight.water);
-    // A sea that never ends: the plane follows the camera across the bay.
-    if (mesh.current) mesh.current.position.set(Math.round(camera.position.x / 50) * 50, WATER_Y, Math.round(camera.position.z / 50) * 50);
-  });
-  return (
-    <mesh ref={mesh} material={material} rotation-x={-Math.PI / 2} frustumCulled={false} renderOrder={-5}>
-      <planeGeometry args={[9000, 9000, 1, 1]} />
-    </mesh>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Sea wall                                                             */
 /* ------------------------------------------------------------------ */
 
-/** The island the site stands on: a block of fill behind a concrete sea wall, with a dark tide line and fenders along the quay. */
+/**
+ * Cast concrete for the sea wall, one 8 m bay of it: pale grey panels between dark vertical joints,
+ * faint formwork lifts, rows of tie holes, rust-free streaks of run-off, and the wet band the tide
+ * leaves (darkest at the water, fading up the wall). v runs from the wall's foot (0) to its top (1).
+ */
+function wallTexture() {
+  const W = 1024;
+  const H = 512;
+  const depth = 3.2;
+  const tex = canvasTexture(W, H, (g) => {
+    const r = rng(77);
+    g.fillStyle = "#BEC6D0";
+    g.fillRect(0, 0, W, H);
+    // Cloudy variation in the pour.
+    for (let i = 0; i < 70; i++) {
+      const x = r() * W;
+      const y = r() * H;
+      const rad = 20 + r() * 110;
+      const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, r() > 0.5 ? "rgba(96,108,126,0.10)" : "rgba(240,244,248,0.12)");
+      gr.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = gr;
+      g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    // Formwork lifts and panel joints.
+    const Y = (m: number) => H - (m / depth) * H;
+    g.fillStyle = "rgba(78,90,108,0.16)";
+    for (let m = 0.6; m < depth; m += 0.6) g.fillRect(0, Y(m), W, 1.5);
+    g.fillStyle = "rgba(52,62,78,0.5)";
+    for (let x = 0; x <= W; x += W / 2) g.fillRect(x - 1.5, 0, 3, H);
+    // Tie holes on a grid.
+    g.fillStyle = "rgba(60,70,86,0.45)";
+    for (let x = W / 8; x < W; x += W / 4) for (let m = 0.9; m < depth; m += 1.2) {
+      g.beginPath();
+      g.arc(x, Y(m), 3, 0, Math.PI * 2);
+      g.fill();
+    }
+    // Run-off streaks down from the coping.
+    for (let i = 0; i < 46; i++) {
+      const x = r() * W;
+      const len = H * (0.1 + r() * 0.35);
+      const gr = g.createLinearGradient(0, 0, 0, len);
+      gr.addColorStop(0, "rgba(70,80,96,0.16)");
+      gr.addColorStop(1, "rgba(70,80,96,0)");
+      g.fillStyle = gr;
+      g.fillRect(x, 0, 2 + r() * 6, len);
+    }
+    // The wet band: soaked dark at the water line, drying up the wall.
+    const water = Y(depth + WATER_Y);
+    const wet = g.createLinearGradient(0, water - H * 0.32, 0, water);
+    wet.addColorStop(0, "rgba(58,70,88,0)");
+    wet.addColorStop(0.65, "rgba(58,70,88,0.38)");
+    wet.addColorStop(1, "rgba(44,54,70,0.72)");
+    g.fillStyle = wet;
+    g.fillRect(0, water - H * 0.32, W, H * 0.32);
+    g.fillStyle = "rgba(40,50,66,0.78)";
+    g.fillRect(0, water, W, H - water);
+  });
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/** Box UVs in metres along each face (8 m per texture repeat), v from the foot of the wall to its top. */
+function wallBox(w: number, h: number, d: number) {
+  const g = new THREE.BoxGeometry(w, h, d);
+  const p = g.attributes.position as THREE.BufferAttribute;
+  const n = g.attributes.normal as THREE.BufferAttribute;
+  const uv = g.attributes.uv as THREE.BufferAttribute;
+  for (let i = 0; i < p.count; i++) {
+    const along = Math.abs(n.getZ(i)) > 0.5 ? p.getX(i) : p.getZ(i);
+    uv.setXY(i, along / 8, p.getY(i) / h + 0.5);
+  }
+  return g;
+}
+
+/** Tetrapods: four tapered legs from one centre, the shape every Japanese sea wall is armoured with. */
+function tetrapodGeometry() {
+  return geo("tetrapod", () => {
+    const legs = [
+      [1, 1, 1],
+      [1, -1, -1],
+      [-1, 1, -1],
+      [-1, -1, 1],
+    ].map(([x, y, z]) => {
+      const dir = new THREE.Vector3(x, y, z).normalize();
+      const leg = new THREE.CylinderGeometry(0.27, 0.4, 1, 12, 1).translate(0, 0.5, 0);
+      leg.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir));
+      return leg;
+    });
+    const hub = new THREE.IcosahedronGeometry(0.46, 1);
+    const g = merge([...legs.map((l) => l.toNonIndexed()), hub.toNonIndexed()]);
+    g.computeVertexNormals();
+    return g;
+  });
+}
+
+/**
+ * The armour along the open sides of the island: two loose rows of tetrapods at the foot of the
+ * wall, half in the water, every one turned its own way. One instanced draw for all of them.
+ */
+function Tetrapods() {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const spots = useMemo(() => {
+    const r = rng(303);
+    const out: { x: number; y: number; z: number; s: number; q: THREE.Quaternion; c: number }[] = [];
+    const add = (x: number, z: number) => {
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * Math.PI * 2, r() * Math.PI * 2, r() * Math.PI * 2));
+      out.push({ x, y: WATER_Y - 0.3 + r() * 0.5, z, s: 0.9 + r() * 0.3, q, c: r() });
+    };
+    // South: along the promenade's wall, out of the way of nothing (the sea is open there).
+    for (let x = SITE.west + 1.2; x < 220; x += 1.9 + r() * 0.5) {
+      add(x, SITE.south + 1.15 + r() * 0.35);
+      if (r() > 0.25) add(x + 0.9, SITE.south + 2.6 + r() * 0.6);
+    }
+    // West tip: either side of the pier's root.
+    for (let z = SITE.north + 2; z < SITE.south - 1; z += 1.9 + r() * 0.5) {
+      if (Math.abs(z - SITE.pier.z) < SITE.pier.w + 1.2) continue;
+      add(SITE.west - 1.15 - r() * 0.35, z);
+      if (r() > 0.3) add(SITE.west - 2.6 - r() * 0.6, z + 0.9);
+    }
+    return out;
+  }, []);
+  useLayoutEffect(() => {
+    const m = mesh.current;
+    if (!m) return;
+    const m4 = new THREE.Matrix4();
+    const c = new THREE.Color();
+    spots.forEach((p, i) => {
+      m4.compose(new THREE.Vector3(p.x, p.y, p.z), p.q, new THREE.Vector3(p.s, p.s, p.s));
+      m.setMatrixAt(i, m4);
+      // Weathered concrete: each one a slightly different grey.
+      m.setColorAt(i, c.set("#98A1AD").offsetHSL(0, 0, (p.c - 0.5) * 0.1));
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [spots]);
+  return <instancedMesh ref={mesh} args={[tetrapodGeometry(), tetrapodMaterial(), spots.length]} castShadow receiveShadow />;
+}
+
+/** Concrete that the sea keeps wet: darker and a little glossier from just above the water down. */
+function tetrapodMaterial() {
+  return mat("tetrapod", () => {
+    const m = new THREE.MeshStandardMaterial({ color: "#FFFFFF", roughness: 0.94, metalness: 0 });
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader
+        .replace("#include <common>", "#include <common>\nvarying float vWetY;")
+        .replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWetY = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).y;");
+      sh.fragmentShader = sh.fragmentShader
+        .replace("#include <common>", "#include <common>\nvarying float vWetY;")
+        .replace(
+          "#include <roughnessmap_fragment>",
+          `#include <roughnessmap_fragment>
+          float dry = smoothstep(${(WATER_Y - 0.1).toFixed(2)}, ${(WATER_Y + 0.55).toFixed(2)}, vWetY);
+          diffuseColor.rgb *= mix(0.52, 1.0, dry);
+          roughnessFactor = mix(0.55, roughnessFactor, dry);`,
+        );
+    };
+    m.customProgramCacheKey = () => "tetrapod-1";
+    return m;
+  });
+}
+
+/** The island the site stands on: a block of fill behind a cast concrete sea wall, armoured with tetrapods on its open sides, fenders along the quay. */
 export function SeaWall() {
   const { west, east, north, south } = SITE;
   const w = east - west;
@@ -137,31 +216,23 @@ export function SeaWall() {
     for (let x = 46; x < 146; x += 7) out.push(x);
     return out;
   }, []);
+  const wall = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({ map: wallTexture(), roughness: 0.93, metalness: 0 });
+    return { m, g: wallBox(w, depth, d) };
+  }, [w, d]);
   return (
     <group>
-      <mesh position={[(west + east) / 2, -depth / 2 - 0.002, (north + south) / 2]} material={flat("#C3CBD5", 0.92)} receiveShadow>
-        <boxGeometry args={[w, depth, d]} />
-      </mesh>
-      {/* Coping along the edge, and the tide line just above the water */}
-      {[
-        [(west + east) / 2, north, w, 0.5],
-        [(west + east) / 2, south, w, 0.5],
-      ].map(([x, z, len], i) => (
-        <group key={i}>
-          <mesh position={[x, 0.06, z]} material={flat("#D9DFE6", 0.85)} receiveShadow castShadow>
-            <boxGeometry args={[len, 0.14, 0.6]} />
-          </mesh>
-          <mesh position={[x, WATER_Y + 0.35, z + (i === 0 ? -0.01 : 0.01)]} material={flat("#7E8B9C", 0.95)}>
-            <boxGeometry args={[len, 0.7, 0.02 + 0.01]} />
-          </mesh>
-        </group>
+      <mesh position={[(west + east) / 2, -depth / 2 - 0.002, (north + south) / 2]} geometry={wall.g} material={wall.m} receiveShadow />
+      {/* Coping along the edge */}
+      {[north, south].map((z) => (
+        <mesh key={z} position={[(west + east) / 2, 0.06, z]} material={flat("#D9DFE6", 0.85)} receiveShadow castShadow>
+          <boxGeometry args={[w, 0.14, 0.6]} />
+        </mesh>
       ))}
       <mesh position={[west, 0.06, (north + south) / 2]} material={flat("#D9DFE6", 0.85)} castShadow>
         <boxGeometry args={[0.6, 0.14, d]} />
       </mesh>
-      <mesh position={[west - 0.01, WATER_Y + 0.35, (north + south) / 2]} material={flat("#7E8B9C", 0.95)}>
-        <boxGeometry args={[0.02, 0.7, d]} />
-      </mesh>
+      <Tetrapods />
       {/* Rubber fenders and bollards along the container quay */}
       {fenders.map((x) => (
         <group key={x}>

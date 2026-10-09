@@ -6,10 +6,11 @@
 // per-vertex colour and roughness, so skin, fabric, hard hats and reflective tape each read as what
 // they are while a person still costs about a dozen draw calls (one when far away).
 import * as THREE from "three";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { DETAIL } from "../reel/water";
 
 export type Pose = "stand" | "walk" | "sit" | "tablet" | "point" | "wave";
 
@@ -72,8 +73,8 @@ type Part = [THREE.BufferGeometry, string, number?];
 const fuse = (parts: Part[]) => mergeGeometries(parts.map(([g, c, r]) => finish(g, c, r ?? R.fabric)), false)!;
 
 const rb = (w: number, h: number, d: number, r: number, x = 0, y = 0, z = 0) =>
-  new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)).translate(x, y, z);
-const ball = (r: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 18) => new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)).scale(sx, sy, sz).translate(x, y, z);
+  new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)).translate(x, y, z);
+const ball = (r: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 14) => new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)).scale(sx, sy, sz).translate(x, y, z);
 
 /**
  * A body section turned from a profile of [radius, y] points (y going up), then squashed front to
@@ -104,8 +105,8 @@ function bodyParts(look: Look) {
   // Pelvis: hips and seat in trousers, a belt with a buckle at the waist.
   const hipR = f ? 0.178 : 0.165;
   parts.pelvis = fuse([
-    [lathe([[0.07, -0.14], [0.135, -0.11], [hipR, -0.05], [hipR - 0.006, 0.01], [0.148, 0.04]], 0.66, 1, 24), trousers, trouserR],
-    [lathe([[0.151, 0.018], [0.155, 0.032], [0.155, 0.048], [0.151, 0.06]], 0.67, 1, 24), "#1C1E22", R.gloss],
+    [lathe([[0.07, -0.14], [0.135, -0.11], [hipR, -0.05], [hipR - 0.006, 0.01], [0.148, 0.04]], 0.66, 1, 18), trousers, trouserR],
+    [lathe([[0.151, 0.018], [0.155, 0.032], [0.155, 0.048], [0.151, 0.06]], 0.67, 1, 18), "#1C1E22", R.gloss],
     [rb(0.012, 0.03, 0.045, 0.004, 0.104, 0.04, 0), "#B9BCC2", 0.25],
   ]);
 
@@ -148,8 +149,8 @@ function bodyParts(look: Look) {
   ];
   if (vest) {
     // Hi-vis vest over the shirt: open at the neck, two reflective hoops and shoulder braces, pockets
-    torso.push([lathe([[0.153, 0.06], [0.161, 0.18], [0.175, 0.29], [sh + 0.006, 0.39], [sh - 0.006, 0.45]], 0.665, 1.03, 24), vest]);
-    for (const y of [0.14, 0.3]) torso.push([lathe([[0.168 + (y - 0.14) * 0.06, y - 0.017], [0.169 + (y - 0.14) * 0.06, y], [0.168 + (y - 0.14) * 0.06, y + 0.017]], 0.67, 1.04, 24), "#DDE1E6", R.tape]);
+    torso.push([lathe([[0.153, 0.06], [0.161, 0.18], [0.175, 0.29], [sh + 0.006, 0.39], [sh - 0.006, 0.45]], 0.665, 1.03, 18), vest]);
+    for (const y of [0.14, 0.3]) torso.push([lathe([[0.168 + (y - 0.14) * 0.06, y - 0.017], [0.169 + (y - 0.14) * 0.06, y], [0.168 + (y - 0.14) * 0.06, y + 0.017]], 0.67, 1.04, 18), "#DDE1E6", R.tape]);
     for (const z of [-0.075, 0.075]) torso.push([rb(0.02, 0.2, 0.035, 0.008).rotateX(z > 0 ? 0.1 : -0.1).translate(0.112, 0.36, z), "#DDE1E6", R.tape]);
     torso.push([rb(0.01, 0.34, 0.018, 0.004, 0.118, 0.25, 0), "#4B5418", R.gloss]); // zip
     for (const z of [-0.08, 0.08]) torso.push([rb(0.01, 0.06, 0.07, 0.004, 0.113, 0.11, z), vest]); // pockets
@@ -166,7 +167,7 @@ function bodyParts(look: Look) {
 
   // Head: cranium, jaw and chin, nose, ears, eyes, brows, lips.
   const head: Part[] = [
-    [ball(0.094, -0.004, 0.118, 0, 1.06, 1.12, f ? 0.84 : 0.88, 24), skin, R.skin],
+    [ball(0.094, -0.004, 0.118, 0, 1.06, 1.12, f ? 0.84 : 0.88, 20), skin, R.skin],
     [ball(0.066, 0.03, 0.058, 0, 0.95, 0.85, f ? 0.96 : 1.08, 20), skin, R.skin], // jaw
     [ball(0.024, 0.075, 0.035, 0, 0.9, 0.9, 1.1), skin, R.skin], // chin
     [new THREE.ConeGeometry(0.019, 0.048, 12).rotateZ(-Math.PI / 2).scale(1, 1.25, 0.9).translate(0.103, 0.094, 0), skin, R.skin], // nose
@@ -284,6 +285,8 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
   const rootJ = useRef<THREE.Group>(null);
   const statueJ = useRef<THREE.Mesh>(null);
   useEffect(() => () => statueJ.current?.geometry.dispose(), []);
+  // People are too small to read in the water's reflection: they are drawn on screen and in shadows only.
+  useLayoutEffect(() => rootJ.current?.traverse((o) => o.layers.set(DETAIL)), []);
 
   useFrame(({ clock, camera, size }) => {
     // Distance LOD: small on screen, the person is one merged mesh in their last pose (one draw call).
@@ -298,6 +301,14 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
       P1.project(camera);
       const px = (Math.abs(P1.y - P0.y) * size.height) / 2;
       far = px < (pose === "walk" ? 16 : 30);
+      // A few pixels tall, a person is a speck: not drawn at all (hysteresis, so never flickering).
+      const tiny = statue.userData.tiny ? px < 5.5 : px < 4;
+      statue.userData.tiny = tiny;
+      if (tiny && statue.userData.ready) {
+        statue.visible = false;
+        if (pelvisJ.current) pelvisJ.current.visible = false;
+        return;
+      }
       if (far && statue.userData.ready) {
         statue.visible = true;
         if (pelvisJ.current) pelvisJ.current.visible = false;

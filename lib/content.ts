@@ -84,6 +84,7 @@ export const OUTCOMES = [
 export const PATHS = {
   custom: {
     label: "Custom to your business",
+    short: "Custom",
     intro:
       "We begin with the operation that needs to change. The first month produces a clear blueprint before the production build begins.",
     total: "6 to 12 weeks to the first production release",
@@ -96,6 +97,7 @@ export const PATHS = {
   },
   catalogue: {
     label: "From the catalogue",
+    short: "Catalogue",
     intro:
       "Start from an application that already solves a common decision, then fit it to your systems, policies and teams.",
     total: "4 to 8 weeks to the first production release",

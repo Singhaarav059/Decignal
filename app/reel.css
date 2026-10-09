@@ -49,16 +49,16 @@ html {
   display: block;
 }
 
-/* A whisper of paper grain over the whole world: it settles the render into an illustration. */
+/* A whisper of grain over the whole world, like film. Plain alpha, no blend mode: a blend mode
+   would make the compositor re-blend the full screen over the canvas on every frame. */
 .reel::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.035;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.12 0 0 0 0 0.24 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  mix-blend-mode: multiply;
 }
 
 .r-sec {
@@ -3657,5 +3657,1026 @@ html[data-reel-at="ask"] .r-nav-links[data-slide] {
   .r-route,
   .r-stack {
     translate: none;
+  }
+}
+
+/* ================================================================== */
+/* Nav glances: one panel under the nav that morphs between sections   */
+/* ================================================================== */
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.r-peek {
+  --pk-bg: #ffffff;
+  --pk-bg-2: #f2f5f9;
+  --pk-ink: var(--color-ink);
+  --pk-soft: #4a5876;
+  --pk-line: rgb(20 33 61 / 0.1);
+  position: fixed;
+  top: 66px;
+  z-index: 41;
+  width: var(--w);
+  height: var(--h);
+  color: var(--pk-ink);
+  opacity: 0;
+  translate: 0 -8px;
+  scale: 0.985;
+  transform-origin: var(--caret) 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-2) var(--ease),
+    translate var(--dur-3) var(--ease),
+    scale var(--dur-3) var(--ease),
+    width 460ms var(--ease),
+    height 460ms var(--ease),
+    left 460ms var(--ease);
+}
+.r-peek[data-open] {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  pointer-events: auto;
+}
+/* A bridge over the gap between the links and the panel, so the pointer can cross it. */
+.r-peek::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -16px;
+  height: 16px;
+}
+.r-peek-caret {
+  position: absolute;
+  top: -6px;
+  left: var(--caret);
+  width: 13px;
+  height: 13px;
+  translate: -50% 0;
+  rotate: 45deg;
+  border-radius: 3px 0 0 0;
+  background: var(--pk-bg);
+  border-left: 1px solid var(--pk-line);
+  border-top: 1px solid var(--pk-line);
+  transition: left 420ms var(--ease);
+}
+.r-peek-body {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--pk-bg);
+  border: 1px solid var(--pk-line);
+  box-shadow: 0 1px 2px rgb(20 33 61 / 0.06), 0 24px 48px -24px rgb(20 33 61 / 0.4);
+}
+.r-peek-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--w);
+  padding: 20px 22px 22px;
+  opacity: 0;
+  translate: 28px 0;
+  pointer-events: none;
+  transition: opacity 240ms var(--ease), translate 460ms var(--ease);
+}
+.r-peek-pane[data-from="left"] {
+  translate: -28px 0;
+}
+.r-peek-pane[data-on] {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+/* Each block rises in on open, one after another. */
+.r-peek-pane[data-on] .r-peek-in [style*="--k"] {
+  animation: r-peek-rise 520ms var(--ease) both;
+  animation-delay: calc(var(--k) * 45ms + 60ms);
+}
+@keyframes r-peek-rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+.r-peek button:not(.r-btn) {
+  text-align: left;
+  color: inherit;
+}
+.r-peek-kicker,
+.r-peek-act,
+.r-peek small {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pk-soft);
+}
+.r-peek-lead {
+  margin-top: 6px;
+  max-width: 34rem;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--pk-soft);
+}
+.r-peek-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+.r-peek-go svg {
+  transition: translate var(--dur-2) var(--ease);
+}
+.r-peek-go:hover svg {
+  translate: 3px 0;
+}
+
+/* Story: the day's ten scenes */
+.r-peek-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--pk-line);
+}
+.r-peek-arc {
+  position: relative;
+  flex: none;
+  color: var(--pk-ink);
+}
+.r-peek-arc svg {
+  display: block;
+  overflow: visible;
+}
+.r-peek-sun {
+  fill: var(--color-saffron);
+  stroke: var(--pk-bg);
+  stroke-width: 3;
+  transition: fill var(--dur-4) var(--ease);
+}
+[data-moon] .r-peek-sun {
+  fill: #c9d4f4;
+}
+.r-peek-pct {
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--pk-soft);
+}
+.r-peek-acts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.r-peek-act {
+  margin-bottom: 8px;
+}
+.r-peek-acts ol {
+  display: grid;
+  gap: 6px;
+}
+.r-peek-acts button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  padding: 7px 8px 9px 7px;
+  border-radius: 12px;
+  transition: background-color var(--dur-2) var(--ease);
+}
+.r-peek-acts button:hover,
+.r-peek-acts button:focus-visible {
+  background: var(--pk-bg-2);
+}
+.r-peek-sky {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--hz);
+  box-shadow: inset 0 0 0 1px rgb(20 33 61 / 0.08);
+}
+.r-peek-sky::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 52%;
+  background: var(--top);
+}
+/* The island on the horizon line, the same in every hour. */
+.r-peek-sky::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 7px;
+  bottom: 9px;
+  height: 4px;
+  border-radius: 1px;
+  background: rgb(20 33 61 / 0.45);
+}
+.r-peek-sky[data-dark]::after {
+  background: rgb(255 214 150 / 0.75);
+}
+.r-peek-sky em {
+  position: absolute;
+  inset: 0;
+  font-size: 0;
+}
+.r-peek-scene {
+  display: grid;
+  min-width: 0;
+}
+.r-peek-scene small {
+  letter-spacing: 0.08em;
+}
+.r-peek-scene b {
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.r-peek-scene span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--pk-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.r-peek-bar {
+  position: absolute;
+  left: 53px;
+  right: 8px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--pk-line);
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+}
+.r-peek-bar span {
+  display: block;
+  height: 100%;
+  width: calc(var(--fill, 0) * 100%);
+  border-radius: inherit;
+  background: var(--pk-ink);
+}
+.r-peek-acts button[data-here] .r-peek-bar {
+  opacity: 1;
+}
+.r-peek-acts button[data-here] {
+  background: var(--pk-bg-2);
+}
+.r-peek-acts button[data-here] .r-peek-scene small::after {
+  content: " · Now";
+  color: var(--color-cobalt);
+}
+.r-peek-acts button[data-read] .r-peek-scene small {
+  color: var(--pk-ink);
+}
+
+/* Platform, apps, FAQ: cards and rows */
+.r-peek-grid {
+  display: grid;
+  gap: 14px;
+}
+.r-peek-platform {
+  grid-template-columns: 1fr 1fr 1.08fr;
+}
+.r-peek-card {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--pk-bg-2);
+  transition: background-color var(--dur-2) var(--ease), translate var(--dur-3) var(--ease);
+}
+button.r-peek-card:hover {
+  translate: 0 -2px;
+}
+.r-peek-card[data-here] {
+  box-shadow: inset 0 0 0 1.5px var(--tone);
+}
+.r-peek-card b {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.r-peek-card > span:not(.r-peek-art) {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--pk-soft);
+}
+.r-peek-card small {
+  color: var(--tone);
+}
+.r-peek-art {
+  display: block;
+  margin: -2px -2px 8px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--pk-bg);
+  color: var(--pk-ink);
+}
+.r-peek-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.r-peek-art text {
+  font-size: 9px;
+  font-weight: 650;
+  fill: var(--pk-soft);
+  letter-spacing: 0.04em;
+}
+.r-peek-pane[data-on] .r-peek-draw {
+  stroke-dasharray: 220;
+  animation: r-peek-draw 1100ms var(--ease) 180ms both;
+}
+@keyframes r-peek-draw {
+  from {
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.r-peek-truck {
+  animation: r-peek-drive 3.4s var(--ease) infinite;
+}
+@keyframes r-peek-drive {
+  0%,
+  12% {
+    transform: translate(56px, 35px);
+  }
+  78%,
+  100% {
+    transform: translate(140px, 35px);
+  }
+}
+.r-peek-list ul {
+  display: grid;
+  margin-top: 4px;
+}
+.r-peek-list button {
+  display: grid;
+  grid-template-columns: 16px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: background-color var(--dur-2) var(--ease);
+}
+.r-peek-list button:hover {
+  background: var(--pk-bg);
+}
+.r-peek-list svg {
+  color: var(--color-emerald);
+}
+.r-peek-list b {
+  font-weight: 650;
+}
+.r-peek-list button span {
+  color: var(--pk-soft);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.r-peek-apps {
+  grid-template-columns: 1.45fr 1fr;
+  gap: 24px;
+}
+.r-peek-rows {
+  display: grid;
+  margin-top: 8px;
+}
+.r-peek-rows button {
+  display: grid;
+  grid-template-columns: 10px minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  transition: background-color var(--dur-2) var(--ease);
+}
+.r-peek-rows button:hover,
+.r-peek-rows button:focus-visible {
+  background: var(--pk-bg-2);
+}
+.r-peek-rows i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone);
+  translate: 0 -1px;
+}
+.r-peek-rows b {
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.r-peek-rows span {
+  font-size: 12.5px;
+  color: var(--pk-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.r-peek-rows em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 22px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--pk-bg-2);
+}
+.r-peek-rows button:hover em {
+  background: var(--pk-bg);
+}
+.r-peek-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.r-peek-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--pk-line);
+  font-size: 13px;
+  font-weight: 560;
+  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.r-peek-chips button:hover {
+  background: var(--pk-bg-2);
+  border-color: transparent;
+}
+.r-peek-chips i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+/* How it works: the route as a line of four stops */
+.r-peek-route {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.r-peek-route::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 17px;
+  border-top: 1.5px dashed var(--pk-line);
+}
+.r-peek-route button {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 14px;
+  transition: background-color var(--dur-2) var(--ease);
+}
+.r-peek-route button:hover {
+  background: var(--pk-bg-2);
+}
+.r-peek-route i {
+  width: 14px;
+  height: 14px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--pk-bg);
+  box-shadow: inset 0 0 0 3px var(--tone);
+}
+.r-peek-route small {
+  color: var(--tone);
+}
+.r-peek-route b {
+  font-size: 14px;
+  font-weight: 650;
+}
+.r-peek-route span {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--pk-soft);
+}
+.r-peek-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pk-line);
+  font-size: 13px;
+  color: var(--pk-soft);
+}
+.r-peek-foot b {
+  color: var(--pk-ink);
+  font-weight: 650;
+  margin-right: 4px;
+}
+.r-peek-foot .r-peek-go {
+  margin: 0 0 0 auto;
+}
+
+/* FAQ */
+.r-peek-faq {
+  grid-template-columns: 1.6fr 1fr;
+}
+.r-peek-faq .r-peek-rows {
+  margin-top: 0;
+}
+.r-peek-faq .r-peek-rows button {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+}
+.r-peek-ico {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--tone);
+  background: var(--pk-bg-2);
+}
+.r-peek-faq .r-peek-rows b {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.r-peek-audit {
+  align-content: start;
+  gap: 6px;
+}
+.r-peek-audit b {
+  font-size: 16px;
+}
+.r-peek-audit .r-btn {
+  justify-self: start;
+  margin-top: 8px;
+}
+.r-peek-audit .r-peek-go {
+  margin-top: 4px;
+}
+
+/* Over the evening and night sections the panel turns to the night palette. */
+html[data-reel-at="how"] .r-peek,
+html[data-reel-at="ask"] .r-peek {
+  --pk-bg: #101a36;
+  --pk-bg-2: #18244a;
+  --pk-ink: #f5f7fc;
+  --pk-soft: rgb(232 237 248 / 0.72);
+  --pk-line: rgb(255 255 255 / 0.1);
+}
+html[data-reel-at="how"] .r-peek .r-btn-dark,
+html[data-reel-at="ask"] .r-peek .r-btn-dark {
+  background: #fff;
+  color: var(--color-ink);
+}
+/* The hovered link is marked while its glance is open. */
+.r-nav-links button[data-peeking] {
+  opacity: 1;
+}
+
+/* ---- Phone and tablet menu: a sheet with the five parts and the ten scenes ---- */
+.r-menu {
+  display: none;
+}
+@media (max-width: 900px) {
+  .r-peek {
+    display: none;
+  }
+  .r-nav[data-open="true"] .r-nav-links {
+    display: none;
+  }
+  .r-menu {
+    position: fixed;
+    display: block;
+    top: 66px;
+    left: 12px;
+    right: 12px;
+    max-height: calc(100svh - 82px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 8px;
+    border-radius: 22px;
+    background: #ffffff;
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+    box-shadow: 0 24px 48px -24px rgb(20 33 61 / 0.45);
+    opacity: 0;
+    translate: 0 -10px;
+    scale: 0.98;
+    transform-origin: 90% 0;
+    pointer-events: none;
+    transition: opacity var(--dur-2) var(--ease), translate var(--dur-3) var(--ease), scale var(--dur-3) var(--ease);
+  }
+  .r-nav[data-open="true"] .r-menu {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    pointer-events: auto;
+  }
+  .r-menu-links button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    text-align: left;
+  }
+  .r-menu-links button[data-on="true"] {
+    background: #f2f5f9;
+  }
+  .r-menu-links b {
+    font-size: 17px;
+    font-weight: 650;
+  }
+  .r-menu-links span {
+    grid-row: 2;
+    font-size: 13px;
+    color: #4a5876;
+  }
+  .r-menu-links svg {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: center;
+    color: #4a5876;
+  }
+  .r-nav[data-open="true"] .r-menu-links li,
+  .r-nav[data-open="true"] .r-menu-scenes li {
+    animation: r-peek-rise 460ms var(--ease) both;
+    animation-delay: calc(var(--d) * 28ms + 40ms);
+  }
+  .r-menu-kicker {
+    margin: 10px 14px 6px;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4a5876;
+  }
+  .r-menu-scenes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    padding: 0 4px 4px;
+  }
+  .r-menu-scenes button {
+    display: grid;
+    grid-template-columns: 18px auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 560;
+  }
+  .r-menu-scenes button[aria-current] {
+    background: #f2f5f9;
+  }
+  .r-menu-scenes i {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--hz);
+    box-shadow: inset 0 0 0 1px rgb(20 33 61 / 0.08);
+  }
+  .r-menu-scenes i::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 50%;
+    background: var(--top);
+  }
+  .r-menu-scenes small {
+    font-size: 11px;
+    font-weight: 650;
+    color: #4a5876;
+  }
+  .r-menu-scenes span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r-peek,
+  .r-peek-pane,
+  .r-peek-caret {
+    transition-duration: 0.01ms !important;
+  }
+  .r-peek-truck {
+    animation: none;
+    transform: translate(140px, 35px);
+  }
+}
+
+/* Phones: the four route steps fit under the heading in one screen. Scoped to the step cards (the
+   older ".r-route li" rules also padded every item of each step's checklist). */
+@media (max-width: 767px) {
+  .r-route > li {
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .r-route-gets {
+    display: none;
+  }
+  .r-route > li > span:not(.r-route-when) {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+.r-short {
+  display: none;
+}
+@media (max-width: 480px) {
+  .r-switch .r-long {
+    display: none;
+  }
+  .r-switch .r-short {
+    display: inline;
+  }
+}
+
+/* ---- The planner's controls on the decision: approve, adjust, reject ---- */
+.r-control {
+  margin-top: 18px;
+}
+.r-control .r-approve {
+  margin-top: 0;
+}
+.r-control > .r-approve-note {
+  display: block;
+  margin-top: 8px;
+}
+.r-kicker[data-rejected] {
+  color: var(--color-signal);
+}
+.r-adjust,
+.r-reject {
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  animation: r-peek-rise 420ms var(--ease) both;
+}
+.r-adjust-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.r-step {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line-strong);
+  background: #fff;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color var(--dur-2) var(--ease), scale var(--dur-1) var(--ease);
+}
+.r-step:active:not(:disabled) {
+  scale: 0.94;
+}
+.r-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.r-adjust input[type="range"] {
+  flex: 1;
+  height: 28px;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.r-adjust input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--color-ink) calc(var(--k) * 100%), var(--color-line-strong) 0);
+}
+.r-adjust input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-line-strong);
+}
+.r-adjust input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-ink);
+}
+.r-adjust input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-ink);
+  transition: scale var(--dur-2) var(--ease);
+}
+.r-adjust input[type="range"]:active::-webkit-slider-thumb {
+  scale: 1.15;
+}
+.r-adjust input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-ink);
+}
+.r-balance {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 12px;
+}
+.r-balance > div {
+  display: grid;
+  gap: 2px;
+}
+.r-balance span:first-child {
+  font-size: 12px;
+  color: var(--color-ink-soft);
+}
+.r-balance b {
+  font-size: 20px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-3) var(--ease);
+}
+.r-balance b[data-bad] {
+  color: var(--color-signal);
+}
+.r-balance-bar {
+  position: relative;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 6px;
+  background: var(--color-line);
+}
+.r-balance-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--v) * 100%);
+  border-radius: inherit;
+  background: var(--c);
+  transition: width var(--dur-4) var(--ease);
+}
+.r-balance-bar::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: calc(var(--m) * 100%);
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-ink);
+}
+.r-balance-bar em {
+  position: absolute;
+  top: 10px;
+  left: calc(var(--m) * 100%);
+  translate: -50% 0;
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
+}
+.r-balance > div {
+  padding-bottom: 14px;
+}
+.r-control-note {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+}
+.r-control-note[data-tone="signal"] {
+  color: var(--color-signal);
+}
+.r-control-note[data-tone="ok"] {
+  color: color-mix(in oklab, var(--color-emerald) 80%, var(--color-ink));
+}
+.r-reject > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.r-chip {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line-strong);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 560;
+  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), scale var(--dur-1) var(--ease);
+}
+.r-chip:hover {
+  border-color: var(--color-signal);
+}
+.r-chip:active {
+  scale: 0.97;
+}
+.r-control-result {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.r-control-result i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-signal);
+  translate: 0 -1px;
+}
+/* Rolling digits */
+.r-roll {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+.r-roll-col {
+  display: inline-block;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+  vertical-align: baseline;
+  translate: 0 0.12em;
+}
+.r-roll-col > span {
+  display: block;
+  transition: translate var(--dur-4) var(--ease);
+}
+.r-roll-col > span > span {
+  display: block;
+  height: 1em;
+}
+.r-title .r-roll-col {
+  height: 1.06em;
+  line-height: 1.06;
+  translate: 0 0.16em;
+}
+.r-title .r-roll-col > span > span {
+  height: 1.06em;
+}
+@media (max-width: 480px) {
+  .r-control .r-approve {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .r-control .r-approve .r-btn {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .r-balance b {
+    font-size: 17px;
   }
 }

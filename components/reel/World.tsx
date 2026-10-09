@@ -21,7 +21,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { Canvas, useFrame, useThree, type RootState } from "@react-three/fiber";
 import { Suspense, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { DECISION, N, S, anchorOf, atSection, decisionU, reel, story } from "@/lib/reel";
+import { DECISION, N, S, anchorOf, atSection, decisionU, palletsOf, reel, story } from "@/lib/reel";
 import { daylight, stepDaylight } from "@/lib/daylight";
 import { canvasQuality, isPhone } from "@/lib/device";
 import { FORK, Forklift, SemiTruck, TRUCK } from "../three/vehicles";
@@ -29,12 +29,13 @@ import { TINTS } from "../three/palette";
 import { LoadedPallet, Tote } from "../three/parts";
 import { Person } from "../three/people";
 import { Plant, PLANT } from "../three/buildings";
-import { DecisionPlate, PLATE, RACK, RACK_SLOTS, RackFrame, rackSlot, skuTote } from "./objects";
+import { DecisionPlate, PLATE, RACK, RACK_SLOTS, RackFrame, engravePlates, rackSlot, skuTote } from "./objects";
 import { Contact } from "./sets";
 import { PLANT01, PlantFloor } from "./environments";
 import { DispatchBoard, Ground, LAND, PALLET_SLOTS, Verges, YARD, bayX, opsScreen } from "./land";
 import { Clouds, FarShore, Gulls, SkyDome, SkyLight, stepSkyUniforms } from "./sky";
-import { Containers, Crane, FishingBoat, Floodlight, InboundShip, MooredShip, Pier, SITE, SeaWall, WATER_Y, Water, yardSlots } from "./harbour";
+import { Containers, Crane, FishingBoat, Floodlight, InboundShip, MooredShip, Pier, SITE, SeaWall, WATER_Y, yardSlots } from "./harbour";
+import { DETAIL, Unreflected, Water, renderReflection, type Shore } from "./water";
 import { Islet, Torii } from "./garden";
 import { HeadOffice, SalesOffice, ServiceCentre } from "./town";
 import { stepGlow } from "./glow";
@@ -64,6 +65,12 @@ const TRUCK_MID = (TRUCK.front + TRUCK.rear) / 2;
 const ARRIVE_X = 16 - TRUCK_MID;
 /** The torii stands in the water off the islet, out in the bay beyond the moored ship. */
 const ISLET = { x: 118, z: -168 };
+/** Where the water meets something: the sea wall, the moored ship's hull, the torii islet's rocks. */
+const SHORE: Shore = {
+  island: [SITE.west, SITE.east, SITE.north, SITE.south],
+  ship: [SITE.quay.ship.x - 46, SITE.quay.ship.x + 46, SITE.quay.ship.z - 7.5, SITE.quay.ship.z + 7.5],
+  islet: [ISLET.x, ISLET.z, 12.5, 7.5],
+};
 
 /* ------------------------------------------------------------------ */
 /* Screen frames: where on screen each shot's subject sits              */
@@ -98,8 +105,23 @@ function settle(key: FrameKey) {
   out.w = Math.max(r.width, 1);
 }
 
+/**
+ * Where each shot sits only changes when the page lays out again, so the anchors are measured on
+ * resize and font or content changes, and once a second as a safety net: never every frame (ten
+ * layout reads a frame was a measurable share of each frame's budget).
+ */
+const framesState = { dirty: true, n: 0, w: 0, h: 0 };
+export function framesChanged() {
+  framesState.dirty = true;
+}
 function measureFrames() {
-  for (const k of FRAME_KEYS) settle(k);
+  if (framesState.dirty || view.w !== framesState.w || view.h !== framesState.h || ++framesState.n >= 60) {
+    for (const k of FRAME_KEYS) settle(k);
+    framesState.dirty = false;
+    framesState.n = 0;
+    framesState.w = view.w;
+    framesState.h = view.h;
+  }
   wide.cx = view.w / 2;
   wide.cy = view.h * 0.55;
   wide.w = view.w;
@@ -273,36 +295,58 @@ const lightRight = new THREE.Vector3();
 const lightUp = new THREE.Vector3();
 
 /** Sun to sky balance. The sky's own light (SkyLight) adds the rest of the ambient. */
-const KEY_GAIN = 1.9;
-const FILL_GAIN = 0.4;
+const KEY_GAIN = 2.25;
+const FILL_GAIN = 0.3;
+
+/**
+ * The shadow map is redrawn only when what it shows has changed: the light's frame moved on to a
+ * new step, the sun turned by a visible amount, or something on the ground moved (see Renderer).
+ */
+const shadowState = { extent: 0, r: NaN, u: NaN, dir: new THREE.Vector3(), dirty: true };
+/** Shadow sizes come in steps of 15%, so a slow zoom redraws the map a few times, not every frame. */
+const EXTENT_STEP = Math.log(1.15);
 
 /** Fits the key light's shadow to what the camera is looking at, and gives it the hour's colour. */
 function stepSun(l: THREE.DirectionalLight | null, hemi: THREE.HemisphereLight | null, map: number) {
   if (!l) return;
   const dir = daylight.keyDir;
-  const extent = THREE.MathUtils.clamp(cam.span * 0.62, 7, 80);
-  // Snap to the shadow map's texels so its edges hold still while the camera moves.
+  const want = THREE.MathUtils.clamp(cam.span * 0.62, 7, 80);
+  // A little larger than the shot needs, so the frame can lag the camera by one step and still cover it.
+  const extent = 7 * Math.exp(Math.ceil(Math.log(want / 7) / EXTENT_STEP) * EXTENT_STEP) * 1.15;
   const texel = (2 * extent) / map;
+  // The frame moves in steps of an eighth of its size, each a whole number of texels, so shadow
+  // edges never crawl and the map is not redrawn for every small move of the camera.
+  const step = Math.max(1, Math.round(extent / 8 / texel)) * texel;
   lightRight.crossVectors(THREE.Object3D.DEFAULT_UP, dir).normalize();
   lightUp.crossVectors(dir, lightRight).normalize();
   keyTarget.position.set(cam.x, Math.min(cam.y, 4), cam.z);
-  const r = Math.round(keyTarget.position.dot(lightRight) / texel) * texel - keyTarget.position.dot(lightRight);
-  const u = Math.round(keyTarget.position.dot(lightUp) / texel) * texel - keyTarget.position.dot(lightUp);
-  keyTarget.position.addScaledVector(lightRight, r).addScaledVector(lightUp, u);
-  keyTarget.updateMatrixWorld();
-  l.position.copy(keyTarget.position).addScaledVector(dir, 120);
-  // Bias in shadow-map texels: as the sun lowers and the shadow widens, a fixed bias left the
-  // painted floor lines striped with acne that crawled as the scroll moved the sun.
-  l.shadow.normalBias = Math.max(0.03, texel * 2.4);
-  l.color.copy(daylight.key);
-  // Outdoor light is mostly sun: a strong key over a soft sky fill, so shadows read and forms model.
-  l.intensity = daylight.keyPower * KEY_GAIN;
-  const c = l.shadow.camera;
-  if (c.right !== extent) {
+  const pr = keyTarget.position.dot(lightRight);
+  const pu = keyTarget.position.dot(lightUp);
+  const r = Math.round(pr / step) * step;
+  const u = Math.round(pu / step) * step;
+  const sh = shadowState;
+  // A tenth of a degree of sun is under a centimetre of shadow on anything here.
+  const turned = sh.dir.dot(dir) < 0.9999985;
+  if (turned || extent !== sh.extent || r !== sh.r || u !== sh.u) {
+    sh.extent = extent;
+    sh.r = r;
+    sh.u = u;
+    sh.dir.copy(dir);
+    sh.dirty = true;
+    keyTarget.position.addScaledVector(lightRight, r - pr).addScaledVector(lightUp, u - pu);
+    keyTarget.updateMatrixWorld();
+    l.position.copy(keyTarget.position).addScaledVector(dir, 120);
+    // Bias in shadow-map texels: as the sun lowers and the shadow widens, a fixed bias left the
+    // painted floor lines striped with acne that crawled as the scroll moved the sun.
+    l.shadow.normalBias = Math.max(0.03, texel * 2.4);
+    const c = l.shadow.camera;
     c.left = c.bottom = -extent;
     c.right = c.top = extent;
     c.updateProjectionMatrix();
   }
+  l.color.copy(daylight.key);
+  // Outdoor light is mostly sun: a strong key over a soft sky fill, so shadows read and forms model.
+  l.intensity = daylight.keyPower * KEY_GAIN;
   if (hemi) {
     hemi.color.copy(daylight.fillSky);
     hemi.groundColor.copy(daylight.fillGround);
@@ -315,6 +359,8 @@ function Sun() {
   const light = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
   const map = isPhone() ? 2048 : 4096;
+  // The shadow map sees the details kept out of the water's reflection.
+  useLayoutEffect(() => light.current?.shadow.camera.layers.enable(DETAIL), []);
   useFrame(({ clock }) => {
     stepSun(light.current, hemi.current, map);
     stepSkyUniforms(clock.elapsedTime);
@@ -376,6 +422,7 @@ function stepCut(t: number) {
   const open = smoother(span(t, 1.62, 1.96)) * (1 - smoother(span(t, 2.72, 2.88)));
   cutTop.constant = mix(12, 4.98, open);
   cutFront.constant = LAND.plantZ + mix(7, 2.6, open);
+  return open;
 }
 
 /** Totes on hand: 16 at 15 units each is 240; safety stock (175) is just under 12. */
@@ -387,6 +434,7 @@ const RACK_Z = PLANT01.wall.z + RACK.depth / 2 + 0.12;
 const FACT_AT = (i: number) => 0.36 + i * 0.05;
 
 function Inside() {
+  const root = useRef<THREE.Group>(null);
   const totes = useRef<(THREE.Group | null)[]>([]);
   const beacon = useRef<THREE.MeshStandardMaterial>(null);
   const contact = useRef<THREE.Group>(null);
@@ -394,7 +442,10 @@ function Inside() {
   const [ops] = useState(opsScreen);
   useFrame(({ clock }) => {
     const t = story();
-    stepCut(t);
+    const open = stepCut(t);
+    // With the roof and front wall in place nothing inside can be seen: it is not drawn at all
+    // (in the main view, the shadow map or the water's reflection) until the cut starts to open.
+    if (root.current) root.current.visible = open > 0.0005;
     // The floor's contact shadow is only worth drawing while we can see in.
     if (contact.current) contact.current.visible = t > 1.5 && t < 2.95;
     const u = reel.u[S.signal];
@@ -416,7 +467,7 @@ function Inside() {
   });
   const { rack, wall, screen, floor } = PLANT01;
   return (
-    <group position={INSIDE.toArray()}>
+    <group ref={root} position={INSIDE.toArray()}>
       <PlantFloor screen={ops.texture} span={INSIDE_SPAN} />
       <group position={[rack.x, 0, RACK_Z]}>
         <RackFrame beacon={beacon} />
@@ -431,7 +482,7 @@ function Inside() {
       {/* The planner, reading the display: the facts arrive there, then the recommendation */}
       <Person look="planner" pose="tablet" seed={2.4} position={[screen.x + screen.w / 2 + 0.7, 0, wall.z + 1.5]} rotation-y={-Math.PI / 2 + 0.5} />
       <group ref={contact} position-y={0.035}>
-        <Contact w={floor.w} d={floor.d} far={0.8} blur={2.2} opacity={0.55} position-z={wall.z + floor.d / 2} />
+        <Contact w={floor.w} d={floor.d} far={0.8} blur={2.2} opacity={0.55} position-z={wall.z + floor.d / 2} watch={() => reel.u[S.signal]} />
       </group>
     </group>
   );
@@ -501,9 +552,11 @@ const bez = (a: number, b: number, c: number, d: number, u: number) => {
 
 /** Where the forklift is and how high its forks are, at decision progress u. */
 function liftAt(u: number, out: Lift): Lift {
+  // The forklift loads as many pallets as the planner approved, then parks.
+  const n = palletsOf();
   const all = (u - DECISION.load) / DECISION.each;
   if (all < 0) return Object.assign(out, { x: bayX(0), z: WAIT_Z, yaw: FACE, h: 0.06, active: -1, v: 0 });
-  if (all >= 6) return Object.assign(out, { x: PARK[0], z: PARK[1], yaw: FACE, h: 0.06, active: 6, v: 0 });
+  if (all >= n) return Object.assign(out, { x: PARK[0], z: PARK[1], yaw: FACE, h: 0.06, active: 6, v: 0 });
   const k = Math.floor(all);
   const v = all - k;
   const x = bayX(k);
@@ -516,7 +569,7 @@ function liftAt(u: number, out: Lift): Lift {
   if (v < 0.68) return Object.assign(out, { x, z: PLACE_Z, h: mix(1.78, 1.42, smoother((v - 0.58) / 0.1)) });
   // Reverse out on a curve to the next bay (or to park), lowering the forks.
   const r = smoother((v - 0.68) / 0.32);
-  const [nx, nz] = k < 5 ? [bayX(k + 1), WAIT_Z] : PARK;
+  const [nx, nz] = k < n - 1 ? [bayX(k + 1), WAIT_Z] : PARK;
   const z0 = PLACE_Z,
     z1 = PLACE_Z - 1.4,
     z2 = nz + 0.6,
@@ -532,8 +585,9 @@ function liftAt(u: number, out: Lift): Lift {
   return Object.assign(out, { x: px, z: pz, h: mix(1.42, 0.06, smoother(span(r, 0, 0.6))) });
 }
 
-/** Each pallet: 0 staged in its bay, 1 on the forks, 2 on the trailer. */
+/** Each pallet: 0 staged in its bay, 1 on the forks, 2 on the trailer. Pallets past the approved quantity stay staged. */
 function palletState(n: number, lift: Lift) {
+  if (n >= palletsOf()) return 0;
   if (n < lift.active) return 2;
   if (n > lift.active) return 0;
   return lift.v < 0.17 ? 0 : lift.v < 0.64 ? 1 : 2;
@@ -608,8 +662,15 @@ function BoardPlate() {
   const pending = useRef<THREE.Group>(null);
   const approved = useRef<THREE.Group>(null);
   const flip = useRef(0);
+  const drawn = useRef("");
   useFrame((_, dt) => {
-    flip.current = THREE.MathUtils.damp(flip.current, reel.approved ? 1 : 0, 5, dt);
+    // The plate is re-engraved when the planner changes the quantity or rejects it.
+    const key = `${reel.qty}|${reel.rejected}`;
+    if (key !== drawn.current) {
+      drawn.current = key;
+      engravePlates(reel.qty, reel.rejected);
+    }
+    flip.current = THREE.MathUtils.damp(flip.current, reel.approved || reel.rejected ? 1 : 0, 5, dt);
     const f = flip.current;
     if (pending.current) pending.current.scale.x = Math.max(1 - f * 2, 1e-3);
     if (approved.current) approved.current.scale.x = Math.max(f * 2 - 1, 1e-3);
@@ -667,6 +728,7 @@ function Harbour() {
 
 const pinAt = new THREE.Vector3();
 const camDir = new THREE.Vector3();
+const pinAhead = new THREE.Vector3();
 /**
  * Each tag card's size, kept up to date by a ResizeObserver, so the frame loop never reads layout
  * (reading offsetWidth after moving a tag forced the whole page to lay out again, every tag, every frame).
@@ -682,6 +744,19 @@ const sizer =
         }
       })
     : null;
+/**
+ * Writes a custom property only when its value changed: a tag at rest costs nothing, where an
+ * unchanged write still made the browser restyle (and, for --dy, lay out) the tag every frame.
+ */
+const lastVar = new WeakMap<HTMLElement, Record<string, string>>();
+function setVar(el: HTMLElement, name: string, value: string) {
+  let m = lastVar.get(el);
+  if (!m) lastVar.set(el, (m = {}));
+  if (m[name] === value) return;
+  m[name] = value;
+  el.style.setProperty(name, value);
+}
+
 /** Places a DOM tag at a point in the world, in screen pixels. */
 function pin(el: HTMLElement | null, x: number, y: number, z: number, on: boolean, camera: THREE.Camera) {
   if (!el) return;
@@ -690,18 +765,22 @@ function pin(el: HTMLElement | null, x: number, y: number, z: number, on: boolea
   pinAt.set(x, y, z);
   // Behind the camera: hide it rather than mirror it onto the screen.
   camera.getWorldDirection(camDir);
-  const ahead = pinAt.clone().sub(camera.position).dot(camDir) > 0;
+  const ahead = pinAhead.copy(pinAt).sub(camera.position).dot(camDir) > 0;
   pinAt.project(camera);
   const px = ((pinAt.x + 1) / 2) * view.w;
   const py = ((1 - pinAt.y) / 2) * view.h;
   pinAt.set(px, py, 0);
-  el.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)`;
+  const tf = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)`;
+  if (lastVar.get(el)?.tf !== tf) {
+    el.style.transform = tf;
+    (lastVar.get(el) ?? (lastVar.set(el, {}), lastVar.get(el)!)).tf = tf;
+  }
   // Keep the tag's card on screen; its stem still points at the place.
   const card = el.firstElementChild as HTMLElement | null;
   if (card) {
     const half = (cardSize.get(card)?.w ?? 0) / 2;
     const dx = Math.min(Math.max(px, half + 12), view.w - half - 12) - px;
-    card.style.setProperty("--dx", `${dx.toFixed(1)}px`);
+    setVar(card, "--dx", `${dx.toFixed(1)}px`);
   }
   // A tag whose place sits up under the nav would be cut off: it waits until its place is lower.
   const want = String(on && ahead && py > 150);
@@ -762,7 +841,7 @@ function declutter(items: { el: HTMLElement; x: number; y: number }[], dt: numbe
     const size = cardSize.get(card);
     if (!size) continue;
     const { w, h } = size;
-    const dx = parseFloat(card.style.getPropertyValue("--dx") || "0");
+    const dx = parseFloat(lastVar.get(card)?.["--dx"] || "0");
     const cx = it.x + dx;
     let want = 0;
     for (let guard = 0; guard < 8; guard++) {
@@ -776,7 +855,7 @@ function declutter(items: { el: HTMLElement; x: number; y: number }[], dt: numbe
     const prev = lift.get(it.el) ?? want;
     const dy = THREE.MathUtils.damp(prev, want, 10, dt);
     lift.set(it.el, dy);
-    card.style.setProperty("--dy", `${dy.toFixed(1)}px`);
+    setVar(card, "--dy", `${dy.toFixed(1)}px`);
     const bottom = it.y - 14 - want;
     placed.push({ x: cx, top: bottom - h, bottom, w });
   }
@@ -817,6 +896,19 @@ function Viewport() {
   return null;
 }
 
+/** Shows everything that starts hidden (pallets not yet loaded, distant people's merged statues),
+ *  except the parts Bake merged away; returns them so they can be hidden again. */
+function showHidden(scene: THREE.Scene) {
+  const hidden: THREE.Object3D[] = [];
+  scene.traverse((o) => {
+    if (!o.visible && !o.userData.bakedAway) {
+      hidden.push(o);
+      o.visible = true;
+    }
+  });
+  return hidden;
+}
+
 function Renderer() {
   const told = useRef(false);
   const ready = useRef(false);
@@ -827,10 +919,19 @@ function Renderer() {
     // Compile every shader before the first frame, in parallel where the GPU driver allows
     // (KHR_parallel_shader_compile), instead of stalling the first render for seconds.
     gl.shadowMap.autoUpdate = false;
+    // The output settings are part of every shader: set them before compiling (onCreated runs later,
+    // and compiling under the default tone mapping meant every shader was built twice).
+    gl.toneMapping = THREE.NeutralToneMapping;
+    gl.toneMappingExposure = 1.0;
+    gl.localClippingEnabled = true;
     let alive = true;
-    gl.compileAsync(scene, camera)
-      .catch(() => {})
-      .then(() => alive && (ready.current = true));
+    // Everything that starts hidden (pallets not yet loaded, distant people's merged statues,
+    // Plant 01's interior) is shown for the compile, so no shader is first built mid-scroll.
+    camera.layers.enable(DETAIL);
+    const hidden = showHidden(scene);
+    const compiling = gl.compileAsync(scene, camera);
+    hidden.forEach((o) => (o.visible = false));
+    compiling.catch(() => {}).then(() => alive && (ready.current = true));
     return () => {
       alive = false;
     };
@@ -838,13 +939,32 @@ function Renderer() {
   useFrame(({ gl, scene, camera }) => {
     if (!ready.current) return;
     if (!told.current) performance.mark("world:first-render-start");
-    // The sun's shadow map is redrawn when the story moves (camera, sun or truck), and a few times
-    // a second otherwise for the people and boats idling in place.
-    const t = story();
+    // The sun's shadow map is redrawn when its frame or the sun moved on (stepSun), when something
+    // on the ground moved (the forklift, the pallets, the truck, the rack's totes), and a few times
+    // a second for the people idling in place.
+    const t = decisionU() * 4 + reel.u[S.signal];
     const s = shadow.current;
-    if (t !== s.t || ++s.n % 6 === 0) gl.shadowMap.needsUpdate = true;
+    if (shadowState.dirty || t !== s.t || ++s.n % 20 === 0) {
+      gl.shadowMap.needsUpdate = true;
+      shadowState.dirty = false;
+      s.n = 0;
+    }
     s.t = t;
+    // The first frame is drawn under the loader with everything shown, so the shadow pass builds its
+    // shaders for things that only appear later in the story too.
+    const warm = !told.current ? showHidden(scene) : null;
+    if (warm) gl.shadowMap.needsUpdate = true;
+    // World matrices once for both passes: the water's reflection, then the frame itself.
+    scene.updateMatrixWorld();
+    renderReflection(gl, scene, camera as THREE.PerspectiveCamera);
+    const auto = scene.matrixWorldAutoUpdate;
+    scene.matrixWorldAutoUpdate = false;
     gl.render(scene, camera);
+    scene.matrixWorldAutoUpdate = auto;
+    if (warm) {
+      warm.forEach((o) => (o.visible = false));
+      gl.shadowMap.needsUpdate = true;
+    }
     // The loader waits for the first drawn frame, so its curtain always lifts onto the bay.
     if (!told.current) {
       told.current = true;
@@ -873,20 +993,30 @@ function Scene({ stage }: { stage: React.RefObject<HTMLDivElement | null> }) {
   if (!performance.getEntriesByName("world:scene").length) performance.mark("world:scene");
   useLayoutEffect(() => {
     for (const k of FRAME_KEYS) anchorEls[k] = document.querySelector(`[data-frame='${k}']`);
+    framesChanged();
+    // Anything that moves an anchor on the page (fonts arriving, copy swapping, the window) re-measures.
+    const ro = new ResizeObserver(framesChanged);
+    ro.observe(document.body);
+    for (const k of FRAME_KEYS) if (anchorEls[k]) ro.observe(anchorEls[k]!);
+    window.addEventListener("resize", framesChanged);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", framesChanged);
+    };
   }, []);
   return (
     <>
       <ScrollSync />
       <Viewport />
       <CameraRig stage={stage} />
-      <SkyLight intensity={0.8} />
+      <SkyLight intensity={0.62} />
       <Sun />
       <Haze />
       <SkyDome />
       <Clouds />
       <FarShore />
       <Gulls />
-      <Water />
+      <Water shore={SHORE} />
       <Ground />
       {/* Everything that never moves is merged into a few meshes per material (see Bake) */}
       <Bake>
@@ -903,9 +1033,12 @@ function Scene({ stage }: { stage: React.RefObject<HTMLDivElement | null> }) {
         <ServiceCentre position={[LAND.service.x, 0, LAND.service.z]} />
       </Bake>
       <StatusLight />
-      <Inside />
-      <Yard />
-      <Contact w={100} d={66} far={0.7} blur={1.7} opacity={0.55} position={[14, 0.01, -19]} res={1536} color="#1A2440" />
+      <Unreflected>
+        <Inside />
+        <Yard />
+      </Unreflected>
+      {/* Re-rendered only when something on the ground moves: the forklift, the pallets, the truck */}
+      <Contact w={100} d={66} far={0.7} blur={1.7} opacity={0.55} position={[14, 0.01, -19]} res={1536} color="#1A2440" watch={decisionU} />
       <Pins />
       <Renderer />
     </>
@@ -923,12 +1056,14 @@ export default function World() {
         dpr={q.dpr}
         camera={{ fov: 22, near: 1, far: 9000, position: [0, 30, 260] }}
         gl={{ antialias: q.antialias, alpha: false, powerPreference: "high-performance" }}
-        onCreated={({ gl, scene }) => {
+        onCreated={({ gl, scene, camera }) => {
           performance.mark("world:created");
           performance.mark("world:gl");
           // ?perf exposes the renderer for measuring load and frame cost, in any build.
           if (location.search.includes("perf")) (window as unknown as { __three: object }).__three = { gl, scene };
           gl.localClippingEnabled = true;
+          // The main view draws everything, including what the water does not reflect (see DETAIL).
+          camera.layers.enable(DETAIL);
           gl.toneMapping = THREE.NeutralToneMapping;
           gl.toneMappingExposure = 1.0;
         }}

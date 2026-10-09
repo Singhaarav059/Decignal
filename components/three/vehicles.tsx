@@ -18,7 +18,7 @@ function useRolling(radius: number, idle = 0) {
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const wheels = useRef<THREE.Group[]>([]);
-  const state = useMemo(() => ({ last: null as THREE.Vector3 | null, lean: 0, v: new THREE.Vector3(), s: new THREE.Vector3(), fwd: new THREE.Vector3() }), []);
+  const state = useMemo(() => ({ last: null as THREE.Vector3 | null, lean: 0, v: new THREE.Vector3(), s: new THREE.Vector3(), fwd: new THREE.Vector3(), d: new THREE.Vector3() }), []);
   useFrame(({ clock }, dt) => {
     const r = root.current;
     if (!r) return;
@@ -26,7 +26,7 @@ function useRolling(radius: number, idle = 0) {
     r.getWorldScale(state.s);
     state.fwd.set(1, 0, 0).transformDirection(r.matrixWorld);
     let d = 0;
-    if (state.last) d = state.fwd.dot(state.v.clone().sub(state.last)) / Math.max(state.s.x, 1e-4);
+    if (state.last) d = state.fwd.dot(state.d.copy(state.v).sub(state.last)) / Math.max(state.s.x, 1e-4);
     state.last = (state.last ?? new THREE.Vector3()).copy(state.v);
     // Each wheel turns by distance / its own radius (stored on the group).
     wheels.current.forEach((w) => w && (w.rotation.z -= d / ((w.userData.r as number) ?? radius)));

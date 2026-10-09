@@ -6,9 +6,10 @@
 // or water) and marks where its shot's subject sits with an empty [data-frame] anchor. Live figures
 // are tags pinned over places in the world ([data-pin], positioned by the world every frame).
 import dynamic from "next/dynamic";
+import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowRight, ArrowUp, Bot, CalendarCheck, CalendarClock, Check, Database, KeyRound, Layers, Lock, MessagesSquare, Plus, ShieldCheck, Target } from "lucide-react";
-import { measure, reel, S, SECTIONS, update, anchorOf, DECISION, loadedAt, story } from "@/lib/reel";
+import { measure, reel, S, SECTIONS, update, anchorOf, DECISION, decisionU, loadedAt, story } from "@/lib/reel";
 import { skyCss } from "@/lib/daylight";
 import { RECORDS } from "@/lib/records";
 import { APPLICATIONS, AREA_COPY, AUDIT_POINTS, CATEGORIES, CONNECT, DELIVERS, FAQ, FAQ_TOPICS, GAPS, GLANCE, INDUSTRIES, OUTCOMES, PATHS, PRINCIPLES, PROMISES, PROOF, TRACE } from "@/lib/content";
@@ -116,6 +117,10 @@ export function Reel() {
   const [short, setShort] = useState(false);
   const [section, setSection] = useState(0);
   const [approved, setApproved] = useState(false);
+  // The planner's controls on the decision: the quantity, and an optional rejection with its reason.
+  const [qty, setQty] = useState(240);
+  const [control, setControl] = useState<"idle" | "adjust" | "reject">("idle");
+  const [rejected, setRejected] = useState<string | null>(null);
   const [phase, setPhase] = useState<"load" | "road" | "done">("load");
   const [path, setPath] = useState<keyof typeof PATHS>("custom");
   const [open, setOpen] = useState<number | null>(0);
@@ -126,7 +131,6 @@ export function Reel() {
     reel.calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     measure();
     update(window.scrollY);
-    let raf = 0;
     let last = { step: -1, sys: -1, area: -1, pr: -1, ind: -1, section: -1, short: false, phase: "", sky: "" };
     const secs = SECTIONS.map((k) => document.querySelector<HTMLElement>(`[data-reel="${k}"]`));
     const tick = () => {
@@ -154,9 +158,10 @@ export function Reel() {
       // The rack's count, as the world drains it: 240 down to 145 by day 6.
       const units = Math.round(240 - 95 * smooth(span(u, 0.04, 0.3)));
       if (onHand.current) onHand.current.textContent = String(units);
-      const du = reel.s >= S.decision ? reel.u[S.decision] : 0;
-      const pallets = reel.s > S.decision ? 6 : loadedAt(du);
-      if (loaded.current) loaded.current.textContent = String(pallets * 40);
+      // Held short of approval while the planner has rejected it (see decisionU).
+      const du = decisionU();
+      const pallets = loadedAt(du);
+      if (loaded.current) loaded.current.textContent = String(Math.min(pallets * 40, reel.qty));
       const step = u < 0.32 ? 0 : u < 0.68 ? 1 : 2;
       const sys = reel.u[S.systems] < 0.5 ? 0 : 1;
       const area = Math.min(Math.floor(reel.u[S.yours] * AREAS.length), AREAS.length - 1);
@@ -169,8 +174,8 @@ export function Reel() {
       const ind = Math.min(Math.floor(reel.u[S.industries] * INDUSTRIES.length), INDUSTRIES.length - 1);
       if (pr !== last.pr) setPrinciple(pr);
       if (ind !== last.ind) setIndustry(ind);
-      const ok = reel.s > S.decision + 0.001 || du >= DECISION.approve;
-      const ph = reel.s > S.decision + 0.001 || du >= DECISION.drive[1] ? "done" : du >= DECISION.drive[0] ? "road" : "load";
+      const ok = !reel.rejected && du >= DECISION.approve;
+      const ph = du >= DECISION.drive[1] ? "done" : du >= DECISION.drive[0] ? "road" : "load";
       if (ph !== last.phase) setPhase(ph);
       if (ok !== reel.approved) {
         reel.approved = ok;
@@ -191,9 +196,11 @@ export function Reel() {
       // restyle every element on the page, every frame of the scroll.
       if (sky !== last.sky) document.documentElement.style.backgroundColor = sky;
       last = { step, sys, area, pr, ind, section: sec, short: below, phase: ph, sky };
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    // On the same ticker as the smooth scroll and the world, in that order: the scroll moves, this
+    // reads it, then the world draws from it. Separate animation frames could leave the camera a
+    // frame behind the page on some frames, which reads as judder.
+    gsap.ticker.add(tick);
     const onResize = () => measure();
     const onPointer = (e: PointerEvent) => {
       reel.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -213,7 +220,7 @@ export function Reel() {
       };
     }
     return () => {
-      cancelAnimationFrame(raf);
+      gsap.ticker.remove(tick);
       clearTimeout(t);
       ro.disconnect();
       window.removeEventListener("resize", onResize);
@@ -224,7 +231,21 @@ export function Reel() {
 
   const go = (i: number, u = 0) => scrollToTarget(anchorOf(i, u));
   // Approving moves the story on to loading; the scroll position is the one source of truth.
-  const approve = () => go(S.decision, DECISION.approve + 0.02);
+  const approve = (units = qty) => {
+    reel.qty = units;
+    setQty(units);
+    setControl("idle");
+    go(S.decision, DECISION.approve + 0.02);
+  };
+  const reject = (why: string) => {
+    reel.rejected = true;
+    setRejected(why);
+    setControl("idle");
+  };
+  const undoReject = () => {
+    reel.rejected = false;
+    setRejected(null);
+  };
   // Picking an area scrolls to its stretch of the applications section, so the scroll stays the one source of truth.
   const pickArea = (i: number) => go(S.yours, (i + 0.5) / AREAS.length);
   const pickPrinciple = (i: number) => go(S.foundation, (i + 0.5) / PRINCIPLES.length);
@@ -234,7 +255,21 @@ export function Reel() {
   return (
     <div ref={root} id="story" className="reel">
       <Loader />
-      <ReelNav section={section} />
+      <ReelNav
+        section={section}
+        actions={{
+          go,
+          area: pickArea,
+          industry: pickIndustry,
+          principle: pickPrinciple,
+          question: (q) => {
+            setOpen(q);
+            // Clear of the nav, with the question's answer opening below it.
+            scrollToTarget(`#faq-q-${q}`, false, -140);
+          },
+          audit: () => scrollToTarget("#audit"),
+        }}
+      />
       {sheet !== null && <StorySheet i={sheet} onPick={setSheet} onClose={() => setSheet(null)} />}
       <World />
 
@@ -427,15 +462,17 @@ export function Reel() {
           <header className="r-head r-head-left">
             <p className="r-eyebrow">04 · The decision</p>
             <h2 id="decision-title" className="r-display r-title">
-              Move 240 units.
+              Move <CountRoll value={qty} /> units.
             </h2>
-            <p className="r-kicker">
-              {phase === "load" ? (
+            <p className="r-kicker" data-rejected={!!rejected || undefined}>
+              {rejected ? (
+                "Rejected by the planner · no stock moves"
+              ) : phase === "load" ? (
                 <>
-                  Plant 02 to Plant 01 · <b ref={loaded}>0</b> of 240 loaded
+                  Plant 02 to Plant 01 · <b ref={loaded}>0</b> of {qty} loaded
                 </>
               ) : phase === "road" ? (
-                "240 loaded · on the road to Plant 01"
+                `${qty} loaded · on the road to Plant 01`
               ) : (
                 "Delivered to Plant 01 · two days before the shortfall"
               )}
@@ -449,18 +486,17 @@ export function Reel() {
                 </li>
               ))}
             </ul>
-            <div className="r-approve">
-              <button className={`r-btn ${approved ? "r-btn-ok" : "r-btn-dark"}`} onClick={approve} aria-pressed={approved} disabled={approved}>
-                {approved ? (
-                  <>
-                    <Check size={16} strokeWidth={2.4} /> Approved
-                  </>
-                ) : (
-                  "Approve transfer"
-                )}
-              </button>
-              <span className="r-approve-note">{approved ? "Signed off by the planner, as policy requires" : "Planner approval required by policy"}</span>
-            </div>
+            <DecisionControl
+              qty={qty}
+              approved={approved}
+              rejected={rejected}
+              mode={control}
+              setMode={setControl}
+              setQty={setQty}
+              onApprove={approve}
+              onReject={reject}
+              onUndo={undoReject}
+            />
           </header>
           <div className="r-frame r-frame-yard" data-frame="yard" aria-hidden />
           <div className="r-trace r-panel">
@@ -470,12 +506,14 @@ export function Reel() {
             <ol aria-label="Decision record">
               {TRACE.map((t, i) => {
                 const done = approved ? (phase === "done" ? 7 : 6) : 5;
+                const state = rejected && i >= 5 ? (i === 5 ? "rejected" : "next") : i < done ? "done" : i === done ? "now" : "next";
+                const text = i === 4 ? t.text.replace("240", String(qty)) : i === 5 && rejected ? `Rejected: ${rejected.toLowerCase()}` : i === 6 && rejected ? "Nothing moves; the reason trains the next one" : t.text;
                 return (
-                  <li key={t.step} data-state={i < done ? "done" : i === done ? "now" : "next"}>
+                  <li key={t.step} data-state={state}>
                     <span>
                       {String(i + 1).padStart(2, "0")} {t.step}
                     </span>
-                    {t.text}
+                    {text}
                   </li>
                 );
               })}
@@ -697,8 +735,11 @@ export function Reel() {
             <p className="r-sub">{PATHS[path].intro}</p>
             <div ref={pathTabs} data-slide="0" className="r-switch" role="tablist" aria-label="Route">
               {(Object.keys(PATHS) as (keyof typeof PATHS)[]).map((k) => (
-                <button key={k} role="tab" aria-selected={path === k} onClick={() => setPath(k)}>
-                  {PATHS[k].label}
+                <button key={k} role="tab" aria-selected={path === k} onClick={() => setPath(k)} aria-label={PATHS[k].label}>
+                  <span className="r-long">{PATHS[k].label}</span>
+                  <span className="r-short" aria-hidden>
+                    {PATHS[k].short}
+                  </span>
                 </button>
               ))}
             </div>
@@ -995,6 +1036,163 @@ function CountIn({ value }: { value: string }) {
   return (
     <span ref={ref}>
       <CountUp value={value} play={play} />
+    </span>
+  );
+}
+
+const REJECT_WHY = ["Plant 02 needs the stock", "Expedite from the supplier", "Demand looks temporary"];
+
+/**
+ * The planner's hand on the decision: approve it as recommended, adjust the quantity (in pallets of
+ * 40, within Plant 02's 380-unit plan), or reject it with a reason. Approving moves the story on;
+ * the forklift then loads exactly what was approved. Rejecting holds the truck at Plant 02.
+ */
+function DecisionControl({
+  qty,
+  approved,
+  rejected,
+  mode,
+  setMode,
+  setQty,
+  onApprove,
+  onReject,
+  onUndo,
+}: {
+  qty: number;
+  approved: boolean;
+  rejected: string | null;
+  mode: "idle" | "adjust" | "reject";
+  setMode: (m: "idle" | "adjust" | "reject") => void;
+  setQty: (q: number) => void;
+  onApprove: (q?: number) => void;
+  onReject: (why: string) => void;
+  onUndo: () => void;
+}) {
+  const keep = 620 - qty;
+  const over = keep < 380;
+  if (rejected)
+    return (
+      <div className="r-approve r-control" aria-live="polite">
+        <p className="r-control-result" data-tone="signal">
+          <i aria-hidden />
+          <span>
+            Rejected in this example. Nothing is loaded. Reason recorded: <b>{rejected}</b>
+          </span>
+        </p>
+        <button className="r-link" onClick={onUndo}>
+          Undo
+        </button>
+      </div>
+    );
+  if (approved)
+    return (
+      <div className="r-approve r-control" aria-live="polite">
+        <button className="r-btn r-btn-ok" aria-pressed disabled>
+          <Check size={16} strokeWidth={2.4} /> Approved
+        </button>
+        <span className="r-approve-note">Signed off by the planner, as policy requires</span>
+      </div>
+    );
+  return (
+    <div className="r-control" aria-live="polite">
+      {mode === "adjust" && (
+        <div className="r-adjust">
+          <div className="r-adjust-row">
+            <button className="r-step" aria-label="40 fewer units" disabled={qty <= 120} onClick={() => setQty(qty - 40)}>
+              −
+            </button>
+            <input type="range" min={120} max={280} step={40} value={qty} onChange={(e) => setQty(Number(e.target.value))} aria-label="Units to transfer" style={{ "--k": (qty - 120) / 160 } as React.CSSProperties} />
+            <button className="r-step" aria-label="40 more units" disabled={qty >= 280} onClick={() => setQty(qty + 40)}>
+              +
+            </button>
+          </div>
+          <div className="r-balance" aria-label={`Plant 02 keeps ${keep}; Plant 01 has ${145 + qty} once it lands`}>
+            <div>
+              <span>Plant 02 keeps</span>
+              <b data-bad={over || undefined}>
+                <CountRoll value={keep} />
+              </b>
+              <span className="r-balance-bar" style={{ "--v": keep / 620, "--m": 380 / 620, "--c": "var(--color-saffron)" } as React.CSSProperties}>
+                <i />
+                <em>plan 380</em>
+              </span>
+            </div>
+            <div>
+              <span>Plant 01 has</span>
+              <b>
+                <CountRoll value={145 + qty} />
+              </b>
+              <span className="r-balance-bar" style={{ "--v": (145 + qty) / 440, "--m": 175 / 440, "--c": "var(--color-cobalt)" } as React.CSSProperties}>
+                <i />
+                <em>safety 175</em>
+              </span>
+            </div>
+          </div>
+          <p className="r-control-note" data-tone={over ? "signal" : qty === 240 ? "ok" : undefined}>
+            {over
+              ? "Plant 02 would drop under its 380-unit plan. Policy holds this back."
+              : qty === 240
+                ? "Matches the recommendation: Plant 01 is covered until the day-21 delivery."
+                : "Plant 01 would run short again before the day-21 delivery."}
+          </p>
+        </div>
+      )}
+      {mode === "reject" && (
+        <div className="r-reject">
+          <p className="r-control-note">Why? The reason is recorded and shapes the next recommendation.</p>
+          <div>
+            {REJECT_WHY.map((r) => (
+              <button key={r} className="r-chip" onClick={() => onReject(r)}>
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="r-approve">
+        <button className="r-btn r-btn-dark" onClick={() => onApprove(qty)} disabled={over}>
+          {mode === "adjust" ? `Approve ${qty}` : "Approve transfer"}
+        </button>
+        {mode === "idle" ? (
+          <>
+            <button className="r-btn r-btn-ghost r-btn-sm" onClick={() => setMode("adjust")}>
+              Adjust
+            </button>
+            <button className="r-btn r-btn-ghost r-btn-sm" onClick={() => setMode("reject")}>
+              Reject
+            </button>
+          </>
+        ) : (
+          <button
+            className="r-link"
+            onClick={() => {
+              setMode("idle");
+              setQty(240);
+            }}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+      {mode === "idle" && <span className="r-approve-note">Planner approval required by policy</span>}
+    </div>
+  );
+}
+
+/** A number whose digits roll to their new value, so a changed quantity reads as a count. */
+function CountRoll({ value }: { value: number }) {
+  const digits = String(value).split("");
+  return (
+    <span className="r-roll" aria-label={String(value)} role="text">
+      {digits.map((d, i) => (
+        <span key={digits.length - i} className="r-roll-col" aria-hidden>
+          <span style={{ translate: `0 ${-Number(d) * 10}%` }}>
+            {"0123456789".split("").map((n) => (
+              <span key={n}>{n}</span>
+            ))}
+          </span>
+        </span>
+      ))}
     </span>
   );
 }

@@ -34,33 +34,38 @@ let plateGeo: THREE.BufferGeometry | undefined;
 const plateTopGeo = new THREE.PlaneGeometry(PLATE.w - 0.08, PLATE.d - 0.08).rotateX(-Math.PI / 2);
 
 /** Engraving: dark-filled letters cut into porcelain, with a bump map so the cuts catch light. */
-function plateTexture(approved: boolean) {
-  const c = document.createElement("canvas");
-  c.width = TEX_W;
-  c.height = Math.round((TEX_W * (PLATE.d - 0.08)) / (PLATE.w - 0.08));
+function engrave(c: HTMLCanvasElement, approved: boolean, qty: number, rejected: boolean) {
   const g = c.getContext("2d")!;
   const sans = bodyFont();
+  g.textBaseline = "alphabetic";
   g.fillStyle = "#F4F5F7";
   g.fillRect(0, 0, c.width, c.height);
   g.fillStyle = "#141619";
   g.font = `700 30px ${sans}`;
   g.fillText("DECISION · TRF-0240", 64, 92);
   displayText(g, "TRANSFER", 60, 230, 112);
-  displayText(g, "240 UNITS", 60, 340, 112);
+  displayText(g, `${qty} UNITS`, 60, 340, 112);
   g.font = `600 40px ${sans}`;
   g.fillStyle = "#2F3339";
   g.fillText("Plant 02  →  Plant 01", 64, 430);
   // Status pill
-  const label = approved ? "APPROVED · PLANNER" : "AWAITING APPROVAL";
+  const label = rejected && approved ? "REJECTED · PLANNER" : approved ? "APPROVED · PLANNER" : "AWAITING APPROVAL";
   g.font = `700 30px ${sans}`;
   const w = g.measureText(label).width + 56;
-  g.fillStyle = approved ? TINTS.emerald : "#141619";
+  g.fillStyle = rejected && approved ? "#E5503A" : approved ? TINTS.emerald : "#141619";
   g.beginPath();
   g.roundRect(64, 492, w, 64, 32);
   g.fill();
   g.fillStyle = "#FFFDF8";
   g.textBaseline = "middle";
   g.fillText(label, 92, 525);
+}
+
+function plateTexture(approved: boolean) {
+  const c = document.createElement("canvas");
+  c.width = TEX_W;
+  c.height = Math.round((TEX_W * (PLATE.d - 0.08)) / (PLATE.w - 0.08));
+  engrave(c, approved, 240, false);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
@@ -76,6 +81,18 @@ function plateMaterial(approved: boolean) {
   })());
 }
 
+/**
+ * Re-engraves both faces of the plate (the one awaiting approval and the one it turns over to) for
+ * the quantity the planner chose, or as rejected. Same textures, redrawn: no new materials.
+ */
+export function engravePlates(qty: number, rejected: boolean) {
+  for (const approved of [false, true]) {
+    const map = plateMaterial(approved).map as THREE.CanvasTexture | null;
+    if (!map) continue;
+    engrave(map.image as HTMLCanvasElement, approved, qty, rejected);
+    map.needsUpdate = true;
+  }
+}
 
 /** The decision: a porcelain plate with the recommendation engraved on its face. */
 export const DecisionPlate = forwardRef<THREE.Group, { approved?: boolean } & React.ComponentProps<"group">>(function DecisionPlate({ approved = false, ...props }, ref) {

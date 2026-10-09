@@ -115,3 +115,15 @@ export function skyCss(t: number) {
   stepDaylight(t);
   return `#${daylight.horizon.getHexString()}`;
 }
+
+const sa = new THREE.Color();
+const sb = new THREE.Color();
+/** The sky at story time t, as flat CSS colours (zenith and horizon), without touching `daylight`. */
+export function skyAt(t: number) {
+  let i = 0;
+  while (i < KEYS.length - 2 && t > KEYS[i + 1].t) i++;
+  const k = smooth(Math.min(Math.max((t - KEYS[i].t) / (KEYS[i + 1].t - KEYS[i].t), 0), 1));
+  const top = `#${sa.copy(parsed[i].top).lerp(parsed[i + 1].top, k).getHexString()}`;
+  const horizon = `#${sb.copy(parsed[i].horizon).lerp(parsed[i + 1].horizon, k).getHexString()}`;
+  return { top, horizon, dark: KEYS[i].stars + (KEYS[i + 1].stars - KEYS[i].stars) * k > 0.15 };
+}

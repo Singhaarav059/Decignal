@@ -68,8 +68,9 @@ function tyreGeometry(r: number, w: number) {
     [r * 0.965, -h * 0.9],
     [r * 0.995, -h * 0.72],
   ];
-  const s1 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, b)), 72);
-  const s2 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, -b)).reverse(), 72);
+  // 48 steps round: a smooth silhouette at the largest a wheel is ever drawn (about 50 px across).
+  const s1 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, b)), 48);
+  const s2 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, -b)).reverse(), 48);
   const sidewall = merge([s1, s2]).rotateX(Math.PI / 2);
   const band = new THREE.LatheGeometry(
     [
@@ -78,7 +79,7 @@ function tyreGeometry(r: number, w: number) {
       [r, h * 0.4],
       [r * 0.995, h * 0.72],
     ].map(([a, b]) => new THREE.Vector2(a, b)),
-    72,
+    48,
   ).rotateX(Math.PI / 2);
   // Tread blocks: the lathe U runs around the tyre, so the tread repeats around the circumference.
   const uv = band.attributes.uv as THREE.BufferAttribute;
@@ -315,8 +316,10 @@ function loadGeometry() {
           const x = -0.39 + i * 0.395;
           const z = -0.197 + j * 0.394;
           const y = 0.144 + th / 2 + l * (th + 0.005);
-          parts.push(rbox(tw - 0.02, th - 0.02, td - 0.02, 0.02, x, y - 0.006, z, 2));
-          parts.push(rbox(tw, 0.02, td, 0.006, x, y + th / 2 - 0.01, z, 1));
+          // Square-edged: a 2 cm rounding is under a pixel in every shot these appear in, and
+          // rounded boxes cost 25 times the triangles (13 pallets of 18 totes add up).
+          parts.push(box(tw - 0.02, th - 0.02, td - 0.02, x, y - 0.006, z));
+          parts.push(box(tw, 0.02, td, x, y + th / 2 - 0.01, z));
         }
     return merge(parts);
   });

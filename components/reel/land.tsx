@@ -42,10 +42,44 @@ function grass(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: 
     g.fillStyle = gr;
     g.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
   }
-  for (let i = 0; i < (w * h) / 60; i++) {
-    g.fillStyle = r() > 0.5 ? "rgba(84,116,96,0.16)" : "rgba(232,240,226,0.18)";
-    g.fillRect(x + r() * w, y + r() * h, 1.5, 1.5);
+  speckle(g, x, y, w, h, `grass-${seed}`, [84, 116, 96, 0.16], [232, 240, 226, 0.18], 1 / 60);
+}
+
+const tiles = new Map<string, HTMLCanvasElement>();
+/**
+ * Fine speckle (grit, aggregate, blades) as one repeating 256 px tile of single-pixel dots, filled
+ * in one call. Drawing each dot as its own rectangle took most of a second at load.
+ */
+function speckle(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, key: string, dark: number[], light: number[], density: number, seed = 9) {
+  let tile = tiles.get(key);
+  if (!tile) {
+    const N = 256;
+    tile = document.createElement("canvas");
+    tile.width = tile.height = N;
+    const t = tile.getContext("2d")!;
+    const img = t.createImageData(N, N);
+    const r = rng(seed + key.length * 31);
+    // 1.5 px dots at this density cover about 2.25x the area of single pixels.
+    const n = Math.round(N * N * density * 2.25);
+    for (let i = 0; i < n; i++) {
+      const c = r() > 0.5 ? dark : light;
+      const a = Math.min(1, c[3] * (0.7 + r() * 0.6));
+      const k = (Math.floor(r() * N) + Math.floor(r() * N) * N) * 4;
+      img.data[k] = c[0];
+      img.data[k + 1] = c[1];
+      img.data[k + 2] = c[2];
+      img.data[k + 3] = Math.round(a * 255);
+    }
+    t.putImageData(img, 0, 0);
+    tiles.set(key, tile);
   }
+  const pat = g.createPattern(tile, "repeat");
+  if (!pat) return;
+  g.save();
+  g.translate(x, y);
+  g.fillStyle = pat;
+  g.fillRect(0, 0, w, h);
+  g.restore();
 }
 
 /** Concrete paving: cool grey slabs with saw-cut joints and faint weathering. */
@@ -73,10 +107,7 @@ function asphaltStrip(g: CanvasRenderingContext2D, x: number, y: number, w: numb
   g.fillStyle = "#555C67";
   g.fillRect(x, y, w, h);
   const r = rng(seed);
-  for (let i = 0; i < (w * h) / 14; i++) {
-    g.fillStyle = r() > 0.5 ? `rgba(255,255,255,${0.03 + r() * 0.05})` : `rgba(0,0,0,${0.05 + r() * 0.08})`;
-    g.fillRect(x + r() * w, y + r() * h, 1.2, 1.2);
-  }
+  speckle(g, x, y, w, h, `asphalt-${seed}`, [0, 0, 0, 0.11], [255, 255, 255, 0.07], 1 / 14);
   for (const k of [0.2, 0.36, 0.64, 0.8]) {
     const cy = y + h * k;
     const gr = g.createLinearGradient(0, cy - 0.4 * s, 0, cy + 0.4 * s);

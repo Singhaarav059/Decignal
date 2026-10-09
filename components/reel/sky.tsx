@@ -5,9 +5,9 @@
 // moves from dawn to night with the scroll and never cuts.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { daylight } from "@/lib/daylight";
-import { reel } from "@/lib/reel";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { daylight, stepDaylight } from "@/lib/daylight";
+import { reel, story } from "@/lib/reel";
 
 /* ------------------------------------------------------------------ */
 /* Shared sky colour, used by the dome and by the water's reflection    */
@@ -126,8 +126,9 @@ export function SkyDome() {
   );
   // The dome travels with the camera, so the sky is always infinitely far away.
   useFrame(({ camera }) => mesh.current?.position.copy(camera.position), -0.5);
+  // Drawn last of the solid things, at the far plane: only the pixels nothing else covered are shaded.
   return (
-    <mesh ref={mesh} material={material} renderOrder={-10} frustumCulled={false}>
+    <mesh ref={mesh} material={material} renderOrder={4} frustumCulled={false}>
       <sphereGeometry args={[SKY_RADIUS, 48, 24]} />
     </mesh>
   );
@@ -171,17 +172,25 @@ function cloudTexture(seed: number, w = 1024, h = 400) {
       blobs.push([x + Math.cos(a) * rad * 0.82, y + Math.sin(a) * rad * 0.82, rr]);
     }
   }
+  // Every billow in one path, then one soft blur over the whole silhouette (blurring billow by
+  // billow cost seconds at load).
+  const sharp = document.createElement("canvas");
+  sharp.width = w;
+  sharp.height = h;
+  const gp = sharp.getContext("2d")!;
+  gp.fillStyle = "#fff";
+  gp.beginPath();
+  for (const [x, y, rad] of blobs) {
+    gp.moveTo(x + rad, y);
+    gp.arc(x, y, rad, 0, Math.PI * 2);
+  }
+  gp.fill("nonzero");
   const shape = document.createElement("canvas");
   shape.width = w;
   shape.height = h;
   const gs = shape.getContext("2d")!;
   gs.filter = "blur(1.2px)";
-  gs.fillStyle = "#fff";
-  for (const [x, y, rad] of blobs) {
-    gs.beginPath();
-    gs.arc(x, y, rad, 0, Math.PI * 2);
-    gs.fill();
-  }
+  gs.drawImage(sharp, 0, 0);
   gs.filter = "none";
   gs.clearRect(0, base, w, h - base);
   // A soft fade along the flat base, so it sits in the air rather than on a shelf.
@@ -548,25 +557,42 @@ export function SkyLight({ intensity = 1 }: { intensity?: number }) {
       const { scene } = get();
       if (scene.environment === k.target?.texture) scene.environment = null;
       k.target?.dispose();
+      k.cube.dispose();
       k.pmrem.dispose();
       k.material.dispose();
       kit.current = null;
     },
     [get],
   );
-  useFrame(({ gl, scene }) => {
+  const refresh = (gl: THREE.WebGLRenderer, scene: THREE.Scene) => {
     const k = (kit.current ??= skyLightKit(gl));
-    k.n++;
-    const t = daylight.t;
-    if (Math.abs(t - k.t) < 0.02 || (k.target && k.n % 6)) return;
-    k.t = t;
+    k.t = daylight.t;
     // The ground half: the water and the land in the hour's light.
     k.ground.value.copy(daylight.water).lerp(daylight.fillGround, 0.5);
-    const next = k.pmrem.fromScene(k.envScene, 0, 0.1, 200, { size: 128 });
-    k.target?.dispose();
-    k.target = next;
-    scene.environment = next.texture;
+    k.camera.update(gl, k.envScene);
+    // Filtered into the same target every time: the environment stays one texture, so no material
+    // has to look up its shader again when the light changes (a new texture would make all of
+    // them do so, a stall in the middle of the scroll).
+    const first = !k.target;
+    k.target = k.pmrem.fromCubemap(k.cube.texture, k.target ?? undefined);
+    if (first || scene.environment !== k.target.texture) scene.environment = k.target.texture;
     scene.environmentIntensity = intensity;
+  };
+  // The first sky light is made before the world's shaders are compiled, so they are compiled with
+  // it (made on the first frame instead, every physical material would compile a second time).
+  useLayoutEffect(() => {
+    const { gl, scene } = get();
+    stepDaylight(story());
+    stepSkyUniforms(0);
+    refresh(gl, scene);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [get]);
+  useFrame(({ gl, scene }) => {
+    const k = kit.current;
+    if (!k) return;
+    k.n++;
+    if (Math.abs(daylight.t - k.t) < 0.02 || k.n % 6) return;
+    refresh(gl, scene);
   }, -0.9);
   return null;
 }
@@ -598,5 +624,7 @@ function skyLightKit(gl: THREE.WebGLRenderer) {
       }`,
   });
   envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), material));
-  return { pmrem, envScene, ground, material, target: null as THREE.WebGLRenderTarget | null, t: NaN, n: 0 };
+  const cube = new THREE.WebGLCubeRenderTarget(64, { type: THREE.HalfFloatType });
+  const camera = new THREE.CubeCamera(0.1, 200, cube);
+  return { pmrem, envScene, ground, material, cube, camera, target: null as THREE.WebGLRenderTarget | null, t: NaN, n: 0 };
 }

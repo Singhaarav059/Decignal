@@ -33,6 +33,10 @@ export const reel = {
   pointer: { x: 0, y: 0 },
   /** The decision has been approved on the page. */
   approved: false,
+  /** Units the planner approved (the recommendation is 240: six pallets of 40). */
+  qty: 240,
+  /** The planner rejected the recommendation: nothing is loaded and the truck stays at Plant 02. */
+  rejected: false,
   /** The reader asked for less motion. */
   calm: false,
 };
@@ -102,14 +106,24 @@ export const DECISION = {
   drive: [0.7, 0.94] as const,
 };
 
+/** Pallets of 40 units the approved quantity fills (the trailer takes six). */
+export const palletsOf = (qty = reel.qty) => Math.min(6, Math.max(1, Math.round(qty / 40)));
+
 /** Pallets on the trailer at decision progress u (each is set down 64% of the way through its turn). */
 export function loadedAt(u: number) {
+  const n = palletsOf();
   const all = (u - DECISION.load) / DECISION.each;
   if (all <= 0) return 0;
-  if (all >= 6) return 6;
+  if (all >= n) return n;
   const k = Math.floor(all);
   return k + (all - k >= 0.64 ? 1 : 0);
 }
 
-/** Decision progress, held at 0 before the decision and at 1 after it. */
-export const decisionU = () => (reel.s > S.decision + 0.001 ? 1 : reel.s >= S.decision ? reel.u[S.decision] : 0);
+/**
+ * Decision progress, held at 0 before the decision and at 1 after it. A rejected recommendation
+ * holds it just short of approval: nothing is loaded and the truck never leaves Plant 02.
+ */
+export const decisionU = () => {
+  const u = reel.s > S.decision + 0.001 ? 1 : reel.s >= S.decision ? reel.u[S.decision] : 0;
+  return reel.rejected ? Math.min(u, DECISION.approve - 0.001) : u;
+};

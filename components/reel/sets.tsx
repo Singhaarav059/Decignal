@@ -11,6 +11,7 @@ import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurS
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader.js";
 import { grain } from "../three/materials";
 import { story } from "@/lib/reel";
+import { DETAIL } from "./water";
 
 /* ------------------------------------------------------------------ */
 /* Contact shadow                                                       */
@@ -43,13 +44,15 @@ type ContactProps = React.ComponentProps<"group"> & {
   opacity?: number;
   res?: number;
   color?: string;
+  /** A value that changes whenever something standing on this ground moves; the pass is redrawn only then. */
+  watch?: () => number;
 };
 
 /**
  * A soft shadow where objects touch the ground, rendered from below each frame the set is on
  * screen: an orthographic depth pass of everything within `far` of the ground, blurred twice.
  */
-export function Contact({ w, d, far = 1, blur = 2.4, opacity = 0.8, res = 512, color = "#171B23", ...props }: ContactProps) {
+export function Contact({ w, d, far = 1, blur = 2.4, opacity = 0.8, res = 512, color = "#171B23", watch = story, ...props }: ContactProps) {
   const root = useRef<THREE.Group>(null);
   const kit = useMemo(() => {
     const rw = res;
@@ -65,6 +68,8 @@ export function Contact({ w, d, far = 1, blur = 2.4, opacity = 0.8, res = 512, c
     // are in the pass; the ground itself (and every registered base) is hidden while it runs.
     const cam = new THREE.OrthographicCamera(-w / 2, w / 2, d / 2, -d / 2, 0, far);
     cam.rotation.x = Math.PI / 2;
+    // Sees the details kept out of the water's reflection too.
+    cam.layers.enable(DETAIL);
     const depth = new THREE.MeshDepthMaterial({ side: THREE.DoubleSide });
     depth.onBeforeCompile = (s) => {
       s.uniforms.ucolor = { value: new THREE.Color(color) };
@@ -101,10 +106,11 @@ export function Contact({ w, d, far = 1, blur = 2.4, opacity = 0.8, res = 512, c
     return () => void displays.delete(m);
   }, []);
 
-  // The pass redraws the whole scene from below: only worth it when the story has moved something.
+  // The pass redraws the whole scene from below: only worth it when something on the ground moved
+  // (the camera moving changes nothing here: the shadow lies on the ground, not on the screen).
   const last = useRef({ t: NaN, n: 0 });
   useFrame(({ gl, scene }) => {
-    const t = story();
+    const t = watch();
     const l = last.current;
     if (Math.abs(t - l.t) < 1e-5 && l.n > 2) return;
     l.t = t;
