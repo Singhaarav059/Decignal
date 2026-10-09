@@ -35,8 +35,9 @@ function useRolling(radius: number, idle = 0) {
     state.lean = THREE.MathUtils.damp(state.lean, THREE.MathUtils.clamp(speed * 0.0016, -0.012, 0.012), 4, Math.min(dt, 1 / 30));
     if (body.current) {
       body.current.rotation.z = state.lean;
-      // Rolling: a slow road bounce. Parked with the engine on: a faint, fast idle shiver.
-      body.current.position.y = Math.abs(speed) > 0.2 ? Math.sin(clock.elapsedTime * 13) * 0.006 : Math.sin(clock.elapsedTime * 41) * idle;
+      // Rolling: a slow road bounce. Parked with the engine on: a faint, slow idle rock (a fast
+      // shiver reads as flicker on screen).
+      body.current.position.y = Math.abs(speed) > 0.2 ? Math.sin(clock.elapsedTime * 5) * 0.004 : Math.sin(clock.elapsedTime * 2.2) * idle * 0.5;
     }
   });
   const spin = (r: number) => (g: THREE.Group | null) => {
@@ -346,7 +347,7 @@ type TruckProps = {
 function Exhaust({ at }: { at: [number, number, number] }) {
   const puffs = useRef<(THREE.Mesh | null)[]>([]);
   const mats = useMemo(
-    () => [0, 1, 2, 3].map(() => new THREE.MeshStandardMaterial({ color: "#E9E6E1", roughness: 1, transparent: true, depthWrite: false })),
+    () => [0, 1, 2, 3].map(() => new THREE.MeshStandardMaterial({ color: "#E3E4E7", roughness: 1, transparent: true, depthWrite: false })),
     [],
   );
   useFrame(({ clock }) => {
@@ -574,7 +575,8 @@ export function Forklift({ color, lift, children }: { color: string; lift?: () =
     // Free lift first: the carriage rises inside the mast, then the inner mast extends.
     if (carr.current) carr.current.position.y = 0.05 + h;
     if (inner.current) inner.current.position.y = Math.max(0, h - 0.9);
-    if (beacon.current) beacon.current.emissiveIntensity = 0.6 + (Math.sin(clock.elapsedTime * 7) > 0.3 ? 1.6 : 0);
+    // The beacon glows and fades slowly rather than strobing.
+    if (beacon.current) beacon.current.emissiveIntensity = 0.9 + (0.5 + 0.5 * Math.sin(clock.elapsedTime * 1.6)) * 0.7;
   });
   return (
     <group ref={root}>

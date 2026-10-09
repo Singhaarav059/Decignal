@@ -1,12 +1,12 @@
 // Mirrors the CSS tokens in app/globals.css.
 export const COLORS = {
-  bg: "#FBF6EF",
-  envBase: "#F6EEE4",
-  shadow: "#3B2A22",
+  bg: "#F3F5F7",
+  envBase: "#EAECF0",
+  shadow: "#262C37",
   porcelain: "#FFFDF8",
   plinth: "#1C2C8C",
-  ink: "#14130F",
-  inkSoft: "#6E685E",
+  ink: "#101113",
+  inkSoft: "#5C6370",
   inkOnDark: "#FFFDF8",
   signal: "#F2361F", // risk
   demand: "#2E5BFF", // demand / information
@@ -23,22 +23,3 @@ export const TINTS = {
   pink: "#FF5FA2",
   porcelain: COLORS.porcelain,
 } as const;
-
-/** Text colour that reads on each glaze. */
-export const INK_ON: Record<keyof typeof TINTS, { ink: string; soft: string }> = {
-  cobalt: { ink: "#FFFFFF", soft: "#C6D3FF" },
-  violet: { ink: "#FFFFFF", soft: "#DDD4FF" },
-  emerald: { ink: "#FFFFFF", soft: "#C4EEDF" },
-  saffron: { ink: "#2A1A00", soft: "#6B4800" },
-  tangerine: { ink: "#FFFFFF", soft: "#FFE0D1" },
-  pink: { ink: "#FFFFFF", soft: "#FFE1EE" },
-  porcelain: { ink: COLORS.ink, soft: COLORS.inkSoft },
-};
-
-export const FONTS = {
-  // Bricolage Grotesque for headings and labels, Figtree for running text: the page's two families.
-  serif: "/fonts/bricolage-grotesque-latin-700-normal.woff",
-  serifItalic: "/fonts/bricolage-grotesque-latin-600-normal.woff",
-  sans: "/fonts/figtree-latin-600-normal.woff",
-  mono: "/fonts/bricolage-grotesque-latin-600-normal.woff",
-};

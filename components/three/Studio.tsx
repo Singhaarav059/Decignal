@@ -31,7 +31,7 @@ export function KeyLight({ extent = 11 }: { extent?: number }) {
   const map = isPhone() ? 2048 : 4096;
   return (
     <>
-    <hemisphereLight args={["#DCE6F5", "#F3E6D3", 0.35]} />
+    <hemisphereLight args={["#DCE6F5", "#DFE2E7", 0.35]} />
     <directionalLight
       position={[6, 10, 7]}
       color="#FFE8CC"

@@ -5,7 +5,6 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { CRATE } from "@/lib/scene";
 import { aluminium, chrome, darkGlass, plastic, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
 
 /* ---------------- Geometry helpers ---------------- */
@@ -182,6 +181,8 @@ function rimEnamel(color: string) {
 
 /* ---------------- Tote: a stackable plastic container ---------------- */
 
+/** A stock tote, in metres. */
+export const CRATE = { w: 0.6, h: 0.3, d: 0.42 };
 const T = { w: CRATE.w, h: CRATE.h, d: CRATE.d };
 
 /** Body, lip and moulded ribs as one shell. `open` leaves a recess on top for contents. */

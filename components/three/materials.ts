@@ -175,7 +175,7 @@ export const cladding = (color: string, repeat = 12, rough = 0.48) =>
     return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.25, normalMap: n, normalScale: new THREE.Vector2(1, 1) });
   });
 
-export const concrete = (color = "#E2DED6") =>
+export const concrete = (color = "#D8DBE0") =>
   memo(`concrete-${color}`, () => {
     const r = grain("concrete", 225, 40).clone();
     r.needsUpdate = true;
@@ -287,10 +287,10 @@ export const shipLabel = () =>
 
 export const wood = () => memo("wood", () => {
   const texture = canvasTex("wood-grain", 256, 256, (c) => {
-    c.fillStyle = "#C9A274";
+    c.fillStyle = "#8F9AAE";
     c.fillRect(0, 0, 256, 256);
     for (let i = 0; i < 160; i++) {
-      c.strokeStyle = `rgba(90, 54, 25, ${0.04 + (i % 5) * 0.018})`;
+      c.strokeStyle = `rgba(52, 64, 84, ${0.04 + (i % 5) * 0.018})`;
       c.lineWidth = 0.5 + (i % 3) * 0.4;
       c.beginPath();
       for (let y = 0; y <= 256; y += 8) {
@@ -304,7 +304,7 @@ export const wood = () => memo("wood", () => {
 });
 
 /** Brass for the globe stand. */
-export const brass = () => memo("brass", () => new THREE.MeshStandardMaterial({ color: "#D9B36A", roughness: 0.25, metalness: 1 }));
+export const brass = () => memo("brass", () => new THREE.MeshStandardMaterial({ color: "#939EB0", roughness: 0.25, metalness: 1 }));
 
 /** Shrink wrap over a loaded pallet. */
 export const wrap = () =>

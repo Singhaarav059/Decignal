@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Bricolage_Grotesque, Figtree, Fraunces } from "next/font/google";
 import "./globals.css";
+import "./reel.css";
+
+// Fraunces carries the display type: a calm, softly cornered serif at a light weight.
+const reel = Fraunces({
+  variable: "--font-reel",
+  subsets: ["latin"],
+  axes: ["SOFT", "opsz"],
+});
 
 // Bricolage Grotesque carries headlines and labels (optical size tightens it at display sizes,
 // width lets labels run a touch condensed); Figtree carries everything people read.
@@ -36,13 +44,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FBF6EF",
+  themeColor: "#E6EEF6",
   colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} antialiased`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${reel.variable} antialiased`}>
       <body>{children}</body>
     </html>
   );

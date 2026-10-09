@@ -36,12 +36,12 @@ export type Look = {
 
 const SKIN = ["#8A5A3C", "#C48A62", "#E2B48E", "#5C3A26", "#A86E4A", "#D6A17A"];
 export const LOOKS: Record<string, Look> = {
-  crew: { skin: SKIN[0], shirt: "#2F3A4A", trousers: "#262C36", vest: "#D7EE3A", hat: "#F4F2EC", hair: "#1E1A17", boots: "#4A3426", body: "m", hairStyle: "crop", beard: true, height: 1.02 },
-  warehouse: { skin: SKIN[1], shirt: "#3D4652", trousers: "#2A2F37", vest: "#FF7A1F", hat: "#F2C230", hair: "#2A211B", boots: "#3B2B20", body: "f", hairStyle: "ponytail", height: 0.96 },
-  planner: { skin: SKIN[2], shirt: "#EEF1F5", trousers: "#2E3646", vest: null, hat: null, hair: "#3A2A1E", boots: "#2A2421", body: "f", hairStyle: "bun", glasses: true, height: 0.97 },
-  driver: { skin: SKIN[3], shirt: "#33495F", trousers: "#272B33", vest: "#D7EE3A", hat: null, hair: "#141210", boots: "#2B231D", body: "m", hairStyle: "short", headwear: { kind: "cap", color: "#22344A" }, beard: true, height: 1.0 },
-  engineer: { skin: SKIN[4], shirt: "#24486E", trousers: "#1F2836", vest: null, hat: "#2F6DF6", hair: "#1B1714", boots: "#3A2A1F", body: "m", hairStyle: "short", height: 1.04 },
-  shopper: { skin: SKIN[5], shirt: "#B5476A", trousers: "#3B4F70", vest: null, hat: null, hair: "#5A3A22", boots: "#E9E6E0", body: "f", hairStyle: "long", height: 0.95 },
+  crew: { skin: SKIN[0], shirt: "#2F3A4A", trousers: "#262C36", vest: "#D7EE3A", hat: "#EEEFF2", hair: "#181A1D", boots: "#2C3544", body: "m", hairStyle: "crop", beard: true, height: 1.02 },
+  warehouse: { skin: SKIN[1], shirt: "#3D4652", trousers: "#2A2F37", vest: "#FF7A1F", hat: "#F2C230", hair: "#1D2128", boots: "#242B37", body: "f", hairStyle: "ponytail", height: 0.96 },
+  planner: { skin: SKIN[2], shirt: "#EEF1F5", trousers: "#2E3646", vest: null, hat: null, hair: "#222936", boots: "#222429", body: "f", hairStyle: "bun", glasses: true, height: 0.97 },
+  driver: { skin: SKIN[3], shirt: "#33495F", trousers: "#272B33", vest: "#D7EE3A", hat: null, hair: "#101214", boots: "#1F2329", body: "m", hairStyle: "short", headwear: { kind: "cap", color: "#22344A" }, beard: true, height: 1.0 },
+  engineer: { skin: SKIN[4], shirt: "#24486E", trousers: "#1F2836", vest: null, hat: "#2F6DF6", hair: "#15171A", boots: "#232A36", body: "m", hairStyle: "short", height: 1.04 },
+  shopper: { skin: SKIN[5], shirt: "#B5476A", trousers: "#3B4F70", vest: null, hat: null, hair: "#303A4C", boots: "#E2E4E7", body: "f", hairStyle: "long", height: 0.95 },
 };
 
 /* ---------------- Geometry ---------------- */
@@ -176,8 +176,8 @@ function bodyParts(look: Look) {
     [rb(0.012, 0.009, 0.042, 0.004, 0.086, 0.058, 0), "#8E4E3E", R.skin], // lips
   ];
   for (const z of [-0.034, 0.034]) {
-    head.push([ball(0.0125, 0.082, 0.118, z, 0.6, 0.85, 1.1), "#F4F1EC", R.eye]);
-    head.push([ball(0.0072, 0.09, 0.118, z, 0.5, 1, 1), "#2A1D16", R.eye]);
+    head.push([ball(0.0125, 0.082, 0.118, z, 0.6, 0.85, 1.1), "#EEEFF2", R.eye]);
+    head.push([ball(0.0072, 0.09, 0.118, z, 0.5, 1, 1), "#191E27", R.eye]);
     head.push([rb(0.008, 0.007, 0.034, 0.003, 0.094, 0.142, z).rotateX(z > 0 ? 0.12 : -0.12), hair, R.hair]); // brows
   }
   if (look.beard) head.push([ball(0.07, 0.022, 0.052, 0, 0.95, 0.8, 1.1), hair, 0.95], [rb(0.01, 0.012, 0.05, 0.005, 0.092, 0.07, 0), hair, 0.95]);

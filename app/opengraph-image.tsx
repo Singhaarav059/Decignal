@@ -17,8 +17,8 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          background: "#FBF6EF",
-          color: "#14130F",
+          background: "linear-gradient(180deg, #8EA8D6 0%, #E4E2EC 62%, #F4D6D3 100%)",
+          color: "#14213D",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 40, fontWeight: 700 }}>
@@ -30,10 +30,10 @@ export default function OpengraphImage() {
           decignal
         </div>
         <div style={{ display: "flex", flexDirection: "column", fontSize: 104, fontWeight: 700, lineHeight: 1.02, letterSpacing: -3 }}>
-          <div>Your operation.</div>
-          <div style={{ color: "#2E5BFF" }}>Seen as a whole.</div>
+          <div>Turn information</div>
+          <div>into decisions.</div>
         </div>
-        <div style={{ display: "flex", fontSize: 30, color: "#524D44" }}>
+        <div style={{ display: "flex", fontSize: 30, color: "#33415C" }}>
           Turn information from the systems you already run into decisions your teams approve.
         </div>
       </div>
