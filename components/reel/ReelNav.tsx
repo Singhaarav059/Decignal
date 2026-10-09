@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "../ui/Logo";
 import { scrollToTarget } from "../SmoothScroll";
 import { anchorOf, S } from "@/lib/reel";
+import { useSlide } from "./motion";
 
 const LINKS: { label: string; go: () => void; from: number; to: number }[] = [
   { label: "Home", go: () => scrollToTarget(0), from: S.hero, to: S.systems },
@@ -17,12 +18,14 @@ const LINKS: { label: string; go: () => void; from: number; to: number }[] = [
 /** Logo left, links centred with the current one underlined, actions right. Light over the evening sky. */
 export function ReelNav({ section }: { section: number }) {
   const [open, setOpen] = useState(false);
+  const on = LINKS.findIndex((l) => section >= l.from && section <= l.to);
+  const links = useSlide<HTMLUListElement>(on, ":scope > li > button");
   return (
     <nav className="r-nav" data-open={open} aria-label="Main">
       <a href="#" className="r-nav-logo" onClick={(e) => (e.preventDefault(), scrollToTarget(0))} aria-label="Decignal, back to top">
         <Logo size={22} />
       </a>
-      <ul className="r-nav-links">
+      <ul ref={links} data-slide="0" className="r-nav-links">
         {LINKS.map((l) => (
           <li key={l.label}>
             <button

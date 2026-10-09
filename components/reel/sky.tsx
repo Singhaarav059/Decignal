@@ -4,8 +4,8 @@
 // and a few gulls. All of it is coloured by the daylight (lib/daylight.ts), so the whole backdrop
 // moves from dawn to night with the scroll and never cuts.
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import { daylight } from "@/lib/daylight";
 import { reel } from "@/lib/reel";
 
@@ -525,4 +525,78 @@ export function Gulls() {
       ))}
     </group>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Sky light: the world is lit and reflected by its own sky              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Image-based light from the sky the page is showing, not from a photo studio: a copy of the sky
+ * (and below the horizon, the bay and the land) is filtered into an environment map that every
+ * physical material uses for its ambient light and reflections. Windows mirror the dawn, paint picks
+ * up the golden hour, and at night everything falls into the moonlit blue. It is refreshed as the
+ * day moves on, a few times a second at most, and never while the story stands still.
+ */
+export function SkyLight({ intensity = 1 }: { intensity?: number }) {
+  const kit = useRef<ReturnType<typeof skyLightKit> | null>(null);
+  const get = useThree((s) => s.get);
+  useEffect(
+    () => () => {
+      const k = kit.current;
+      if (!k) return;
+      const { scene } = get();
+      if (scene.environment === k.target?.texture) scene.environment = null;
+      k.target?.dispose();
+      k.pmrem.dispose();
+      k.material.dispose();
+      kit.current = null;
+    },
+    [get],
+  );
+  useFrame(({ gl, scene }) => {
+    const k = (kit.current ??= skyLightKit(gl));
+    k.n++;
+    const t = daylight.t;
+    if (Math.abs(t - k.t) < 0.02 || (k.target && k.n % 6)) return;
+    k.t = t;
+    // The ground half: the water and the land in the hour's light.
+    k.ground.value.copy(daylight.water).lerp(daylight.fillGround, 0.5);
+    const next = k.pmrem.fromScene(k.envScene, 0, 0.1, 200, { size: 128 });
+    k.target?.dispose();
+    k.target = next;
+    scene.environment = next.texture;
+    scene.environmentIntensity = intensity;
+  }, -0.9);
+  return null;
+}
+
+function skyLightKit(gl: THREE.WebGLRenderer) {
+  const pmrem = new THREE.PMREMGenerator(gl);
+  const envScene = new THREE.Scene();
+  const ground = { value: new THREE.Color() };
+  const material = new THREE.ShaderMaterial({
+    uniforms: { ...skyUniforms, uGround: ground },
+    side: THREE.BackSide,
+    depthWrite: false,
+    vertexShader: /* glsl */ `
+      varying vec3 vDir;
+      void main() {
+        vDir = normalize(position);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: /* glsl */ `
+      ${SKY_GLSL}
+      uniform vec3 uGround;
+      varying vec3 vDir;
+      void main() {
+        vec3 d = normalize(vDir);
+        vec3 c = skyColour(d, false);
+        // Below the horizon: the bay and the land under the sky's light.
+        c = mix(c, uGround, smoothstep(0.0, -0.12, d.y));
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  });
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), material));
+  return { pmrem, envScene, ground, material, target: null as THREE.WebGLRenderTarget | null, t: NaN, n: 0 };
 }

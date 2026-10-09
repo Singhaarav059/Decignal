@@ -1,7 +1,31 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "decignal", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000, "autoPort": true },
-    { "name": "decignal-running", "url": "http://localhost:3000", "port": 3000 }
+    {
+      "name": "decignal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "decignal-running",
+      "url": "http://localhost:3000",
+      "port": 3000
+    },
+    {
+      "name": "decignal-prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "start",
+        "-p",
+        "3100"
+      ],
+      "port": 3100
+    }
   ]
 }

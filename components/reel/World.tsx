@@ -25,7 +25,6 @@ import { DECISION, N, S, anchorOf, atSection, decisionU, reel, story } from "@/l
 import { daylight, stepDaylight } from "@/lib/daylight";
 import { canvasQuality, isPhone } from "@/lib/device";
 import { FORK, Forklift, SemiTruck, TRUCK } from "../three/vehicles";
-import { Studio } from "../three/Studio";
 import { TINTS } from "../three/palette";
 import { LoadedPallet, Tote } from "../three/parts";
 import { Person } from "../three/people";
@@ -34,11 +33,14 @@ import { DecisionPlate, PLATE, RACK, RACK_SLOTS, RackFrame, rackSlot, skuTote } 
 import { Contact } from "./sets";
 import { PLANT01, PlantFloor } from "./environments";
 import { DispatchBoard, Ground, LAND, PALLET_SLOTS, Verges, YARD, bayX, opsScreen } from "./land";
-import { Clouds, FarShore, Gulls, SkyDome, stepSkyUniforms } from "./sky";
+import { Clouds, FarShore, Gulls, SkyDome, SkyLight, stepSkyUniforms } from "./sky";
 import { Containers, Crane, FishingBoat, Floodlight, InboundShip, MooredShip, Pier, SITE, SeaWall, WATER_Y, Water, yardSlots } from "./harbour";
 import { Islet, Torii } from "./garden";
 import { HeadOffice, SalesOffice, ServiceCentre } from "./town";
 import { stepGlow } from "./glow";
+import { Bake } from "./Bake";
+
+if (typeof performance !== "undefined") performance.mark("world:module");
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const smoother = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
@@ -53,6 +55,8 @@ const mix = THREE.MathUtils.lerp;
 const [P02, P01] = LAND.plants;
 /** Plant 01's floor (on top of its plinth) and where the slice of it we look into sits. */
 const INSIDE = new THREE.Vector3(P01, 1.2, LAND.plantZ + 0.5);
+/** The operations display on Plant 01's wall, in world metres. */
+const BOARD = new THREE.Vector3(INSIDE.x + PLANT01.screen.x, INSIDE.y + PLANT01.screen.y, INSIDE.z + PLANT01.wall.z);
 /** The partition runs wall to wall inside the plant. */
 const INSIDE_SPAN = 16.8;
 /** The truck parked at Plant 02's kerb, and where it stops in front of Plant 01. */
@@ -141,15 +145,18 @@ const KEYS: Key[] = [
   { t: S.signal - 0.35, stop: false, at: (o) => aim(o, P01, 1.2, -9, 0.2, 0.68, 40, wide, 22) },
   // 03 Signal: inside Plant 01, a slow push in while the rack drains and the facts arrive
   { t: atSection(S.signal, 0), stop: true, at: (o) => aim(o, INSIDE.x, INSIDE.y, INSIDE.z, 0.2, 0.4, 10.5, frames.plant, 20) },
-  { t: atSection(S.signal, 1), stop: true, at: (o) => aim(o, INSIDE.x, INSIDE.y, INSIDE.z - 0.2, 0.1, 0.37, 9.6, frames.plant, 20) },
+  { t: atSection(S.signal, 0.3), stop: true, at: (o) => aim(o, INSIDE.x, INSIDE.y, INSIDE.z - 0.2, 0.1, 0.37, 9.6, frames.plant, 20) },
+  // The facts land on the operations display: the camera walks up to it so it can be read
+  { t: atSection(S.signal, 0.42), stop: true, at: (o) => aim(o, BOARD.x, BOARD.y, BOARD.z, 0.04, 0.12, 6.4, frames.plant, 20) },
+  { t: atSection(S.signal, 1), stop: true, at: (o) => aim(o, BOARD.x, BOARD.y - 0.05, BOARD.z, 0.02, 0.1, 6, frames.plant, 20) },
   // Out of Plant 01 and back down the road to Plant 02
   { t: S.decision - 0.14, stop: false, at: (o) => aim(o, 0, 0, -1, 0.02, 0.5, 70, wide, 22) },
   // 04 Decision: Plant 02's yard, pushing in a little while it loads
-  { t: atDecision(0), stop: true, at: (o) => aim(o, P02 - 1, 1.4, 0.4, 0.04, 0.42, 44, frames.yard, 20) },
-  { t: atDecision(DECISION.drive[0]), stop: true, at: (o) => aim(o, P02 - 1.4, 1.4, 0.6, -0.04, 0.4, 40, frames.yard, 20) },
+  { t: atDecision(0), stop: true, at: (o) => aim(o, P02 - 1, 1.2, 0.6, 0.04, 0.5, 34, frames.yard, 20) },
+  { t: atDecision(DECISION.drive[0]), stop: true, at: (o) => aim(o, P02 - 1.4, 1.2, 0.8, -0.04, 0.48, 31, frames.yard, 20) },
   // The truck drives to Plant 01 and the camera goes with it
-  { t: atDecision(DECISION.drive[1]), stop: true, at: (o) => aim(o, P01 + 1.5, 1.4, 0.4, -0.14, 0.38, 42, frames.yard, 20) },
-  { t: atDecision(1), stop: true, at: (o) => aim(o, P01 + 1.5, 1.4, 0.2, -0.18, 0.4, 40, frames.yard, 20) },
+  { t: atDecision(DECISION.drive[1]), stop: true, at: (o) => aim(o, P01 + 1.5, 1.2, 0.6, -0.14, 0.46, 33, frames.yard, 20) },
+  { t: atDecision(1), stop: true, at: (o) => aim(o, P01 + 1.5, 1.2, 0.4, -0.18, 0.47, 31, frames.yard, 20) },
   // 05 Foundation: on along the road to the head office, where the approval is recorded
   { t: atSection(S.foundation, 0), stop: true, at: (o) => aim(o, LAND.office.x, 5, LAND.office.z, 0.34, 0.2, 44, frames.found, 22) },
   { t: atSection(S.foundation, 1), stop: true, at: (o) => aim(o, LAND.office.x, 5, LAND.office.z - 0.6, 0.27, 0.18, 40, frames.found, 22) },
@@ -226,12 +233,14 @@ function stepCamera({ camera, clock }: RootState, dt: number, stage: HTMLDivElem
   const t = calm ? calm.t : live;
   shotAt(t, cam);
   if (!reel.calm) {
-    // The opening shot settles in on load, then never quite stops: a slow drift while you read.
-    if (introStart < 0) introStart = clock.elapsedTime;
-    const intro = 1 - smoother(clamp01((clock.elapsedTime - introStart) / 3.2));
+    // The opening shot settles in once the loader lifts, then never quite stops: every held shot
+    // drifts very slowly while you read, so the world is never a still picture.
+    if (introStart < 0 && document.documentElement.classList.contains("ready")) introStart = clock.elapsedTime;
+    const intro = introStart < 0 ? 1 : 1 - smoother(clamp01((clock.elapsedTime - introStart) / 3.2));
     const still = 1 - smooth(span(t, 0, 0.5));
     cam.d *= 1 + 0.08 * intro;
-    cam.yaw += 0.05 * intro + still * Math.sin(clock.elapsedTime * 0.11) * 0.012;
+    cam.yaw += 0.05 * intro + Math.sin(clock.elapsedTime * 0.11) * (0.004 + still * 0.008);
+    cam.pitch += Math.sin(clock.elapsedTime * 0.07 + 1.3) * 0.0025;
     lean = THREE.MathUtils.damp(lean, reel.pointer.x, 2.5, dt);
     cam.yaw += lean * 0.012;
   }
@@ -263,6 +272,10 @@ const keyTarget = new THREE.Object3D();
 const lightRight = new THREE.Vector3();
 const lightUp = new THREE.Vector3();
 
+/** Sun to sky balance. The sky's own light (SkyLight) adds the rest of the ambient. */
+const KEY_GAIN = 1.9;
+const FILL_GAIN = 0.4;
+
 /** Fits the key light's shadow to what the camera is looking at, and gives it the hour's colour. */
 function stepSun(l: THREE.DirectionalLight | null, hemi: THREE.HemisphereLight | null, map: number) {
   if (!l) return;
@@ -278,8 +291,12 @@ function stepSun(l: THREE.DirectionalLight | null, hemi: THREE.HemisphereLight |
   keyTarget.position.addScaledVector(lightRight, r).addScaledVector(lightUp, u);
   keyTarget.updateMatrixWorld();
   l.position.copy(keyTarget.position).addScaledVector(dir, 120);
+  // Bias in shadow-map texels: as the sun lowers and the shadow widens, a fixed bias left the
+  // painted floor lines striped with acne that crawled as the scroll moved the sun.
+  l.shadow.normalBias = Math.max(0.03, texel * 2.4);
   l.color.copy(daylight.key);
-  l.intensity = daylight.keyPower;
+  // Outdoor light is mostly sun: a strong key over a soft sky fill, so shadows read and forms model.
+  l.intensity = daylight.keyPower * KEY_GAIN;
   const c = l.shadow.camera;
   if (c.right !== extent) {
     c.left = c.bottom = -extent;
@@ -289,7 +306,7 @@ function stepSun(l: THREE.DirectionalLight | null, hemi: THREE.HemisphereLight |
   if (hemi) {
     hemi.color.copy(daylight.fillSky);
     hemi.groundColor.copy(daylight.fillGround);
-    hemi.intensity = daylight.fillPower;
+    hemi.intensity = daylight.fillPower * FILL_GAIN;
   }
 }
 
@@ -312,7 +329,7 @@ function Sun() {
         target={keyTarget}
         castShadow
         shadow-mapSize={[map, map]}
-        shadow-bias={-0.0003}
+        shadow-bias={-0.0005}
         shadow-normalBias={0.03}
         shadow-radius={6}
         shadow-blurSamples={16}
@@ -412,7 +429,7 @@ function Inside() {
       {/* The stock controller: the count falling on her tablet is the first sign */}
       <Person look="warehouse" pose="tablet" seed={0.7} position={[rack.x + 2.25, 0, wall.z + 1.75]} rotation-y={Math.PI + 0.55} />
       {/* The planner, reading the display: the facts arrive there, then the recommendation */}
-      <Person look="planner" pose="tablet" seed={2.4} position={[screen.x - 0.4, 0, wall.z + 2.3]} rotation-y={Math.PI / 2 + 0.35} />
+      <Person look="planner" pose="tablet" seed={2.4} position={[screen.x + screen.w / 2 + 0.7, 0, wall.z + 1.5]} rotation-y={-Math.PI / 2 + 0.5} />
       <group ref={contact} position-y={0.035}>
         <Contact w={floor.w} d={floor.d} far={0.8} blur={2.2} opacity={0.55} position-z={wall.z + floor.d / 2} />
       </group>
@@ -650,9 +667,26 @@ function Harbour() {
 
 const pinAt = new THREE.Vector3();
 const camDir = new THREE.Vector3();
+/**
+ * Each tag card's size, kept up to date by a ResizeObserver, so the frame loop never reads layout
+ * (reading offsetWidth after moving a tag forced the whole page to lay out again, every tag, every frame).
+ * A card hidden by CSS (display: none on phones) measures 0 and is skipped.
+ */
+const cardSize = new WeakMap<Element, { w: number; h: number }>();
+const sizer =
+  typeof window !== "undefined"
+    ? new ResizeObserver((entries) => {
+        for (const e of entries) {
+          const b = e.borderBoxSize?.[0];
+          cardSize.set(e.target, b ? { w: b.inlineSize, h: b.blockSize } : { w: (e.target as HTMLElement).offsetWidth, h: (e.target as HTMLElement).offsetHeight });
+        }
+      })
+    : null;
 /** Places a DOM tag at a point in the world, in screen pixels. */
 function pin(el: HTMLElement | null, x: number, y: number, z: number, on: boolean, camera: THREE.Camera) {
   if (!el) return;
+  // A tag that is off and already hidden costs nothing.
+  if (!on && el.dataset.on === "false") return;
   pinAt.set(x, y, z);
   // Behind the camera: hide it rather than mirror it onto the screen.
   camera.getWorldDirection(camDir);
@@ -665,11 +699,12 @@ function pin(el: HTMLElement | null, x: number, y: number, z: number, on: boolea
   // Keep the tag's card on screen; its stem still points at the place.
   const card = el.firstElementChild as HTMLElement | null;
   if (card) {
-    const half = card.offsetWidth / 2;
+    const half = (cardSize.get(card)?.w ?? 0) / 2;
     const dx = Math.min(Math.max(px, half + 12), view.w - half - 12) - px;
     card.style.setProperty("--dx", `${dx.toFixed(1)}px`);
   }
-  const want = String(on && ahead);
+  // A tag whose place sits up under the nav would be cut off: it waits until its place is lower.
+  const want = String(on && ahead && py > 150);
   if (el.dataset.on !== want) el.dataset.on = want;
 }
 
@@ -724,8 +759,9 @@ function declutter(items: { el: HTMLElement; x: number; y: number }[], dt: numbe
   for (const it of items) {
     const card = it.el.firstElementChild as HTMLElement | null;
     if (!card) continue;
-    const w = card.offsetWidth;
-    const h = card.offsetHeight;
+    const size = cardSize.get(card);
+    if (!size) continue;
+    const { w, h } = size;
     const dx = parseFloat(card.style.getPropertyValue("--dx") || "0");
     const cx = it.x + dx;
     let want = 0;
@@ -752,6 +788,8 @@ function Pins() {
     els.current = Object.entries(PINS)
       .map(([id, spec]) => [document.querySelector<HTMLElement>(`[data-pin='${id}']`), spec] as [HTMLElement | null, PinSpec])
       .filter((e): e is [HTMLElement, PinSpec] => !!e[0]);
+    for (const [el] of els.current) if (el.firstElementChild) sizer?.observe(el.firstElementChild);
+    return () => els.current.forEach(([el]) => el.firstElementChild && sizer?.unobserve(el.firstElementChild));
   }, []);
   useFrame(({ camera }, dt) => {
     const t = reel.calm ? calmTime().t : story();
@@ -759,7 +797,8 @@ function Pins() {
     for (const [el, spec] of els.current) {
       const [x, y, z] = spec.at();
       pin(el, x, y, z, spec.on(t), camera);
-      if (el.dataset.on === "true" && el.offsetParent !== null) shown.push({ el, x: pinAt.x, y: pinAt.y });
+      const card = el.firstElementChild;
+      if (el.dataset.on === "true" && card && (cardSize.get(card)?.w ?? 0) > 0) shown.push({ el, x: pinAt.x, y: pinAt.y });
     }
     declutter(shown, dt);
   });
@@ -779,7 +818,41 @@ function Viewport() {
 }
 
 function Renderer() {
-  useFrame(({ gl, scene, camera }) => gl.render(scene, camera), 1);
+  const told = useRef(false);
+  const ready = useRef(false);
+  const shadow = useRef({ t: NaN, n: 0 });
+  const get = useThree((s) => s.get);
+  useLayoutEffect(() => {
+    const { gl, scene, camera } = get();
+    // Compile every shader before the first frame, in parallel where the GPU driver allows
+    // (KHR_parallel_shader_compile), instead of stalling the first render for seconds.
+    gl.shadowMap.autoUpdate = false;
+    let alive = true;
+    gl.compileAsync(scene, camera)
+      .catch(() => {})
+      .then(() => alive && (ready.current = true));
+    return () => {
+      alive = false;
+    };
+  }, [get]);
+  useFrame(({ gl, scene, camera }) => {
+    if (!ready.current) return;
+    if (!told.current) performance.mark("world:first-render-start");
+    // The sun's shadow map is redrawn when the story moves (camera, sun or truck), and a few times
+    // a second otherwise for the people and boats idling in place.
+    const t = story();
+    const s = shadow.current;
+    if (t !== s.t || ++s.n % 6 === 0) gl.shadowMap.needsUpdate = true;
+    s.t = t;
+    gl.render(scene, camera);
+    // The loader waits for the first drawn frame, so its curtain always lifts onto the bay.
+    if (!told.current) {
+      told.current = true;
+      performance.mark("world:drawn");
+      document.documentElement.dataset.world = "drawn";
+      window.dispatchEvent(new Event("world-drawn"));
+    }
+  }, 1);
   return null;
 }
 
@@ -797,6 +870,7 @@ function ScrollSync() {
 }
 
 function Scene({ stage }: { stage: React.RefObject<HTMLDivElement | null> }) {
+  if (!performance.getEntriesByName("world:scene").length) performance.mark("world:scene");
   useLayoutEffect(() => {
     for (const k of FRAME_KEYS) anchorEls[k] = document.querySelector(`[data-frame='${k}']`);
   }, []);
@@ -805,7 +879,7 @@ function Scene({ stage }: { stage: React.RefObject<HTMLDivElement | null> }) {
       <ScrollSync />
       <Viewport />
       <CameraRig stage={stage} />
-      <Studio resolution={isPhone() ? 256 : 512} />
+      <SkyLight intensity={0.8} />
       <Sun />
       <Haze />
       <SkyDome />
@@ -814,18 +888,21 @@ function Scene({ stage }: { stage: React.RefObject<HTMLDivElement | null> }) {
       <Gulls />
       <Water />
       <Ground />
-      <Verges />
-      <Harbour />
-      <group position={[P02, 0, LAND.plantZ]}>
-        <Plant accent={TINTS.saffron} name="PLANT 02" />
-      </group>
-      <group position={[P01, 0, LAND.plantZ]}>
-        <Plant accent={TINTS.cobalt} name="PLANT 01" cut={CUT} />
-      </group>
+      {/* Everything that never moves is merged into a few meshes per material (see Bake) */}
+      <Bake>
+        <Verges />
+        <Harbour />
+        <group position={[P02, 0, LAND.plantZ]}>
+          <Plant accent={TINTS.saffron} name="PLANT 02" />
+        </group>
+        <group position={[P01, 0, LAND.plantZ]}>
+          <Plant accent={TINTS.cobalt} name="PLANT 01" cut={CUT} />
+        </group>
+        <HeadOffice position={[LAND.office.x, 0, LAND.office.z]} />
+        <SalesOffice position={[LAND.sales.x, 0, LAND.sales.z]} />
+        <ServiceCentre position={[LAND.service.x, 0, LAND.service.z]} />
+      </Bake>
       <StatusLight />
-      <HeadOffice position={[LAND.office.x, 0, LAND.office.z]} />
-      <SalesOffice position={[LAND.sales.x, 0, LAND.sales.z]} />
-      <ServiceCentre position={[LAND.service.x, 0, LAND.service.z]} />
       <Inside />
       <Yard />
       <Contact w={100} d={66} far={0.7} blur={1.7} opacity={0.55} position={[14, 0.01, -19]} res={1536} color="#1A2440" />
@@ -846,7 +923,11 @@ export default function World() {
         dpr={q.dpr}
         camera={{ fov: 22, near: 1, far: 9000, position: [0, 30, 260] }}
         gl={{ antialias: q.antialias, alpha: false, powerPreference: "high-performance" }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, scene }) => {
+          performance.mark("world:created");
+          performance.mark("world:gl");
+          // ?perf exposes the renderer for measuring load and frame cost, in any build.
+          if (location.search.includes("perf")) (window as unknown as { __three: object }).__three = { gl, scene };
           gl.localClippingEnabled = true;
           gl.toneMapping = THREE.NeutralToneMapping;
           gl.toneMappingExposure = 1.0;

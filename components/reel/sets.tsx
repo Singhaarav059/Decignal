@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader.js";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader.js";
 import { grain } from "../three/materials";
+import { story } from "@/lib/reel";
 
 /* ------------------------------------------------------------------ */
 /* Contact shadow                                                       */
@@ -100,7 +101,16 @@ export function Contact({ w, d, far = 1, blur = 2.4, opacity = 0.8, res = 512, c
     return () => void displays.delete(m);
   }, []);
 
-  useFrame(({ gl, scene }) => renderContact(gl, scene, root.current, kit, w, d, far, blur), 0.5);
+  // The pass redraws the whole scene from below: only worth it when the story has moved something.
+  const last = useRef({ t: NaN, n: 0 });
+  useFrame(({ gl, scene }) => {
+    const t = story();
+    const l = last.current;
+    if (Math.abs(t - l.t) < 1e-5 && l.n > 2) return;
+    l.t = t;
+    l.n++;
+    renderContact(gl, scene, root.current, kit, w, d, far, blur);
+  }, 0.5);
 
   return (
     <group ref={root} {...props}>
@@ -205,14 +215,25 @@ export function canvasTexture(w: number, h: number, draw: (g: CanvasRenderingCon
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 16;
+  let text = false;
   const paint = () => {
     const g = c.getContext("2d")!;
+    // Note whether this canvas draws any text: only those need repainting once the fonts arrive.
+    if (!text) {
+      const fill = g.fillText.bind(g);
+      g.fillText = (...a: Parameters<CanvasRenderingContext2D["fillText"]>) => {
+        text = true;
+        g.fillText = fill;
+        return fill(...a);
+      };
+    }
     g.clearRect(0, 0, w, h);
     draw(g, w, h);
     t.needsUpdate = true;
   };
   paint();
-  if (typeof document !== "undefined") document.fonts?.ready.then(paint);
+  // A big ground texture takes hundreds of milliseconds to paint: never paint one twice for nothing.
+  if (typeof document !== "undefined" && text && document.fonts?.status !== "loaded") document.fonts.ready.then(paint);
   return t;
 }
 
@@ -227,6 +248,15 @@ export const display = () => {
  * the font size: drawn at 12px and scaled up, the letters keep the sturdy text cut, whose
  * hairlines survive on a texture, instead of the display cut, whose hairlines vanish.
  */
+/** The largest display size, up to `px`, at which `text` fits in `maxW` canvas pixels. */
+export function fitDisplay(g: CanvasRenderingContext2D, text: string, maxW: number, px: number, weight = 800) {
+  g.save();
+  g.font = `${weight} 12px ${display()}`;
+  const w12 = g.measureText(text).width;
+  g.restore();
+  return Math.min(px, (maxW / Math.max(w12, 1)) * 12);
+}
+
 export function displayText(g: CanvasRenderingContext2D, text: string, x: number, y: number, px: number, weight = 800) {
   const k = px / 12;
   g.save();

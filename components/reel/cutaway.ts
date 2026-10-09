@@ -21,6 +21,8 @@ export function clipUnder(root: THREE.Object3D, planes: THREE.Plane[]) {
     if (hit) return hit;
     const c = m.clone();
     c.clippingPlanes = planes;
+    // Its shader hook only colours back faces: merging the mesh (Bake) leaves it correct.
+    c.userData.bakeSafe = true;
     c.clipShadows = true;
     if (!c.transparent) {
       c.side = THREE.DoubleSide;

@@ -411,7 +411,7 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
   // Height variety scales the whole figure; an explicit `scale` from the scene multiplies it.
   const s = typeof scale === "number" ? scale * h : h;
   return (
-    <group ref={rootJ} scale={s} {...props}>
+    <group ref={rootJ} scale={s} userData={{ live: true }} {...props}>
       <mesh ref={statueJ} material={m} visible={false} castShadow />
       <group ref={pelvisJ} position-y={L.hip}>
         <mesh geometry={g.pelvis} material={m} castShadow />
@@ -447,7 +447,7 @@ export function Walker({ path, speed = 1.2, offset = 0, ...p }: Omit<PersonProps
     root.current.rotation.y = Math.atan2(-tan.z, tan.x);
   });
   return (
-    <group ref={root}>
+    <group ref={root} userData={{ live: true }}>
       <Person {...p} pose={calm ? "stand" : "walk"} speed={speed} />
     </group>
   );

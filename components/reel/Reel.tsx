@@ -7,18 +7,35 @@
 // are tags pinned over places in the world ([data-pin], positioned by the world every frame).
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowRight, ArrowUp, Check, Plus } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Bot, CalendarCheck, CalendarClock, Check, Database, KeyRound, Layers, Lock, MessagesSquare, Plus, ShieldCheck, Target } from "lucide-react";
 import { measure, reel, S, SECTIONS, update, anchorOf, DECISION, loadedAt, story } from "@/lib/reel";
 import { skyCss } from "@/lib/daylight";
 import { RECORDS } from "@/lib/records";
-import { APPLICATIONS, AREA_COPY, AUDIT_POINTS, CATEGORIES, CONNECT, DELIVERS, FAQ, FAQ_TOPICS, GAPS, GLANCE, INDUSTRIES, OUTCOMES, PATHS, PRINCIPLES, PROMISES, PROOF, STACK, TRACE } from "@/lib/content";
+import { APPLICATIONS, AREA_COPY, AUDIT_POINTS, CATEGORIES, CONNECT, DELIVERS, FAQ, FAQ_TOPICS, GAPS, GLANCE, INDUSTRIES, OUTCOMES, PATHS, PRINCIPLES, PROMISES, PROOF, TRACE } from "@/lib/content";
 import { scrollToTarget } from "../SmoothScroll";
 import { ReelNav } from "./ReelNav";
 import { LiveReads, PrincipleDemo, StorySheet } from "./Panels";
+import { Loader } from "./Loader";
+import { useReveal, useSlide } from "./motion";
+import { CountUp } from "../ui/CountUp";
 import { AuditForm } from "./AuditForm";
+import { StackStrip } from "./StackStrip";
 import { Logo } from "../ui/Logo";
 
 const World = dynamic(() => import("./World"), { ssr: false });
+
+/** Each FAQ topic's icon and colour, in FAQ order. */
+const FAQ_META = [
+  { Icon: Layers, tone: "cobalt" },
+  { Icon: Database, tone: "saffron" },
+  { Icon: Lock, tone: "violet" },
+  { Icon: Bot, tone: "emerald" },
+  { Icon: ShieldCheck, tone: "tangerine" },
+  { Icon: KeyRound, tone: "pink" },
+  { Icon: Target, tone: "cobalt" },
+  { Icon: CalendarClock, tone: "emerald" },
+];
+const AUDIT_ICONS = [MessagesSquare, Target, CalendarCheck];
 
 const tone = (t: string) => `var(--color-${t})`;
 const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
@@ -88,15 +105,22 @@ export function Reel() {
   const [signalStep, setSignalStep] = useState(0);
   const [sysStep, setSysStep] = useState(0);
   const [areaIdx, setAreaIdx] = useState(0);
+  const [appIdx, setAppIdx] = useState(0);
   const [principle, setPrinciple] = useState(0);
   const [industry, setIndustry] = useState(0);
   const [sheet, setSheet] = useState<number | null>(null);
+  const areaTabs = useSlide<HTMLDivElement>(areaIdx);
+  const principleTabs = useSlide<HTMLDivElement>(principle);
+  const industryTabs = useSlide<HTMLDivElement>(industry);
+  useReveal(root);
   const [short, setShort] = useState(false);
   const [section, setSection] = useState(0);
   const [approved, setApproved] = useState(false);
   const [phase, setPhase] = useState<"load" | "road" | "done">("load");
   const [path, setPath] = useState<keyof typeof PATHS>("custom");
   const [open, setOpen] = useState<number | null>(0);
+  const pathTabs = useSlide<HTMLDivElement>(Object.keys(PATHS).indexOf(path));
+
 
   useEffect(() => {
     reel.calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -117,7 +141,12 @@ export function Reel() {
         const end = anchorOf(i, 1);
         const away = y < top ? (top - y) / vh : i < SECTIONS.length - 1 && y > end ? (y - end) / vh : 0;
         const k = 1 - smooth(span(away, 0.06, 0.34));
-        el.style.setProperty("--in", k.toFixed(3));
+        const kk = k.toFixed(3);
+        // Only when it changed: each write restyles the whole section.
+        if (el.dataset.in !== kk) {
+          el.dataset.in = kk;
+          el.style.setProperty("--in", kk);
+        }
         const gone = String(k < 0.02);
         if (el.dataset.away !== gone) el.dataset.away = gone;
       });
@@ -132,7 +161,10 @@ export function Reel() {
       const sys = reel.u[S.systems] < 0.5 ? 0 : 1;
       const area = Math.min(Math.floor(reel.u[S.yours] * AREAS.length), AREAS.length - 1);
       if (sys !== last.sys) setSysStep(sys);
-      if (area !== last.area) setAreaIdx(area);
+      if (area !== last.area) {
+        setAreaIdx(area);
+        setAppIdx(0);
+      }
       const pr = Math.min(Math.floor(reel.u[S.foundation] * PRINCIPLES.length), PRINCIPLES.length - 1);
       const ind = Math.min(Math.floor(reel.u[S.industries] * INDUSTRIES.length), INDUSTRIES.length - 1);
       if (pr !== last.pr) setPrinciple(pr);
@@ -155,7 +187,9 @@ export function Reel() {
       }
       // The page behind the canvas follows the sky, so nothing ever flashes a different colour.
       const sky = skyCss(story());
-      if (sky !== last.sky) document.documentElement.style.setProperty("--sky", sky);
+      // Set as a plain background, not a custom property: changing a variable on <html> would
+      // restyle every element on the page, every frame of the scroll.
+      if (sky !== last.sky) document.documentElement.style.backgroundColor = sky;
       last = { step, sys, area, pr, ind, section: sec, short: below, phase: ph, sky };
       raf = requestAnimationFrame(tick);
     };
@@ -199,6 +233,7 @@ export function Reel() {
 
   return (
     <div ref={root} id="story" className="reel">
+      <Loader />
       <ReelNav section={section} />
       {sheet !== null && <StorySheet i={sheet} onPick={setSheet} onClose={() => setSheet(null)} />}
       <World />
@@ -276,19 +311,7 @@ export function Reel() {
           </div>
         </div>
         <div className="r-frame r-frame-hero" data-frame="hero" aria-hidden />
-        <div className="r-stack">
-          <p className="r-stack-label">Works with your stack</p>
-          <div className="r-stack-track" aria-label={`Works with ${STACK.join(", ")}`}>
-            {/* Two copies so the strip loops without a seam */}
-            {[0, 1].map((k) => (
-              <ul key={k} aria-hidden={k === 1 || undefined}>
-                {STACK.map((n) => (
-                  <li key={n}>{n}</li>
-                ))}
-              </ul>
-            ))}
-          </div>
-        </div>
+        <StackStrip />
       </section>
 
       {/* ---------------- 02 The problem: six systems, six places ---------------- */}
@@ -470,7 +493,7 @@ export function Reel() {
               Enterprise-grade underneath.
             </h2>
             <p className="r-cat-count">Effortless on the surface: one trusted layer for the context, controls and reliability every application needs.</p>
-            <div className="r-cat-tabs" role="tablist" aria-label="Principles">
+            <div ref={principleTabs} data-slide="0" className="r-cat-tabs" role="tablist" aria-label="Principles">
               {PRINCIPLES.map((x, i) => (
                 <button key={x.name} role="tab" aria-selected={i === principle} onClick={() => pickPrinciple(i)}>
                   <span>0{i + 1}</span>
@@ -518,7 +541,7 @@ export function Reel() {
             <p className="r-cat-count">
               {APPLICATIONS.length} applications · {CATEGORIES.length} business areas · live in weeks
             </p>
-            <div className="r-cat-tabs" role="tablist" aria-label="Business areas">
+            <div ref={areaTabs} data-slide="0" className="r-cat-tabs" role="tablist" aria-label="Business areas">
               {AREAS.map((a, i) => (
                 <button key={a.id} role="tab" aria-selected={i === areaIdx} onClick={() => pickArea(i)} style={{ "--tone": tone(a.tone) } as React.CSSProperties}>
                   <i />
@@ -538,25 +561,35 @@ export function Reel() {
                       {copy.signal}
                     </p>
                     <ul className="r-cat-apps">
-                      {apps.map((x) => (
-                        <li key={x.name}>
+                      {/* One application open at a time keeps the card inside the screen */}
+                      {apps.map((x, j) => (
+                        <li key={x.name} data-open={j === appIdx} onMouseEnter={() => setAppIdx(j)}>
                           <div className="r-cat-app-top">
-                            <button className="r-cat-open" onClick={() => setSheet(APPLICATIONS.indexOf(x))} aria-haspopup="dialog">
+                            <button
+                              className="r-cat-open"
+                              onFocus={() => setAppIdx(j)}
+                              onClick={() => (j === appIdx ? setSheet(APPLICATIONS.indexOf(x)) : setAppIdx(j))}
+                              aria-haspopup="dialog"
+                            >
                               {x.name}
                             </button>
                             <em>{x.weeks} wks</em>
                           </div>
-                          <p className="r-cat-text">{x.text}</p>
-                          <p className="r-cat-action">
-                            <ArrowRight size={13} strokeWidth={2.4} aria-hidden />
-                            {x.example}
-                          </p>
-                          <p className="r-cat-sys">
-                            {x.connects.join(" · ")}
-                            <span className="r-cat-more">
-                              See it decide <ArrowRight size={12} strokeWidth={2.4} aria-hidden />
-                            </span>
-                          </p>
+                          <div className="r-cat-body">
+                            <div>
+                              <p className="r-cat-text">{x.text}</p>
+                              <p className="r-cat-action">
+                                <ArrowRight size={13} strokeWidth={2.4} aria-hidden />
+                                {x.example}
+                              </p>
+                              <p className="r-cat-sys">
+                                {x.connects.join(" · ")}
+                                <span className="r-cat-more">
+                                  See it decide <ArrowRight size={12} strokeWidth={2.4} aria-hidden />
+                                </span>
+                              </p>
+                            </div>
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -586,7 +619,7 @@ export function Reel() {
               Shaped around your industry.
             </h2>
             <p className="r-cat-count">The same foundation, configured around the systems and decisions of six industries.</p>
-            <div className="r-cat-tabs" role="tablist" aria-label="Industries">
+            <div ref={industryTabs} data-slide="0" className="r-cat-tabs" role="tablist" aria-label="Industries">
               {INDUSTRIES.map((x, i) => (
                 <button key={x.name} role="tab" aria-selected={i === industry} onClick={() => pickIndustry(i)} style={{ "--tone": tone(x.tone) } as React.CSSProperties}>
                   <i />
@@ -662,7 +695,7 @@ export function Reel() {
               One decision first.
             </h2>
             <p className="r-sub">{PATHS[path].intro}</p>
-            <div className="r-switch" role="tablist" aria-label="Route">
+            <div ref={pathTabs} data-slide="0" className="r-switch" role="tablist" aria-label="Route">
               {(Object.keys(PATHS) as (keyof typeof PATHS)[]).map((k) => (
                 <button key={k} role="tab" aria-selected={path === k} onClick={() => setPath(k)}>
                   {PATHS[k].label}
@@ -697,16 +730,18 @@ export function Reel() {
         <div className="r-frame r-frame-ask" data-frame="ask" aria-hidden />
         <div className="r-ask-body">
           <section className="r-glance" aria-labelledby="glance-title">
-            <div className="r-glance-head">
+            <div className="r-glance-head" data-reveal>
               <p className="r-eyebrow">At a glance</p>
               <h2 id="glance-title" className="r-display r-glance-title">
                 What working with Decignal looks like.
               </h2>
             </div>
             <ul>
-              {GLANCE.map((g) => (
-                <li key={g.label}>
-                  <strong>{g.value}</strong>
+              {GLANCE.map((g, i) => (
+                <li key={g.label} data-reveal style={{ "--d": i } as React.CSSProperties}>
+                  <strong>
+                    <CountIn value={g.value} />
+                  </strong>
                   <b>{g.label}</b>
                   <span>{g.text}</span>
                 </li>
@@ -715,7 +750,7 @@ export function Reel() {
           </section>
 
           <section className="r-proof" aria-labelledby="proof-title">
-            <div className="r-proof-head">
+            <div className="r-proof-head" data-reveal>
               <p className="r-eyebrow">Representative outcomes</p>
               <h2 id="proof-title" className="r-display r-glance-title">
                 Value measured in the operation, not in AI activity.
@@ -723,8 +758,8 @@ export function Reel() {
               <p className="r-note">Illustrative deployment patterns, to be replaced with verified client results.</p>
             </div>
             <ul>
-              {PROOF.map((p) => (
-                <li key={p.title} style={{ "--tone": tone(p.tone) } as React.CSSProperties}>
+              {PROOF.map((p, i) => (
+                <li key={p.title} data-reveal style={{ "--tone": tone(p.tone), "--d": i } as React.CSSProperties}>
                   <p className="r-proof-sector">
                     <i />
                     {p.sector}
@@ -732,7 +767,9 @@ export function Reel() {
                   <b>{p.title}</b>
                   <q>{p.quote}</q>
                   <p className="r-proof-num">
-                    <strong>{p.value}</strong>
+                    <strong>
+                      <CountIn value={p.value} />
+                    </strong>
                     {p.label}
                   </p>
                   <small>{p.context}</small>
@@ -742,7 +779,7 @@ export function Reel() {
           </section>
 
           <div className="r-ask-grid">
-            <div id="faq" className="r-faq">
+            <div id="faq" className="r-faq" data-reveal>
               <p className="r-eyebrow">10 · Before you begin</p>
               <h2 id="ask-title" className="r-display r-title">
                 Questions teams ask first.
@@ -752,7 +789,13 @@ export function Reel() {
                   const on = open === i;
                   return (
                     <li key={f.q} data-open={on}>
-                      <button id={`faq-q-${i}`} aria-expanded={on} aria-controls={`faq-a-${i}`} onClick={() => setOpen(on ? null : i)}>
+                      <button id={`faq-q-${i}`} aria-expanded={on} aria-controls={`faq-a-${i}`} onClick={() => setOpen(on ? null : i)} style={{ "--tone": tone(FAQ_META[i].tone) } as React.CSSProperties}>
+                        <span className="r-faq-ico" aria-hidden>
+                          {(() => {
+                            const I = FAQ_META[i].Icon;
+                            return <I size={16} strokeWidth={2} />;
+                          })()}
+                        </span>
                         <span>
                           <small>{FAQ_TOPICS[i]}</small>
                           {f.q}
@@ -784,24 +827,35 @@ export function Reel() {
                 </button>
               </div>
             </div>
-            <div id="audit" className="r-audit">
+            <div id="audit" className="r-audit" data-reveal style={{ "--d": 1 } as React.CSSProperties}>
               <p className="r-eyebrow">Free AI audit</p>
               <h2 className="r-display r-audit-title">Bring us the decision that should move faster.</h2>
               <p className="r-sub">30 minutes on one workflow: the systems behind it and the outcome worth solving first.</p>
               <ul className="r-audit-points">
-                {AUDIT_POINTS.map((p, i) => (
-                  <li key={p.title}>
-                    <span>0{i + 1}</span>
-                    <b>{p.title}</b>
-                    {p.text}
-                  </li>
-                ))}
+                {AUDIT_POINTS.map((p, i) => {
+                  const I = AUDIT_ICONS[i];
+                  return (
+                    <li key={p.title}>
+                      <I size={18} strokeWidth={2} aria-hidden />
+                      <b>{p.title}</b>
+                      <span>{p.text}</span>
+                    </li>
+                  );
+                })}
               </ul>
               <AuditForm />
+              <ol className="r-audit-next" aria-label="What happens next">
+                {["You send the brief", "We reply within one working day", "A 30-minute working session"].map((x, i) => (
+                  <li key={x}>
+                    <span>0{i + 1}</span>
+                    {x}
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
 
-          <div className="r-close">
+          <div className="r-close" data-reveal>
             <h2 className="r-display r-close-title">
               Bring us one decision.
               <br />
@@ -813,7 +867,7 @@ export function Reel() {
           </div>
 
           <footer className="r-footer">
-            <div className="r-footer-cols">
+            <div className="r-footer-cols" data-reveal>
               <div className="r-footer-brand">
                 <Logo size={22} />
                 <p>Decision intelligence for enterprises across India and Africa.</p>
@@ -882,8 +936,9 @@ function Tag({ id, tone: t, title, note, value, big }: { id: string; tone: strin
 }
 
 function Steps({ count, active, onPick }: { count: number; active: number; onPick: (i: number) => void }) {
+  const ref = useSlide<HTMLDivElement>(active);
   return (
-    <div className="r-steps" role="tablist" aria-label="Steps">
+    <div ref={ref} data-slide="0" className="r-steps" role="tablist" aria-label="Steps">
       {Array.from({ length: count }, (_, i) => (
         <button key={i} role="tab" aria-selected={i === active} aria-label={`Step ${i + 1}: ${SIGNAL_STEPS[i].word}`} onClick={() => onPick(i)} data-on={i === active}>
           <span>{String(i + 1).padStart(2, "0")}</span>
@@ -919,5 +974,27 @@ function StockChart({ step }: { step: number }) {
       </svg>
       <figcaption>Projected stock · safety 175</figcaption>
     </figure>
+  );
+}
+
+/** Counts a figure up the first time it scrolls into view. */
+function CountIn({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [play, setPlay] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      setPlay(true);
+      io.disconnect();
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <span ref={ref}>
+      <CountUp value={value} play={play} />
+    </span>
   );
 }

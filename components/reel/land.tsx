@@ -14,7 +14,7 @@ import { Houses } from "./town";
 import { SITE } from "./harbour";
 import { nightGlow } from "./glow";
 import { RECORDS } from "@/lib/records";
-import { asGround, canvasTexture, displayText, sans } from "./sets";
+import { asGround, canvasTexture, displayText, fitDisplay, sans } from "./sets";
 
 /* ------------------------------------------------------------------ */
 /* Painted ground                                                       */
@@ -390,12 +390,12 @@ export function drawOps(g: CanvasRenderingContext2D, w: number, h: number, st: O
   // Header
   g.fillStyle = "#1B2028";
   g.fillRect(0, 0, w, 120);
-  g.fillStyle = "#E9EDF3";
-  g.font = `700 46px ${f}`;
+  g.fillStyle = "#FFFFFF";
+  g.font = `700 52px ${f}`;
   g.textBaseline = "middle";
   g.fillText("SKU 4471 · BEARING 6204 · PLANT 01", 48, 62);
-  const chip = st.step === 2 ? ["RECOMMENDATION", TINTS.emerald] : st.units < 175 ? ["BELOW SAFETY STOCK", "#F2361F"] : ["ON PLAN", "#3A4250"];
-  g.font = `800 34px ${f}`;
+  const chip = st.step === 2 ? ["RECOMMENDATION", "#0A7A55"] : st.units < 175 ? ["BELOW SAFETY STOCK", "#F2361F"] : ["ON PLAN", "#3A4250"];
+  g.font = `800 38px ${f}`;
   const cw = g.measureText(chip[0]).width + 60;
   g.fillStyle = chip[1];
   g.beginPath();
@@ -409,8 +409,8 @@ export function drawOps(g: CanvasRenderingContext2D, w: number, h: number, st: O
     // On hand, large, and the stock line falling through safety stock
     g.fillStyle = "#FFFFFF";
     displayText(g, String(st.units), 60, 420, 260);
-    g.fillStyle = "#9AA4B2";
-    g.font = `600 44px ${f}`;
+    g.fillStyle = "#DCE2EA";
+    g.font = `600 54px ${f}`;
     g.fillText("units on hand", 66, 500);
     g.fillText("Short on day 6", 66, 570);
     const x0 = 760, x1 = w - 60, y0 = 200, y1 = h - 90;
@@ -423,9 +423,9 @@ export function drawOps(g: CanvasRenderingContext2D, w: number, h: number, st: O
     g.lineTo(x1, Y(175));
     g.stroke();
     g.setLineDash([]);
-    g.fillStyle = "#6E7888";
-    g.font = `600 30px ${f}`;
-    g.fillText("Safety stock 175", x0 + 10, Y(175) - 16);
+    g.fillStyle = "#C3CBD6";
+    g.font = `600 40px ${f}`;
+    g.fillText("Safety stock 175", x0 + 10, Y(175) - 18);
     const pts = [240, 228, 212, 196, 181, 163, 145, 128, 110];
     g.strokeStyle = TINTS.cobalt;
     g.lineWidth = 9;
@@ -442,8 +442,8 @@ export function drawOps(g: CanvasRenderingContext2D, w: number, h: number, st: O
     g.beginPath();
     g.arc(xd, Y(145), 16, 0, Math.PI * 2);
     g.fill();
-    g.font = `700 32px ${f}`;
-    g.fillText("Day 6", xd - 44, Y(145) + 62);
+    g.font = `700 42px ${f}`;
+    g.fillText("Day 6", xd - 56, Y(145) + 70);
     return;
   }
 
@@ -467,32 +467,36 @@ export function drawOps(g: CanvasRenderingContext2D, w: number, h: number, st: O
       g.roundRect(x, y, 14, th, [22, 0, 0, 22]);
       g.fill();
       g.fillStyle = r.tone;
-      g.font = `800 34px ${f}`;
-      g.fillText(r.sys.toUpperCase(), x + 44, y + 64);
-      g.fillStyle = "#9AA4B2";
-      g.font = `600 30px ${f}`;
-      g.fillText(r.field, x + 44, y + 108);
+      g.font = `800 44px ${f}`;
+      g.fillText(r.sys.toUpperCase(), x + 44, y + 72);
+      g.fillStyle = "#E3E8EF";
+      g.font = `600 42px ${f}`;
+      g.fillText(r.field, x + 44, y + 128);
       g.fillStyle = "#FFFFFF";
-      displayText(g, r.value.toUpperCase(), x + 40, y + th - 46, r.value.length > 12 ? 50 : r.value.length > 8 ? 70 : 92);
+      // Each value sized to fit its card, so long ones (Planner approves) never run off the edge.
+      const value = r.value.toUpperCase();
+      displayText(g, value, x + 44, y + th - 50, fitDisplay(g, value, tw - 80, 96));
       g.globalAlpha = 1;
     });
     return;
   }
 
   // The recommendation, with its reasons counted
-  g.fillStyle = TINTS.emerald;
+  // A deeper green than the brand emerald, so white text on it passes AA contrast.
+  g.fillStyle = "#0A7A55";
   g.beginPath();
   g.roundRect(48, 168, w - 96, h - 216, 30);
   g.fill();
-  g.fillStyle = "rgba(255,255,255,0.82)";
-  g.font = `700 40px ${f}`;
-  g.fillText("TRF-0240 · 6 FACTS · 6 SYSTEMS", 100, 260);
+  g.fillStyle = "#FFFFFF";
+  g.font = `700 46px ${f}`;
+  g.fillText("TRF-0240 · 6 FACTS · 6 SYSTEMS", 100, 262);
   g.fillStyle = "#FFFFFF";
   displayText(g, "TRANSFER 240 UNITS", 92, 430, 128);
   displayText(g, "FROM PLANT 02", 92, 560, 128);
-  g.fillStyle = "rgba(255,255,255,0.88)";
-  g.font = `600 44px ${f}`;
-  g.fillText("Arrives day 4, two days before the shortfall · awaiting planner approval", 100, 680);
+  g.fillStyle = "#FFFFFF";
+  g.font = `600 50px ${f}`;
+  g.fillText("Arrives day 4, two days before the shortfall", 100, 690);
+  g.fillText("Awaiting planner approval", 100, 760);
 }
 
 /** The display's texture and a redraw that only repaints when what it shows changes. */

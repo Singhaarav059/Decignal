@@ -459,7 +459,7 @@ export function MooredShip() {
   });
   const { x, z } = SITE.quay.ship;
   return (
-    <group ref={ship} position={[x, WATER_Y, z]}>
+    <group ref={ship} position={[x, WATER_Y, z]} userData={{ live: true }}>
       <Ship L={92} B={15} tiers={3} seed={11} />
     </group>
   );
@@ -480,7 +480,7 @@ export function InboundShip() {
     g.rotation.z = reel.calm ? 0 : Math.sin(clock.elapsedTime * 0.4) * 0.006;
   });
   return (
-    <group ref={ship} rotation-y={Math.PI}>
+    <group ref={ship} rotation-y={Math.PI} userData={{ live: true }}>
       <Ship L={56} B={11} tiers={2} seed={23} />
       <Wake />
     </group>
@@ -593,7 +593,7 @@ export function FishingBoat(p: React.ComponentProps<"group">) {
   });
   return (
     <group {...p}>
-      <group ref={g} position-y={WATER_Y}>
+      <group ref={g} position-y={WATER_Y} userData={{ live: true }}>
         <mesh geometry={boatHull()} material={flat("#F2F4F7", 0.5)} castShadow />
         <mesh position={[0.3, 0.75, 0]} material={flat("#5D86B8", 0.5)}>
           <boxGeometry args={[8.4, 0.18, 2.66]} />
