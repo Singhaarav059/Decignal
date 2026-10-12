@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Aperture, ArrowRight, Menu, X } from "lucide-react";
 import { Logo } from "../ui/Logo";
 import { scrollToTarget } from "../SmoothScroll";
 import { anchorOf, S } from "@/lib/reel";
 import { useSlide } from "./motion";
+import { lensStore, setLens } from "./lens";
 import { NavGlance, SCENES, sceneSky, type GlanceActions, type GlanceId } from "./NavGlance";
 
 const LINKS: { label: string; glance: GlanceId; blurb: string; go: () => void; from: number; to: number }[] = [
   { label: "Home", glance: "story", blurb: "The story, dawn to night", go: () => scrollToTarget(0), from: S.hero, to: S.systems },
   { label: "Platform", glance: "platform", blurb: "Signal, decision, foundation", go: () => scrollToTarget(anchorOf(S.signal, 0.05)), from: S.signal, to: S.foundation },
-  { label: "Applications", glance: "apps", blurb: "Eight apps, six industries", go: () => scrollToTarget(anchorOf(S.yours)), from: S.yours, to: S.outcome },
-  { label: "How it works", glance: "how", blurb: "Live in four to twelve weeks", go: () => scrollToTarget(anchorOf(S.how)), from: S.how, to: S.how },
+  { label: "Applications", glance: "apps", blurb: "Eight apps, six industries", go: () => scrollToTarget(anchorOf(S.yours)), from: S.yours, to: S.industries },
+  { label: "How it works", glance: "how", blurb: "Measured outcomes, live in weeks", go: () => scrollToTarget(anchorOf(S.how)), from: S.outcome, to: S.how },
   { label: "FAQ", glance: "faq", blurb: "What teams ask first", go: () => scrollToTarget("#ask"), from: S.ask, to: S.ask },
 ];
 
@@ -90,6 +91,7 @@ export function ReelNav({ section, actions }: { section: number; actions: Glance
         })}
       </ul>
       <div className="r-nav-actions">
+        <LensToggle />
         <button className="r-btn r-btn-dark r-btn-sm" onClick={() => scrollToTarget("#audit")}>
           Book an audit
         </button>
@@ -139,5 +141,21 @@ export function ReelNav({ section, actions }: { section: number; actions: Glance
         </ol>
       </div>
     </nav>
+  );
+}
+
+/** Turns the camera's depth of field on or off (off by default; remembered on this device). */
+function LensToggle() {
+  const on = useSyncExternalStore(lensStore.subscribe, lensStore.get, lensStore.server);
+  return (
+    <button
+      className="r-nav-lens"
+      aria-pressed={on}
+      aria-label="Depth of field"
+      data-tip={on ? "Depth of field on" : "Depth of field off"}
+      onClick={() => setLens(!on)}
+    >
+      <Aperture size={18} strokeWidth={1.8} aria-hidden />
+    </button>
   );
 }

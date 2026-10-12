@@ -337,6 +337,72 @@ html {
   align-items: center;
   gap: 8px;
 }
+/* Depth of field: a quiet icon button, filled while on, its state named on hover */
+.r-nav-lens {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.42);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  color: inherit;
+  transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), border-color var(--dur-3) var(--ease);
+}
+.r-nav-lens svg {
+  transition: transform var(--dur-5) var(--ease);
+}
+.r-nav-lens[aria-pressed="true"] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #fff;
+}
+.r-nav-lens[aria-pressed="true"] svg {
+  transform: rotate(60deg);
+}
+.r-nav-lens::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 560;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+}
+@media (hover: hover) {
+  .r-nav-lens:hover::after {
+    opacity: 1;
+    transform: none;
+  }
+}
+.r-nav-lens:focus-visible::after {
+  opacity: 1;
+  transform: none;
+}
+html[data-reel-at="how"] .r-nav-lens,
+html[data-reel-at="ask"] .r-nav-lens {
+  background: rgb(14 22 46 / 0.35);
+  border-color: rgb(255 255 255 / 0.14);
+}
+html[data-reel-at="how"] .r-nav-lens[aria-pressed="true"],
+html[data-reel-at="ask"] .r-nav-lens[aria-pressed="true"] {
+  background: #fff;
+  color: var(--color-ink);
+}
+@media (max-width: 767px) {
+  .r-nav-lens {
+    display: none;
+  }
+}
 .r-nav-menu {
   display: none;
   width: 40px;
@@ -347,6 +413,14 @@ html {
 html[data-reel-at="how"] .r-nav,
 html[data-reel-at="ask"] .r-nav {
   color: #f5f7fc;
+}
+.r-nav {
+  transition: color var(--dur-5) var(--ease), background-color var(--dur-3) var(--ease), border-color var(--dur-3) var(--ease);
+  border-bottom: 1px solid transparent;
+}
+html[data-nav-solid] .r-nav {
+  background-color: #0a1026;
+  border-bottom-color: rgb(255 255 255 / 0.08);
 }
 html[data-reel-at="how"] .r-nav-links,
 html[data-reel-at="ask"] .r-nav-links {
@@ -421,6 +495,34 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
   border-radius: 999px;
   background: #fff;
   box-shadow: 0 0 0 1.5px var(--tone), 0 1px 3px rgb(20 33 61 / 0.4);
+}
+/* Place off screen: no stem, an arrow on the side it lies */
+.r-pin-tag[data-edge] .r-pin-card::before {
+  display: none;
+}
+.r-pin-tag[data-edge] .r-pin-card::after {
+  top: 50%;
+  left: auto;
+  right: 10px;
+  width: auto;
+  height: auto;
+  transform: translateY(-50%);
+  background: none;
+  content: "\2192";
+  color: var(--tone);
+  font-size: 15px;
+  font-weight: 650;
+}
+.r-pin-tag[data-edge="right"] .r-pin-card {
+  padding-right: 30px;
+}
+.r-pin-tag[data-edge="left"] .r-pin-card {
+  padding-left: 30px;
+}
+.r-pin-tag[data-edge="left"] .r-pin-card::after {
+  left: 10px;
+  right: auto;
+  content: "\2190";
 }
 .r-pin-card b {
   display: flex;
@@ -687,7 +789,7 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
   bottom: 20%;
 }
 
-/* ---------------- 05 Yours, 06 Outcome ---------------- */
+/* ---------------- 06 Yours, 08 Outcome ---------------- */
 
 .r-frame-out {
   left: 0;
@@ -706,7 +808,7 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
   color: var(--color-ink-soft);
 }
 
-/* ---------------- 07 How it works ---------------- */
+/* ---------------- 09 How it works ---------------- */
 
 .r-switch {
   display: inline-flex;
@@ -797,7 +899,7 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
   }
 }
 
-/* ---------------- 08 Questions, audit, footer ---------------- */
+/* ---------------- 10 Questions, audit, footer ---------------- */
 
 .r-ask {
   padding: clamp(110px, 16vh, 160px) var(--r-gutter) 0;
@@ -1738,6 +1840,48 @@ text.r-chart-land {
   grid-template-rows: 1fr;
 }
 
+/* The rack in Plant 01: hovering it, or the stock panel beside it, opens where its stock goes */
+.r-rack .r-pin-card > span:not(.r-outcome-more) {
+  font-size: 12px;
+}
+.r-rack .r-pin-card strong {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.r-rack[data-hl="true"] {
+  z-index: 2;
+}
+.r-rack[data-hl="true"] .r-outcome-more {
+  grid-template-rows: 1fr;
+}
+.r-rack .r-outcome-more > span {
+  width: 210px;
+}
+.r-rack-facts {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgb(20 33 61 / 0.1);
+  font-size: 12px;
+}
+.r-rack-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.r-rack-facts dt {
+  color: var(--color-ink-soft);
+}
+.r-rack-facts dd {
+  font-weight: 600;
+  color: var(--color-ink);
+  text-align: right;
+}
+.r-rack-facts > div[data-on="true"] dd {
+  color: var(--tone);
+}
+
 /* How it works: what each step hands over */
 .r-route-gets {
   display: flex;
@@ -2235,8 +2379,8 @@ text.r-chart-land {
   .r-frame-fn {
     left: 0;
     right: 0;
-    top: 70%;
-    bottom: 2%;
+    top: 54%;
+    bottom: 6%;
   }
 }
 

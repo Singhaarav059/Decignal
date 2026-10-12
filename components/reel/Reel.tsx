@@ -102,6 +102,8 @@ const PINS_HERO = [
 export function Reel() {
   const root = useRef<HTMLDivElement>(null);
   const onHand = useRef<HTMLElement>(null);
+  const rackUnits = useRef<HTMLElement>(null);
+  const [stockHover, setStockHover] = useState(false);
   const loaded = useRef<HTMLElement>(null);
   const [signalStep, setSignalStep] = useState(0);
   const [sysStep, setSysStep] = useState(0);
@@ -158,6 +160,7 @@ export function Reel() {
       // The rack's count, as the world drains it: 240 down to 145 by day 6.
       const units = Math.round(240 - 95 * smooth(span(u, 0.04, 0.3)));
       if (onHand.current) onHand.current.textContent = String(units);
+      if (rackUnits.current) rackUnits.current.textContent = String(units);
       // Held short of approval while the planner has rejected it (see decisionU).
       const du = decisionU();
       const pallets = loadedAt(du);
@@ -226,6 +229,29 @@ export function Reel() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
       delete document.documentElement.dataset.reelAt;
+    };
+  }, []);
+
+  // Once the night page scrolls up under the nav, the nav gets a solid band so the two never collide.
+  useEffect(() => {
+    const body = document.querySelector(".r-ask-body");
+    if (!body) return;
+    const root = document.documentElement;
+    let io: IntersectionObserver | undefined;
+    const watch = () => {
+      io?.disconnect();
+      io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) root.dataset.navSolid = "";
+        else delete root.dataset.navSolid;
+      }, { rootMargin: `0px 0px ${72 - window.innerHeight}px 0px` });
+      io.observe(body);
+    };
+    watch();
+    window.addEventListener("resize", watch);
+    return () => {
+      io?.disconnect();
+      window.removeEventListener("resize", watch);
+      delete root.dataset.navSolid;
     };
   }, []);
 
@@ -308,6 +334,40 @@ export function Reel() {
             </button>
           </span>
         ))}
+        {/* The rack draining in Plant 01: its live count, and on hover where the stock goes */}
+        <span className="r-pin-tag r-outcome r-rack" data-pin="s-rack" data-on="false" data-hl={stockHover} style={{ "--tone": tone(short ? "signal" : "saffron") } as React.CSSProperties}>
+          <span className="r-pin-card" tabIndex={0} aria-label="Rack A, SKU 4471: stock on hand. Hover or focus for details.">
+            <b>
+              <i />
+              Rack A · SKU 4471
+            </b>
+            <span>
+              <strong ref={rackUnits}>240</strong> on hand
+            </span>
+            <span className="r-outcome-more">
+              <span>
+                <dl className="r-rack-facts">
+                  <div>
+                    <dt>Feeds</dt>
+                    <dd>Line 2, through the curtain</dd>
+                  </div>
+                  <div>
+                    <dt>Safety stock</dt>
+                    <dd>175</dd>
+                  </div>
+                  <div data-on={short}>
+                    <dt>Runs short</dt>
+                    <dd>Day 6</dd>
+                  </div>
+                  <div>
+                    <dt>Orders</dt>
+                    <dd>Up 18% this week</dd>
+                  </div>
+                </dl>
+              </span>
+            </span>
+          </span>
+        </span>
         {OUTCOME_PINS.map((p) => (
           <span key={p.id} className="r-pin-tag r-pin-big r-outcome" data-pin={p.id} data-on="false" style={{ "--tone": tone(p.tone) } as React.CSSProperties}>
             <span className="r-pin-card" tabIndex={0}>
@@ -432,7 +492,7 @@ export function Reel() {
 
           <div className="r-frame r-frame-plant" data-frame="plant" aria-hidden />
 
-          <dl className="r-panel r-stock" aria-label="Plant 01 stock">
+          <dl className="r-panel r-stock" aria-label="Plant 01 stock" onPointerEnter={() => setStockHover(true)} onPointerLeave={() => setStockHover(false)}>
             <div className="r-stock-top">
               <span className={`r-pill ${short ? "r-pill-risk" : ""}`}>{short ? "Below safety stock" : "Plant 01 · WMS"}</span>
               <p className="r-stock-big">
@@ -703,7 +763,7 @@ export function Reel() {
       </section>
 
       {/* ---------------- 08 Outcome: sunset, the stock is back ---------------- */}
-      <section id="outcomes" data-reel="outcome" className="r-sec r-held" style={{ height: "160vh" }} aria-labelledby="outcome-title">
+      <section id="outcomes" data-reel="outcome" className="r-sec r-held" style={{ height: "220vh" }} aria-labelledby="outcome-title">
         <div className="r-pin">
           <header className="r-head">
             <p className="r-eyebrow">08 · The outcome</p>
@@ -724,7 +784,7 @@ export function Reel() {
         </div>
       </section>
 
-      {/* ---------------- 07 How it works: dusk over the bay ---------------- */}
+      {/* ---------------- 09 How it works: dusk over the bay ---------------- */}
       <section id="how" data-reel="how" className="r-sec r-held r-dark" style={{ height: "160vh" }} aria-labelledby="how-title">
         <div className="r-pin">
           <header className="r-head">
@@ -766,7 +826,7 @@ export function Reel() {
         </div>
       </section>
 
-      {/* ---------------- 08 Questions and the audit: night harbour ---------------- */}
+      {/* ---------------- 10 Questions and the audit: night harbour ---------------- */}
       <section id="ask" data-reel="ask" className="r-sec r-dark r-ask" aria-labelledby="ask-title">
         <div className="r-frame r-frame-ask" data-frame="ask" aria-hidden />
         <div className="r-ask-body">

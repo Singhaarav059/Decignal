@@ -40,6 +40,7 @@ import { Islet, Torii } from "./garden";
 import { HeadOffice, SalesOffice, ServiceCentre } from "./town";
 import { stepGlow } from "./glow";
 import { Bake } from "./Bake";
+import { drawFrame, warmLens } from "./lens";
 
 if (typeof performance !== "undefined") performance.mark("world:module");
 
@@ -191,10 +192,10 @@ const KEYS: Key[] = [
   // 08 Outcome, sunset: Plant 01 restocked, Plant 02 down the road, the quay behind
   { t: atSection(S.outcome, 0), stop: true, at: (o) => aim(o, 6, 3, -10, -0.16, 0.2, 100, frames.out, 24) },
   { t: atSection(S.outcome, 1), stop: true, at: (o) => aim(o, 7, 3, -11, -0.19, 0.19, 96, frames.out, 24) },
-  // 07 How it works, dusk: out across the bay to the torii and the mountain, the island below
+  // 09 How it works, dusk: out across the bay to the torii and the mountain, the island below
   { t: atSection(S.how, 0), stop: true, at: (o) => aim(o, 70, 10, -150, 0.12, 0.07, 340, frames.how, 26) },
   { t: atSection(S.how, 1), stop: true, at: (o) => aim(o, 72, 10, -152, 0.1, 0.07, 330, frames.how, 26) },
-  // 08 Night harbour
+  // 10 Night harbour
   { t: N - 1, stop: true, at: (o) => aim(o, 20, 4, -36, 0.16, 0.13, 210, frames.ask, 26) },
 ];
 
@@ -775,6 +776,12 @@ function pin(el: HTMLElement | null, x: number, y: number, z: number, on: boolea
     el.style.transform = tf;
     (lastVar.get(el) ?? (lastVar.set(el, {}), lastVar.get(el)!)).tf = tf;
   }
+  // A place off the side of the screen gets an arrow towards it instead of a stem into nothing.
+  const edge = px > view.w ? "right" : px < 0 ? "left" : "";
+  if ((el.dataset.edge ?? "") !== edge) {
+    if (edge) el.dataset.edge = edge;
+    else delete el.dataset.edge;
+  }
   // Keep the tag's card on screen; its stem still points at the place.
   const card = el.firstElementChild as HTMLElement | null;
   if (card) {
@@ -819,6 +826,8 @@ const PINS: Record<string, PinSpec> = {
   "i-lo": { at: () => [SITE.quay.ship.x, 22, SITE.quay.ship.z], on: (t) => during(S.industries, t) },
   "i-fs": { at: () => [LAND.office.x, 14.5, LAND.office.z], on: (t) => during(S.industries, t) },
   "i-en": { at: () => [60, 19.5, -42.5], on: (t) => during(S.industries, t) },
+  // Signal: the rack itself, while it drains (before the camera walks to the display)
+  "s-rack": { at: () => [INSIDE.x + PLANT01.rack.x, INSIDE.y + RACK.height + 0.35, INSIDE.z + RACK_Z], on: (t) => during(S.signal, t) && reel.u[S.signal] < 0.38 },
   // Outcome
   "o-time": { at: () => [ARRIVE_X + TRUCK_MID, 5.4, TRUCK_Z], on: (t) => during(S.outcome, t) },
   "o-kept": { at: () => [P02 - 2, roof, LAND.plantZ], on: (t) => during(S.outcome, t) },
@@ -867,7 +876,7 @@ function Pins() {
     els.current = Object.entries(PINS)
       .map(([id, spec]) => [document.querySelector<HTMLElement>(`[data-pin='${id}']`), spec] as [HTMLElement | null, PinSpec])
       .filter((e): e is [HTMLElement, PinSpec] => !!e[0]);
-    for (const [el] of els.current) if (el.firstElementChild) sizer?.observe(el.firstElementChild);
+    for (const [el] of els.current) if (el.firstElementChild) sizer?.observe(el.firstElementChild, { box: "border-box" });
     return () => els.current.forEach(([el]) => el.firstElementChild && sizer?.unobserve(el.firstElementChild));
   }, []);
   useFrame(({ camera }, dt) => {
@@ -930,13 +939,14 @@ function Renderer() {
     camera.layers.enable(DETAIL);
     const hidden = showHidden(scene);
     const compiling = gl.compileAsync(scene, camera);
+    warmLens(gl);
     hidden.forEach((o) => (o.visible = false));
     compiling.catch(() => {}).then(() => alive && (ready.current = true));
     return () => {
       alive = false;
     };
   }, [get]);
-  useFrame(({ gl, scene, camera }) => {
+  useFrame(({ gl, scene, camera }, dt) => {
     if (!ready.current) return;
     if (!told.current) performance.mark("world:first-render-start");
     // The sun's shadow map is redrawn when its frame or the sun moved on (stepSun), when something
@@ -959,7 +969,7 @@ function Renderer() {
     renderReflection(gl, scene, camera as THREE.PerspectiveCamera);
     const auto = scene.matrixWorldAutoUpdate;
     scene.matrixWorldAutoUpdate = false;
-    gl.render(scene, camera);
+    drawFrame(gl, scene, camera as THREE.PerspectiveCamera, cam.d, dt);
     scene.matrixWorldAutoUpdate = auto;
     if (warm) {
       warm.forEach((o) => (o.visible = false));

@@ -23,7 +23,11 @@ const body = Figtree({
   subsets: ["latin"],
 });
 
+// Share images need an absolute URL: Railway names its domain at build time, otherwise the live site.
+const site = process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "https://decignal.up.railway.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(site),
   title: "Decignal · Turn information into decisions",
   description:
     "Decignal connects the systems you already run and turns operational data into clear, explainable decisions your teams approve.",
