@@ -61,7 +61,6 @@ export function IndustryDetail() {
             style={{ opacity: 0, "--tone": `var(--color-${INDUSTRY_TONE[k]})` } as React.CSSProperties}
           >
             <div className="ind-card">
-              <span className="ind-card-rule" aria-hidden />
               <p className="ind-eyebrow ind-reveal eyebrow tabular max-md:hidden" style={{ ["--d" as string]: 0 }}>
                 {String(k + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")} · The challenge
               </p>

@@ -63,7 +63,7 @@ export function Audit() {
 
         <div
           data-reveal
-          className="audit-card relative self-start rounded-[28px] bg-paper p-6 shadow-[0_40px_80px_-30px_rgba(20,19,15,0.55)] md:p-9 lg:sticky lg:top-28"
+          className="audit-card relative self-start rounded-[28px] bg-paper p-6 md:p-9 lg:sticky lg:top-28"
         >
           {/* The card answers each completed step with a brief cobalt ring. */}
           <span key={step} className="audit-ring" aria-hidden />

@@ -41,32 +41,3 @@ export const SYSTEMS: SystemMeta[] = [
 ];
 
 export const tone = (t: string) => `var(--color-${t})`;
-/** A solid, light tint of a palette colour (no gradients). */
-export const tint = (t: string, pct = 12) => `color-mix(in srgb, var(--color-${t}) ${pct}%, white)`;
-
-export function IconChip({
-  Icon,
-  t,
-  size = 40,
-  solid = false,
-}: {
-  Icon: LucideIcon;
-  t: string;
-  size?: number;
-  solid?: boolean;
-}) {
-  return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-[30%]"
-      style={{
-        width: size,
-        height: size,
-        background: solid ? tone(t) : tint(t),
-        color: solid ? "#fff" : tone(t),
-      }}
-      aria-hidden
-    >
-      <Icon size={Math.round(size * 0.48)} strokeWidth={1.9} />
-    </span>
-  );
-}

@@ -246,7 +246,6 @@ export function Nav() {
         >
           {/* Light layer: the bar's glass, and a sweep of the section's colour each time the reader moves on. */}
           <span className="nav-glass" aria-hidden />
-          <Sweep />
 
           <div className="relative flex min-w-0 items-center gap-1">
             <button
@@ -346,34 +345,6 @@ export function Nav() {
         </button>
       </div>
     </>
-  );
-}
-
-/** A band of the current section's colour runs once across the bar when the reader enters a new
- *  chapter or section. */
-function Sweep() {
-  const [s, setS] = useState({ key: 0, tone: "" });
-  useEffect(() => {
-    let last = "";
-    const update = () => {
-      const w = where();
-      const k = w.n + w.label;
-      if (!w.label || k === last) return;
-      const first = last === "";
-      last = k;
-      if (!first) setS((p) => ({ key: p.key + 1, tone: w.tone }));
-    };
-    const off = subscribe(update);
-    window.addEventListener("scroll", update, { passive: true });
-    return () => {
-      off();
-      window.removeEventListener("scroll", update);
-    };
-  }, []);
-  return (
-    <span className="nav-fx" aria-hidden>
-      {s.key > 0 && <span key={s.key} className="nav-sweep" style={{ ["--tone" as string]: s.tone }} />}
-    </span>
   );
 }
 

@@ -17,7 +17,7 @@ export function DecisionControls() {
 
   return (
     <div
-      className="decision-panel mt-8 w-[28rem] max-w-full rounded-[22px] border border-white/80 bg-white/65 p-5 max-md:mt-0 max-md:w-full max-md:p-4 shadow-[0_18px_50px_-24px_rgba(20,19,15,0.35)] backdrop-blur-md transition-shadow duration-500 hover:shadow-[0_24px_60px_-24px_rgba(20,19,15,0.42)]"
+      className="decision-panel mt-8 w-[28rem] max-w-full rounded-[22px] border border-line bg-white p-5 max-md:mt-0 max-md:w-full max-md:p-4"
       aria-live="polite"
       // While someone is deciding, the decision card in the stack comes forward to be read.
       onPointerEnter={() => (store.focusHint = DECISION_CARD)}
@@ -185,7 +185,7 @@ function Btn({
     <button
       {...p}
       className={`min-h-10 rounded-full px-4 text-sm font-medium transition-[transform,background-color] duration-300 ease-out active:scale-[0.97] ${
-        primary ? "bg-ink text-white hover:bg-emerald" : "border border-line-strong bg-white/60 hover:bg-ink/5"
+        primary ? "bg-ink text-white hover:bg-emerald" : "border border-line-strong bg-white hover:bg-ink/5"
       } ${className}`}
     />
   );

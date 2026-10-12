@@ -96,7 +96,6 @@ export function ApplicationExplorer({ indices }: { indices: number[] }) {
   return <div ref={root} className="application-journey" style={{ height: `${indices.reduce((total,i) => total + CHAPTER_LENGTHS[i] * 100, 100)}svh`, ["--tone" as string]: color }}>
     <div className="application-stage" data-step={frame.step} data-jumping={jumping || undefined}>
       <nav ref={chapterNav} className="application-chapter-bar" aria-label="Application chapters">{indices.map((index,i)=><button key={index} aria-label={`Show ${APPLICATIONS[index].name}`} aria-current={i===frame.chapter?"step":undefined} onClick={()=>jump(i)}><span>{String(i+1).padStart(2,"0")}</span>{CHAPTER_NAMES[index]}<i/></button>)}</nav>
-      <div className="application-ghost" aria-hidden>{["STOCK", "DEMAND", "CAPACITY", "HEALTH", "RESILIENCE", "GROWTH", "SERVICE", "CONTROL"][selected]}</div>
       <div className="application-copy" key={selected}>
         <p className="eyebrow"><span className="diamond" style={{color:"var(--tone)"}} />{String(selected + 1).padStart(2, "0")} / {app.category}</p>
         <h3 className="display">{demo.headline.split("\n").map((line,i)=><span key={line} className="block">{i===1?<em style={{color:"var(--tone)"}}>{line}</em>:line}</span>)}</h3>

@@ -33,15 +33,6 @@ import { Arrow } from "../ui/Arrow";
 import { isPhone } from "@/lib/device";
 
 
-/** One word per chapter, set huge and faint behind the 3D. */
-const GHOSTS: [number, string][] = [
-  [CH.signal, "SIGNAL"],
-  [CH.problem, "SHORTAGE"],
-  [CH.context, "CONTEXT"],
-  [CH.decision, "TRANSFER"],
-  [CH.control, "APPROVAL"],
-  [CH.scale, "FUNCTIONS"],
-];
 
 const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
@@ -58,7 +49,6 @@ export function Story() {
     const roots = [back.current, front.current].filter(Boolean) as HTMLDivElement[];
     const chEls = roots.flatMap((r) => Array.from(r.querySelectorAll<HTMLElement>("[data-ch]")));
     const indEls = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ind]") ?? []);
-    const ghosts = Array.from(back.current?.querySelectorAll<HTMLElement>("[data-ghost]") ?? []);
     const stock = front.current?.querySelector<HTMLElement>("[data-stock]");
     const finalEl = front.current?.querySelector<HTMLElement>("[data-final]");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -105,16 +95,6 @@ export function Story() {
           put(el, "--split-k", String(Math.min(1, (1 - w) * 3)));
         }
         if (el.dataset.interactive !== undefined) put(el, "pointer-events", w > 0.6 ? "auto" : "none");
-      });
-
-      // Giant chapter words drift slowly behind the object, the way a camera passes type on a wall.
-      ghosts.forEach((el) => {
-        const c = Number(el.dataset.ghost);
-        const w = weight(c, g);
-        put(el, "opacity", String(smoothstep(0.3, 1, w)));
-        put(el, "visibility", w < 0.005 ? "hidden" : "visible");
-        // A hidden word holds still: nobody sees it drift, and the browser skips the work.
-        if (!still && w >= 0.005) put(el, "transform", `translate3d(${(0.5 - (g - c)) * 18}vw, 0, 0)`);
       });
 
       // Plant 02's stock counts down as each pallet goes onto the truck.
@@ -170,11 +150,6 @@ export function Story() {
             </span>
           </p>
         </div>
-        {GHOSTS.map(([c, word]) => (
-          <p key={word} data-ghost={c} className="ghost-word" style={{ opacity: 0 }}>
-            {word}
-          </p>
-        ))}
         <div data-ch={CH.decision} className="story-decision-heading absolute inset-x-0 top-[11vh] px-6 text-center">
           <p className="display text-[clamp(36px,min(6.5vw,10vh),108px)]">
             One clear
@@ -271,7 +246,7 @@ export function Story() {
             </p>
             <div className="flex flex-col gap-3">
             <Stepper />
-            <dl className="decision-facts grid grid-cols-3 divide-x divide-line overflow-hidden rounded-2xl border border-white/80 bg-white/60 text-left shadow-[0_10px_40px_-20px_rgba(20,19,15,0.3)] backdrop-blur-md">
+            <dl className="decision-facts grid grid-cols-3 divide-x divide-line overflow-hidden rounded-2xl border border-line bg-white text-left">
               {[
                 ["Arrives", "2 days"],
                 ["Plant 02 left", "380 units"],

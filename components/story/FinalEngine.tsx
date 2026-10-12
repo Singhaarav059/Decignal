@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, ShieldCheck, Sparkles } from "lucide-react";
-import { SYSTEMS, IconChip, tone, tint } from "../ui/systems";
+import { Check, ShieldCheck } from "lucide-react";
+import { SYSTEMS, tone } from "../ui/systems";
 import { scrollToTarget } from "../SmoothScroll";
 import { Arrow } from "../ui/Arrow";
 
@@ -69,7 +69,7 @@ export function FinalEngine({ ch }: { ch: number }) {
         <ul className="fe-sources">
           {SYSTEMS.map((s, i) => (
             <li key={s.id} style={{ ["--tone" as string]: tone(s.tone), ["--d" as string]: i }}>
-              <IconChip Icon={s.Icon} t={s.tone} size={30} />
+              <i className="fe-src-dot" aria-hidden />
               <span className="fe-src-text">
                 <span className="fe-src-name">{s.name}</span>
                 <span className="fe-src-knows">{s.knows}</span>
@@ -81,7 +81,6 @@ export function FinalEngine({ ch }: { ch: number }) {
 
         <div className="fe-core">
           <div className="fe-core-head">
-            <span className="fe-core-mark"><Sparkles size={14} /></span>
             <span>Decision TRF-0240</span>
             <span className="fe-core-live">Live</span>
           </div>
@@ -108,7 +107,7 @@ export function FinalEngine({ ch }: { ch: number }) {
 
         <ul className="fe-outcomes">
           {OUTCOMES.map((o, j) => (
-            <li key={o.v} style={{ ["--tone" as string]: tone(o.t), ["--tint" as string]: tint(o.t, 14), ["--d" as string]: j, ["--f" as string]: o.f }}>
+            <li key={o.v} style={{ ["--tone" as string]: tone(o.t), ["--d" as string]: j, ["--f" as string]: o.f }}>
               <strong className="tabular">{o.v}</strong>
               <span>{o.k}</span>
               <i aria-hidden><b /></i>
