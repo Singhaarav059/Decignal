@@ -620,7 +620,7 @@ html.ready .intro-stage {
   .story-intro { padding-inline: 20px; }
   .story-intro > div > div:last-child { justify-content: flex-end; }
   .story-intro p { max-width: none; }
-  .story-intro { background: linear-gradient(transparent, rgb(251 248 243 / 0.96) 25%); padding-top: 24px; }
+  .story-intro { padding-top: 24px; }
   .editorial .eyebrow { font-size: 11px; }
   .editorial .app-card .eyebrow { font-size: 11px; }
 }
