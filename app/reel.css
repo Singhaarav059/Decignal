@@ -72,9 +72,13 @@ html {
 .r-ask-body {
   opacity: var(--in, 1);
 }
+/* Copy faded out with its shot can't be clicked, but stays in the tab order: focusing it brings
+   its section back on screen (see the focus handler in Reel.tsx). */
 .r-sec[data-away="true"] > .r-pin,
-.r-sec[data-away="true"] .r-hero-copy {
-  visibility: hidden;
+.r-sec[data-away="true"] > .r-pin *,
+.r-sec[data-away="true"] .r-hero-copy,
+.r-sec[data-away="true"] .r-hero-copy * {
+  pointer-events: none;
 }
 .r-pin {
   position: sticky;
@@ -452,7 +456,8 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
   top: 0;
   transition: opacity var(--dur-4) var(--ease);
 }
-.r-pin-tag[data-on="false"] {
+.r-pin-tag[data-on="false"],
+.r-pin-tag[data-blocked="true"] {
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--dur-4) var(--ease), visibility 0s linear var(--dur-4);
@@ -461,7 +466,7 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
   position: absolute;
   bottom: calc(14px + var(--dy, 0px));
   left: 0;
-  transform: translateX(calc(-50% + var(--dx, 0px)));
+  transform: translateX(calc(-50% + var(--dx, 0px) + var(--sx, 0px)));
   display: grid;
   gap: 1px;
   width: max-content;
@@ -479,7 +484,7 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
 .r-pin-card::after {
   content: "";
   position: absolute;
-  left: calc(50% - var(--dx, 0px));
+  left: calc(50% - var(--dx, 0px) - var(--sx, 0px));
   top: 100%;
   width: 1px;
   height: calc(14px + var(--dy, 0px));
@@ -488,7 +493,7 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
 .r-pin-card::before {
   content: "";
   position: absolute;
-  left: calc(50% - var(--dx, 0px) - 3px);
+  left: calc(50% - var(--dx, 0px) - var(--sx, 0px) - 3px);
   top: calc(100% + 12px + var(--dy, 0px));
   width: 7px;
   height: 7px;
@@ -1058,6 +1063,16 @@ html[data-reel-at="ask"] .r-nav .r-btn-dark {
 .r-field select:focus,
 .r-field textarea:focus {
   outline: none;
+}
+.r-field input:focus-visible,
+.r-field select:focus-visible,
+.r-field textarea:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.85);
+  outline-offset: 2px;
+}
+.r-field input:focus,
+.r-field select:focus,
+.r-field textarea:focus {
   border-color: rgb(255 255 255 / 0.6);
   background: rgb(255 255 255 / 0.12);
 }
@@ -2337,6 +2352,10 @@ text.r-chart-land {
   }
   .r-outcomes-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* The three results take the bottom edge here, where the note would sit under them (as on phones) */
+  #outcomes .r-pin > .r-note {
+    display: none;
   }
 }
 
@@ -4822,5 +4841,39 @@ html[data-reel-at="ask"] .r-peek .r-btn-dark {
   }
   .r-balance b {
     font-size: 17px;
+  }
+}
+
+/* Short laptop screens: the industry panel drops its intro line and tightens, so it fits the height */
+@media (min-width: 1101px) and (max-height: 760px) {
+  #industries .r-cat-count {
+    display: none;
+  }
+  #industries .r-cat-lead {
+    margin-top: 4px;
+  }
+  #industries .r-ind-caps {
+    margin-top: 8px;
+  }
+}
+
+/* Short laptop screens: the systems card sheds its promise line and the island sits lower, so all
+   six system tags clear the card */
+@media (min-width: 1101px) and (max-height: 760px) {
+  [data-reel="systems"] .r-promises {
+    display: none;
+  }
+  [data-reel="systems"] .r-head {
+    padding-top: var(--sp-4);
+    padding-bottom: var(--sp-4);
+  }
+  [data-reel="systems"] .r-title {
+    font-size: 2.6rem;
+  }
+  [data-reel="systems"] .r-trio {
+    margin-top: 12px;
+  }
+  .r-frame-sys {
+    top: 70%;
   }
 }

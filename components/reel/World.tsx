@@ -835,7 +835,25 @@ const PINS: Record<string, PinSpec> = {
 };
 
 type Placed = { x: number; top: number; bottom: number; w: number };
+
+/**
+ * The copy on screen that tags must never cover: the nav and the panels of the section that is
+ * showing. Read a few times a second (the panels sit still while their shot holds), never per frame.
+ */
+const COVERS = ".r-nav-links, .r-nav-actions, .r-nav-logo, .r-sec:not([data-away='true']) > .r-pin :is(.r-head, .r-panel, .r-catalogue, .r-facts, .r-demo), .r-sec:not([data-away='true']) .r-hero-copy > *";
+let covers: DOMRect[] = [];
+let coversAge = 0;
+function readCovers() {
+  if (--coversAge > 0) return;
+  coversAge = 20;
+  covers = [...document.querySelectorAll<HTMLElement>(COVERS)]
+    .filter((e) => Number(e.closest<HTMLElement>("[data-reel]")?.dataset.in ?? 1) > 0.5)
+    .map((e) => e.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.bottom > 0 && r.top < view.h);
+}
+const covered = (l: number, t: number, r: number, b: number) => covers.some((c) => l < c.right + 6 && r > c.left - 6 && t < c.bottom + 6 && b > c.top - 6);
 const lift = new WeakMap<HTMLElement, number>();
+const slide = new WeakMap<HTMLElement, number>();
 
 /**
  * Tags never cover each other: the lowest tag on screen stays on its place, and any tag that would
@@ -861,12 +879,42 @@ function declutter(items: { el: HTMLElement; x: number; y: number }[], dt: numbe
       want += bottom - (hit.top - 6);
     }
     want = Math.min(want, 160);
+    // Lifted onto the copy: look for the nearest free spot with a smaller lift and a sideways slide.
+    let sx = 0;
+    if (want > 0 && covered(cx - w / 2, it.y - 14 - want - h, cx + w / 2, it.y - 14 - want)) {
+      const free = (x: number, b: number) =>
+        x - w / 2 > 12 && x + w / 2 < view.w - 12 && !covered(x - w / 2, b - h, x + w / 2, b) && !placed.some((p) => Math.abs(p.x - x) < (p.w + w) / 2 + 6 && b - h < p.bottom + 6 && b > p.top - 6);
+      let best = Infinity;
+      for (let l = 0; l <= want; l += 10) {
+        for (let k = 0; k <= w; k += 12) {
+          for (const x of k ? [cx + k, cx - k] : [cx]) {
+            const cost = Math.abs(x - cx) + l * 1.5;
+            if (cost < best && free(x, it.y - 14 - l)) {
+              best = cost;
+              sx = x - cx;
+              want = l;
+            }
+          }
+        }
+      }
+    }
     const prev = lift.get(it.el) ?? want;
     const dy = THREE.MathUtils.damp(prev, want, 10, dt);
     lift.set(it.el, dy);
     setVar(card, "--dy", `${dy.toFixed(1)}px`);
+    const prevX = slide.get(it.el) ?? sx;
+    const ds = THREE.MathUtils.damp(prevX, sx, 10, dt);
+    slide.set(it.el, ds);
+    setVar(card, "--sx", `${ds.toFixed(1)}px`);
+    const x = cx + sx;
     const bottom = it.y - 14 - want;
-    placed.push({ x: cx, top: bottom - h, bottom, w });
+    // A tag that would land on the copy steps aside until its place moves clear.
+    // One being read stays put, even once it has opened over the copy.
+    const reading = it.el.dataset.hl === "true" || card.matches(":hover, :focus-within");
+    const block = String(!reading && covered(x - w / 2, bottom - h, x + w / 2, bottom));
+    if (it.el.dataset.blocked !== block) it.el.dataset.blocked = block;
+    if (block === "true") continue;
+    placed.push({ x, top: bottom - h, bottom, w });
   }
 }
 
@@ -888,6 +936,7 @@ function Pins() {
       const card = el.firstElementChild;
       if (el.dataset.on === "true" && card && (cardSize.get(card)?.w ?? 0) > 0) shown.push({ el, x: pinAt.x, y: pinAt.y });
     }
+    readCovers();
     declutter(shown, dt);
   });
   return null;

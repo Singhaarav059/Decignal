@@ -232,6 +232,19 @@ export function Reel() {
     };
   }, []);
 
+  // Keyboard: focusing copy whose shot is not on screen brings that section's shot in, so tabbing
+  // walks the story section by section instead of into faded copy.
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      const sec = (e.target as Element | null)?.closest?.<HTMLElement>("[data-reel]");
+      if (!sec || Number(sec.dataset.in ?? 1) > 0.9) return;
+      const i = SECTIONS.indexOf(sec.dataset.reel as (typeof SECTIONS)[number]);
+      if (i >= 0) scrollToTarget(anchorOf(i, i === S.signal ? 0.05 : 0), true);
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, []);
+
   // Once the night page scrolls up under the nav, the nav gets a solid band so the two never collide.
   useEffect(() => {
     const body = document.querySelector(".r-ask-body");

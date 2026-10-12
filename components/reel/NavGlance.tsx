@@ -150,6 +150,7 @@ export function NavGlance({
             data-from={id === shown ? undefined : GLANCE_ORDER.indexOf(id) < GLANCE_ORDER.indexOf(shown) ? "left" : "right"}
             style={{ ["--dir" as string]: dir }}
             aria-hidden={id !== shown}
+            inert={id !== shown}
           >
             <div key={id === shown ? `${id}-${epoch}` : id} className="r-peek-in">
               {id === "story" && <StoryGlance act={act} actions={actions} section={section} live={open === "story"} />}

@@ -61,7 +61,14 @@ export function ReelNav({ section, actions }: { section: number; actions: Glance
   }, [peek]);
 
   return (
-    <nav className="r-nav" data-open={open} data-peek={peek ?? undefined} aria-label="Main">
+    <nav
+      className="r-nav"
+      data-open={open}
+      data-peek={peek ?? undefined}
+      aria-label="Main"
+      // Tabbing on past the links and their glance closes it, so focus never walks a hidden panel.
+      onFocus={(e) => peek && !(e.target as Element).closest(".r-nav-links, #r-peek") && hide(0)}
+    >
       <a href="#" className="r-nav-logo" onClick={(e) => (e.preventDefault(), scrollToTarget(0))} aria-label="Decignal, back to top">
         <Logo size={22} />
       </a>
