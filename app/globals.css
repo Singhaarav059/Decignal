@@ -418,7 +418,6 @@ html.ready .intro-stage {
   padding: 16px 18px 12px;
   border-radius: 14px;
   border: 1px solid var(--color-line);
-  border-top: 2px solid var(--tone, var(--color-ink));
   background: var(--color-paper);
   box-shadow: 0 1px 2px rgb(20 19 15 / 0.05), 0 18px 44px -22px rgb(20 19 15 / 0.32);
   opacity: 0;
@@ -663,9 +662,11 @@ html.ready .intro-stage {
 .application-chapter-bar { position: absolute; top: 82px; left: 5%; right: 5%; z-index: 5; display: flex; border-bottom: 1px solid var(--color-line); overflow-x: auto; scrollbar-width: none; }
 .application-chapter-bar button { flex: 1; position: relative; display: flex; gap: 9px; align-items: center; padding: 12px 10px; white-space: nowrap; font-size: 12.5px; font-weight: 550; color: var(--color-ink-soft); transition: color 300ms; }
 .application-chapter-bar button span { font: 11px var(--font-mono); font-weight: 600; opacity: .7; }
-.application-chapter-bar button i { position: absolute; bottom: 0; left: 10px; right: 10px; height: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; transition: transform 450ms var(--ease-out-expo); }
-.application-chapter-bar button[aria-current] { color: var(--color-ink); font-weight: 650; }
-.application-chapter-bar button[aria-current] i { transform: scaleX(1); }
+.application-chapter-bar button i { display: none; }
+.application-chapter-bar button { border-radius: 99px; transition: color 300ms, background-color 300ms; }
+.application-chapter-bar button[aria-current] { color: #fff; font-weight: 650; background: var(--tone); }
+.application-chapter-bar { padding-bottom: 6px; justify-content: space-between; }
+.application-chapter-bar button { flex: 0 1 auto; }
 .application-chapter-bar button:hover { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
 
 .application-copy { position: absolute; z-index: 2; left: 5%; top: 16%; width: 31%; max-width: 440px; animation: applicationResolve 600ms var(--ease-out-expo) both; }
@@ -673,11 +674,10 @@ html.ready .intro-stage {
 .application-copy h3 { margin-top: 10px; font-size: clamp(26px,2.8vw,42px); line-height: 1.08; font-weight: 650; }
 .application-copy h3 em { font-style: normal; }
 .application-summary { margin-top: 8px; font-size: 13px; color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); font-weight: 600; }
-.application-phase-nav { display: flex; margin-top: 16px; border-bottom: 1px solid var(--color-line); gap: 18px; }
-.application-phase-nav button { padding: 0 0 8px; display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 550; color: var(--color-ink-soft); position: relative; }
+.application-phase-nav { display: flex; margin-top: 16px; gap: 4px; }
+.application-phase-nav button { padding: 5px 11px; border-radius: 99px; display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 550; color: var(--color-ink-soft); position: relative; }
 .application-phase-nav button span { font: 11px var(--font-mono); font-weight: 600; opacity: .75; }
-.application-phase-nav button[aria-current] { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); font-weight: 650; }
-.application-phase-nav button[aria-current]::after { content: ''; position: absolute; height: 2px; background: var(--tone); bottom: -1px; left: 0; right: 0; }
+.application-phase-nav button[aria-current] { color: #fff; font-weight: 650; background: var(--tone); }
 .application-narrative { margin-top: 12px; min-height: 72px; animation: applicationResolve 500ms var(--ease-out-expo) both; }
 .application-narrative > .spec-label { font-size: 11px; font-weight: 600; color: var(--color-ink-soft); letter-spacing: 0.08em; }
 .application-narrative p { font-size: 15px; line-height: 1.5; max-width: 36ch; margin-top: 6px; font-weight: 500; color: var(--color-ink-2); letter-spacing: -.016em; }
@@ -726,7 +726,7 @@ html.ready .intro-stage {
   .application-chapter-bar button { flex: none; padding: 11px 10px; font-size: 11.5px; }
   .application-copy { left: 4%; top: 18%; width: 34%; }
   .application-copy h3 { font-size: 26px; }
-  .application-phase-nav { gap: 14px; margin-top: 14px; }
+  .application-phase-nav { margin-top: 14px; }
   .application-narrative p { font-size: 13.5px; }
   .application-world { left: 38%; right: 2%; top: 16%; height: 42%; }
   .operation-readout { left: 38%; right: 2%; top: 60%; bottom: 4.5%; padding: 10px 14px; }
@@ -739,8 +739,8 @@ html.ready .intro-stage {
   .application-copy { top: max(13%, 132px); left: 5%; width: 90%; max-width: none; }
   .application-copy h3 { font-size: clamp(24px,4.2vw,32px); margin-top: 8px; }
   .application-summary { margin-top: 6px; font-size: 11.5px; }
-  .application-phase-nav { margin-top: 12px; gap: 16px; }
-  .application-phase-nav button { padding-bottom: 6px; font-size: 11px; }
+  .application-phase-nav { margin-top: 12px; }
+  .application-phase-nav button { padding: 4px 9px; font-size: 11px; }
   .application-narrative { margin-top: 8px; min-height: 48px; }
   .application-narrative > .spec-label, .application-measure, .application-sources { display: none; }
   .application-narrative p { font-size: 13px; max-width: 50ch; margin-top: 0; line-height: 1.45; }
@@ -997,16 +997,14 @@ html.ready .intro-stage {
 @property --tone { syntax: '<color>'; inherits: true; initial-value: #2f5bff; }
 .application-journey { transition: --tone var(--dur-3) var(--ease); }
 .operation-readout { border-color: var(--color-line); background: rgb(255 253 249 / 0.94); }
-.operation-readout::before { content: ''; position: absolute; left: 18px; right: 18px; top: 0; height: 2px; border-radius: 0 0 2px 2px; background: var(--tone); opacity: .7; }
 .application-chapter-bar button span, .application-progress > span:first-child { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); }
+.application-chapter-bar button[aria-current] span { color: #fff; }
 /* Every chart draws in on chapter mount and again when a later stage adds its stroke. */
 @keyframes evidenceDrawIn { from { stroke-dashoffset: 800; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
 .evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: evidenceDrawIn 900ms var(--ease-out-quint) both; }
 /* Readings: the one matching the current stage (signal / evidence / action) is lifted. */
 .evidence-reading { position: relative; transition: background-color var(--dur-3) var(--ease); }
-.evidence-reading::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-3) var(--ease); }
 .evidence-reading[data-active] { background: rgb(20 19 15 / .04); }
-.evidence-reading[data-active]::after { transform: scaleX(1); }
 .evidence-reading-label { display: block; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Legible labels: >= 11px wherever the layout has room. */
 .evidence-heading .spec-label { font-size: 11px; }
@@ -1025,8 +1023,7 @@ html.ready .intro-stage {
   .evidence-heading .spec-label, .evidence-state { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .application-journey, .evidence-reading, .evidence-reading::after { transition: none; }
-  .evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: none; stroke-dashoffset: 0; opacity: 1; }
+  .application-journey, .evidence-reading,   .evidence-draw:not(.interactive-draw), .evidence-draw.interactive-draw.is-drawn { animation: none; stroke-dashoffset: 0; opacity: 1; }
 }
 
 /* ---- OUTCOMES pass ---- */
@@ -2057,7 +2054,7 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
 .layer-readout-steps button { position: relative; display: grid; gap: 1px; width: 100%; padding: 6px 2px 8px; text-align: left; font-size: 11px; font-weight: 600; color: var(--color-ink-soft); transition: color var(--dur-2) var(--ease); }
 .layer-readout-steps button span { font: 600 11px var(--font-mono); opacity: .8; }
 .layer-readout-steps button::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--color-line-strong); }
-.layer-readout-steps button i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--tone); transform: scaleX(0); transform-origin: left; }
+.layer-readout-steps button i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--color-ink); transform: scaleX(0); transform-origin: left; }
 .layer-readout-steps button[aria-current] { color: var(--color-ink); }
 .layer-readout-steps button[aria-current] span { color: color-mix(in oklab, var(--tone) 66%, var(--color-ink)); opacity: 1; }
 .layer-readout-steps button[aria-current] i { animation: layer-fill var(--step) linear forwards; }

@@ -374,7 +374,7 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
 
       {/* Decision Impact Metric Cards (matching Decision section's 3-column card) */}
       {demo?.readings && (
-        <dl className="evidence-metrics mt-2 grid grid-cols-3 divide-x divide-line overflow-hidden rounded-xl border border-line bg-paper/90 text-left shadow-[0_2px_8px_-4px_rgba(20,19,15,0.06)]">
+        <dl className="evidence-metrics mt-2 grid grid-cols-3 divide-x divide-line overflow-hidden rounded-xl border border-line bg-paper/90 text-left">
           {demo.readings.map(([k, v], i) => (
             <div key={k} className="evidence-reading min-w-0 px-2.5 py-1.5 md:px-3" data-active={i === step || undefined}>
               <dt className="eyebrow evidence-reading-label text-ink-soft leading-none">{k}</dt>
