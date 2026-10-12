@@ -162,7 +162,6 @@ export function SystemsRibbon() {
 
   return (
     <div ref={stage} className="ribbon-stage">
-      <div className="ribbon-backdrop" aria-hidden />
       <svg ref={guide} className="ribbon-guide" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden>
         <path ref={path} d="M -60 418 C 220 418, 330 330, 520 230 S 860 60, 1060 40" />
       </svg>
