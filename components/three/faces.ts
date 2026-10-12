@@ -58,7 +58,7 @@ function pill(c: C, text: string, xRight: number, y: number, color: string, fill
   const w = c.measureText(text).width + 84;
   const x = xRight - w;
   rr(c, x, y - 40, w, 64, 32);
-  c.fillStyle = filled ? color : hexA(color, 0.12);
+  c.fillStyle = filled ? color : BG2;
   c.fill();
   c.fillStyle = filled ? "#fff" : color;
   c.beginPath();
@@ -98,10 +98,6 @@ function title(c: C, text: string, y: number, size = 92, color = INK, maxW = FAC
 }
 
 function check(c: C, x: number, y: number, color: string) {
-  c.fillStyle = hexA(color, 0.14);
-  c.beginPath();
-  c.arc(x, y, 26, 0, Math.PI * 2);
-  c.fill();
   c.strokeStyle = color;
   c.lineWidth = 6;
   c.lineCap = "round";
@@ -479,7 +475,7 @@ function fnLedger(c: C, tone: string) {
     const y = FN_TOP - 30 + i * 84;
     if (hold) {
       rr(c, 70, y - 8, FACE_W - 140, 72, 18);
-      c.fillStyle = hexA(tone, 0.1);
+      c.fillStyle = BG2;
       c.fill();
     }
     font(c, 30, 500, true);

@@ -17,7 +17,7 @@ const STATUS: Record<DemoKind, [string, string, string]> = {
 function Tick({ x, y, ok }: { x: number; y: number; ok: boolean }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <circle r="7" fill={ok ? "var(--color-emerald)" : "var(--color-signal)"} fillOpacity=".14" />
+      <circle r="7" fill="#fff" stroke={ok ? "var(--color-emerald)" : "var(--color-signal)"} strokeWidth="1.2" />
       <path
         d={ok ? "M-3 0l2 2 4-5" : "M-3 0h6"}
         stroke={ok ? "var(--color-emerald)" : "var(--color-signal)"}
@@ -313,7 +313,7 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
                   {step >= 1 && (
                     <line x1={x + 9} y1={y + 11} x2="290" y2="40" stroke="var(--tone)" strokeOpacity="0.28" strokeDasharray="2 2" />
                   )}
-                  <rect x={x} y={y} width="20" height="23" rx="2.5" fill="var(--tone)" fillOpacity="0.14" stroke="var(--tone)" strokeOpacity="0.55" />
+                  <rect x={x} y={y} width="20" height="23" rx="2.5" fill="#fff" stroke="var(--tone)" strokeOpacity="0.55" />
                   <line x1={x + 3} y1={y + 6} x2={x + 14} y2={y + 6} stroke="var(--tone)" strokeOpacity="0.6" />
                   <line x1={x + 3} y1={y + 11} x2={x + 10} y2={y + 11} stroke="var(--tone)" strokeOpacity="0.6" />
                 </g>
@@ -321,7 +321,7 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
             })}
             <g transform="translate(290, 40)">
               <circle r="26" fill="none" stroke={step >= 1 ? "var(--color-pink)" : "var(--color-line-strong)"} strokeWidth="1.5" strokeDasharray={step >= 1 ? undefined : "3 3"} style={{ transition: "all 400ms ease" }} />
-              <circle r="14" fill="var(--color-pink)" fillOpacity="0.15" stroke="var(--color-pink)" strokeWidth="1.5" />
+              <circle r="14" fill="#fff" stroke="var(--color-pink)" strokeWidth="1.5" />
               <circle r="7" fill="none" stroke="var(--color-pink)" strokeWidth="1.4" />
               <circle r="2.5" fill="var(--color-pink)" />
               <text x="0" y="38" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="var(--color-ink)">BEARING X90</text>
@@ -329,7 +329,7 @@ export function OperationEvidence({ kind, step }: { kind: DemoKind; step: number
             <path d="M 320 40 H 424" className={`chart-action evidence-draw interactive-draw ${done ? "is-drawn" : ""}`} strokeWidth="2" />
             {done && (
               <g transform="translate(440, 40)">
-                <circle r="13" fill="var(--color-emerald)" fillOpacity="0.15" stroke="var(--color-emerald)" strokeWidth="1.5" />
+                <circle r="13" fill="#fff" stroke="var(--color-emerald)" strokeWidth="1.5" />
                 <path d="M -4 0 L -1 3 L 5 -3" fill="none" stroke="var(--color-emerald)" strokeWidth="1.8" />
                 <text x="0" y="24" textAnchor="middle" fontSize="7.5" fontWeight="600" fill="var(--color-emerald)">ONE ESCALATION</text>
               </g>
