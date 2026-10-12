@@ -8,18 +8,18 @@ import { scrollToTarget } from "../SmoothScroll";
 import { LogoMark } from "../ui/Logo";
 import { Arrow } from "../ui/Arrow";
 import { showArea } from "./GrowlioSections";
-import { ArrowUp, ArrowUpRight, LayoutGrid, MessageCircleQuestion, Route, Sparkles, TrendingUp, type LucideIcon } from "lucide-react";
+import { ArrowUp, ArrowUpRight } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const STRATA = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
 
-/** Each section of the page as a card: its colour, what it holds, and a way in. */
-const NAV: { label: string; href: string; tone: string; Icon: LucideIcon; blurb: string }[] = [
-  { label: "Applications", href: "#applications", tone: "cobalt", Icon: LayoutGrid, blurb: "Eight applications across five business areas" },
-  { label: "Outcomes", href: "#outcomes", tone: "emerald", Icon: TrendingUp, blurb: "What changed, measured in three operations" },
-  { label: "How it works", href: "#how", tone: "violet", Icon: Route, blurb: "One decision first, live in weeks" },
-  { label: "Questions", href: "#faq", tone: "tangerine", Icon: MessageCircleQuestion, blurb: "What enterprise teams ask first" },
+/** Each section of the page as a ruled row: its number in the section colour, what it holds, a way in. */
+const NAV: { label: string; href: string; tone: string; blurb: string }[] = [
+  { label: "Applications", href: "#applications", tone: "cobalt", blurb: "Eight applications across five business areas" },
+  { label: "Outcomes", href: "#outcomes", tone: "emerald", blurb: "What changed, measured in three operations" },
+  { label: "How it works", href: "#how", tone: "violet", blurb: "One decision first, live in weeks" },
+  { label: "Questions", href: "#faq", tone: "tangerine", blurb: "What enterprise teams ask first" },
 ];
 
 export function Footer() {
@@ -115,10 +115,9 @@ export function Footer() {
           <nav aria-label="Footer" className="footer-nav">
             <p className="eyebrow">Explore</p>
             <ul className="footer-cards mt-4">
-              {NAV.map(({ label, href, tone, Icon, blurb }, i) => (
+              {NAV.map(({ label, href, tone, blurb }, i) => (
                 <li key={href} style={{ ["--tone" as string]: `var(--color-${tone})` }}>
                   <button onClick={() => scrollToTarget(href)} className="footer-card">
-                    <span className="footer-card-icon" aria-hidden><Icon size={18} strokeWidth={2} /></span>
                     <span className="footer-card-n tabular" aria-hidden>0{i + 1}</span>
                     <strong>{label}</strong>
                     <small>{blurb}</small>
@@ -126,13 +125,11 @@ export function Footer() {
                   </button>
                 </li>
               ))}
-              <li className="footer-cards-wide" style={{ ["--tone" as string]: "var(--color-saffron)" }}>
-                <button onClick={() => scrollToTarget("#audit")} className="footer-card footer-card-audit">
-                  <span className="footer-card-icon" aria-hidden><Sparkles size={18} strokeWidth={2} /></span>
-                  <span>
-                    <strong>Free AI audit</strong>
-                    <small>30 minutes on one decision in your operation. No commitment.</small>
-                  </span>
+              <li style={{ ["--tone" as string]: "var(--color-saffron)" }}>
+                <button onClick={() => scrollToTarget("#audit")} className="footer-card">
+                  <span className="footer-card-n tabular" aria-hidden>05</span>
+                  <strong>Free AI audit</strong>
+                  <small>30 minutes on one decision in your operation. No commitment.</small>
                   <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
                 </button>
               </li>

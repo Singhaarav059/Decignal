@@ -6,7 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { APPLICATIONS, CATEGORIES, CATEGORY_TONE, FAQ, OUTCOMES, PATHS } from "@/lib/content";
 import { SystemsRibbon } from "./SystemsRibbon";
 import { OUTCOME_FILL, OutcomeGraphic } from "./OutcomeGraphic";
-import { AreaStack, GlanceCards, PipelineStrip, Roadmap, showArea } from "./GrowlioSections";
+import { AreaStack, GlanceList, PipelineStrip, Roadmap, showArea } from "./GrowlioSections";
 import { Audit } from "./Audit";
 import { Footer } from "./Footer";
 import { ApplicationExplorer } from "./ApplicationExplorer";
@@ -14,7 +14,6 @@ import { CountUp } from "../ui/CountUp";
 import { scrollToTarget } from "../SmoothScroll";
 import { onOutcome, onQuestion } from "@/lib/jump";
 import { isPhone } from "@/lib/device";
-import { Bot, CalendarClock, CircleCheck, Database, KeyRound, Layers, Lock, MessageCircle, Plug, ScanSearch, ShieldCheck, Target, type LucideIcon } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -129,9 +128,9 @@ export function Editorial() {
 /* ------------------------------------------------------------------ */
 
 const CONNECT_STEPS = [
-  { Icon: Plug, t: "Connect", d: "Read-only links to what you run", c: "cobalt" },
-  { Icon: ScanSearch, t: "Read", d: "Live context, refreshed in minutes", c: "violet" },
-  { Icon: CircleCheck, t: "Recommend", d: "One action, sent for approval", c: "emerald" },
+  { t: "Connect", d: "Read-only links to what you run", c: "cobalt" },
+  { t: "Read", d: "Live context, refreshed in minutes", c: "violet" },
+  { t: "Recommend", d: "One action, sent for approval", c: "emerald" },
 ];
 
 function Systems() {
@@ -149,9 +148,8 @@ function Systems() {
           ))}
         </ul>
         <ol className="connect-steps">
-          {CONNECT_STEPS.map(({ Icon, t, d, c }, i) => (
+          {CONNECT_STEPS.map(({ t, d, c }, i) => (
             <li key={t} style={{ ["--tone" as string]: `var(--color-${c})` }}>
-              <span className="connect-icon"><Icon size={17} strokeWidth={2} /></span>
               <span className="connect-n tabular">0{i + 1}</span>
               <strong>{t}</strong>
               <span>{d}</span>
@@ -245,7 +243,7 @@ function Outcomes() {
           <p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption></div>
         </figure>)}
       </div>
-      <GlanceCards />
+      <GlanceList />
     </div>
     <p className="results-note">Illustrative decisions from the scenes above. Deployment results are measured against your own baseline.</p>
   </section>;
@@ -282,15 +280,15 @@ function HowItWorks() {
 
 /* ------------------------------------------------------------------ */
 
-const FAQ_META: { Icon: LucideIcon; topic: string; tone: string }[] = [
-  { Icon: Layers, topic: "Integration", tone: "cobalt" },
-  { Icon: Database, topic: "Data", tone: "saffron" },
-  { Icon: Lock, topic: "Security", tone: "violet" },
-  { Icon: Bot, topic: "Automation", tone: "emerald" },
-  { Icon: ShieldCheck, topic: "Control", tone: "tangerine" },
-  { Icon: KeyRound, topic: "Ownership", tone: "pink" },
-  { Icon: Target, topic: "Getting started", tone: "cobalt" },
-  { Icon: CalendarClock, topic: "Timeline", tone: "emerald" },
+const FAQ_META: { topic: string; tone: string }[] = [
+  { topic: "Integration", tone: "cobalt" },
+  { topic: "Data", tone: "saffron" },
+  { topic: "Security", tone: "violet" },
+  { topic: "Automation", tone: "emerald" },
+  { topic: "Control", tone: "tangerine" },
+  { topic: "Ownership", tone: "pink" },
+  { topic: "Getting started", tone: "cobalt" },
+  { topic: "Timeline", tone: "emerald" },
 ];
 
 function Faq() {
@@ -309,10 +307,6 @@ function Faq() {
             <Lines lines={["Questions enterprise", <>teams <em className="spectrum-text">ask first.</em></>]} />
           </h2>
           <div className="faq-help">
-            <div className="faq-help-art" aria-hidden>
-              {["cobalt", "violet", "emerald"].map((t, i) => <span key={t} style={{ ["--tone" as string]: `var(--color-${t})`, ["--i" as string]: i }}>{["RK", "AM", "SN"][i]}</span>)}
-              <i><MessageCircle size={15} /></i>
-            </div>
             <p className="faq-help-title">Still have a question?</p>
             <p className="faq-help-text">Bring it to the free 30-minute audit.</p>
             <button
@@ -331,11 +325,11 @@ function Faq() {
       <ul className="faq-list">
         {FAQ.map((f, i) => {
           const on = open === i;
-          const { Icon, topic, tone } = FAQ_META[i];
+          const { topic, tone } = FAQ_META[i];
           return (
             <li key={f.q} className="faq-item" data-open={on || undefined} style={{ ["--tone" as string]: `var(--color-${tone})` }}>
               <button id={`faq-q-${i}`} onClick={() => setOpen(on ? null : i)} aria-expanded={on} aria-controls={`faq-a-${i}`} className="faq-q">
-                <span className="faq-icon"><Icon size={18} /></span>
+                <span className="faq-n tabular" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
                 <span className="faq-q-text">
                   <span className="sr-only">{topic}: </span>
                   <span className="faq-q-title">{f.q}</span>

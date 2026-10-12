@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { onStep } from "@/lib/jump";
-import { Check, Clock, Database, Factory, FileSearch, Globe, Network, Radar, Scale, ShieldCheck, Sparkles, TrendingUp, Truck, Users, Warehouse } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { APPLICATIONS, CATEGORY_TONE, PATHS } from "@/lib/content";
 import { scrollToTarget } from "../SmoothScroll";
@@ -88,25 +88,24 @@ export function AreaStack() {
 /* ------------------------------------------------------------------ */
 
 const PIPELINE = [
-  { Icon: Radar, step: "Signal", ex: "Bearing X90 short at Plant 01", tone: "signal" },
-  { Icon: FileSearch, step: "Evidence", ex: "Open orders up 18% in 3 weeks", tone: "violet" },
-  { Icon: Network, step: "Context", ex: "Plant 02 holds 240 spare units", tone: "saffron" },
-  { Icon: Scale, step: "Policy", ex: "Max 300 units per transfer", tone: "cobalt" },
-  { Icon: Sparkles, step: "Decision", ex: "Transfer 240 units today", tone: "emerald" },
-  { Icon: ShieldCheck, step: "Approval", ex: "Planner approves at 09:42", tone: "tangerine" },
-  { Icon: TrendingUp, step: "Result", ex: "Lands 4 days before the breach", tone: "pink" },
+  { step: "Signal", ex: "Bearing X90 short at Plant 01", tone: "signal" },
+  { step: "Evidence", ex: "Open orders up 18% in 3 weeks", tone: "violet" },
+  { step: "Context", ex: "Plant 02 holds 240 spare units", tone: "saffron" },
+  { step: "Policy", ex: "Max 300 units per transfer", tone: "cobalt" },
+  { step: "Decision", ex: "Transfer 240 units today", tone: "emerald" },
+  { step: "Approval", ex: "Planner approves at 09:42", tone: "tangerine" },
+  { step: "Result", ex: "Lands 4 days before the breach", tone: "pink" },
 ];
 
-/** The pipeline as a moving strip of illustrated steps, each carrying the running example. */
+/** The pipeline as a moving strip of steps, each carrying the running example. */
 export function PipelineStrip() {
   const row = [...PIPELINE, ...PIPELINE];
   return (
     <section className="pipeline-strip" aria-label="How one decision moves: signal, evidence, context, policy, decision, approval, result">
       <div className="fade-x overflow-hidden py-3">
         <ol className="marquee" style={{ ["--marquee-speed" as string]: "60s" }} aria-hidden>
-          {row.map(({ Icon, step, ex, tone }, i) => (
+          {row.map(({ step, ex, tone }, i) => (
             <li key={i} className="pipe-step" style={{ ["--tone" as string]: `var(--color-${tone})` }}>
-              <span className="pipe-icon"><Icon size={20} strokeWidth={2} /></span>
               <span className="pipe-text">
                 <span className="pipe-n tabular">{String((i % PIPELINE.length) + 1).padStart(2, "0")}</span>
                 <strong>{step}</strong>
@@ -123,73 +122,31 @@ export function PipelineStrip() {
 
 /* ------------------------------------------------------------------ */
 
-/** Decignal in figures, each figure with its own small picture and a sentence that explains it.
- *  Rendered as loose tiles so the outcome board can lay them out around the case card. */
-export function GlanceCards() {
+/** Decignal in figures, each with what it counts and a sentence that explains it. */
+const GLANCE: { n: React.ReactNode; aria?: string; label: string; text: string; tone: string }[] = [
+  { n: "0", label: "systems replaced", text: "Decignal reads the ERP, MES, CRM and WMS you already run, read-only to start.", tone: "cobalt" },
+  { n: <>4<span className="glance-dash" aria-hidden>–</span>8<small> wks</small></>, aria: "4 to 8 weeks", label: "to the first release", text: "From the catalogue. A custom application takes 6 to 12 weeks.", tone: "emerald" },
+  { n: "8", label: "ready applications", text: "Inventory to finance, each fitted to your systems and policies.", tone: "saffron" },
+  { n: "5", label: "business areas", text: "Supply chain, operations, commercial, customer, finance and risk.", tone: "violet" },
+  { n: "1", label: "named approver per action", text: "Human approval can always be required. You set roles and thresholds.", tone: "tangerine" },
+];
+
+/** The figures as a ruled spec sheet: a number, what it counts, one sentence of proof. */
+export function GlanceList() {
   return (
-    <>
-      <article className="glance-card glance-wide g-systems" style={{ ["--tone" as string]: "var(--color-cobalt)" }}>
-        <div>
-          <strong className="glance-num">0</strong>
-          <p className="glance-label">systems replaced</p>
-          <p>Decignal reads the ERP, MES, CRM and WMS you already run, read-only to start.</p>
+    <dl className="glance-list">
+      {GLANCE.map((g) => (
+        <div key={g.label} className="glance-row" style={{ ["--tone" as string]: `var(--color-${g.tone})` }}>
+          <dt>
+            <strong className="glance-num" aria-label={g.aria}>{g.n}</strong>
+            <span className="glance-label">{g.label}</span>
+          </dt>
+          <dd>{g.text}</dd>
         </div>
-        <div className="glance-systems" aria-hidden>
-          {SYS_ART.map(({ Icon, n, t }, i) => (
-            <span key={n} style={{ ["--tone" as string]: `var(--color-${t})`, ["--i" as string]: i }}><Icon size={16} />{n}</span>
-          ))}
-          <b className="glance-hub"><Sparkles size={18} /></b>
-        </div>
-      </article>
-      <article className="glance-card g-weeks" style={{ ["--tone" as string]: "var(--color-emerald)" }}>
-        <strong className="glance-num" aria-label="4 to 8 weeks">4<span className="glance-dash" aria-hidden>–</span>8<small> wks</small></strong>
-        <p className="glance-label">to the first release</p>
-        <div className="glance-timeline" aria-hidden>
-          {Array.from({ length: 12 }, (_, w) => <i key={w} data-on={w >= 3 && w < 8 || undefined} />)}
-          <span style={{ left: "29%" }}>W4</span><span style={{ left: "62%" }}>W8</span>
-        </div>
-        <p>From the catalogue. A custom application takes 6 to 12 weeks.</p>
-      </article>
-      <article className="glance-card g-apps" style={{ ["--tone" as string]: "var(--color-saffron)" }}>
-        <strong className="glance-num">8</strong>
-        <p className="glance-label">ready applications</p>
-        <div className="glance-apps" aria-hidden>
-          {APPLICATIONS.map((a) => <i key={a.name} title={a.name} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[a.category]})` }}><b>{a.name.split(" ").filter((w) => /\w/.test(w)).map((w) => w[0]).join("").slice(0, 2)}</b><span>{a.name}</span></i>)}
-        </div>
-        <p>Inventory to finance, each fitted to your systems and policies.</p>
-      </article>
-      <article className="glance-card glance-side g-areas" style={{ ["--tone" as string]: "var(--color-violet)" }}>
-        <strong className="glance-num">5</strong>
-        <p className="glance-label">business areas</p>
-        <svg className="glance-donut" viewBox="0 0 42 42" aria-hidden>
-          {Object.values(CATEGORY_TONE).map((t, i) => (
-            <circle key={t} r="15.9" cx="21" cy="21" pathLength={100} style={{ stroke: `var(--color-${t})`, strokeDasharray: "18 82", strokeDashoffset: -i * 20 }} />
-          ))}
-        </svg>
-        <p>Supply chain, operations, commercial, customer, finance and risk.</p>
-      </article>
-      <article className="glance-card glance-side g-approver" style={{ ["--tone" as string]: "var(--color-tangerine)" }}>
-        <strong className="glance-num">1</strong>
-        <p className="glance-label">named approver per action</p>
-        <div className="glance-approve" aria-hidden>
-          <span className="glance-avatar">AM</span>
-          <span><b>Transfer 240 units</b><small>Waiting for you</small></span>
-          <span className="glance-btn"><Check size={13} strokeWidth={3} />Approve</span>
-        </div>
-        <p>Human approval can always be required. You set roles and thresholds.</p>
-      </article>
-    </>
+      ))}
+    </dl>
   );
 }
-
-const SYS_ART = [
-  { Icon: Database, n: "ERP", t: "cobalt" },
-  { Icon: Users, n: "CRM", t: "violet" },
-  { Icon: Factory, n: "MES", t: "emerald" },
-  { Icon: Warehouse, n: "WMS", t: "saffron" },
-  { Icon: Truck, n: "Suppliers", t: "tangerine" },
-  { Icon: Globe, n: "External", t: "pink" },
-];
 
 /* ------------------------------------------------------------------ */
 

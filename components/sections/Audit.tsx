@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { CATEGORIES } from "@/lib/content";
 import { Arrow } from "../ui/Arrow";
-import { CalendarCheck, MessagesSquare, Target } from "lucide-react";
 
-const BENEFIT_ICONS = [MessagesSquare, Target, CalendarCheck];
 
 const COUNTRIES = ["India", "Nigeria", "Kenya", "South Africa", "Egypt", "Ghana", "Morocco", "Other"];
 const SYSTEMS = ["SAP", "Oracle", "Microsoft Dynamics", "Salesforce", "Custom / in-house", "Spreadsheets"];
@@ -51,11 +49,8 @@ export function Audit() {
               ["No commitment", "We decide together if the next step makes sense."],
             ].map(([t, d], i) => (
               <li key={t} className="grid grid-cols-[48px_1fr] items-start border-b border-white/25 py-5">
-                <span className="flex size-8 items-center justify-center rounded-xl bg-white/15 text-white" aria-hidden>
-                  {(() => {
-                    const Icon = BENEFIT_ICONS[i];
-                    return <Icon size={16} strokeWidth={2} />;
-                  })()}
+                <span className="audit-benefit-n pt-1.5 font-mono text-[12px] font-semibold text-white/70" aria-hidden>
+                  0{i + 1}
                 </span>
                 <span>
                   <span className="block font-serif text-2xl leading-tight">{t}</span>
@@ -95,7 +90,7 @@ export function Audit() {
             >
               <div className="flex items-baseline justify-between border-b border-line-strong pb-4">
                 <p className="font-serif text-3xl">{step === 1 ? "Tell us about you" : "Your first decision"}</p>
-                <p className="eyebrow tabular">0{step} / 02</p>
+                <p className="eyebrow tabular shrink-0 whitespace-nowrap">0{step} / 02</p>
               </div>
 
               {step === 1 && (
