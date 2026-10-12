@@ -30,7 +30,6 @@ import { ScalePhone } from "./ScalePhone";
 import { scrollToTarget } from "../SmoothScroll";
 import { TONE } from "./chapters";
 import { Arrow } from "../ui/Arrow";
-import { isPhone } from "@/lib/device";
 
 
 
@@ -52,8 +51,6 @@ export function Story() {
     const stock = front.current?.querySelector<HTMLElement>("[data-stock]");
     const finalEl = front.current?.querySelector<HTMLElement>("[data-final]");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // Phones move the copy on opacity and position only: a filter repaints the text every frame.
-    const flat = still || isPhone();
     let lastStock = "";
     // While a system is open, the giant headline steps back so the island and its panel lead.
     const offSelect = onSelect((n) => {
@@ -87,7 +84,6 @@ export function Story() {
         const w = shown(weight(Number(el.dataset.ch), g));
         put(el, "opacity", String(w));
         put(el, "transform", `translate3d(0, ${(1 - w) * 18}px, 0)`);
-        if (!flat) put(el, "filter", w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`);
         put(el, "visibility", w < 0.005 ? "hidden" : "visible");
         if (el.dataset.interactive !== undefined) put(el, "pointer-events", w > 0.6 ? "auto" : "none");
       });
@@ -106,10 +102,9 @@ export function Story() {
       const wi = shown(weight(CH.industries, g));
       indEls.forEach((el) => {
         const k = Number(el.dataset.ind);
-        // One name at a time: the old name clears before the next resolves, never two half-blurred.
+        // One name at a time: the old name clears before the next resolves, never two half-shown.
         const w = wi * smoothstep(0.35, 1, 1 - clamp01(Math.abs(f - k) * 2.4));
         put(el, "opacity", String(w));
-        if (!flat) put(el, "filter", w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`);
         put(el, "transform", `translate3d(0, ${(f - k) * -40}px, 0)`);
         put(el, "visibility", w < 0.005 ? "hidden" : "visible");
       });

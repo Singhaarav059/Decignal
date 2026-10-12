@@ -13,30 +13,24 @@ import { ApplicationExplorer } from "./ApplicationExplorer";
 import { CountUp } from "../ui/CountUp";
 import { scrollToTarget } from "../SmoothScroll";
 import { onOutcome, onQuestion } from "@/lib/jump";
-import { isPhone } from "@/lib/device";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Paragraphs come into focus; headlines rise line by line out of their own masks. */
+/** Paragraphs fade and rise into place; headlines rise line by line out of their own masks. */
 function useReveal() {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!ref.current || reduced()) return;
-    // Phones rise into place without the focus pull: text under a blur filter reads as low quality on a
-    // small screen, and filtering every revealing block made scrolling stutter.
-    const focus = isPhone() ? {} : { filter: "blur(8px)" };
-    const sharp = isPhone() ? {} : { filter: "blur(0px)" };
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
         gsap.fromTo(
           el,
-          { opacity: 0, y: 24, ...focus },
+          { opacity: 0, y: 24 },
           {
             opacity: 1,
             y: 0,
-            ...sharp,
             duration: 1,
             ease: "power3.out",
             scrollTrigger: { trigger: el, start: "top 90%", once: true },
