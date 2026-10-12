@@ -16,7 +16,6 @@ export function IndustryDetail() {
     if (!el) return;
     const blocks = Array.from(el.querySelectorAll<HTMLElement>("[data-ind-detail]"));
     const items = Array.from(el.querySelectorAll<HTMLElement>("[data-ind-item]"));
-    const bar = el.querySelector<HTMLElement>("[data-ind-bar]");
     let last = -1;
     return subscribe((g) => {
       const f = industryF(localIn(CH.industries, g));
@@ -26,16 +25,15 @@ export function IndustryDetail() {
         b.style.opacity = String(w);
         b.style.transform = `translate3d(0, ${(k - f) * 14}px, 0)`;
         b.style.visibility = w < 0.01 ? "hidden" : "visible";
-        // The card unfolds as soon as its frame starts to appear, so the glass is never seen empty:
+        // The card unfolds as soon as its frame starts to appear, so the card is never seen empty:
         // rows, checks and figures arrive in sequence while the frame fades in, and leave as it fades out.
         b.toggleAttribute("data-on", w > 0.08);
       });
       const now = Math.round(f);
-      if (bar) bar.style.transform = `translateY(${f * 100}%)`;
       if (now !== last) {
         last = now;
         items.forEach((it, k) => it.toggleAttribute("aria-current", k === now));
-        // The index bar takes the colour of the industry facing the viewer.
+        // The current entry takes the colour of the industry facing the viewer.
         el.style.setProperty("--ind-tone", `var(--color-${INDUSTRY_TONE[now]})`);
       }
     });
@@ -99,8 +97,7 @@ export function IndustryDetail() {
 
       {/* Right: every industry, the current one marked; click to turn the card to it */}
       <nav aria-label="Industries" className="ind-index pointer-events-auto absolute right-0 top-0 max-md:hidden">
-        <ol className="relative border-l border-line">
-          <span data-ind-bar className="ind-bar absolute -left-px top-0 h-[34px] w-[2px]" aria-hidden />
+        <ol>
           {INDUSTRIES.map((ind, k) => (
             <li key={ind.name}>
               <button type="button" data-ind-item onClick={() => go(k)} className="ind-item">

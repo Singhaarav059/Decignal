@@ -956,9 +956,7 @@ html.ready .intro-stage {
   background: var(--tone);
   vertical-align: 1px;
 }
-.ind-bar { background: var(--ind-tone); transition: background-color var(--dur-3) var(--ease); }
 .ind-item[aria-current] .eyebrow { color: color-mix(in srgb, var(--ind-tone) 70%, var(--color-ink)); }
-@media (prefers-reduced-motion: reduce) { .ind-bar { transition: none; } }
 /* ---- FOOTER pass ---- */
 /* Six system threads draw in and meet at one approved node. */
 /* Footer links read as links: a tone dot or nothing at rest; on hover the label shifts, an
@@ -1253,13 +1251,11 @@ html.ready .intro-stage {
 .ind-facts { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; margin-top: 14px; }
 .ind-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .ind-chips span { padding: 2px 8px; border-radius: 999px; font: 500 11px var(--font-mono); color: color-mix(in srgb, var(--tone) 70%, var(--color-ink)); background: color-mix(in srgb, var(--tone) 12%, white); }
-.ind-index { padding: 8px 6px 8px 0; border-radius: 18px; background: #fff; border: 1px solid var(--color-line); box-shadow: none; }
-.ind-index ol { border-left-color: transparent; }
-.ind-item { width: 100%; border-radius: 0 10px 10px 0; padding-right: 18px; transition: color 200ms var(--ease-out-quint), background-color 260ms var(--ease-out-quint), padding 260ms var(--ease-out-quint); }
+.ind-index { padding: 6px; border-radius: 18px; background: #fff; border: 1px solid var(--color-line); box-shadow: none; }
+.ind-item { width: 100%; border-radius: 10px; padding-right: 18px; transition: color 200ms var(--ease-out-quint), background-color 260ms var(--ease-out-quint), padding 260ms var(--ease-out-quint); }
 .ind-item-dot { width: 6px; height: 6px; border-radius: 999px; opacity: .45; transition: opacity 260ms, transform 260ms var(--ease-out-quint); }
 .ind-item:hover .ind-item-dot, .ind-item[aria-current] .ind-item-dot { opacity: 1; transform: scale(1.35); }
-.ind-item[aria-current] { background: color-mix(in srgb, var(--ind-tone) 11%, transparent); padding-left: 18px; }
-.ind-bar { top: 8px; width: 3px; border-radius: 0 3px 3px 0; transition: background-color var(--dur-3) var(--ease); }
+.ind-item[aria-current] { background: var(--color-bg); }
 @media (max-width: 1023px) { .ind-card { padding: 14px; } }
 @media (prefers-reduced-motion: reduce) {
   .ind-reveal, .ind-check path { transition: none; }
