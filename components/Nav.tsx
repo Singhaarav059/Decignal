@@ -7,6 +7,7 @@ import { Arrow } from "./ui/Arrow";
 import { ArrowUpRight } from "lucide-react";
 import { CHAPTERS, blendAt, store, subscribe } from "@/lib/story";
 import { toneVar } from "./story/chapters";
+import { pageBox, viewTop } from "@/lib/offsets";
 import { NavPeek, PEEKS, type PeekId } from "./NavPeek";
 
 const SECTIONS = [
@@ -85,10 +86,10 @@ function NavLinks({
       let found = -1;
       LINKS.forEach(([, href], i) => {
         const el = document.querySelector(href);
-        if (el && el.getBoundingClientRect().top < vh * 0.45) found = i;
+        if (el && viewTop(el) < vh * 0.45) found = i;
       });
       const audit = document.getElementById("audit");
-      if (audit && audit.getBoundingClientRect().top < vh * 0.45) found = -1;
+      if (audit && viewTop(audit) < vh * 0.45) found = -1;
       setActive(found);
     };
     on();
@@ -169,9 +170,10 @@ export function Nav() {
     let lastY = window.scrollY;
     const on = () => {
       const y = window.scrollY;
-      const past = !!story && y > story.offsetHeight - window.innerHeight * 0.5;
-      const application = document.querySelector(".application-journey")?.getBoundingClientRect();
-      const readingApplication = !!application && application.top < 80 && application.bottom >= window.innerHeight;
+      const past = !!story && y > pageBox(story).height - window.innerHeight * 0.5;
+      const journey = document.querySelector(".application-journey");
+      const application = journey ? pageBox(journey) : null;
+      const readingApplication = !!application && application.top - y < 80 && application.top + application.height - y >= window.innerHeight;
       setSolid(past);
       setInStory(!past);
       setCompact(y > 48);
@@ -379,7 +381,7 @@ function Sweep() {
 function where(): { n: string; label: string; tone: string; i: number } {
   const story = document.getElementById("story");
   const vh = window.innerHeight;
-  if (story && story.getBoundingClientRect().bottom > vh * 0.5) {
+  if (story && viewTop(story) + pageBox(story).height > vh * 0.5) {
     const { i, j, e } = blendAt(store.g);
     const idx = e < 0.5 ? i : j;
     return { n: String(idx + 1).padStart(2, "0"), label: CHAPTERS[idx].label, tone: toneVar(idx), i: idx };
@@ -388,7 +390,7 @@ function where(): { n: string; label: string; tone: string; i: number } {
   const tones: Record<string, string> = { applications: "cobalt", outcomes: "emerald", how: "violet", faq: "tangerine", audit: "cobalt" };
   for (const s of SECTIONS) {
     const el = document.getElementById(s[0]);
-    if (el && el.getBoundingClientRect().top < vh * 0.4) found = s;
+    if (el && viewTop(el) < vh * 0.4) found = s;
   }
   return { n: "", label: found ? found[1] : "", tone: found ? `var(--color-${tones[found[0]]})` : "var(--color-ink)", i: CHAPTERS.length };
 }

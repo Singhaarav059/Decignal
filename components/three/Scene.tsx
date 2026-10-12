@@ -14,6 +14,7 @@ import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
 import { canvasQuality, isPhone } from "@/lib/device";
+import { Warm } from "./Warm";
 
 // Portrait only: chapters whose copy fills the top of the screen lower the object into the free space below.
 const PORTRAIT_DROP = [-0.055, 0.13, 0.06, 0.12, -0.12, 0.09, -0.1, -0.14, -0.06];
@@ -197,6 +198,7 @@ function World() {
         <Transfer />
         <Cards />
         <ChartMarks />
+        <Warm />
       </Suspense>
       <Threads />
       <SystemNetwork />
@@ -241,7 +243,8 @@ export default function Scene() {
       dpr={q.dpr}
       camera={{ fov: 26, near: 0.1, far: 80, position: [0, 7, 15] }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
-      onCreated={({ gl }) => {
+      onCreated={({ gl, scene, camera }) => {
+        if (process.env.NODE_ENV !== "production") Object.assign(window, { __three: { gl, scene, camera } });
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 0.95;
         gl.setClearColor(0x000000, 0);

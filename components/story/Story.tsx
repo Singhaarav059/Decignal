@@ -17,7 +17,7 @@ import {
   subscribe,
   weight,
 } from "@/lib/story";
-import { industryF } from "@/lib/layouts";
+import { industryF } from "@/lib/story";
 import { BEATS, transferredUnits } from "@/lib/scene";
 import { DecisionControls } from "./DecisionControls";
 import { IslandPanel } from "./IslandPanel";
@@ -81,28 +81,40 @@ export function Story() {
     };
     roots.forEach((r) => r.addEventListener("focusin", onFocusIn));
 
+    // Most chapters sit fully hidden or fully shown, so most frames change nothing: write a style only
+    // when its value moves, and the browser has no styles to recalculate while the reader scrolls.
+    const written = new WeakMap<HTMLElement, Record<string, string>>();
+    const put = (el: HTMLElement, prop: string, value: string) => {
+      let w = written.get(el);
+      if (!w) written.set(el, (w = {}));
+      if (w[prop] === value) return;
+      w[prop] = value;
+      el.style.setProperty(prop, value);
+    };
+
     const off = subscribe((g) => {
       chEls.forEach((el) => {
         const w = shown(weight(Number(el.dataset.ch), g));
-        el.style.opacity = String(w);
-        el.style.transform = `translate3d(0, ${(1 - w) * 18}px, 0)`;
-        if (!flat) el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`;
-        el.style.visibility = w < 0.005 ? "hidden" : "visible";
+        put(el, "opacity", String(w));
+        put(el, "transform", `translate3d(0, ${(1 - w) * 18}px, 0)`);
+        if (!flat) put(el, "filter", w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`);
+        put(el, "visibility", w < 0.005 ? "hidden" : "visible");
         // Headings resolve from a red and blue split into one sharp line as they settle.
         if (!flat) {
-          el.style.setProperty("--split", `${(1 - w) * 8}px`);
-          el.style.setProperty("--split-k", String(Math.min(1, (1 - w) * 3)));
+          put(el, "--split", `${(1 - w) * 8}px`);
+          put(el, "--split-k", String(Math.min(1, (1 - w) * 3)));
         }
-        if (el.dataset.interactive !== undefined) el.style.pointerEvents = w > 0.6 ? "auto" : "none";
+        if (el.dataset.interactive !== undefined) put(el, "pointer-events", w > 0.6 ? "auto" : "none");
       });
 
       // Giant chapter words drift slowly behind the object, the way a camera passes type on a wall.
       ghosts.forEach((el) => {
         const c = Number(el.dataset.ghost);
         const w = weight(c, g);
-        el.style.opacity = String(smoothstep(0.3, 1, w));
-        el.style.visibility = w < 0.005 ? "hidden" : "visible";
-        if (!still) el.style.transform = `translate3d(${(0.5 - (g - c)) * 18}vw, 0, 0)`;
+        put(el, "opacity", String(smoothstep(0.3, 1, w)));
+        put(el, "visibility", w < 0.005 ? "hidden" : "visible");
+        // A hidden word holds still: nobody sees it drift, and the browser skips the work.
+        if (!still && w >= 0.005) put(el, "transform", `translate3d(${(0.5 - (g - c)) * 18}vw, 0, 0)`);
       });
 
       // Plant 02's stock counts down as each pallet goes onto the truck.
@@ -121,18 +133,18 @@ export function Story() {
         const k = Number(el.dataset.ind);
         // One name at a time: the old name clears before the next resolves, never two half-blurred.
         const w = wi * smoothstep(0.35, 1, 1 - clamp01(Math.abs(f - k) * 2.4));
-        el.style.opacity = String(w);
-        if (!flat) el.style.filter = w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`;
-        el.style.transform = `translate3d(0, ${(f - k) * -40}px, 0)`;
-        el.style.visibility = w < 0.005 ? "hidden" : "visible";
+        put(el, "opacity", String(w));
+        if (!flat) put(el, "filter", w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`);
+        put(el, "transform", `translate3d(0, ${(f - k) * -40}px, 0)`);
+        put(el, "visibility", w < 0.005 ? "hidden" : "visible");
       });
 
       // The closing board assembles in step with the scroll (sources, links, decision, results).
-      finalEl?.style.setProperty("--fp", still ? "1" : String(clamp01((g - CH.final + 0.4) / 0.7)));
+      if (finalEl) put(finalEl, "--fp", still ? "1" : String(clamp01((g - CH.final + 0.4) / 0.7)));
 
       // The 3D steps aside as the closing board arrives: the story ends on one flat summary.
       const out = 1 - smoothstep(0.15, 0.75, weight(CH.final, g));
-      if (canvas.current) canvas.current.style.opacity = String(out);
+      if (canvas.current) put(canvas.current, "opacity", String(out));
     });
     return () => {
       off();

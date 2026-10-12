@@ -1,7 +1,6 @@
 // World layout for the 3D story. Every actor has a pose per chapter; chapters it is absent
 // from return null, and the actor scales in or out of the scene during the transition.
-import { CH, blendAt, clamp01, smootherstep } from "./story";
-import { industryF, PLINTH_H } from "./layouts";
+import { CH, blendAt, clamp01, smootherstep, industryF, PLINTH_H } from "./story";
 
 export { industryF, PLINTH_H };
 

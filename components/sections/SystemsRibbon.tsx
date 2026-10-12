@@ -57,6 +57,15 @@ export function SystemsRibbon() {
     let raf = 0, visible = true, len = 1;
     // Where the copy sits over the stage, grown by a tile's reach: no tile may pass through it.
     let keep = { l: 0, t: 0, r: 0, b: 0 };
+    // The card's box in the stage's pixels, and the path sampled once per layout: the tiles read
+    // both every frame, and asking the DOM each time forced a layout and a path walk per tile.
+    let cardBox = { left: 0, right: 0, top: 0, bottom: 0 };
+    const SAMPLES = 720;
+    const pts = new Float32Array((SAMPLES + 1) * 2);
+    const at = (d: number) => {
+      const f = (Math.min(Math.max(d, 0), len) / len) * SAMPLES, i = Math.min(Math.floor(f), SAMPLES - 1), k = f - i;
+      return { x: pts[i * 2] + (pts[i * 2 + 2] - pts[i * 2]) * k, y: pts[i * 2 + 1] + (pts[i * 2 + 3] - pts[i * 2 + 1]) * k };
+    };
 
     // The path is drawn in the stage's own pixels from where the copy and the card actually are, so
     // a tile never crosses the copy and always meets a card edge square on, a full tile clear of the
@@ -92,6 +101,12 @@ export function SystemsRibbon() {
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       p.setAttribute("d", d);
       len = p.getTotalLength();
+      for (let i = 0; i <= SAMPLES; i++) {
+        const q = p.getPointAtLength((i / SAMPLES) * len);
+        pts[i * 2] = q.x;
+        pts[i * 2 + 1] = q.y;
+      }
+      cardBox = { left: cl, right: cr, top: ct, bottom: cb };
     };
 
     const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
@@ -104,16 +119,15 @@ export function SystemsRibbon() {
     if (copy) ro.observe(copy);
 
     const place = (now: number) => {
-      const box = el.getBoundingClientRect(), c = card.current!.getBoundingClientRect();
       // Tiles inside the card's box are behind it; past its right edge they leave as decisions.
-      const left = c.left - box.left + 12, right = c.right - box.left - 12;
-      const top = c.top - box.top + 12, bottom = c.bottom - box.top - 12;
+      const left = cardBox.left + 12, right = cardBox.right - 12;
+      const top = cardBox.top + 12, bottom = cardBox.bottom - 12;
       const phase = reduced ? 0.013 : ((now - t0) % LOOP_MS) / LOOP_MS;
       for (let i = 0; i < count; i++) {
         const node = tiles.current[i];
         if (!node) continue;
         const u = (i / count + phase) % 1;
-        const a = p.getPointAtLength(u * len), b = p.getPointAtLength(Math.min(len, u * len + 4));
+        const a = at(u * len), b = at(u * len + 4);
         const ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
         const zone = a.x >= right ? 2 : a.x > left && a.y > top && a.y < bottom ? 1 : 0;
         // Safety net for layouts with no clean path past the copy. The zone is already padded by a

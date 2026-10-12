@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { CH, INDUSTRIES, INDUSTRY_TONE, clamp01, gToProgress, localIn, subscribe } from "@/lib/story";
-import { industryF } from "@/lib/layouts";
+import { industryF } from "@/lib/story";
 import { scrollToTarget } from "../SmoothScroll";
 
 /** Local progress in the Industries chapter where industry k has settled (inverse of industryF). */

@@ -214,3 +214,14 @@ export const INDUSTRIES = [
 
 /** Each industry's accent, matching its 3D card badge (components/three/faces.ts INDUSTRY_TONE). */
 export const INDUSTRY_TONE = ["emerald", "cobalt", "pink", "tangerine", "violet", "saffron"] as const;
+
+/** Height of the turning block the industries stand on (world units). */
+export const PLINTH_H = 0.07;
+
+/** Which industry faces the front (fractional while turning), from local progress in the Industries chapter. */
+export function industryF(t: number) {
+  const n = INDUSTRIES.length - 1;
+  const raw = clamp01((t - 0.04) / 0.86) * n;
+  const k = Math.min(Math.floor(raw), n - 1);
+  return k + smootherstep(0.35, 0.85, raw - k);
+}

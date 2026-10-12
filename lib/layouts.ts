@@ -1,12 +1,13 @@
 import * as THREE from "three";
-import { CH, INDUSTRIES, smootherstep, clamp01 } from "./story";
+import { CH, industryF, PLINTH_H, smootherstep } from "./story";
+
+export { industryF, PLINTH_H };
 
 // Plate dimensions (world units). One plate = one layer of information.
 export const W = 1.5;
 export const H = 0.07;
 export const D = 1.0;
 export const N = 30;
-export const PLINTH_H = 0.07;
 
 /** The plate that carries the signal through the whole story. */
 export const SIG = 19; // top plate of the WMS stack
@@ -263,13 +264,6 @@ export function plateStates(c: number, t: number, out: PlateState[]) {
 }
 
 /** Industry float (0..5). Holds on each industry, turns half a revolution between them. */
-export function industryF(t: number) {
-  const n = INDUSTRIES.length - 1;
-  const raw = clamp01((t - 0.04) / 0.86) * n;
-  const k = Math.min(Math.floor(raw), n - 1);
-  return k + smootherstep(0.35, 0.85, raw - k);
-}
-
 /* ---------------- Camera ---------------- */
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
