@@ -89,11 +89,6 @@ export function Story() {
         put(el, "transform", `translate3d(0, ${(1 - w) * 18}px, 0)`);
         if (!flat) put(el, "filter", w > 0.98 ? "none" : `blur(${(1 - w) * 2}px)`);
         put(el, "visibility", w < 0.005 ? "hidden" : "visible");
-        // Headings resolve from a red and blue split into one sharp line as they settle.
-        if (!flat) {
-          put(el, "--split", `${(1 - w) * 8}px`);
-          put(el, "--split-k", String(Math.min(1, (1 - w) * 3)));
-        }
         if (el.dataset.interactive !== undefined) put(el, "pointer-events", w > 0.6 ? "auto" : "none");
       });
 

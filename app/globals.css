@@ -332,14 +332,8 @@ html.ready .intro-stage {
   transform: none;
 }
 
-/* Colour-split reveal: a red and a blue ghost of each heading converge into one sharp line. */
 [data-ch] {
   will-change: transform, opacity, filter;
-}
-[data-ch] .display {
-  text-shadow:
-    calc(var(--split, 0px) * -1) 0 rgb(242 54 31 / calc(var(--split-k, 0) * 0.5)),
-    var(--split, 0px) 0 rgb(46 91 255 / calc(var(--split-k, 0) * 0.5));
 }
 
 /* Transfer order progress (Decision chapter) */
@@ -2150,10 +2144,9 @@ html.ready .nav-cta { animation: navItem 700ms var(--ease) 520ms both; }
   .operation-readout, .ribbon-card { background: rgb(255 253 249 / .97); }
   .scale-phone-tabs button { background: #fff; }
 
-  /* Copy and headings move on opacity and position only: a blur or colour-split mid-transition read as
-     out of focus on a small screen, and repainting text through a filter every frame is what stuttered. */
+  /* Copy and headings move on opacity and position only: a blur mid-transition read as out of focus on
+     a small screen, and repainting text through a filter every frame is what stuttered. */
   [data-ch] { will-change: transform, opacity; }
-  [data-ch] .display { text-shadow: none; }
 }
 
 /* Mid-width desktops: the evidence list stacks label over value so it stays clear of the left island. */
