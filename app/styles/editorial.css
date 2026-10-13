@@ -723,7 +723,7 @@
    sheets, each sticking to the top while the next slides up over it. Both routes on every sheet. ---- */
 .how { padding-top: var(--section-y); }
 .how-top { display: grid; gap: 28px; align-items: end; }
-.how-legend { display: grid; gap: 10px; }
+.how-legend { display: grid; gap: 10px; padding: 14px 16px; border-radius: var(--radius-lg); }
 .how-legend li { display: flex; align-items: flex-start; gap: 12px; }
 .how-legend li > span:last-child { display: grid; gap: 2px; }
 .how-legend strong { font-size: var(--fs-body); font-weight: 600; }

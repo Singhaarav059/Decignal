@@ -15,6 +15,17 @@ html.lenis body {
   overflow: hidden;
 }
 
+/* A block far off screen holds its loops (lib/still.ts): ticking them re-styled and re-laid out SVG
+   nobody saw. Only the loops the browser runs on the main thread (SVG drawings, the wallpaper's shape
+   morph); compositor loops (a marquee's slide) cost nothing there, and pausing them re-rastered their
+   layers when they woke. */
+[data-still],
+[data-still] *,
+[data-still] *::before,
+[data-still] *::after {
+  animation-play-state: paused !important;
+}
+
 /* Body stays transparent so the colour fields behind the stage show through. */
 body {
   background: transparent;

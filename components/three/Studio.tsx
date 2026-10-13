@@ -24,6 +24,9 @@ export function Studio({ resolution = 1024 }: { resolution?: number }) {
   );
 }
 
+/** Where the key light stands; it aims at the origin. The shadow floor (Shadows.tsx) casts along it. */
+export const KEY_POS = [6, 10, 7] as const;
+
 /** Key light: neutral white daylight with a crisp, slightly softened shadow, and a cool sky fill. */
 export function KeyLight({ extent = 11 }: { extent?: number }) {
   // A phone shows the scene at about a third of desktop size, so a 2048 map gives its shadows the same
@@ -33,7 +36,7 @@ export function KeyLight({ extent = 11 }: { extent?: number }) {
     <>
     <hemisphereLight args={["#E9EEF6", "#E6E9EE", 0.35]} />
     <directionalLight
-      position={[6, 10, 7]}
+      position={KEY_POS}
       color="#FFFFFF"
       intensity={1.65}
       castShadow

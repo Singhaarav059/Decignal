@@ -229,6 +229,9 @@
   }
 }
 @keyframes band-open {
-  from { clip-path: inset(0 min(6%, 72px) round var(--radius-xl)); }
+  from { clip-path: inset(0 var(--open-inset, min(6%, 72px)) round var(--radius-xl)); }
   to { clip-path: inset(0 0 round var(--radius-xl)); }
 }
+/* Phones: the panels' text sits a dozen pixels inside their edge, so the opening slab narrows less
+   than that; at 6% it cut the first letters of every line while it opened. */
+@media (max-width: 599px) { :root { --open-inset: 8px; } }

@@ -314,6 +314,15 @@
   .final-outcomes li { grid-template-columns: auto 6.5em 1fr; align-items: center; gap: 10px; padding: 9px 12px; }
   .final-lead { display: none; }
 }
+/* Short phones: the closing world sits between the headline and this card, and had a sliver (11px on a
+   667px screen). The systems row steps aside (the hero and the islands name them) and the rows tighten. */
+@media (max-width: 767px) and (max-height: 760px) {
+  .final-systems { display: none; }
+  .final-card-title { margin-top: 12px; }
+  .final-outcomes { gap: 4px; margin-top: 8px; }
+  .final-outcomes li { padding-block: 7px; }
+  .final-actions { margin-top: 14px; }
+}
 
 /* ---- Works with what you run: the copy on a glass panel the six photographs orbit behind, each
    joined to the middle by a thread in its colour; the three promises as chips. ---- */
@@ -424,7 +433,12 @@
    sheets) the grid is measured against the page, not the narrower panel, so their text lands on the
    same --edge as every other section at every width. --panel-inset is how far the panel is inset. ---- */
 .night-panel, .site-footer, .how-sheets { --panel-inset: 12px; }
-@media (max-width: 599px) { .night-panel, .site-footer { --panel-inset: 6px; } }
+@media (max-width: 599px) {
+  .night-panel, .site-footer, .how-sheets { --panel-inset: 6px; }
+  /* The colour sheets stand on the same 6px inset as the navy band, so their text keeps the page edge
+     with room inside the sheet (at 12px it had 8px, crowding the rounded corners). */
+  .how-sheets { padding-inline: var(--panel-inset); }
+}
 :is(.night-panel, .site-footer) .page-wrap { width: min(100% + 2 * var(--panel-inset) - 2 * var(--gutter), var(--grid-max)); }
 .how-sheet-inner { padding-inline: calc(max(var(--gutter), (100% + 2 * var(--panel-inset) - var(--grid-max)) / 2) - var(--panel-inset)); }
 

@@ -25,7 +25,9 @@
 
 /* ---- The floating chrome: the strongest glass ---- */
 /* Every group below lists single classes only, so a later rule for one element can still override it. */
-:is(.nav-brand, .nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel) {
+/* The logo is its own pill only on wide screens (chrome.css); below 1024px it sits inside the bar's one
+   surface, and glass of its own drew a square patch in the pill. */
+:is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel) {
   background: rgb(255 255 255 / 0.5);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
@@ -44,7 +46,7 @@
   .nav-cta[data-quiet]:hover .nav-cta-icon { color: var(--color-cobalt); background: var(--color-surface); }
 }
 @media (min-width: 1024px) {
-  .nav-brand { background: rgb(255 255 255 / 0.5); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+  .nav-brand { background: rgb(255 255 255 / 0.5); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
   .nav-pill[data-solid] .nav-surface { box-shadow: none; }
 }
 .nav-pill[data-solid] .nav-surface { box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
@@ -114,13 +116,24 @@
 /* The footer's area pills and the audit's request card stay white glass on colour. */
 .footer-area { background: rgb(255 255 255 / 0.86); box-shadow: var(--lg-rim), 0 6px 14px -8px rgb(12 18 34 / 0.35); }
 
+/* Glass inside glass draws nothing new: a control's backdrop is its card's own frosted face (the card
+   is its backdrop root), so the second blur changed no pixel by more than 2/255 (measured on the hero
+   card), yet each one was a GPU pass of its own on every frame the world moved behind the card. */
+:is(.story-card, .application-card, .island-panel, .nav-peek-body, .faq-item, .bento-card, .how-plate, .orbit-copy, .cta-pill, .phone-dock) * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Readers who ask for less transparency get solid surfaces. */
 @media (prefers-reduced-transparency: reduce) {
-  :is(.nav-brand, .nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
+  :is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
     .hero-tag, .section-title-label, .sys-chip, .faq-item, .faq-fig, .bento-card, .outcome-figure, .orbit-copy, .how-plate, .dial-face) {
     background-color: var(--color-surface) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+  }
+  @media (min-width: 1024px) {
+    .nav-brand { background-color: var(--color-surface) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
   }
   .story-card[data-night] { background-color: var(--color-night) !important; }
 }
@@ -164,9 +177,15 @@
 /* ---- Glass over dark sections (Nav.tsx sets [data-dark] from lib/on-dark.ts): the tint darkens, the
    rim dims, the type and icons turn white; the solid CTA turns white so it still leads. ---- */
 .nav-shell :is(.nav-brand, .nav-links, .nav-surface, .nav-cta) { transition: background-color var(--dur-4) var(--ease), color var(--dur-4) var(--ease), box-shadow var(--dur-4) var(--ease); }
-.nav-shell[data-dark] :is(.nav-brand, .nav-links, .nav-surface, .nav-cta[data-quiet]) {
+.nav-shell[data-dark] :is(.nav-links, .nav-surface, .nav-cta[data-quiet]) {
   background-color: rgb(16 22 40 / 0.46);
   box-shadow: var(--lg-night-rim), 0 0 0 0.75px rgb(255 255 255 / 0.06), 0 14px 34px -16px rgb(0 0 0 / 0.55);
+}
+@media (min-width: 1024px) {
+  .nav-shell[data-dark] .nav-brand {
+    background-color: rgb(16 22 40 / 0.46);
+    box-shadow: var(--lg-night-rim), 0 0 0 0.75px rgb(255 255 255 / 0.06), 0 14px 34px -16px rgb(0 0 0 / 0.55);
+  }
 }
 .nav-shell[data-dark] :is(.logo-word, .nav-links a, .nav-readout, .nav-readout-label, .nav-cta[data-quiet]) { color: #fff; }
 .nav-shell[data-dark] .nav-burger-bar { background: #fff; }

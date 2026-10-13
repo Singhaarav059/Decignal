@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { gToProgress, progressToG, setAfter, setG, store } from "@/lib/story";
 import { getLenis, jumpTo, scrollToTarget, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
+import { startStill } from "@/lib/still";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -99,5 +100,6 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
 
   // Started after Lenis and the story trigger, so its first reading sees them.
   useEffect(() => startChrome(sections), [sections]);
+  useEffect(() => startStill(), []);
   return null;
 }

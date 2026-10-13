@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { Studio } from "./Studio";
 import { COLORS } from "./palette";
@@ -10,7 +10,9 @@ import type { DemoKind } from "@/lib/application-demos";
 import { Logistics, Maintenance, Production, SupplyRisk, Distribution, DealerNetwork, Customer, Finance, type SceneProps } from "./OperationalScenes";
 import { phase, type Motion } from "./SceneKit";
 import { Warm } from "./Warm";
+import { ShadowGate } from "./Shadows";
 import { canvasQuality } from "@/lib/device";
+import { whenStill } from "@/lib/idle";
 
 /** The part of the canvas the page's copy leaves free, as insets in CSS px from each edge. */
 export type Frame = { left: number; top: number; right: number; bottom: number };
@@ -63,17 +65,16 @@ const KINDS: DemoKind[] = ["inventory", "demand", "production", "maintenance", "
 const MODELS: Record<DemoKind, (p: SceneProps) => React.ReactNode> = { inventory: Logistics, demand: Distribution, production: Production, maintenance: Maintenance, risk: SupplyRisk, sales: DealerNetwork, customer: Customer, finance: Finance };
 const REST = { progress: 0, edge: 0 };
 /** A hidden world keeps its matrices as they were: three would otherwise walk all eight every frame. */
-const skipWhenHidden = (g: THREE.Group | null) => {
-  if (g) g.updateMatrixWorld = function (force) {
-    if (this.visible) THREE.Group.prototype.updateMatrixWorld.call(this, force);
-  };
-};
+function updateIfShown(this: THREE.Object3D, force?: boolean) {
+  if (this.visible) THREE.Group.prototype.updateMatrixWorld.call(this, force);
+}
 /**
  * Every world on the list stays built; only the current one is shown. Switching chapters then costs
  * nothing, where rebuilding a world (geometry, textures, shaders) stalled the scroll for a fifth of a
  * second. A hidden world rests at its opening pose and follows the scroll again once it is shown.
- * The world on screen is built first and shows at once; the others follow one per idle moment, each
- * sent to the GPU as it arrives, so the first picture never waits for all eight.
+ * The world on screen is built first and shows at once; the others follow one per pause in the scroll
+ * (a build mid-scroll was a long task that stuttered it on phones), each sent to the GPU as it arrives
+ * and only it: re-warming every built world each time grew to a fifth of a second.
  */
 function Stages(props: Props) {
   const list = props.kinds ?? KINDS;
@@ -81,15 +82,36 @@ function Stages(props: Props) {
   const [count, setCount] = useState(1);
   useEffect(() => {
     if (count >= order.length) return;
-    const next = () => setCount((c) => c + 1);
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(next, { timeout: 800 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = window.setTimeout(next, 200);
-    return () => window.clearTimeout(id);
+    return whenStill(() => setCount((c) => c + 1));
   }, [count, order.length]);
   const built = new Set([...order.slice(0, count), props.kind]);
+  const groups = useRef(new Map<DemoKind, THREE.Group>());
+  const warmed = useRef(new Set<DemoKind>());
+  const refs = useMemo(
+    () =>
+      Object.fromEntries(
+        KINDS.map((k) => [
+          k,
+          (g: THREE.Group | null) => {
+            if (!g) return void groups.current.delete(k);
+            g.updateMatrixWorld = updateIfShown;
+            groups.current.set(k, g);
+          },
+        ]),
+      ) as Record<DemoKind, (g: THREE.Group | null) => void>,
+    [],
+  );
+  // The first warm-up takes the whole scene (studio, ground, light); later ones only the worlds just built.
+  const fresh = useCallback(() => {
+    const first = warmed.current.size === 0;
+    const roots: THREE.Object3D[] = [];
+    for (const [k, g] of groups.current) {
+      if (warmed.current.has(k)) continue;
+      warmed.current.add(k);
+      roots.push(g);
+    }
+    return first ? null : roots;
+  }, []);
   const current = useRef(props.kind);
   useLayoutEffect(() => {
     current.current = props.kind;
@@ -104,12 +126,12 @@ function Stages(props: Props) {
         const Model = MODELS[k];
         const on = k === props.kind;
         return (
-          <group key={k} ref={skipWhenHidden} visible={on} dispose={null}>
+          <group key={k} ref={refs[k]} visible={on} dispose={null}>
             <Model motion={motions[k]} step={on ? props.step : 0} still={props.still} pin={props.pin} />
           </group>
         );
       })}
-      <Warm key={built.size} />
+      <Warm key={built.size} roots={fresh} />
     </>
   );
 }
@@ -153,6 +175,9 @@ export default function ApplicationScene(props: Props) {
         <Stages {...props} />
         <mesh rotation-x={-Math.PI / 2} position-y={-0.065} receiveShadow><planeGeometry args={[30, 30]} /><shadowMaterial color={COLORS.shadow} opacity={0.12} /></mesh>
         <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} />
+        {/* The light's map is drawn by the view alone, and only after a caster moved: the contact pass
+            re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
+        <ShadowGate />
       </Suspense>
     </Canvas>
   );

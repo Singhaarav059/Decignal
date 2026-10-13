@@ -17,6 +17,7 @@ import { SystemIcon, sourceIcon } from "../ui/SystemIcon";
 import { AreaArt } from "./AreaArt";
 import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
+import { whenStill } from "@/lib/idle";
 
 gsap.registerPlugin(ScrollTrigger);
 // Viewport heights per application, by APPLICATIONS index: every stop (signal, evidence, action) gets its
@@ -151,20 +152,19 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       io.disconnect();
     }, { rootMargin: compact ? "150% 0px" : "300% 0px" });
     io.observe(el);
-    // Fetch the scene's code once the loader has lifted and the page is idle, then build the world in the
-    // background a little later (its shaders compile off the main thread, Warm), so it is drawn and waiting
-    // when the reader arrives, by scroll or by a jump from the nav. A canvas out of view draws on demand only.
+    // Fetch the scene's code once the loader has lifted and the reader pauses, then build the world in the
+    // background at the next pause (its shaders compile off the main thread, Warm), so it is drawn and
+    // waiting when the reader arrives, by scroll or by a jump from the nav. Never mid-scroll: the build is a
+    // long task that stuttered the story on phones. A canvas out of view draws on demand only.
     const html = document.documentElement;
-    let idle = 0;
-    let build = 0;
+    let live = true;
+    let cancel = () => {};
     const prefetch = () => {
-      const run = () => {
+      cancel = whenStill(() => {
         void import("../three/ApplicationScene").then(() => {
-          const mount = () => setNear(true);
-          build = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(mount, { timeout: 5000 }) : window.setTimeout(mount, 2500);
+          if (live) cancel = whenStill(() => setNear(true));
         });
-      };
-      idle = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(run, { timeout: 4000 }) : window.setTimeout(run, 1500);
+      });
     };
     let mo: MutationObserver | null = null;
     if (html.classList.contains("ready")) prefetch();
@@ -177,14 +177,10 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       mo.observe(html, { attributes: true, attributeFilter: ["class"] });
     }
     return () => {
+      live = false;
       io.disconnect();
       mo?.disconnect();
-      if (typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idle);
-        window.cancelIdleCallback(build);
-      }
-      window.clearTimeout(idle);
-      window.clearTimeout(build);
+      cancel();
     };
   }, [compact]);
 

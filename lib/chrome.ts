@@ -206,6 +206,9 @@ const fresh = new Set<Element>();
 const watched = new Set<Element>();
 let dirty = true;
 let collectedAt = -Infinity;
+/** The observer stands down while the dock is down and the page moves (nothing asks it then): it
+ *  watches every reading block, and the browser re-measured all of them on each scroll frame. */
+let parked = false;
 /** The driver's frame request: something coming into the strip at rest (a list turning over, an
  *  answer opening) gets a fresh check. */
 let kick = () => {};
@@ -254,9 +257,13 @@ function observeBand(b: Band) {
   }
 }
 
+/** Where a run of text is read: its paragraph, item or heading holds every inline piece inside it. */
+const BLOCK = "p, li, h1, h2, h3, h4, h5, h6, dt, dd, figcaption, blockquote, label, legend, summary, td, th, pre";
+
 /** Finds the reading elements in <main> (past the story and its fixed layers) and observes new ones. */
 function collect() {
   dirty = false;
+  parked = false;
   collectedAt = performance.now();
   const main = document.getElementById("main");
   if (!main || !io) return;
@@ -264,7 +271,13 @@ function collect() {
   for (const root of main.children) {
     if (root.id === "story" || getComputedStyle(root).position === "fixed") continue;
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.nodeValue?.trim() && n.parentElement) found.add(n.parentElement);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const at = n.parentElement;
+      if (!n.nodeValue?.trim() || !at) continue;
+      // One target per block, not one per span inside it (a third as many to measure).
+      const block = at.closest(BLOCK);
+      found.add(block && root.contains(block) ? block : at);
+    }
     root.querySelectorAll(SOLID).forEach((el) => found.add(el));
   }
   for (const el of watched) {
@@ -287,7 +300,7 @@ function dockBlocked(ahead: number) {
   const b = dockBand();
   if (!b) return false;
   observeBand(b);
-  if (dirty && performance.now() - collectedAt > 500) collect();
+  if (parked || (dirty && performance.now() - collectedAt > 500)) collect();
   const vw = document.documentElement.clientWidth;
   const bottom = window.innerHeight + ahead;
   for (const set of [near, fresh]) {
@@ -303,7 +316,18 @@ function dockBlocked(ahead: number) {
   return false;
 }
 
+/** Stops watching until the next check, which observes again (and measures the new ones directly). */
+function parkBand() {
+  if (!io || parked) return;
+  io.disconnect();
+  near.clear();
+  fresh.clear();
+  watched.clear();
+  parked = true;
+}
+
 function releaseBand() {
+  parked = false;
   io?.disconnect();
   mo?.disconnect();
   io = mo = null;
@@ -391,14 +415,16 @@ export function startChrome(list?: ChromeSection[]) {
     // reader pauses on a clear strip, once per section, and steps down as soon as text comes up under
     // it (looking further ahead the faster the page moves).
     let dock = false;
+    const resting = performance.now() - movedAt >= restMs;
     if (navHidden && !inHero && !auditNear && !footerNear && !state.jumping && !state.menuOpen) {
-      const resting = performance.now() - movedAt >= restMs;
       const held = state.dock && !!document.activeElement?.closest("[data-dock]");
       if (held) dock = true;
       else if (state.dock) dock = !dockBlocked(dy > 0 ? Math.min(Math.max(dy * 12, 24), vh / 2) : 0);
       else if (resting && sec.id !== roseIn) dock = !dockBlocked(0);
     }
     if (dock && !state.dock) roseIn = sec.id;
+    // The dock stays down while the page moves: nothing reads the strip until the reader rests.
+    if (!dock && !resting) parkBand();
 
     setChrome({
       inStory,

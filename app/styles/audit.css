@@ -432,6 +432,8 @@ textarea.audit-input { resize: none; }
   gap: 8px;
 }
 .audit-submit-face > span[data-off] { visibility: hidden; }
+/* The spinner turns only while it shows: a hidden loop still costs a frame's styling. */
+.audit-submit-face > span[data-off] .audit-spin { animation: none; }
 .audit-spin {
   width: 14px;
   height: 14px;

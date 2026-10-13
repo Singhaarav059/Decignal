@@ -2,23 +2,23 @@
 
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
 import { CHAPTERS, CH, EXIT_DRIFT, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
-import { ISLAND_TOP, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
+import { ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
 import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
-import { canvasQuality, isPhone } from "@/lib/device";
+import { canvasQuality } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
 import { prewarm } from "./Warm";
 import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
+import { ShadowFloor, ShadowGate } from "./Shadows";
 
 /* ------------------------------------------------------------------ */
 /* Stage framing: fit each chapter's subject into the screen area the  */
@@ -265,7 +265,9 @@ function place(n: number, f: number, hw: number, hh: number, ix: number, iy: num
 /** Fills the stage and exclusions for chapter c: the card and the giant headline; an open panel shrinks the stage. */
 function setStage(c: number, vw: number, vh: number, panel: boolean) {
   const phone = vw < 768;
-  const m = phone ? 10 : 24;
+  // Phones keep the page's gutter at the sides, so the world lines up with the copy: at 10px its
+  // buildings and rings ran right up to the screen edge.
+  const m = phone ? gutterOf(vw) : 24;
   stage.x0 = m;
   stage.x1 = vw - m;
   // Room under the nav for a pin's label above the subject.
@@ -595,15 +597,9 @@ function World() {
       <Threads />
       <SystemNetwork />
       <SignalPing />
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <shadowMaterial color={COLORS.shadow} opacity={0.16} transparent />
-      </mesh>
-      {/* Tight contact shadows: every object sits on the ground, none of them float. Laid at the pads'
-          top (the hero draws them at 1.1), so each model is grounded on its yard; markings lie under the shade. */}
-      {/* Phones: half the map for a third of the on-screen size, so the shadow is as fine per pixel as on desktop. */}
-      <ContactShadows position={[0, ISLAND_TOP * 1.1 + 0.003, 0]} scale={30} resolution={isPhone() ? 512 : 1024} blur={1.1} far={0.7} opacity={0.46} color={COLORS.shadow} />
+      <ShadowFloor color={COLORS.shadow} opacity={0.16} />
       <Rig />
+      <ShadowGate />
       <Pause />
     </>
   );

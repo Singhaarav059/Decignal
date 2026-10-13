@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type PointerEvent } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type PointerEvent, type RefObject } from "react";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { Logo } from "./ui/Logo";
 import { Arrow } from "./ui/Arrow";
@@ -34,6 +34,17 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const chapterTone = (i: number) => TONE[i] || "ink";
 const fine = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const wide = () => window.matchMedia("(min-width: 1024px)").matches;
+const onWide = (fn: () => void) => {
+  const m = window.matchMedia("(min-width: 1024px)");
+  m.addEventListener("change", fn);
+  return () => m.removeEventListener("change", fn);
+};
+/** The glances open on wide screens only, so narrower ones never build them (after hydration). */
+const useWide = () => useSyncExternalStore(onWide, wide, () => true);
+
+/** The glances re-render only when their own props change: the bar re-renders on every chapter and
+ *  section change, and rebuilding five panels of drawings each time cost a phone dropped frames. */
+const Peek = memo(NavPeek);
 
 /** One value derived from the story position, re-rendering only when it changes. */
 function useStoryValue<T>(select: (g: number) => T, fallback: T): T {
@@ -394,11 +405,18 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
     setOpen(false);
     closePeek(true);
   }, [closePeek]);
+  const closeSoon = useCallback(() => closePeek(), [closePeek]);
+  const closeNow = useCallback(() => closePeek(true), [closePeek]);
   // Let the menu start closing before the story moves.
-  const toChapter = (i: number) => {
-    closeAll();
-    window.setTimeout(() => goToChapter(i), open ? token("--dur-3", 320) : 0);
-  };
+  const toChapter = useCallback(
+    (i: number) => {
+      closeAll();
+      window.setTimeout(() => goToChapter(i), open ? token("--dur-3", 320) : 0);
+    },
+    [closeAll, open],
+  );
+  const onMenuLink = useCallback(() => setOpen(false), []);
+  const wideScreen = useWide();
 
   const onBox = useCallback((x: number) => setCaret(x), []);
 
@@ -513,104 +531,140 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
           </AuditLink>
         </div>
 
-        <NavPeek
-          variant={variant}
-          hrefFor={hrefFor}
-          peek={peek}
-          caret={caret}
-          onEnter={hold}
-          onLeave={() => closePeek()}
-          onDone={() => closePeek(true)}
-        />
+        {wideScreen && <Peek variant={variant} hrefFor={hrefFor} peek={peek} caret={caret} onEnter={hold} onLeave={closeSoon} onDone={closeNow} />}
       </header>
 
       {/* Phone and tablet menu: a dialog on the page grid. */}
-      <div
-        id="menu"
-        ref={menu}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Menu"
-        className="nav-menu lg:hidden"
-        data-open={open || undefined}
-        data-lenis-prevent
-        inert={!open}
-      >
-        <div className="nav-menu-body">
-          {home && (
-            <section className="nav-menu-group" aria-labelledby="menu-story" style={{ ["--i" as string]: 0 }}>
-              <p className="nav-menu-head t-label">
-                <span id="menu-story">{STORY_PEEK.title}</span>
-                <span ref={pct} className="tabular">
-                  0%
-                </span>
-              </p>
-              <ol className="nav-menu-chapters">
-                {CHAPTERS.map((c, i) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      onClick={() => toChapter(i)}
-                      aria-current={storyMode && i === chapter ? "step" : undefined}
-                      aria-label={`Chapter ${i + 1}: ${c.label}. ${STORY_PEEK.chapters[i]}`}
-                      style={toneVars(chapterTone(i))}
-                    >
-                      <span className="nav-menu-n tabular">{pad(i + 1)}</span>
-                      {c.label}
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
-          <section className="nav-menu-group" aria-labelledby="menu-sections" style={{ ["--i" as string]: 1 }}>
-            <p id="menu-sections" className="nav-menu-head t-label">
-              {FOOTER.navTitle}
-            </p>
-            <ul className="nav-menu-links">
-              {LINKS.map(({ id, label, peek: pid }, i) => (
-                <li key={id}>
-                  <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={!inStory && section && LINK_OF[section] === id ? "location" : undefined}>
-                    <span>
-                      <span className="t-title-card block">{label}</span>
-                      <span className="t-small mt-1 block text-ink-soft">{blurbOf(id, pid)}</span>
-                    </span>
-                    <span className="nav-menu-n tabular">{pad(i + 1)}</span>
-                  </SectionLink>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section className="nav-menu-group" aria-labelledby="menu-areas" style={{ ["--i" as string]: 2 }}>
-            <p id="menu-areas" className="nav-menu-head t-label">
-              {FOOTER.areasTitle}
-            </p>
-            <ul className="nav-menu-areas">
-              {AREAS.map((a) => (
-                <li key={a.slug}>
-                  <Link
-                    href={`/solutions/${a.slug}`}
-                    className="nav-menu-area"
-                    style={toneVars(a.tone)}
-                    aria-current={path === `/solutions/${a.slug}` ? "page" : undefined}
-                    onClick={() => setOpen(false)}
-                  >
-                    <i aria-hidden />
-                    <span>{a.name}</span>
-                    <ChevronRight size={16} strokeWidth={2} aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
-        <div className="nav-menu-cta">
-          <AuditLink className="btn btn-primary" onDone={closeAll}>
-            {CTA.primary}
-            <Arrow />
-          </AuditLink>
-        </div>
-      </div>
+      <NavMenu
+        menuRef={menu}
+        pctRef={pct}
+        open={open}
+        home={home}
+        path={path}
+        here={storyMode ? chapter : -1}
+        link={!inStory && section ? LINK_OF[section] : undefined}
+        hrefFor={hrefFor}
+        toChapter={toChapter}
+        closeAll={closeAll}
+        onLink={onMenuLink}
+      />
     </>
   );
 }
+
+/** The phone and tablet menu. Memoised: it re-renders when what it shows changes (open, the current
+ *  chapter or section), not on every change the bar itself follows. */
+const NavMenu = memo(function NavMenu({
+  menuRef,
+  pctRef,
+  open,
+  home,
+  path,
+  here,
+  link,
+  hrefFor,
+  toChapter,
+  closeAll,
+  onLink,
+}: {
+  menuRef: RefObject<HTMLDivElement | null>;
+  pctRef: RefObject<HTMLSpanElement | null>;
+  open: boolean;
+  home: boolean;
+  path: string;
+  here: number;
+  link: string | undefined;
+  hrefFor: (id: string) => string;
+  toChapter: (i: number) => void;
+  closeAll: () => void;
+  onLink: () => void;
+}) {
+  return (
+    <div
+      id="menu"
+      ref={menuRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu"
+      className="nav-menu lg:hidden"
+      data-open={open || undefined}
+      data-lenis-prevent
+      inert={!open}
+    >
+      <div className="nav-menu-body">
+        {home && (
+          <section className="nav-menu-group" aria-labelledby="menu-story" style={{ ["--i" as string]: 0 }}>
+            <p className="nav-menu-head t-label">
+              <span id="menu-story">{STORY_PEEK.title}</span>
+              <span ref={pctRef} className="tabular">
+                0%
+              </span>
+            </p>
+            <ol className="nav-menu-chapters">
+              {CHAPTERS.map((c, i) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => toChapter(i)}
+                    aria-current={i === here ? "step" : undefined}
+                    aria-label={`Chapter ${i + 1}: ${c.label}. ${STORY_PEEK.chapters[i]}`}
+                    style={toneVars(chapterTone(i))}
+                  >
+                    <span className="nav-menu-n tabular">{pad(i + 1)}</span>
+                    {c.label}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+        <section className="nav-menu-group" aria-labelledby="menu-sections" style={{ ["--i" as string]: 1 }}>
+          <p id="menu-sections" className="nav-menu-head t-label">
+            {FOOTER.navTitle}
+          </p>
+          <ul className="nav-menu-links">
+            {LINKS.map(({ id, label, peek: pid }, i) => (
+              <li key={id}>
+                <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={link === id ? "location" : undefined}>
+                  <span>
+                    <span className="t-title-card block">{label}</span>
+                    <span className="t-small mt-1 block text-ink-soft">{blurbOf(id, pid)}</span>
+                  </span>
+                  <span className="nav-menu-n tabular">{pad(i + 1)}</span>
+                </SectionLink>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className="nav-menu-group" aria-labelledby="menu-areas" style={{ ["--i" as string]: 2 }}>
+          <p id="menu-areas" className="nav-menu-head t-label">
+            {FOOTER.areasTitle}
+          </p>
+          <ul className="nav-menu-areas">
+            {AREAS.map((a) => (
+              <li key={a.slug}>
+                <Link
+                  href={`/solutions/${a.slug}`}
+                  className="nav-menu-area"
+                  style={toneVars(a.tone)}
+                  aria-current={path === `/solutions/${a.slug}` ? "page" : undefined}
+                  onClick={onLink}
+                >
+                  <i aria-hidden />
+                  <span>{a.name}</span>
+                  <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+      <div className="nav-menu-cta">
+        <AuditLink className="btn btn-primary" onDone={closeAll}>
+          {CTA.primary}
+          <Arrow />
+        </AuditLink>
+      </div>
+    </div>
+  );
+});

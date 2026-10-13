@@ -9,10 +9,11 @@ import { useEffect } from "react";
  * so no object stalls the scroll the first time it comes into view. Hidden and off-camera objects
  * are included; their visibility is restored before the next frame.
  */
-export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
+export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, roots?: THREE.Object3D[]) {
   const hidden: THREE.Object3D[] = [];
   const culled: THREE.Object3D[] = [];
-  scene.traverse((o) => {
+  const walk = (fn: (o: THREE.Object3D) => void) => (roots ? roots.forEach((r) => r.traverse(fn)) : scene.traverse(fn));
+  walk((o) => {
     // Parts a Bake merged away are never drawn again: leave them hidden.
     if (!o.visible && !o.userData.bakedAway) {
       hidden.push(o);
@@ -23,8 +24,9 @@ export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
       o.frustumCulled = false;
     }
   });
-  // Programs as drawn on screen (tone mapping and colour space included)...
-  gl.compile(scene, camera);
+  // Programs as drawn on screen (tone mapping and colour space included), lit by the scene's lights...
+  if (roots) roots.forEach((r) => gl.compile(r, camera, scene));
+  else gl.compile(scene, camera);
   // ...then one tiny offscreen draw uploads geometry and textures and builds the shadow depth programs.
   const target = new THREE.WebGLRenderTarget(2, 2);
   const previous = gl.getRenderTarget();
@@ -42,14 +44,18 @@ export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
  * A synchronous compile here stalled the page's scroll for a few hundred milliseconds each time a
  * world was added. The canvas is marked data-ready once the first warm-up is done (it fades in).
  */
-export function Warm() {
+export function Warm({ roots }: { roots?: () => THREE.Object3D[] | null }) {
   const { gl, scene, camera, invalidate } = useThree();
   useEffect(() => {
     let live = true;
     // One frame later, so every object has been posed by its first useFrame.
     const id = requestAnimationFrame(() => {
+      // Only the parts not yet warmed, when the caller says which (null: the whole scene).
+      const only = roots?.() ?? undefined;
+      if (only && only.length === 0) return;
+      const walk = (fn: (o: THREE.Object3D) => void) => (only ? only.forEach((r) => r.traverse(fn)) : scene.traverse(fn));
       const hidden: THREE.Object3D[] = [];
-      scene.traverse((o) => {
+      walk((o) => {
         if (!o.visible && !o.userData.bakedAway) {
           hidden.push(o);
           o.visible = true;
@@ -57,7 +63,7 @@ export function Warm() {
       });
       let pending: Promise<unknown> = Promise.resolve();
       try {
-        pending = gl.compileAsync(scene, camera);
+        pending = only ? Promise.all(only.map((r) => gl.compileAsync(r, camera, scene))) : gl.compileAsync(scene, camera);
       } catch {
         // No compileAsync: prewarm compiles synchronously below.
       } finally {
@@ -68,7 +74,7 @@ export function Warm() {
       const done = () => {
         if (!live) return;
         try {
-          prewarm(gl, scene, camera);
+          prewarm(gl, scene, camera, only);
         } catch {
           // A lost context: the next frame redraws what it can.
         }
@@ -81,6 +87,6 @@ export function Warm() {
       live = false;
       cancelAnimationFrame(id);
     };
-  }, [gl, scene, camera, invalidate]);
+  }, [gl, scene, camera, invalidate, roots]);
   return null;
 }
