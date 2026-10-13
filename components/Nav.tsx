@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type PointerEvent } from "react";
-import { ArrowUpRight, ChartNoAxesCombined, ChevronRight, Database, Layers, LayoutGrid, MessageCircleQuestion, Route, Waypoints, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { Logo } from "./ui/Logo";
 import { Arrow } from "./ui/Arrow";
 import { SectionLink } from "./ui/SectionLink";
@@ -19,12 +19,15 @@ import { TONE, goToChapter } from "./story/chapters";
 import { NavPeek, type PeekId, type SectionPeek } from "./NavPeek";
 
 const PEEK_OF: Record<string, SectionPeek> = { applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
-/** The dock's icon over each link's label. */
-const ICON_OF: Record<string, LucideIcon> = { systems: Database, platform: Layers, applications: LayoutGrid, trail: Waypoints, outcomes: ChartNoAxesCombined, how: Route, faq: MessageCircleQuestion };
-/** The four section links (the audit is the CTA). */
-/** Each link's colour from the palette: its hover tile and current icon take it. */
-const TONE_OF: Record<string, string> = { systems: "cobalt", platform: "violet", applications: "emerald", trail: "saffron", outcomes: "tangerine", how: "pink", faq: "cobalt" };
-const LINKS = NAV.sections.filter(([id]) => id !== "audit").map(([id, label]) => ({ id, label, peek: PEEK_OF[id] as SectionPeek | undefined, tone: TONE_OF[id] ?? "cobalt" }));
+/** The bar keeps the four links people look for (the audit is the CTA); the other home sections light
+ *  the link of the part of the page they belong to. */
+const PRIMARY = ["platform", "applications", "how", "faq"];
+const LINK_OF: Record<string, string> = { systems: "platform", platform: "platform", applications: "applications", trail: "applications", outcomes: "how", how: "how", faq: "faq" };
+/** Each link's colour from the palette: its hover tile takes it. */
+const TONE_OF: Record<string, string> = { platform: "violet", applications: "emerald", how: "tangerine", faq: "cobalt" };
+const LINKS = NAV.sections
+  .filter(([id]) => PRIMARY.includes(id))
+  .map(([id, label]) => ({ id, label, peek: PEEK_OF[id] as SectionPeek | undefined, tone: TONE_OF[id] ?? "cobalt" }));
 const blurbOf = (id: string, peek?: SectionPeek) => NAV.blurbs[(peek ?? id) as keyof typeof NAV.blurbs] ?? "";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -72,9 +75,9 @@ const ringX = (el: HTMLElement) => {
 const focusPeek = (id: PeekId) =>
   window.setTimeout(() => document.querySelector<HTMLElement>(`#peek-${id} :is(a[href], button)`)?.focus(), 140);
 
-/** Primary links as a dock (the nav-dock reference): an icon over each label on a sunken track. A raised
- *  tile glides to the hovered link and rests on the section being read; the item under the pointer leans
- *  toward it (magnetic). Hovering (or ArrowDown) opens a glance of that section below the bar. */
+/** The four primary links as plain text in one glass pill. A tile glides to the hovered link and rests on
+ *  the part of the page being read; the label under the pointer leans toward it (magnetic). Hovering (or
+ *  ArrowDown) opens a glance of that section below the bar. */
 function NavLinks({
   hrefFor,
   active,
@@ -95,7 +98,7 @@ function NavLinks({
   const root = useRef<HTMLElement>(null);
   const [hover, setHover] = useState(-1);
   const [box, setBox] = useState({ x: 0, w: 0, ready: false });
-  const current = LINKS.findIndex((l) => l.id === active);
+  const current = LINKS.findIndex((l) => l.id === (active ? LINK_OF[active] : null));
   const open = peek ? LINKS.findIndex((l) => l.peek === peek) : -1;
   const lit = hover >= 0 ? hover : open >= 0 ? open : current;
 
@@ -160,17 +163,11 @@ function NavLinks({
           aria-current={i === current ? "location" : undefined}
           aria-keyshortcuts={pid ? "ArrowDown" : undefined}
         >
-          <DockIcon id={id} />
           <span className="nav-dock-label">{label}</span>
         </SectionLink>
       ))}
     </nav>
   );
-}
-
-function DockIcon({ id }: { id: string }) {
-  const Icon = ICON_OF[id];
-  return <span className="nav-dock-icon" aria-hidden>{Icon ? <Icon size={18} strokeWidth={1.9} /> : null}</span>;
 }
 
 /** Where the reader is, beside the logo. In the story a ring fills with progress and the readout opens
@@ -573,7 +570,7 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
             <ul className="nav-menu-links">
               {LINKS.map(({ id, label, peek: pid }, i) => (
                 <li key={id}>
-                  <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={!inStory && section === id ? "location" : undefined}>
+                  <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={!inStory && section && LINK_OF[section] === id ? "location" : undefined}>
                     <span>
                       <span className="t-title-card block">{label}</span>
                       <span className="t-small mt-1 block text-ink-soft">{blurbOf(id, pid)}</span>

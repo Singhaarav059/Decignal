@@ -30,7 +30,7 @@ function holdAt(k: number) {
 const goToIndustry = (k: number) => goToStory(CH.industries, holdAt(k));
 
 /** The industry facing the front, as React state: it changes once, at the middle of the board's half-turn. */
-function useIndustryAt() {
+export function useIndustryAt() {
   const [at, setAt] = useState(0);
   useLayoutEffect(() => {
     let last = -1;

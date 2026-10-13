@@ -2,7 +2,7 @@
 // from return null, and the actor scales in or out of the scene during the transition.
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
-import { BEATS, CH, FINAL_EXIT, blendAt, clamp01, finalExit, smoothstep, smootherstep, industryF, scaleF, PLINTH_H } from "./story";
+import { BEATS, CH, blendAt, clamp01, finalExit, smoothstep, smootherstep, industryF, scaleF, PLINTH_H } from "./story";
 
 export { industryF, PLINTH_H, BEATS };
 
@@ -432,8 +432,8 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
       // The board carries on into the hub while the systems rise round it: the camera keeps an even
       // pace with them instead of pulling back ahead of the world it reveals.
       o.steady = true;
-      // The exit: the world sinks and steps back as the page below arrives (S69-07).
-      o.exit = smootherstep(FINAL_EXIT, 1, t);
+      // The exit: the world drifts up with the page below as its sheet arrives (finalExit).
+      o.exit = finalExit(CH.final + t);
     }
   }
   return o;

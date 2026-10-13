@@ -19,17 +19,16 @@ import { Actor } from "./core";
 const STOCK = "#DFE2E7";
 const BREACH_DAY = DAYS.length - 1;
 
-/* Pointing at a day lifts its column a little and labels it with that day's stock. */
+/* Pointing at a day labels it with that day's stock. */
 const crateRoots: (THREE.Group | null)[] = [];
 const liveRoots: THREE.Group[] = [];
-const dayLift = DAYS.map(() => 0);
 let dayHover = -1;
 
 function ChartFocus({ onDay }: { onDay: (d: number) => void }) {
   const ray = useMemo(() => new THREE.Raycaster(), []);
   const ndc = useMemo(() => new THREE.Vector2(), []);
   const live = useRef(false);
-  useFrame(({ camera }, dt) => {
+  useFrame(({ camera }) => {
     const on = weight(CH.problem, store.g) > 0.9;
     let hit = -1;
     if (on && store.pointerIn) {
@@ -51,27 +50,17 @@ function ChartFocus({ onDay }: { onDay: (d: number) => void }) {
       if (on || live.current) document.body.style.cursor = hit >= 0 ? "pointer" : "";
     }
     live.current = on;
-    // Nothing to ease once every column has settled and the chart is away.
-    let moving = on || dayHover >= 0;
-    for (let i = 0; i < dayLift.length && !moving; i++) moving = dayLift[i] > 0.0005;
-    if (!moving) return;
-    const d = Math.min(dt, 1 / 30);
-    for (let i = 0; i < dayLift.length; i++) dayLift[i] = THREE.MathUtils.damp(dayLift[i], i === dayHover ? 1 : 0, 10, d);
   });
   return null;
 }
 
 function ChartCrate({ k }: { k: number }) {
-  const ref = useRef<THREE.Group>(null);
   const { d, l } = chartSlot(k);
-  useFrame(() => {
-    // The column rises as one, each crate a fraction later than the one below.
-    if (ref.current) ref.current.position.y = dayLift[d] * (0.06 + l * 0.012);
-  });
+  // The columns stay put under the pointer (a lifting column read as the chart rocking back and
+  // forth); the day's label alone answers the hover.
   return (
     <group
       ref={(g) => {
-        ref.current = g;
         crateRoots[k] = g;
       }}
     >

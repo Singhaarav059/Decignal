@@ -1,0 +1,153 @@
+/* Chapter heads (components/story/ChapterHeads.tsx), wide screens only: each chapter's headline at
+   display size top-left, aligned with the card's edge, over three figures from the systems it reads.
+   The words rise with the chapter (statement-rise); the figures follow one by one. The card below
+   drops its own title and chapter label while a head is on screen. */
+.chapter-head { display: none; }
+@media (min-width: 1024px) {
+  .chapter-head {
+    display: block;
+    top: calc(96px + clamp(12px, 3.2vh, 40px));
+    padding-inline: var(--edge);
+    text-align: left;
+  }
+  .chapter-head-in { width: min(44vw, 620px); transition: opacity var(--dur-4) var(--ease); }
+  .story-back[data-dim] .chapter-head-in { opacity: 0.12; }
+
+  .chapter-kicker { display: flex; align-items: center; gap: 8px; color: var(--color-ink-soft); }
+  .chapter-kicker-n { color: var(--color-ink); }
+  .chapter-kicker-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--tone-on, #fff); background: var(--tone, var(--color-ink)); }
+  .chapter-kicker-note { padding-left: 10px; margin-left: 2px; box-shadow: inset 1px 0 0 var(--color-line-strong, var(--color-line)); color: var(--color-ink-soft); }
+
+  .chapter-h { margin-top: 18px; font-size: clamp(44px, min(4.7vw, 8.2vh), 78px); line-height: 1; letter-spacing: -0.045em; }
+  .chapter-h .accent { font-weight: 300; }
+  .chapter-roll { display: grid; justify-items: start; height: 1.1em; margin-bottom: -0.1em; }
+  .chapter-roll > span { height: 1.1em; line-height: 1.04; }
+  .chapter-head[data-align="end"] .chapter-head-in { margin-left: auto; width: min(40vw, 560px); }
+
+  .chapter-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(22px, 3.6vh, 40px); }
+  .chapter-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 2px 16px 2px 18px;
+    box-shadow: inset 1px 0 0 var(--color-line);
+    opacity: 0;
+    translate: 0 12px;
+    transition: opacity var(--dur-2) var(--ease), translate var(--dur-3) var(--ease);
+  }
+  .chapter-fact:first-child { padding-left: 0; box-shadow: none; }
+  .chapter-head[data-on] .chapter-fact {
+    opacity: 1;
+    translate: 0 0;
+    transition: opacity var(--dur-4) var(--ease) calc(380ms + var(--k) * 110ms), translate var(--dur-5) var(--ease-out-expo) calc(380ms + var(--k) * 110ms);
+  }
+  .chapter-fact dt { display: contents; }
+  .chapter-src { order: 0; }
+  .chapter-fact-value { order: 1; }
+  .chapter-fact-label { order: 2; }
+  .chapter-fact-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: clamp(28px, 2.5vw, 40px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    color: var(--tone-ink, var(--color-ink));
+  }
+  .chapter-fact[data-risk] .chapter-fact-value { color: var(--color-signal-ink); }
+  .chapter-fact-value small { font-size: 14px; font-weight: 500; letter-spacing: -0.01em; color: var(--color-ink-soft); }
+  .chapter-fact-label { font-size: 13px; line-height: 1.35; color: var(--color-ink-soft); }
+
+  /* The source: the system's chip in its own colour (or six dots for all of them). */
+  .chapter-src {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    align-self: flex-start;
+    height: 22px;
+    padding: 0 9px 0 7px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--tone-ink, var(--color-ink));
+    background: color-mix(in srgb, var(--tone, var(--color-cobalt)) 12%, #fff);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone, var(--color-cobalt)) 22%, transparent);
+  }
+  .chapter-src-plain { color: var(--color-ink-2); background: rgb(255 255 255 / 0.7); box-shadow: inset 0 0 0 1px var(--color-line); }
+  .chapter-src-all { gap: 0; padding: 0 8px; background: rgb(255 255 255 / 0.7); box-shadow: inset 0 0 0 1px var(--color-line); }
+  .chapter-src-all i { width: 9px; height: 9px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 1.5px #fff; }
+  .chapter-src-all i + i { margin-left: -2px; }
+
+  /* The card under a head: its title and chapter name live in the head; the progress strip stays. The
+     title stays in the accessibility tree (the head is aria-hidden). */
+  .story-pane:not([data-ch="0"]):not([data-ch="8"]) :is(.story-title, .story-label) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 1024px) and (max-height: 760px) {
+  .chapter-facts { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chapter-fact { opacity: 1 !important; translate: none !important; transition: none !important; }
+}
+
+/* ---- 09 Decide: the hero's centre line closed by a bar (Story.tsx, FinalBar). Phones keep the
+   headline at the top and the card below. ---- */
+.final-head { display: grid; justify-items: center; }
+.final-sub, .final-bar { display: none; }
+@media (min-width: 1024px) {
+  .final-stage { inset: 0; top: 0; padding: 0; }
+  .final-head { position: absolute; inset-inline: var(--gutter); top: calc(96px + 3vh); }
+  .final-h1 { font-size: clamp(42px, min(6.2vw, 10vh), 100px); }
+  .final-sub { display: block; margin-top: 18px; max-width: 50ch; font-size: 17px; line-height: 1.5; color: var(--color-ink-2); text-wrap: balance; }
+  .final-bar {
+    position: absolute;
+    left: 50%;
+    bottom: var(--card-b);
+    translate: -50% 0;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 0;
+    row-gap: 8px;
+    width: max-content;
+    max-width: calc(100% - 2 * var(--gutter));
+    padding: 16px 16px 16px 26px;
+    border-radius: 28px;
+    pointer-events: auto;
+    text-align: left;
+    background: rgb(255 255 255 / 0.72);
+    -webkit-backdrop-filter: var(--lg-blur);
+    backdrop-filter: var(--lg-blur);
+    box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift);
+    transition: opacity var(--dur-4) var(--ease);
+  }
+  .story-back[data-dim] .final-bar { opacity: 0.12; pointer-events: none; }
+  .final-bar-title { grid-column: 1; grid-row: 1; color: var(--color-ink-soft); }
+  .final-bar-outcomes { grid-column: 1; grid-row: 2; display: flex; gap: 28px; padding-right: 28px; }
+  .final-bar-outcomes li { display: grid; gap: 4px; max-width: 21ch; cursor: default; }
+  .final-bar-outcomes strong { font-size: clamp(22px, 1.9vw, 28px); font-weight: 500; line-height: 1; letter-spacing: -0.035em; white-space: nowrap; color: var(--tone-ink, var(--color-ink)); }
+  .final-bar-outcomes span { font-size: 12.5px; line-height: 1.3; color: var(--color-ink-soft); }
+  .final-bar-systems { grid-column: 2; grid-row: 1 / span 2; display: grid; justify-items: start; gap: 10px; align-self: stretch; align-content: center; padding: 0 28px; box-shadow: inset 1px 0 0 var(--color-line); }
+  .final-bar-systems ul { display: flex; }
+  .final-bar-systems li { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--tone-on); background: var(--tone); box-shadow: 0 0 0 2px #fff; transition: translate var(--dur-2) var(--ease); }
+  .final-bar-systems li + li { margin-left: -6px; }
+  .final-bar-systems li:hover { z-index: 1; translate: 0 -3px; }
+  .final-bar-systems .t-small { color: var(--color-ink-soft); white-space: nowrap; }
+  .final-bar-actions { grid-column: 3; grid-row: 1 / span 2; display: grid; justify-items: center; gap: 10px; align-self: stretch; align-content: center; padding-left: 24px; box-shadow: inset 1px 0 0 var(--color-line); }
+  .final-bar-actions .story-link { margin-top: 0; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .final-bar-outcomes { gap: 18px; padding-right: 20px; }
+  .final-bar-systems { padding: 0 20px; }
+}

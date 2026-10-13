@@ -37,6 +37,12 @@
   backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift);
 }
+/* The quiet CTA's hover keeps chrome.css's cobalt fill: the glass above would otherwise win the
+   background and leave the hover's white label on white glass. */
+@media (hover: hover) {
+  .nav-cta[data-quiet]:hover, .nav-shell[data-dark] .nav-cta[data-quiet]:hover { color: var(--color-on-ink); background-color: var(--color-cobalt); }
+  .nav-cta[data-quiet]:hover .nav-cta-icon { color: var(--color-cobalt); background: var(--color-surface); }
+}
 @media (min-width: 1024px) {
   .nav-brand { background: rgb(255 255 255 / 0.5); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
   .nav-pill[data-solid] .nav-surface { box-shadow: none; }
@@ -60,8 +66,6 @@
   transition: transform var(--dur-3) var(--ease), width var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease), background-color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
 }
 .nav-links a { color: var(--color-ink-2); }
-.nav-links a .nav-dock-icon { transition: color var(--dur-2) var(--ease), translate var(--dur-3) var(--ease); }
-.nav-links a:hover .nav-dock-icon, .nav-links a[aria-current] .nav-dock-icon { color: var(--tone-ink, var(--color-cobalt)); }
 .nav-links a:hover, .nav-links a[aria-current] { color: var(--color-ink); }
 
 /* ---- Glass over content: cards and controls that float over the world, photos or colour ---- */
@@ -166,7 +170,6 @@
 }
 .nav-shell[data-dark] :is(.logo-word, .nav-links a, .nav-readout, .nav-readout-label, .nav-cta[data-quiet]) { color: #fff; }
 .nav-shell[data-dark] .nav-burger-bar { background: #fff; }
-.nav-shell[data-dark] .nav-links a:is(:hover, [aria-current]) .nav-dock-icon { color: color-mix(in srgb, var(--tone) 55%, #fff); }
 .nav-shell[data-dark] .nav-links-hl { background: color-mix(in srgb, var(--tone, var(--color-cobalt)) 34%, rgb(255 255 255 / 0.1)); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.35), inset 0 0 0 0.75px rgb(255 255 255 / 0.16); }
 .nav-shell[data-dark] .nav-cta:not([data-quiet]) { color: var(--color-ink); background: #fff; }
 .nav-shell[data-dark] .nav-cta:not([data-quiet]) .nav-cta-icon { color: #fff; background: var(--color-ink); }

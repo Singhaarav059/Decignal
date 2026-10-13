@@ -23,7 +23,7 @@ export const CHAPTERS: Chapter[] = [
   { id: "control", label: "Control", len: 1.7, ts: 0.62 },
   { id: "scale", label: "Scale", len: 2.2, ts: 0.75 },
   { id: "industries", label: "Industries", len: 3.2, ts: 0.85 },
-  { id: "final", label: "Decide", len: 1.15, ts: 1 },
+  { id: "final", label: "Decide", len: 1, ts: 1 },
 ];
 
 export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<string, number>;
@@ -31,6 +31,8 @@ export const TOTAL_LEN = CHAPTERS.reduce((s, c) => s + c.len, 0);
 
 export const store = {
   g: 0,
+  /** How far the page below has slid over the finished story, 0..1 (finalExit). */
+  after: 0,
   velocity: 0, // scroll velocity from Lenis, px per frame
   /** performance.now() of the last scroll frame (Lenis), so hover effects can wait for the scroll to settle. */
   scrollAt: -1e9,
@@ -204,9 +206,21 @@ export const scaleBeat = (t: number) => Math.round(scaleF(t));
 /** Local progress where function k holds the front (for jumps from the card's function tabs). */
 export const scaleSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.scale].ts - 0.06, 5, 0.6);
 
-/** Where the final chapter leaves: over its last 30% the copy goes and the world sinks for the page below. */
-export const FINAL_EXIT = 0.7;
-export const finalExit = (g: number) => smootherstep(FINAL_EXIT, 1, localIn(CH.final, g));
+/**
+ * The hand-off to the page below: how far its sheet has slid over the finished story (0..1, from
+ * SmoothScroll). The story holds its last frame to the end of its track; then, as the sheet rises, the
+ * world and the closing copy drift up with it at a slower pace (parallax), never sinking against it.
+ */
+export const finalExit = (g: number) => (g >= CHAPTERS.length - 1e-4 ? store.after : 0);
+/** Screen heights the closing layer drifts up while the sheet covers it (the sheet itself travels 1). */
+export const EXIT_DRIFT = 0.42;
+
+export function setAfter(p: number) {
+  const v = clamp01(p);
+  if (Math.abs(v - store.after) < 1e-4) return;
+  store.after = v;
+  store.listeners.forEach((l) => l(store.g));
+}
 
 /**
  * The one 3D pin open at g, by chapter and beat. Ids: "island:<system>" (Context), "plant02",

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { useRef } from "react";
-import { CH, finalExit, smootherstep, store, weight } from "@/lib/story";
+import { CH, smootherstep, store, weight } from "@/lib/story";
 import { HUB, ISO } from "@/lib/scene";
 import { clay } from "../kit";
 import { reducedMotion } from "./core";
@@ -27,7 +27,8 @@ export function FinalMark() {
   useFrame(({ clock }) => {
     const g = root.current;
     if (!g) return;
-    const w = portrait ? 0 : weight(CH.final, store.g) * (1 - finalExit(store.g));
+    // It stays whole as the page arrives: the world drifts up with the sheet instead of folding away.
+    const w = portrait ? 0 : weight(CH.final, store.g);
     g.visible = w > 0.01;
     if (!g.visible) return;
     const still = reducedMotion();

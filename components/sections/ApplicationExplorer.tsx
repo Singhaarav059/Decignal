@@ -152,11 +152,19 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       io.disconnect();
     }, { rootMargin: compact ? "150% 0px" : "300% 0px" });
     io.observe(el);
-    // Fetch the scene's code once the loader has lifted and the page is idle, so the mount is quick.
+    // Fetch the scene's code once the loader has lifted and the page is idle, then build the world in the
+    // background a little later (its shaders compile off the main thread, Warm), so it is drawn and waiting
+    // when the reader arrives, by scroll or by a jump from the nav. A canvas out of view draws on demand only.
     const html = document.documentElement;
     let idle = 0;
+    let build = 0;
     const prefetch = () => {
-      const run = () => void import("../three/ApplicationScene");
+      const run = () => {
+        void import("../three/ApplicationScene").then(() => {
+          const mount = () => setNear(true);
+          build = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(mount, { timeout: 5000 }) : window.setTimeout(mount, 2500);
+        });
+      };
       idle = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(run, { timeout: 4000 }) : window.setTimeout(run, 1500);
     };
     let mo: MutationObserver | null = null;
@@ -172,8 +180,12 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     return () => {
       io.disconnect();
       mo?.disconnect();
-      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
+      if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idle);
+        window.cancelIdleCallback(build);
+      }
       window.clearTimeout(idle);
+      window.clearTimeout(build);
     };
   }, [compact]);
 

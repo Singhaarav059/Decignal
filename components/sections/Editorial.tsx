@@ -29,7 +29,7 @@ import SectionTitle from "../ui/SectionTitle";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
 import { CountUp } from "../ui/CountUp";
-import { SystemsMarquee } from "./SystemsRibbon";
+import { ReadWheel } from "./ReadWheel";
 import { SystemsRing } from "./SystemsRing";
 import { Statement } from "./Statement";
 import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
@@ -151,7 +151,7 @@ export function Editorial() {
 /* ------------------------------------------------------------------ */
 
 function Systems() {
-  // The six systems turn around the head as a ring of photographs; the other types drift below.
+  // The six systems travel round the head as a ring of photographs; the other types follow on a dial.
   return (
     <section
       id="systems"
@@ -183,7 +183,8 @@ function Systems() {
           {SYSTEMS_STRIP.footnote}
         </p>
       </SystemsRing>
-      <SystemsMarquee label={SYSTEMS_STRIP.moreLabel} />
+      {/* The other kinds of system, on a dial the scroll turns. */}
+      <ReadWheel />
     </section>
   );
 }

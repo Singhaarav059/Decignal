@@ -36,13 +36,51 @@ export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
   culled.forEach((o) => (o.frustumCulled = true));
 }
 
-/** Mounted last inside a scene's Suspense: once every model exists, upload it all to the GPU in one go. */
+/**
+ * Mounted last inside a scene's Suspense: once every model exists, compile its shaders off the main
+ * thread where the browser can (KHR_parallel_shader_compile), then upload it all to the GPU in one go.
+ * A synchronous compile here stalled the page's scroll for a few hundred milliseconds each time a
+ * world was added. The canvas is marked data-ready once the first warm-up is done (it fades in).
+ */
 export function Warm() {
-  const { gl, scene, camera } = useThree();
+  const { gl, scene, camera, invalidate } = useThree();
   useEffect(() => {
+    let live = true;
     // One frame later, so every object has been posed by its first useFrame.
-    const id = requestAnimationFrame(() => prewarm(gl, scene, camera));
-    return () => cancelAnimationFrame(id);
-  }, [gl, scene, camera]);
+    const id = requestAnimationFrame(() => {
+      const hidden: THREE.Object3D[] = [];
+      scene.traverse((o) => {
+        if (!o.visible && !o.userData.bakedAway) {
+          hidden.push(o);
+          o.visible = true;
+        }
+      });
+      let pending: Promise<unknown> = Promise.resolve();
+      try {
+        pending = gl.compileAsync(scene, camera);
+      } catch {
+        // No compileAsync: prewarm compiles synchronously below.
+      } finally {
+        // Programs are requested in this synchronous pass: hidden objects go back before any frame draws.
+        hidden.forEach((o) => (o.visible = false));
+      }
+      const cap = new Promise((r) => window.setTimeout(r, 3000));
+      const done = () => {
+        if (!live) return;
+        try {
+          prewarm(gl, scene, camera);
+        } catch {
+          // A lost context: the next frame redraws what it can.
+        }
+        gl.domElement.dataset.ready = "";
+        invalidate();
+      };
+      Promise.race([pending, cap]).then(done, done);
+    });
+    return () => {
+      live = false;
+      cancelAnimationFrame(id);
+    };
+  }, [gl, scene, camera, invalidate]);
   return null;
 }

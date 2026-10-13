@@ -6,6 +6,7 @@ import {
   CH,
   CHAPTERS,
   CONTEXT_PINS,
+  EXIT_DRIFT,
   activePin,
   blendAt,
   clamp01,
@@ -58,7 +59,8 @@ export function StoryCard() {
     let lastStock = "";
     let lastRect = "";
     let left = false;
-    // Wide screens: the hero carries its own line and CTA in its corners, so the card waits for 02.
+    // Wide screens: the hero carries its own line and CTA in its corners, so the card waits for 02; the
+    // ending carries them on its own bar.
     const wideMq = window.matchMedia("(min-width: 1024px)");
     let away = false;
 
@@ -73,17 +75,24 @@ export function StoryCard() {
       return true;
     };
 
+    // An open Details list grows the card upward over the world for a moment. The 3D framing keeps to
+    // the closed card, so opening one never dollies the camera in and out.
+    const openExtra = (p: Element | null | undefined) => {
+      const d = p?.querySelector<HTMLElement>(".story-details:not([hidden])");
+      return d ? d.offsetHeight + (parseFloat(getComputedStyle(d).marginTop) || 0) : 0;
+    };
     const report = () => {
       const gone = finalExit(store.g) > 0.98 || away;
       const r = frame.getBoundingClientRect();
-      const key = gone ? "" : `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`;
+      const extra = gone ? 0 : openExtra(inner.querySelector(":scope > [data-on]"));
+      const key = gone ? "" : `${Math.round(r.left)},${Math.round(r.top + extra)},${Math.round(r.width)},${Math.round(r.height - extra)}`;
       if (key === lastRect) return;
       lastRect = key;
-      setCardRect(gone ? null : { x: r.left, y: r.top, w: r.width, h: r.height });
+      setCardRect(gone ? null : { x: r.left, y: r.top + extra, w: r.width, h: r.height - extra });
     };
 
-    // Each chapter's card height, for the phone layouts that stack a deck above the card.
-    const writeHeights = () => panes.forEach((_, k) => put(overlay, `--story-card-h-${k}`, `${heights[k] + pad + chrome}px`));
+    // Each chapter's closed card height, for the 3D framing and the phone layouts that stack a deck above the card.
+    const writeHeights = () => panes.forEach((p, k) => put(overlay, `--story-card-h-${k}`, `${heights[k] - openExtra(p) + pad + chrome}px`));
 
     // The chapter whose content the card shows: the swap point is the middle of each hand-off.
     const onAt = (g: number) => {
@@ -109,7 +118,8 @@ export function StoryCard() {
       // The ending turns the card to the night of the closing bands.
       frame.toggleAttribute("data-night", on === CH.final);
 
-      const isAway = wideMq.matches && on === CH.fragments;
+      // The ending too: its results and call to action sit on the centred bar (FinalBar).
+      const isAway = wideMq.matches && (on === CH.fragments || on === CH.final);
       if (isAway !== away) {
         away = isAway;
         outer.toggleAttribute("data-away", away);
@@ -120,6 +130,8 @@ export function StoryCard() {
       // The final card stays while the world leaves; the page below slides over it (the wrapper keeps
       // the intro fade). Once the world has gone, the 3D framing stops keeping clear of it (and back).
       const exit = finalExit(g);
+      // Phones keep the card in the ending: it drifts up with the world as the page arrives.
+      put(outer, "translate", exit > 0 ? `0 ${(-exit * EXIT_DRIFT * window.innerHeight).toFixed(1)}px` : "none");
       if (exit > 0.98 !== left) {
         left = !left;
         report();

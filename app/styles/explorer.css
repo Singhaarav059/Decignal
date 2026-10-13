@@ -10,6 +10,9 @@
 
 /* The world: one transform carries the hand-off between applications (set from script). */
 .application-world { position: absolute; inset: 0; z-index: 0; will-change: opacity, transform; }
+/* The world fades in once its shaders are warm (Warm sets data-ready): never a half-built first frame. */
+.application-world canvas { opacity: 0; transition: opacity 700ms var(--ease); }
+.application-world canvas[data-ready] { opacity: 1; }
 
 /* ---- Head: label row and title ---- */
 .application-head { position: absolute; z-index: 2; left: var(--edge); top: 96px; width: var(--card-w); }

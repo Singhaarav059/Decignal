@@ -23,11 +23,53 @@ const PHOTO: Record<string, { src: StaticImageData; alt: string }> = {
   ext: { src: ext, alt: "A container port and a ship at the quay, from the air" },
 };
 
+/** Sync times shown beside each fact (lib/systems: the same freshness the island panels give). */
+const SYNC: Record<string, string> = { erp: "2 min ago", crm: "5 min ago", mes: "1 min ago", wms: "1 min ago", sup: "1 hr ago", ext: "15 min ago" };
+
 /**
- * The six systems as a ring of photographs that turns around the section's copy (the Plinth and
- * Koushik rings): the scroll turns it, and a slow drift keeps it alive while the reader rests. Tiles
- * stay upright; the ones at the front of the ellipse come forward, the ones at the back recede. Each
- * caption names the system and, on hover or focus, what Decignal reads from it in the running example.
+ * A rounded rectangle traced at an even pace: the track the photographs travel round the panel.
+ * u in [0, 1) from the bottom middle, clockwise on screen (left along the bottom first).
+ */
+function track(u: number, A: number, B: number, R: number, out: { x: number; y: number }) {
+  const sx = 2 * (A - R);
+  const sy = 2 * (B - R);
+  const q = (Math.PI * R) / 2;
+  const L = 2 * sx + 2 * sy + 4 * q;
+  let d = (((u % 1) + 1) % 1) * L;
+  // Bottom edge, from the middle leftwards.
+  if (d < sx / 2) return ((out.x = -d), (out.y = B), out);
+  d -= sx / 2;
+  const arc = (cx: number, cy: number, a0: number) => {
+    const a = a0 + (d / q) * (Math.PI / 2);
+    out.x = cx + Math.cos(a) * R;
+    out.y = cy + Math.sin(a) * R;
+    return out;
+  };
+  if (d < q) return arc(-(A - R), B - R, Math.PI / 2);
+  d -= q;
+  if (d < sy) return ((out.x = -A), (out.y = B - R - d), out);
+  d -= sy;
+  if (d < q) return arc(-(A - R), -(B - R), Math.PI);
+  d -= q;
+  if (d < sx) return ((out.x = -(A - R) + d), (out.y = -B), out);
+  d -= sx;
+  if (d < q) return arc(A - R, -(B - R), -Math.PI / 2);
+  d -= q;
+  if (d < sy) return ((out.x = A), (out.y = -(B - R) + d), out);
+  d -= sy;
+  if (d < q) return arc(A - R, B - R, 0);
+  d -= q;
+  out.x = A - R - d;
+  out.y = B;
+  return out;
+}
+
+/**
+ * The six systems as photographs travelling round the section's glass panel (the Plinth and Koushik
+ * rings): the scroll moves them, and a slow drift keeps them going while the reader rests. Their track is
+ * a rounded rectangle measured from the panel and the tiles, so a photograph never passes behind the
+ * copy. The one passing the front (the bottom middle) is being read: its photo takes a ring in its
+ * colour, its thread lights, and the panel shows what Decignal reads from it in the running example.
  * Below 768px the ring lays out as a still grid under the copy.
  */
 export function SystemsRing({ children }: { children: ReactNode }) {
@@ -38,17 +80,33 @@ export function SystemsRing({ children }: { children: ReactNode }) {
     if (!el) return;
     const tiles = Array.from(el.querySelectorAll<HTMLElement>(".orbit-tile"));
     const threads = Array.from(el.querySelectorAll<SVGPathElement>(".orbit-thread"));
+    const lives = Array.from(el.querySelectorAll<HTMLElement>(".orbit-live-item"));
+    const panel = el.querySelector<HTMLElement>(".orbit-copy");
     const wide = window.matchMedia("(min-width: 768px)");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     let visible = false;
-    let rx = 0;
-    let ry = 0;
+    let A = 0;
+    let B = 0;
+    let R = 0;
+    let reading = -1;
+    const pt = { x: 0, y: 0 };
     const t0 = performance.now();
     const measure = () => {
-      // Wide and tall enough that a tile passing above or below the copy clears it.
-      rx = el.clientWidth * (el.clientWidth > 1200 ? 0.36 : 0.39);
-      ry = Math.min(el.clientHeight * 0.37, rx * 0.62);
+      if (!wide.matches || !panel || !tiles[0]) {
+        el.style.removeProperty("--orbit-h");
+        return;
+      }
+      // The panel's half sizes plus a tile's (front scale 1) plus a gap: the track clears the copy.
+      const tw = tiles[0].offsetWidth / 2;
+      const th = tiles[0].offsetHeight / 2;
+      const W = panel.offsetWidth / 2;
+      const H = panel.offsetHeight / 2;
+      const gap = 22;
+      A = Math.max(W + tw + gap, Math.min(el.clientWidth * 0.36, el.clientWidth / 2 - tw - 20));
+      B = H + th + gap;
+      R = Math.min(A, B) * 0.42;
+      el.style.setProperty("--orbit-h", `${Math.ceil(2 * (B + th) + 56)}px`);
     };
     const frame = (now: number) => {
       raf = 0;
@@ -61,19 +119,35 @@ export function SystemsRing({ children }: { children: ReactNode }) {
       }
       const box = pageBox(el);
       const p = (window.scrollY + window.innerHeight - box.top) / (window.innerHeight + box.height);
-      const spin = reduced ? 0 : p * 150 + (now - t0) * 0.0035;
+      const spin = reduced ? 0 : p * 0.42 + (now - t0) * 0.0000075;
+      let front = 0;
+      let best = -Infinity;
       tiles.forEach((t, i) => {
-        const a = ((i * 60 + spin + 90) * Math.PI) / 180;
-        const depth = (Math.sin(a) + 1) / 2;
-        const s = 0.72 + 0.28 * depth;
-        const x = Math.cos(a) * rx;
-        const y = Math.sin(a) * ry;
-        t.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${s.toFixed(3)})`;
+        track(i / tiles.length + spin, A, B, R, pt);
+        // The bottom edge is the front: tiles there come forward, the ones along the top recede.
+        const depth = (pt.y / B + 1) / 2;
+        const sc = 0.76 + 0.24 * depth;
+        t.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
         t.style.zIndex = String(Math.round(depth * 10));
-        // Each system's thread runs from its photo into the middle, bowing like the hero's network.
+        // The front is the tile nearest the bottom middle.
+        const score = pt.y - Math.abs(pt.x) * 0.6;
+        if (score > best) {
+          best = score;
+          front = i;
+        }
+        // Each system's thread runs from its photo into the panel, bowing like the hero's network.
         const th = threads[i];
-        if (th) th.setAttribute("d", `M${x.toFixed(1)} ${y.toFixed(1)} Q ${(x * 0.35).toFixed(1)} ${(y * 0.9).toFixed(1)} 0 0`);
+        if (th) th.setAttribute("d", `M${pt.x.toFixed(1)} ${pt.y.toFixed(1)} Q ${(pt.x * 0.35).toFixed(1)} ${(pt.y * 0.9).toFixed(1)} 0 0`);
       });
+      if (front !== reading) {
+        reading = front;
+        tiles.forEach((t, i) => t.toggleAttribute("data-reading", i === front));
+        threads.forEach((t, i) => t.toggleAttribute("data-reading", i === front));
+        lives.forEach((l, i) => {
+          l.toggleAttribute("data-on", i === front);
+          l.toggleAttribute("data-past", i !== front && l.hasAttribute("data-on"));
+        });
+      }
       if (visible && !reduced) raf = requestAnimationFrame(frame);
     };
     const kick = () => {
@@ -91,13 +165,18 @@ export function SystemsRing({ children }: { children: ReactNode }) {
       kick();
     });
     ro.observe(el);
-    wide.addEventListener("change", kick);
+    if (panel) ro.observe(panel);
+    const onWide = () => {
+      measure();
+      kick();
+    };
+    wide.addEventListener("change", onWide);
     window.addEventListener("scroll", kick, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
       io.disconnect();
       ro.disconnect();
-      wide.removeEventListener("change", kick);
+      wide.removeEventListener("change", onWide);
       window.removeEventListener("scroll", kick);
     };
   }, []);
@@ -114,6 +193,25 @@ export function SystemsRing({ children }: { children: ReactNode }) {
       </svg>
       <div className="orbit-copy" data-lens>
         {children}
+        {/* What the system at the front is giving up right now: one fact from the running example. */}
+        <div className="orbit-live" aria-hidden>
+          <span className="orbit-live-label t-label">
+            <i />
+            Reading
+          </span>
+          <span className="orbit-live-stack">
+            {CONNECTS.map((c, i) => (
+              <span key={c.id} className="orbit-live-item" style={toneVars(c.tone)} data-on={i === 0 || undefined}>
+                <span className="orbit-live-sys">
+                  <SystemIcon id={c.id} size={12} />
+                  {c.name}
+                </span>
+                <span className="orbit-live-fact">{c.read}</span>
+                <span className="orbit-live-sync">Example · synced {SYNC[c.id]}</span>
+              </span>
+            ))}
+          </span>
+        </div>
       </div>
       <ul className="orbit-tiles" aria-label="Systems Decignal reads">
         {CONNECTS.map((c) => {

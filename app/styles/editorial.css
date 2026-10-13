@@ -47,7 +47,8 @@
 
 /* ---- Systems: the six systems as a ring of duotone photographs turning around the head (Plinth,
    Koushik; components/sections/SystemsRing.tsx). Phones: the head, then a still two-column grid. ---- */
-.works-with-section { position: relative; display: grid; padding-top: var(--section-y); overflow: hidden; }
+/* clip, not hidden: the Also reads dial inside holds the screen with position: sticky. */
+.works-with-section { position: relative; display: grid; padding-top: var(--section-y); overflow: clip; }
 .orbit { position: relative; display: grid; gap: 40px; padding-inline: var(--gutter); }
 .orbit-copy { position: relative; z-index: 5; display: grid; justify-items: center; text-align: center; }
 .orbit-copy .section-title-lede { max-width: 34ch; }
@@ -60,9 +61,10 @@
 .orbit-cap-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-pill); color: var(--tone-on); background: var(--tone); }
 .orbit-read { margin-top: 4px; color: var(--color-ink-soft); text-wrap: balance; }
 @media (min-width: 768px) {
-  .orbit { height: clamp(780px, 116svh, 1040px); place-items: center; gap: 0; }
-  .orbit-copy { width: min(680px, 50vw); }
-  .orbit-copy .t-title { font-size: min(var(--fs-title), 64px); }
+  /* The height follows the track round the panel (SystemsRing sets --orbit-h). */
+  .orbit { height: var(--orbit-h, clamp(780px, 116svh, 1040px)); place-items: center; gap: 0; }
+  .orbit-copy { width: min(640px, 48vw); }
+  .orbit-copy .t-title { font-size: min(var(--fs-title), 56px); }
   .orbit-tiles { position: absolute; inset: 0; display: block; pointer-events: none; }
   .orbit-tile { position: absolute; left: 50%; top: 50%; width: clamp(170px, 15vw, 230px); margin: calc(clamp(170px, 15vw, 230px) * -0.42) 0 0 calc(clamp(170px, 15vw, 230px) * -0.5); pointer-events: auto; will-change: transform; }
   .orbit-photo { box-shadow: 0 1px 2px rgb(15 18 23 / 0.06), 0 24px 40px -24px rgb(15 18 23 / 0.35); }
@@ -577,8 +579,15 @@
   color: var(--color-ink);
 }
 .bento-n::after { content: "."; color: var(--tone); }
-.bento-photo { grid-template-rows: auto auto auto 1fr; overflow: hidden; }
-.bento-figure { position: relative; margin: calc(-1 * var(--card-pad)) calc(-1 * var(--card-pad)) 20px; overflow: hidden; aspect-ratio: 16 / 10; background: var(--tone); }
+/* The approver card stacks its pieces with even gaps; the figure takes whatever height is left at the foot. */
+.bento-photo { display: flex; flex-direction: column; overflow: hidden; }
+.bento-photo .bento-n { margin-top: auto; padding-top: 18px; }
+.bento-figure { position: relative; margin: calc(-1 * var(--card-pad)) calc(-1 * var(--card-pad)) 20px; overflow: hidden; aspect-ratio: 16 / 8; background: var(--tone); }
+.bento-log { display: grid; gap: 2px; margin-top: 14px; }
+.bento-log li { display: grid; grid-template-columns: 3.4em 1fr; align-items: baseline; gap: 10px; padding: 7px 0 7px 14px; position: relative; font-size: 13px; line-height: 1.35; color: var(--color-ink-2); box-shadow: inset 0 -1px 0 var(--color-line); }
+.bento-log li:last-child { box-shadow: none; }
+.bento-log li::before { content: ""; position: absolute; left: 0; top: 13px; width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.bento-log span { font-weight: 600; color: var(--color-ink); }
 .bento-img { display: block; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(0.95) brightness(1.12); transition: transform 1200ms var(--ease); }
 .bento-figure::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--tone) 62%, white); mix-blend-mode: multiply; }
 .bento-photo:hover .bento-img { transform: scale(1.05); }
@@ -751,3 +760,4 @@
   .how-sheet-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr); }
   .how-plate { grid-column: auto; align-self: stretch; }
 }
+.bento-photo .bento-art { width: 100%; }

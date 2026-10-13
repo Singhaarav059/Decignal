@@ -1,0 +1,115 @@
+/* Also reads as a dial (components/sections/ReadWheel.tsx). Wide screens: the section holds the screen
+   while the scroll turns a dial that rises from the foot of the page like a horizon. Its rim carries the
+   nine system types (ticks, the three group arcs, upright labels); the one at the crown fills the dome
+   with an example read and two bars, the card names it and the application that uses it.
+   Phones: the head, then the types as a list. */
+.rw-track { padding-top: clamp(56px, 8vw, 96px); }
+.rw-title { margin-top: 12px; text-wrap: balance; font-size: clamp(30px, 3.4vw, 48px); font-weight: 500; line-height: 1.05; letter-spacing: -0.04em; color: var(--color-ink); }
+.rw-title .wall-count { display: inline-grid; margin-left: 12px; vertical-align: 0.3em; }
+.rw-lede { margin-top: 14px; max-width: 44ch; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
+.rw-top { padding-inline: var(--gutter); }
+.rw-swap { animation: rw-in 620ms var(--ease-out-expo) both; }
+@keyframes rw-in { from { opacity: 0; translate: 0 10px; } }
+
+/* Phones and tablets: no dial. */
+.rw-tabs, .rw-card, .rw-wheel { display: none; }
+.rw-top { padding-top: 0; }
+.rw-list { display: grid; gap: 10px; margin: 28px auto 0; padding-inline: var(--gutter); max-width: 720px; }
+.rw-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 14px 16px 14px 14px; border-radius: 18px; background: rgb(255 255 255 / 0.72); box-shadow: inset 0 0 0 1px var(--color-line); }
+.rw-list-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--tone-on); background: var(--tone); }
+.rw-list-body { display: grid; gap: 3px; min-width: 0; }
+.rw-list-k { color: var(--color-ink-soft); }
+.rw-list-body strong { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
+.rw-list-body .t-small { color: var(--color-ink-soft); }
+.rw-list-fig { font-size: 22px; font-weight: 500; letter-spacing: -0.03em; white-space: nowrap; color: var(--tone-ink, var(--color-ink)); }
+.rw-list-fig small { font-size: 12px; color: var(--color-ink-soft); letter-spacing: 0; }
+
+@media (min-width: 1024px) {
+  .rw-list { display: none; }
+  .rw-track { position: relative; height: var(--rw-len); }
+  .rw-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+  .rw-top { position: relative; z-index: 3; display: flex; align-items: flex-start; justify-content: space-between; gap: 48px; padding-top: calc(92px + 2.4vh); }
+  .rw-track { padding-top: 0; }
+  .rw-top { padding-inline: 0; }
+  .rw-copy { max-width: min(620px, 46vw); }
+  .rw-title { font-size: clamp(34px, min(3.4vw, 6vh), 52px); }
+
+  .rw-tabs { display: flex; gap: 8px; margin-top: 22px; }
+  .rw-tab {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 12px; border-radius: var(--radius-pill);
+    font-size: 14px; font-weight: 600; color: var(--color-ink-2); background: rgb(255 255 255 / 0.66);
+    box-shadow: inset 0 0 0 1px var(--color-line);
+    transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
+  }
+  .rw-tab i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); transition: background-color var(--dur-3) var(--ease); }
+  .rw-tab span { font-size: 12px; color: var(--color-ink-soft); }
+  .rw-tab:hover { box-shadow: inset 0 0 0 1px var(--color-line-strong); }
+  .rw-tab[aria-pressed="true"] { color: var(--tone-on); background: var(--tone); box-shadow: none; }
+  .rw-tab[aria-pressed="true"] i { background: currentColor; }
+  .rw-tab[aria-pressed="true"] span { color: inherit; opacity: 0.8; }
+
+  .rw-card {
+    display: block; flex: none; width: min(380px, 30vw); margin-top: 36px; padding: 18px 20px 20px; border-radius: 22px;
+    background: rgb(255 255 255 / 0.72); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+    box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
+  }
+  .rw-card-k { display: flex; align-items: center; justify-content: space-between; color: var(--color-ink-soft); }
+  .rw-card-phase { display: inline-flex; align-items: center; gap: 7px; color: var(--tone-ink, var(--color-ink)); }
+  .rw-card-phase i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+  .rw-card-phase { color: var(--tone-ink, var(--color-ink)); }
+  .rw-card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: 22px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; color: var(--color-ink); }
+  .rw-card-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--tone-on); background: var(--tone); }
+  .rw-card-full { font-size: 14px; font-weight: 500; letter-spacing: -0.005em; color: var(--color-ink-soft); }
+  .rw-card-text { margin-top: 10px; color: var(--color-ink-2); }
+  .rw-card-app { margin-top: 12px; padding-top: 12px; color: var(--color-ink-soft); box-shadow: inset 0 1px 0 var(--color-line); }
+  .rw-card-app strong { font-weight: 600; color: var(--color-ink); }
+
+  /* The dial: a zero-size anchor at the circle's centre, below the screen. */
+  .rw-wheel { display: block; position: absolute; left: 50%; top: calc(var(--crown) + var(--R)); z-index: 1; width: 0; height: 0; }
+  .rw-svg { position: absolute; left: calc(-1 * var(--R)); top: calc(-1 * var(--R)); width: calc(2 * var(--R)); height: calc(2 * var(--R)); overflow: visible; }
+  .rw-disc { fill: rgb(255 255 255 / 0.78); stroke: var(--color-line); stroke-width: 2; }
+  .rw-svg:first-child { filter: drop-shadow(0 -18px 40px rgb(15 18 23 / 0.07)); }
+  .rw-ticks { fill: none; stroke: rgb(15 18 23 / 0.2); stroke-width: 2.6; stroke-linecap: round; }
+  .rw-arc { fill: none; stroke: var(--tone); stroke-width: 9; stroke-linecap: round; }
+  /* The crown's marker, in the colour of the item on it. */
+  .rw-pointer { position: absolute; left: 0; top: calc(-1 * var(--R) + 2px); width: 12px; height: 12px; border-radius: 3px; translate: -50% -50%; rotate: 45deg; background: var(--tone); box-shadow: 0 0 0 3px #fff; transition: background-color var(--dur-3) var(--ease); }
+
+  /* The button only rides the rim (its transform is written per frame); the pill inside carries the look,
+     so scaling the one at the crown never scales its position. */
+  .rw-label { position: absolute; left: 0; top: 0; padding: 0; border: 0; background: none; will-change: transform, opacity; cursor: pointer; }
+  .rw-label-in {
+    display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px 0 5px;
+    border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--color-ink-2);
+    background: rgb(255 255 255 / 0.86); box-shadow: inset 0 0 0 1px var(--color-line), 0 6px 14px -10px rgb(15 18 23 / 0.3);
+    transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), scale var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
+  }
+  .rw-label-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--tone-on); background: var(--tone); transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease); }
+  .rw-label:not([data-phase]) .rw-label-in { color: var(--color-ink-soft); }
+  .rw-label:not([data-phase]) .rw-label-icon { color: var(--tone-ink, var(--color-ink)); background: color-mix(in srgb, var(--tone) 18%, #fff); }
+  .rw-label:hover .rw-label-in { box-shadow: inset 0 0 0 1px var(--color-line-strong), 0 8px 18px -10px rgb(15 18 23 / 0.35); }
+  .rw-label[data-on] .rw-label-in { scale: 1.12; color: var(--tone-on); background: var(--tone); box-shadow: 0 10px 22px -12px rgb(15 18 23 / 0.5); }
+  .rw-label[data-on] .rw-label-icon { color: var(--tone-ink, var(--color-ink)); background: #fff; }
+
+  /* The dome's readout: the crown item's figure, what it is, and two bars to compare. */
+  .rw-readout { position: absolute; left: 0; top: calc(-1 * var(--R) + clamp(54px, 8vh, 92px)); width: min(440px, 34vw); translate: -50% 0; text-align: center; }
+  .rw-read-k { display: inline-flex; align-items: center; gap: 9px; color: var(--color-ink-soft); }
+  .rw-read-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--tone-on); background: var(--tone); }
+  .rw-fig { margin-top: 12px; font-size: clamp(56px, min(6vw, 10vh), 96px); font-weight: 500; line-height: 1; letter-spacing: -0.055em; white-space: nowrap; color: var(--tone-ink, var(--color-ink)); }
+  .rw-fig small { margin-left: 0.22em; font-size: 0.28em; font-weight: 500; letter-spacing: -0.01em; color: var(--color-ink-soft); }
+  .rw-caption { margin-top: 10px; font-size: 15px; color: var(--color-ink-2); }
+  .rw-bars { display: grid; gap: 14px; margin-top: clamp(16px, 3vh, 26px); text-align: left; }
+  .rw-bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; font-size: 13px; }
+  .rw-bar-l { color: var(--color-ink-soft); }
+  .rw-bar-v { font-weight: 600; color: var(--color-ink); }
+  .rw-bars li[data-risk] .rw-bar-v { color: var(--color-signal-ink); }
+  .rw-bar { grid-column: 1 / -1; height: 8px; overflow: hidden; border-radius: 4px; background: rgb(15 18 23 / 0.07); }
+  .rw-bar i { display: block; width: calc(var(--f) * 100%); height: 100%; border-radius: inherit; background: var(--tone); transform-origin: left; animation: rw-grow 1000ms var(--ease-out-expo) calc(160ms + var(--i) * 130ms) both; }
+  .rw-bars li[data-risk] .rw-bar i { background: var(--color-signal); }
+  @keyframes rw-grow { from { transform: scaleX(0); } }
+}
+@media (min-width: 1024px) and (max-height: 760px) {
+  .rw-bars li:nth-child(2), .rw-card-text, .rw-lede { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rw-swap, .rw-bar i { animation: none; }
+}

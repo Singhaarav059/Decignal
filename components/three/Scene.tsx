@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
-import { CHAPTERS, CH, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
+import { CHAPTERS, CH, EXIT_DRIFT, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
 import { ISLAND_TOP, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
@@ -50,9 +50,12 @@ function measurePage() {
   }
   page.head = CHAPTERS.map(() => null);
   page.frames = CHAPTERS.map(() => []);
-  document.querySelectorAll<HTMLElement>("[data-ch] .t-display, [data-ch] .display, [data-ch] h1, [data-ch] [data-frame]").forEach((el) => {
+  document.querySelectorAll<HTMLElement>("[data-ch] .t-display, [data-ch] .display, [data-ch] h1, [data-ch] [data-frame], [data-ch] [data-head]").forEach((el) => {
     const c = Number(el.closest<HTMLElement>("[data-ch]")?.dataset.ch);
-    if (!(c === CH.fragments || c === CH.final)) return;
+    // A chapter head (ChapterHeads.tsx) counts as one block: its headline and its figures together.
+    const head = el.dataset.head !== undefined;
+    if (!head && el.closest("[data-head]")) return;
+    if (!(c === CH.fragments || c === CH.final || head)) return;
     const r = el.getBoundingClientRect();
     if (!r.width) return;
     if (el.dataset.frame !== undefined) {
@@ -284,8 +287,9 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
     nEx = 0;
     cardEx = false;
   }
-  // Wide screens show no card in the hero (StoryCard data-away): its corners are frames instead.
-  if (c === CH.fragments && vw >= 1024) {
+  // Wide screens show no card in the hero or the ending (StoryCard data-away): their corners and the
+  // closing bar are frames instead.
+  if ((c === CH.fragments || c === CH.final) && vw >= 1024) {
     nEx = 0;
     cardEx = false;
   }
@@ -297,7 +301,7 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
     hEx.x1 = head.x1 + 16;
     hEx.y1 = head.y1 + (phone ? 12 : 20);
     // A centred headline across the screen, or the hero's centred head: the stage starts under it.
-    if ((hEx.x0 < vw * 0.25 && hEx.x1 > vw * 0.75) || c === CH.fragments) {
+    if ((hEx.x0 < vw * 0.25 && hEx.x1 > vw * 0.75) || c === CH.fragments || (c === CH.final && vw >= 1024)) {
       stage.y0 = Math.max(stage.y0, hEx.y1);
       nEx--;
     }
@@ -374,9 +378,10 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
   let ix = (stage.x0 + stage.x1) / 2;
   const iy = (stage.y0 + stage.y1) / 2;
   if (nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) ix = ix * 0.5 + ((EX[0].x1 + stage.x1) / 2) * 0.5;
-  // The wide hero is one centre line: the world sits under the headline's middle.
-  if (c === CH.fragments && vw >= 1024) ix = vw / 2;
-  centreLock = c === CH.fragments && vw >= 1024;
+  // The wide hero and the ending are one centre line: the world sits under the headline's middle.
+  const centred = (c === CH.fragments || c === CH.final) && vw >= 1024;
+  if (centred) ix = vw / 2;
+  centreLock = centred;
   // As large as fits, never larger than the shot's own size.
   let f = 1;
   if (!place(n, 1, hw, hh, ix, iy)) {
@@ -422,13 +427,15 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
     debug.spot = [Math.round(qx), Math.round(qy)];
   }
   if (s.exit > 0) {
-    // The last chapter's exit: step back and let the world sink toward the bottom edge.
+    // The last chapter's exit: the world rises with the page as the sheet slides over it, slower than
+    // the sheet (EXIT_DRIFT of a screen to the sheet's one), and steps back a little. The closing copy
+    // drifts by the same amount (Story.tsx), so the scene and its words leave as one layer.
     const k = s.exit;
-    out.d = d * (1 + 0.3 * k);
-    const lift = 0.3 * 2 * out.d * TAN * k;
-    out.x += UX * lift;
-    out.y += UY * lift;
-    out.z += UZ * lift;
+    out.d = d * (1 + 0.1 * k);
+    const drop = EXIT_DRIFT * 2 * out.d * TAN * k;
+    out.x -= UX * drop;
+    out.y -= UY * drop;
+    out.z -= UZ * drop;
   }
 }
 const pr = box();

@@ -151,6 +151,52 @@ export const CHAPTER_COPY: (ChapterCopy | null)[] = [
   },
 ];
 
+/**
+ * The chapter heads on wide screens (ChapterHeads.tsx): three figures beside each chapter's headline.
+ * Each names the system it is read from and takes that system's tone; `risk` turns the figure red.
+ * Figures come from the running example (lib/example.ts) and never repeat the card's own readout.
+ */
+export type ChapterFact = { value: string; unit?: string; label: string; source: string; tone: string; risk?: boolean };
+export const CHAPTER_FACTS: (ChapterFact[] | null)[] = [
+  null,
+  [
+    { value: `${P1.onHand}`, unit: "units", label: "On hand at Plant 01", source: "ERP", tone: "cobalt" },
+    { value: `${P1.dailyUse}`, unit: "/ day", label: `Drawn by ${EXAMPLE.line.name}`, source: "MES", tone: "emerald" },
+    { value: `${P1.safety}`, unit: "units", label: "Safety stock", source: "ERP", tone: "signal", risk: true },
+  ],
+  [
+    { value: `+${EXAMPLE.demand.upPct}%`, label: `Open orders in ${EXAMPLE.demand.weeks} weeks`, source: "CRM", tone: "violet" },
+    { value: `${P1.day6Without}`, unit: "units", label: "Left at Plant 01 on day 6", source: "ERP", tone: "signal", risk: true },
+    { value: `${EXAMPLE.supplier.nextDeliveryDay - P1.breachDay}`, unit: "days", label: "Supplier relief arrives late", source: "Suppliers", tone: "tangerine" },
+  ],
+  [
+    { value: "6", unit: "systems", label: "Read together, read-only", source: "All six", tone: "cobalt" },
+    { value: `${P2.transferable}`, unit: "units", label: "Free at Plant 02 above plan", source: "WMS", tone: "saffron" },
+    { value: `${EXAMPLE.lane.days}`, unit: "days", label: "By road, lane clear", source: "External", tone: "pink" },
+  ],
+  [
+    { value: `${T.units}`, unit: "units", label: "Plant 02 to Plant 01", source: "WMS", tone: "saffron" },
+    { value: `${T.pallets}`, unit: "pallets", label: `${T.perPallet} units each, one truck`, source: "WMS", tone: "saffron" },
+    { value: inrShort(T.costINR), label: "Freight for the transfer", source: "External", tone: "pink" },
+  ],
+  [
+    { value: `${EXAMPLE.policy.maxUnits}`, unit: "units", label: `${EXAMPLE.policy.approver}'s approval limit`, source: "Policy", tone: "violet" },
+    { value: "3 / 3", label: "Policy checks pass", source: "Policy", tone: "emerald" },
+    { value: T.approvedAt, label: `Approved by the ${T.approvedBy.toLowerCase()}`, source: "Example", tone: "cobalt" },
+  ],
+  [
+    { value: "8", unit: "applications", label: "In the catalogue", source: "Catalogue", tone: "emerald" },
+    { value: "5", unit: "areas", label: "From supply chain to finance", source: "Catalogue", tone: "violet" },
+    { value: "1", unit: "layer", label: "Shared context and controls", source: "Platform", tone: "cobalt" },
+  ],
+  [
+    { value: "6", unit: "industries", label: "One foundation for each", source: "Platform", tone: "cobalt" },
+    { value: "5 to 10", unit: "weeks", label: "Typical first release", source: "Catalogue", tone: "emerald" },
+    { value: "1", unit: "decision", label: "To start with, in any of them", source: "Audit", tone: "tangerine" },
+  ],
+  null,
+];
+
 /** 02 Signal readout card (Story.tsx SignalReadout): its accessible summary. */
 export const SIGNAL_ARIA = `${EXAMPLE.part} at Plant 01: ${P1.onHand} units on hand, safety stock ${P1.safety}, breach on day 6`;
 
@@ -417,6 +463,184 @@ export const STATEMENT = {
   eyebrow: "What Decignal does",
   text: "Decignal reads the ERP, CRM, MES and WMS you already run, finds the one decision that matters, and sends it with its evidence to the person who approves it.",
   approverAlt: "A planner reviewing a decision at a laptop",
+  /** The approver card's trail (Statement.tsx bento): the running example, minute by minute. */
+  log: [
+    { t: "09:41", text: "Recommendation sent to the planner", tone: "cobalt" },
+    { t: T.approvedAt, text: `Approved, ${T.units} units`, tone: "emerald" },
+    { t: "09:44", text: "Your team releases the transfer in the ERP", tone: "tangerine" },
+  ],
+} as const;
+
+/**
+ * The Also reads dial (ReadWheel.tsx): the nine other system types, in three groups, each with one read
+ * from an application's illustrative scenario (lib/application-demos.ts, APP_FACTS). `compare` is two
+ * figures side by side, f their bar length (0..1), `risk` the red one. `icon` is a SystemIcon id.
+ */
+export type WheelItem = {
+  name: string;
+  title: string;
+  text: string;
+  app: string;
+  fig: string;
+  unit?: string;
+  caption: string;
+  icon: string;
+  compare: { label: string; value: string; f: number; risk?: boolean }[];
+};
+const MAINT = APP_FACTS.maintenance;
+export const ALSO_READS = {
+  label: "Also reads",
+  title: "Plus the rest of your stack.",
+  lede: "Nine more kinds of system, read the same way: read-only, mapped to your definitions, and used only by the applications that need them.",
+  example: "Example read",
+  usedBy: "Used by",
+  tabsAria: "Other systems Decignal reads, by group",
+  itemOf: (n: number, total: number) => `${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
+  groups: [
+    {
+      id: "ops",
+      label: "Operations",
+      tone: "emerald",
+      items: [
+        {
+          name: "CMMS",
+          title: "Maintenance system",
+          text: "Assets, work orders and maintenance history: which asset, when it was last serviced, and when it can stop.",
+          app: "Predictive Maintenance",
+          fig: MAINT.workOrder,
+          caption: `${MAINT.asset} · ${MAINT.line} · ${MAINT.window} window`,
+          icon: "cmms",
+          compare: [
+            { label: "Hours since last service", value: "3,900 h", f: 0.92, risk: true },
+            { label: "Service interval", value: "4,000 h", f: 0.95 },
+          ],
+        },
+        {
+          name: "SCADA and IoT",
+          title: "Sensors on the line",
+          text: "Readings such as vibration and temperature, as the machine runs. A trend here is often the first sign of a failure.",
+          app: "Predictive Maintenance",
+          fig: MAINT.peak.split(" ")[0],
+          unit: "mm/s",
+          caption: `Vibration peak · sensor ${MAINT.sensor} · ${MAINT.asset}`,
+          icon: "scada",
+          compare: [
+            { label: "Peak this week", value: MAINT.peak, f: 0.96, risk: true },
+            { label: "Running baseline", value: "2.1 mm/s", f: 0.42 },
+          ],
+        },
+        {
+          name: "QMS",
+          title: "Quality system",
+          text: "Inspections, non-conformances and batch holds, so no recommendation moves stock that quality has stopped.",
+          app: "Production Intelligence",
+          fig: "1",
+          unit: "batch held",
+          caption: `${APP_FACTS.qualityBatch} · held for inspection`,
+          icon: "qms",
+          compare: [
+            { label: "Lots inspected this week", value: "42", f: 1 },
+            { label: "Non-conformances", value: "3", f: 0.07, risk: true },
+          ],
+        },
+      ],
+    },
+    {
+      id: "com",
+      label: "Commercial",
+      tone: "violet",
+      items: [
+        {
+          name: "POS",
+          title: "Point of sale",
+          text: "Sell-through by store and region, the demand that reaches shelves before it reaches orders.",
+          app: "Demand & Replenishment",
+          fig: `+${APP_FACTS.demand.raiseUnits.toLocaleString("en-US")}`,
+          unit: "units",
+          caption: `${APP_FACTS.demand.dc} order raised · POS and orders agree`,
+          icon: "pos",
+          compare: [
+            { label: "West sell-through, this month", value: "9,600 units", f: 0.92 },
+            { label: "Replenishment plan", value: "7,800 units", f: 0.75 },
+          ],
+        },
+        {
+          name: "DMS",
+          title: "Dealer management",
+          text: "Dealer orders, stock and allocation, so supply follows the dealers who are actually selling.",
+          app: "Sales & Dealer Intelligence",
+          fig: `${APP_FACTS.sales.shiftPct}%`,
+          caption: "Allocation shifted to West dealers",
+          icon: "dms",
+          compare: [
+            { label: "West share of dealer orders", value: "38%", f: 0.76 },
+            { label: "West share of allocation", value: "26%", f: 0.52 },
+          ],
+        },
+        {
+          name: "Service desk",
+          title: "Service cases",
+          text: "Cases, SLAs and part history, so a pattern across many tickets reaches the one team that can fix its cause.",
+          app: "Customer Service Intelligence",
+          fig: `${APP_FACTS.customer.cases} → 1`,
+          caption: `Cases linked by ${APP_FACTS.customer.part} · owner: ${APP_FACTS.customer.owner}`,
+          icon: "desk",
+          compare: [
+            { label: "Open cases on the same part", value: `${APP_FACTS.customer.cases}`, f: 1 },
+            { label: "Escalations after grouping", value: "1", f: 0.07 },
+          ],
+        },
+      ],
+    },
+    {
+      id: "data",
+      label: "Logistics & data",
+      tone: "cobalt",
+      items: [
+        {
+          name: "TMS",
+          title: "Transport management",
+          text: "Shipments, lanes and carrier ETAs: when goods in transit will really arrive, and which routes are slipping.",
+          app: "Supply Chain Risk",
+          fig: `+${APP_FACTS.risk.laneDelayDays}`,
+          unit: "days",
+          caption: `Port lane delay · ${APP_FACTS.risk.parts.length} parts at risk`,
+          icon: "tms",
+          compare: [
+            { label: "Port lane, delayed", value: `+${APP_FACTS.risk.laneDelayDays} days`, f: 1, risk: true },
+            { label: `${APP_FACTS.risk.alternative} instead`, value: `${APP_FACTS.risk.alternativeDays} days`, f: 0.29 },
+          ],
+        },
+        {
+          name: "Data warehouse",
+          title: "Data warehouse",
+          text: "The history, forecasts and models you already keep. Decignal reads them; it does not ask for a new data lake.",
+          app: "Demand & Replenishment",
+          fig: "36",
+          unit: "months",
+          caption: `${EXAMPLE.part} demand history behind the forecast`,
+          icon: "dwh",
+          compare: [
+            { label: "Forecast, this month", value: "1,080 units", f: 0.86 },
+            { label: "Open orders, today", value: `${EXAMPLE.demand.now.toLocaleString("en-US")} units`, f: 0.9 },
+          ],
+        },
+        {
+          name: "Spreadsheets",
+          title: "Plans in spreadsheets",
+          text: "The shift plans and trackers that live outside any system, read as they are, with nothing to re-key.",
+          app: "Predictive Maintenance",
+          fig: MAINT.window,
+          caption: `Shift plan · the free window on ${MAINT.line}`,
+          icon: "sheet",
+          compare: [
+            { label: `${MAINT.line} load, ${MAINT.window}`, value: "40%", f: 0.4 },
+            { label: `${MAINT.line} load, other days`, value: "95%", f: 0.95 },
+          ],
+        },
+      ],
+    },
+  ] as { id: string; label: string; tone: string; items: WheelItem[] }[],
 } as const;
 
 /** The facts band under the outcome card (E05 GlanceList). No "0" figure (NAV-15), no readiness claim (COPY-09). */

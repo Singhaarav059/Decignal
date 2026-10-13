@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
-import { CH, TOTAL_LEN, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
+import { CH, EXIT_DRIFT, TOTAL_LEN, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
 import { CTA, FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
 import { SceneBoundary } from "../three/SceneBoundary";
@@ -12,6 +12,8 @@ import { SystemIcon } from "../ui/SystemIcon";
 import { SYSTEMS } from "../ui/systems";
 import { Words, wordCount } from "../ui/Words";
 import { StoryCard } from "./StoryCard";
+import { ChapterHeads } from "./ChapterHeads";
+import { FinalBar } from "./FinalCard";
 import { IslandPanel } from "./IslandPanel";
 import { LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
@@ -61,13 +63,16 @@ export function Story() {
     const off = subscribe((g) => {
       els.forEach((el) => {
         const ch = Number(el.dataset.ch);
-        let w = shown(weight(ch, g));
-        // The final statement leaves with the story, as the page below arrives.
-        if (ch === CH.final) w *= 1 - finalExit(g);
+        // A chapter head swaps with the card's content (at the middle of the hand-off), so the card's
+        // title never goes missing; the statements keep their longer gap.
+        let w = el.classList.contains("chapter-head") ? smoothstep(0.5, 0.85, weight(ch, g)) : shown(weight(ch, g));
         if (still) w = w > 0.5 ? 1 : 0;
+        // The closing layer drifts up with the page below as its sheet slides over (the world drifts
+        // by the same amount, Scene frameShot), so the two leave as one.
+        const drift = ch === CH.final ? -finalExit(g) * EXIT_DRIFT * window.innerHeight : 0;
         put(el, "opacity", w.toFixed(3));
         // A phone deck sits 12px above the card, so it travels less than that and never crosses it.
-        put(el, "transform", `translate3d(0, ${((1 - w) * (el.dataset.stage !== undefined ? 10 : 18)).toFixed(2)}px, 0)`);
+        put(el, "transform", `translate3d(0, ${((1 - w) * (el.dataset.stage !== undefined ? 10 : 18) + drift).toFixed(2)}px, 0)`);
         put(el, "visibility", w < 0.005 ? "hidden" : "visible");
         // The closing statement's words rise once it is mostly in, and drop back only once it has gone.
         if (el.classList.contains("statement-rise")) {
@@ -148,6 +153,8 @@ export function Story() {
             </span>
           </div>
         </div>
+        {/* Wide screens: each chapter's headline and figures top-left, behind the world. */}
+        <ChapterHeads />
       </div>
 
       {/* The world */}
@@ -173,15 +180,21 @@ export function Story() {
 
       {/* The closing statement, also behind the world; after the card in reading order. */}
       <div ref={close} className="story-back pointer-events-none fixed inset-0 select-none">
-        <div data-ch={CH.final} className="story-statement statement-rise">
-          <h2 className="t-display" style={accentVars(TONE[CH.final])}>
-            <span className="line-mask">
-              <span><Words>{FINAL.headline[0]}</Words></span>
-            </span>{" "}
-            <span className="line-mask accent">
-              <span><Words from={wordCount(FINAL.headline[0])}>{FINAL.headline[1]}</Words></span>
-            </span>
-          </h2>
+        <div data-ch={CH.final} className="story-statement statement-rise final-stage">
+          <div className="final-head">
+            <h2 className="t-display final-h1" style={accentVars(TONE[CH.final])}>
+              <span className="line-mask">
+                <span><Words>{FINAL.headline[0]}</Words></span>
+              </span>{" "}
+              <span className="line-mask accent">
+                <span><Words from={wordCount(FINAL.headline[0])}>{FINAL.headline[1]}</Words></span>
+              </span>
+            </h2>
+            <p className="t-lede final-sub" data-frame>{FINAL.sub}</p>
+          </div>
+          {/* Wide screens: the ending mirrors the hero on its centre line, the card's results and the
+              call to action on one bar at the foot; the camera keeps the world clear of it. */}
+          <FinalBar />
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { gToProgress, progressToG, setG, store } from "@/lib/story";
+import { gToProgress, progressToG, setAfter, setG, store } from "@/lib/story";
 import { getLenis, jumpTo, scrollToTarget, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 
@@ -43,6 +43,16 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
           onRefresh: (self) => setG(progressToG(self.progress)),
         })
       : null;
+    // The page below sliding over the finished story: the closing layer drifts up with it (finalExit).
+    const after = storyEl
+      ? ScrollTrigger.create({
+          trigger: storyEl,
+          start: "bottom bottom",
+          end: "bottom top",
+          onUpdate: (self) => setAfter(self.progress),
+          onRefresh: (self) => setAfter(self.progress),
+        })
+      : null;
 
     const onPointer = (e: PointerEvent) => {
       store.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -77,6 +87,7 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
 
     return () => {
       st?.kill();
+      after?.kill();
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       document.documentElement.removeEventListener("pointerleave", onLeave);

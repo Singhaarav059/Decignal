@@ -255,8 +255,8 @@ export function Statement({ index }: { index: string }) {
       },
       { rootMargin: "0px 0px -20% 0px" },
     );
-    const grid = el.querySelector(".stmt-head");
-    if (grid) io.observe(grid);
+    // The sentence or the bento, whichever arrives first (a jump can land on the bento directly).
+    el.querySelectorAll(".stmt-head, .bento-wrap").forEach((n) => io.observe(n));
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       return () => io.disconnect();
     const ctx = gsap.context(() => {
@@ -348,6 +348,15 @@ export function Statement({ index }: { index: string }) {
               <p className="bento-text t-small">{approver.text}</p>
               <ApproveArt />
               <ThresholdArt />
+              {/* The trail an approval leaves: who saw it, who approved it, what happened next. */}
+              <ol className="bento-log">
+                {STATEMENT.log.map((l, i) => (
+                  <li key={l.t} style={{ ...toneVars(l.tone), ["--i" as string]: i } as CSSProperties}>
+                    <span className="tabular">{l.t}</span>
+                    {l.text}
+                  </li>
+                ))}
+              </ol>
               <p className="bento-n">
                 <CountUp value={approver.n} play={seen} />
               </p>
