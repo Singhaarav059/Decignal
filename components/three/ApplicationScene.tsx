@@ -8,7 +8,7 @@ import { Studio } from "./Studio";
 import { COLORS } from "./palette";
 import type { DemoKind } from "@/lib/application-demos";
 import { Logistics, Maintenance, Production, SupplyRisk, Distribution, DealerNetwork, Customer, Finance, type SceneProps } from "./OperationalScenes";
-import { phase, type Motion } from "./SceneKit";
+import { FLOORS, phase, type Motion } from "./SceneKit";
 import { Warm } from "./Warm";
 import { ShadowGate } from "./Shadows";
 import { canvasQuality } from "@/lib/device";
@@ -28,6 +28,49 @@ type Props = SceneProps & {
 
 const NO_FRAME: Frame = { left: 0, top: 0, right: 0, bottom: 0 };
 
+const R = new THREE.Vector3();
+const U = new THREE.Vector3();
+const P = new THREE.Vector3();
+const B = new THREE.Box3();
+/** Dev only: the last phone fit, for the review scripts (window.__appFit). */
+const fitLog: Record<string, number> | null = process.env.NODE_ENV !== "production" && typeof window !== "undefined" ? ((window as unknown as { __appFit: Record<string, number> }).__appFit = {}) : null;
+
+/**
+ * The largest zoom (px per world unit) that keeps the shown world's floor whole in the free area, the
+ * page gutter clear of its sides: phones frame the models tighter, and the plates ran off both edges.
+ * A world without a floor (the logistics road runs off by design) is not limited.
+ */
+function floorFit(c: THREE.OrthographicCamera, target: THREE.Vector3, vw: number, w: number, h: number) {
+  let floor: THREE.Mesh | null = null;
+  for (const m of FLOORS) {
+    let o: THREE.Object3D | null = m;
+    while (o && o.visible) o = o.parent;
+    if (!o && m.parent) {
+      floor = m;
+      break;
+    }
+  }
+  if (!floor) return Infinity;
+  const g = floor.geometry;
+  if (!g.boundingBox) g.computeBoundingBox();
+  B.copy(g.boundingBox!);
+  floor.updateWorldMatrix(true, false);
+  R.set(1, 0, 0).applyQuaternion(c.quaternion);
+  U.set(0, 1, 0).applyQuaternion(c.quaternion);
+  let ax = 0;
+  let ay = 0;
+  for (let k = 0; k < 8; k++) {
+    P.set(k & 1 ? B.max.x : B.min.x, k & 2 ? B.max.y : B.min.y, k & 4 ? B.max.z : B.min.z).applyMatrix4(floor.matrixWorld).sub(target);
+    ax = Math.max(ax, Math.abs(P.dot(R)));
+    ay = Math.max(ay, Math.abs(P.dot(U)));
+  }
+  const gutter = THREE.MathUtils.clamp(vw * 0.05, 20, 72);
+  const zx = (w / 2 - gutter) / ax;
+  const zy = (h / 2 - 8) / ay;
+  if (fitLog) Object.assign(fitLog, { zx, zy });
+  return Math.min(zx, zy);
+}
+
 function Camera({ kind, motion, still, frame }: { kind: DemoKind; motion: Motion; still: boolean; frame?: RefObject<Frame> }) {
   const { camera, size } = useThree();
   const target = useMemo(() => new THREE.Vector3(), []);
@@ -41,11 +84,16 @@ function Camera({ kind, motion, still, frame }: { kind: DemoKind; motion: Motion
     // Phones are width-bound: frame the working area a little tighter so the models read.
     const fit = (kind === "inventory" ? 10.3 : kind === "maintenance" ? 8.4 : 9) * (size.width < 768 ? 0.9 : 1);
     const viewHeight = kind === "risk" ? 5.8 : kind === "maintenance" ? 5.2 : kind === "finance" ? 4.2 : kind === "customer" ? 4.6 : kind === "inventory" ? 4.6 : 5.3;
-    const zoom = Math.min(w / fit, h / viewHeight, 120) * close;
+    const c = camera as THREE.OrthographicCamera;
+    c.position.set(kind === "maintenance" ? 4.2 : kind === "finance" ? 0.7 : 4.6, kind === "maintenance" ? 3.6 : kind === "finance" ? 7 : 5.4, 8.5);
+    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : kind === "customer" ? 0.45 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : kind === "finance" ? 0.45 : 0);
+    c.lookAt(target);
+    let zoom = Math.min(w / fit, h / viewHeight, 120) * close;
+    if (size.width < 768) zoom = Math.min(zoom, floorFit(c, target, size.width, w, h));
+    if (fitLog) Object.assign(fitLog, { kind: KINDS.indexOf(kind), zoom, framed: Math.min(w / fit, h / viewHeight, 120) * close });
     // Shift the projection so the scene's centre lands in the middle of the free area, clear of the copy.
     const ox = size.width / 2 - (f.left + w / 2);
     const oy = size.height / 2 - (f.top + h / 2);
-    const c = camera as THREE.OrthographicCamera;
     const k = Math.min(dt, 0.05);
     const snap = still || !view.current.set;
     view.current.set = true;
@@ -53,9 +101,6 @@ function Camera({ kind, motion, still, frame }: { kind: DemoKind; motion: Motion
     view.current.y = snap ? oy : THREE.MathUtils.damp(view.current.y, oy, 6, k);
     c.setViewOffset(size.width, size.height, view.current.x, view.current.y, size.width, size.height);
     c.zoom = snap ? zoom : THREE.MathUtils.damp(c.zoom, zoom, 6, k);
-    c.position.set(kind === "maintenance" ? 4.2 : kind === "finance" ? 0.7 : 4.6, kind === "maintenance" ? 3.6 : kind === "finance" ? 7 : 5.4, 8.5);
-    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : kind === "customer" ? 0.45 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : kind === "finance" ? 0.45 : 0);
-    c.lookAt(target);
     c.updateProjectionMatrix();
   });
   return null;

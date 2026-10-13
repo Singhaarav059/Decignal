@@ -118,10 +118,16 @@ export function Route({points,color="#C3C8D0",radius=0.018,dashed=false,flow=fal
 export function Box({at,size,color="#E3E6EB",metal=false}:{at:Vec;size:Vec;color?:string;metal?:boolean}){
   return <mesh position={at} material={metal?aluminium():enamel(color)} castShadow receiveShadow><boxGeometry args={size}/></mesh>;
 }
+/** Every mounted floor, so the camera can keep the shown world's floor whole on a phone. */
+export const FLOORS = new Set<THREE.Mesh>();
+const holdFloor = (m: THREE.Mesh | null) => {
+  if (m) FLOORS.add(m);
+  else FLOORS.forEach((f) => !f.parent && FLOORS.delete(f));
+};
 /** The scene's floor: a painted area level with the ground, a hair thick, so it never reads as a raised slab. */
 export function Floor({size=[7,0.035,4] as Vec}:{size?:Vec}){
   // Top stays where the old slab's top was (scenes stand on it); only the visible edge goes.
-  return <mesh position-y={-0.035+size[1]/2-0.002} material={concrete("#EEF0F3")} receiveShadow><boxGeometry args={[size[0],0.004,size[2]]}/></mesh>;
+  return <mesh ref={holdFloor} position-y={-0.035+size[1]/2-0.002} material={concrete("#EEF0F3")} receiveShadow><boxGeometry args={[size[0],0.004,size[2]]}/></mesh>;
 }
 export function Bolts({radius=0.6,z=0,count=8}:{radius?:number;z?:number;count?:number}){
   return <>{Array.from({length:count},(_,i)=><mesh key={i} position={[Math.cos(i/count*Math.PI*2)*radius,Math.sin(i/count*Math.PI*2)*radius,z]} material={aluminium(0.25)} rotation-x={Math.PI/2} castShadow><cylinderGeometry args={[0.035,0.035,0.055,6]}/></mesh>)}</>;
