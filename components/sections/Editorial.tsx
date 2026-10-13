@@ -3,16 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, CATEGORIES, CATEGORY_TONE, FAQ, OUTCOMES, PATHS } from "@/lib/content";
-import { SystemsRibbon } from "./SystemsRibbon";
-import { OUTCOME_FILL, OutcomeGraphic } from "./OutcomeGraphic";
-import { AreaStack, GlanceList, PipelineStrip, Roadmap, showArea } from "./GrowlioSections";
-import { Audit } from "./Audit";
-import { Footer } from "./Footer";
-import { ApplicationExplorer } from "./ApplicationExplorer";
+import { APPLICATIONS, FAQ, FAQ_TOPICS, OUTCOMES } from "@/lib/content";
+import { APPLICATION_DEMOS } from "@/lib/application-demos";
+import { APPLICATIONS_COPY, FAQ_COPY, HOW, OUTCOMES_COPY, SYSTEMS_STRIP, type Headline } from "@/lib/copy";
+import { AREAS } from "@/lib/areas";
+import { jumpTo, onOutcome, showArea } from "@/lib/jump";
+import { toneVars } from "@/lib/tone";
+import SectionTitle from "../ui/SectionTitle";
+import SegmentedControl from "../ui/SegmentedControl";
+import { SectionLink } from "../ui/SectionLink";
+import { Arrow } from "../ui/Arrow";
 import { CountUp } from "../ui/CountUp";
-import { scrollToTarget } from "../SmoothScroll";
-import { onOutcome, onQuestion } from "@/lib/jump";
+import { SystemsRibbon } from "./SystemsRibbon";
+import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
+import { AreaStack, plainClick } from "./AreaStack";
+import { Trail } from "./Trail";
+import { Roadmap } from "./Roadmap";
+import { FaqList } from "./FaqList";
+import { FaqFigure, useFaqFigure } from "./FaqArt";
+import { Audit } from "./Audit";
+import { ApplicationExplorer } from "./ApplicationExplorer";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,11 +30,11 @@ const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matc
 
 /** Paragraphs fade and rise into place; headlines rise line by line out of their own masks. */
 function useReveal() {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!ref.current || reduced()) return;
     const ctx = gsap.context(() => {
-      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+      gsap.utils.toArray<HTMLElement>("[data-reveal], .ed-title .section-title-label, .ed-title .section-title-lede").forEach((el) => {
         gsap.fromTo(
           el,
           { opacity: 0, y: 24 },
@@ -56,100 +66,48 @@ function useReveal() {
   return ref;
 }
 
-function Lines({ lines }: { lines: React.ReactNode[] }) {
+const two = (h: Headline): [string, string] => [h[0], h[1]];
+
+/** A section head: label, two lines (the second in the accent ink) and an optional lede. Neutral chrome (D6). */
+function Head({ id, label, headline, lede, className }: { id: string; label: string; headline: Headline; lede?: string; className?: string }) {
   return (
-    <>
-      {lines.map((l, i) => (
-        <span key={i} className="line-mask">
-          <span>{l}</span>
-        </span>
-      ))}
-    </>
+    <SectionTitle
+      id={id}
+      label={label}
+      lines={two(headline)}
+      lede={lede}
+      tone="ink"
+      reveal="lines"
+      className={`ed-title${className ? ` ${className}` : ""}`}
+    />
   );
 }
 
-function Heading({
-  eyebrow,
-  tone,
-  lines,
-  intro,
-}: {
-  eyebrow: string;
-  tone: string;
-  lines: React.ReactNode[];
-  intro?: string;
-}) {
-  return (
-    <div className="mx-auto max-w-6xl text-center">
-      <p data-reveal className="eyebrow inline-flex items-center gap-2.5">
-        <span className="diamond" style={{ color: `var(--color-${tone})` }} />
-        {eyebrow}
-      </p>
-      <h2 data-lines className="display mt-5 text-[clamp(32px,3.8vw,54px)]">
-        <Lines lines={lines} />
-      </h2>
-      {intro && (
-        <p data-reveal className="mx-auto mt-5 max-w-[52ch] text-[17px] leading-relaxed text-ink-2">
-          {intro}
-        </p>
-      )}
-    </div>
-  );
-}
-
+/** Everything below the story, as one sheet over it. The page renders <Footer /> after <main>. */
 export function Editorial() {
   const ref = useReveal();
   return (
-    <main
-      ref={ref as React.RefObject<HTMLElement>}
-      className="editorial relative z-30 rounded-t-[36px] bg-bg shadow-[0_-1px_0_rgba(20,19,15,0.06),0_-28px_70px_-36px_rgba(20,19,15,0.22)] md:rounded-t-[56px]"
-    >
+    <div ref={ref} className="editorial relative bg-bg">
       <Systems />
       <Applications />
-      <PipelineStrip />
+      <Trail />
       <Outcomes />
       <HowItWorks />
-      {/* Questions and the audit brief share one screen: read an answer, the form stays beside it. */}
-      <div className="ask-board">
-        <Faq />
-        <Audit />
-      </div>
-      <Footer />
-    </main>
+      <Faq />
+      <Audit />
+    </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
-const CONNECT_STEPS = [
-  { t: "Connect", d: "Read-only links to what you run", c: "cobalt" },
-  { t: "Read", d: "Live context, refreshed in minutes", c: "violet" },
-  { t: "Recommend", d: "One action, sent for approval", c: "emerald" },
-];
-
 function Systems() {
   return (
-    <section className="works-with-section">
-      <div data-reveal className="works-with">
-        <p className="eyebrow inline-flex items-center gap-2"><span className="diamond" style={{ color: "var(--color-emerald)" }} />Works with what you run</p>
-        <p className="works-with-title">Decignal reads across the systems <em className="spectrum-text">you already run.</em></p>
-        <ul className="works-with-pills">
-          {[["No rip-and-replace programme", "cobalt"], ["No perfect data lake", "saffron"], ["Read-only to start", "emerald"]].map(([t, c]) => (
-            <li key={t} style={{ ["--tone" as string]: `var(--color-${c})` }}>
-              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden><circle cx="8" cy="8" r="7" /><path d="M4.6 8.3l2.2 2.2 4.6-4.8" /></svg>
-              {t}
-            </li>
-          ))}
-        </ul>
-        <ol className="connect-steps">
-          {CONNECT_STEPS.map(({ t, d, c }, i) => (
-            <li key={t} style={{ ["--tone" as string]: `var(--color-${c})` }}>
-              <span className="connect-n tabular">0{i + 1}</span>
-              <strong>{t}</strong>
-              <span>{d}</span>
-            </li>
-          ))}
-        </ol>
+    <section className="works-with-section" aria-labelledby="systems-title">
+      <div className="works-with page-wrap">
+        <Head id="systems-title" label={SYSTEMS_STRIP.eyebrow} headline={SYSTEMS_STRIP.headline} lede={SYSTEMS_STRIP.sub} />
+        <p data-reveal className="t-small works-with-more">{SYSTEMS_STRIP.more}</p>
+        <p data-reveal className="t-small works-with-note">{SYSTEMS_STRIP.footnote}</p>
       </div>
       <SystemsRibbon />
     </section>
@@ -160,185 +118,156 @@ function Systems() {
 
 function Applications() {
   return (
-    <section id="applications" className="scroll-mt-24 pt-16 md:pt-24">
-      {/* Title left, intro and an index of the five areas right: one row instead of a stacked block. */}
-      <div className="apps-head px-6 md:px-0">
-        <div>
-          <p data-reveal className="eyebrow inline-flex items-center gap-2.5"><span className="diamond" style={{ color: "var(--color-cobalt)" }} />Applications</p>
-          <h2 data-lines className="display apps-title"><Lines lines={["The same intelligence.", <>Every <em className="spectrum-text">part of your operation.</em></>]} /></h2>
-        </div>
+    <section id="applications" className="apps" aria-labelledby="applications-title">
+      {/* Title left; the intro and an index of the five areas right. */}
+      <div className="page-wrap apps-head">
+        <Head id="applications-title" label={APPLICATIONS_COPY.eyebrow} headline={APPLICATIONS_COPY.headline} />
         <div className="apps-head-side">
-          <p data-reveal>From the first signal to the right action. Follow the decisions as you scroll.</p>
-          <ul data-reveal className="apps-index" aria-label="Jump to a business area">
-            {CATEGORIES.map((c, i) => (
-              <li key={c}>
-                <button onClick={() => showArea(i)} style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[c]})` }}>
-                  <i aria-hidden />{c}
-                </button>
+          <p data-reveal className="t-lede">{APPLICATIONS_COPY.intro}</p>
+          <ul data-reveal className="apps-index" aria-label={APPLICATIONS_COPY.indexAria}>
+            {AREAS.map((a, i) => (
+              <li key={a.slug}>
+                <a
+                  href={`#area-${a.slug}`}
+                  style={toneVars(a.tone)}
+                  onClick={(e) => {
+                    if (!plainClick(e)) return;
+                    e.preventDefault();
+                    showArea(i);
+                  }}
+                >
+                  <i aria-hidden />
+                  {a.name}
+                </a>
               </li>
             ))}
           </ul>
         </div>
       </div>
       <AreaStack />
-      <ApplicationExplorer indices={APPLICATIONS.map((_, i) => i)} />
+      {/* The explorer shows one application at a time; this list gives readers and crawlers all eight
+          (the area panels link to each entry). */}
+      <ol className="sr-only" aria-label={APPLICATIONS_COPY.listAria}>
+        {APPLICATIONS.map((a, i) => {
+          const d = APPLICATION_DEMOS[i];
+          return (
+            <li key={a.name} id={`application-${d.kind}`} tabIndex={-1}>
+              {a.name}, {a.category}. {d.headline.replace("\n", " ")} {d.steps.join(" ")}
+            </li>
+          );
+        })}
+      </ol>
+      <ApplicationExplorer />
     </section>
   );
 }
 
 /* ------------------------------------------------------------------ */
-
 
 function Outcomes() {
   const root = useRef<HTMLElement>(null);
   const [seen, setSeen] = useState(false);
   const [tab, setTab] = useState(0);
-  // The nav's Outcomes preview opens a case directly.
-  useEffect(() => onOutcome((i) => { setTab(i); scrollToTarget("#outcomes"); }), []);
+  // The nav's Outcomes glance opens a case directly.
+  useEffect(() => onOutcome((i) => { setTab(i); void jumpTo("#outcomes"); }), []);
   useEffect(() => {
-    const grid = root.current?.querySelector(".outcome-grid");
-    if (!grid) return;
-    // Fires once the grid's top clears the lower quarter of the viewport. A ratio threshold
-    // never trips on phones, where the stacked cards are taller than the screen.
+    const card = root.current?.querySelector(".outcome-card");
+    if (!card) return;
+    // Fires once the card's top clears the lower quarter of the viewport. A ratio threshold never
+    // trips on phones, where the stacked card is taller than the screen.
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0, rootMargin: "0px 0px -25% 0px" });
-    io.observe(grid);
+    io.observe(card);
     return () => io.disconnect();
   }, []);
   useEffect(() => {
     if (!root.current || reduced()) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo(".outcome-stroke", {strokeDasharray: 1, strokeDashoffset: 1}, {strokeDashoffset:0, duration:1.4, ease:"power2.out", scrollTrigger:{trigger:root.current,start:"top 65%"}});
-      gsap.fromTo(".outcome-bar", {scaleX:0,transformOrigin:"left"}, {scaleX:1,duration:1.4,ease:"power2.out",scrollTrigger:{trigger:root.current,start:"top 65%"}});
+      const scrollTrigger = { trigger: ".outcome-card", start: "top 65%" };
+      gsap.fromTo(".outcome-stroke", { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.4, ease: "power2.out", scrollTrigger });
+      gsap.fromTo(".outcome-bar", { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: 1.4, ease: "power2.out", scrollTrigger });
     }, root);
     return () => ctx.revert();
   }, []);
-  // One board, two reads: the case card on the left says what changed, the tiles around it
-  // say what working with Decignal looks like. Below 900px it stacks back into a single column.
-  return <section ref={root} id="outcomes" className="results scroll-mt-24">
-    <div className="results-head">
-      <div>
-        <p data-reveal className="eyebrow inline-flex items-center gap-2.5"><span className="diamond" style={{ color: "var(--color-emerald)" }} />The outcome</p>
-        <h2 data-lines className="display results-title"><Lines lines={["Know what changed.", <>See <em className="spectrum-text">why it matters.</em></>]} /></h2>
-        <p data-reveal className="results-intro">Every recommendation should end in an operating result you can check.</p>
-      </div>
-      <div className="results-head-side">
-        <p data-reveal className="eyebrow inline-flex items-center gap-2"><span className="diamond" style={{ color: "var(--color-saffron)" }} />At a glance</p>
-        <h3 data-reveal className="glance-title">What working with Decignal <em className="spectrum-text">looks like.</em></h3>
-      </div>
-    </div>
-    <div className="results-grid">
-      <div className="outcome-grid outcome-cases results-case" style={{["--fill" as string]:OUTCOME_FILL[tab]}}>
-        <div className="case-tabs" role="tablist" aria-label="Outcomes">
-          {OUTCOMES.map((o,i)=><button key={o.sector} role="tab" aria-selected={tab===i} onClick={()=>setTab(i)} style={{["--tone" as string]:OUTCOME_FILL[i]}}><i />{o.sector}</button>)}
-        </div>
-        {OUTCOMES.map((o,i)=><figure key={o.sector} role="tabpanel" hidden={tab!==i} className="outcome-figure case-card" style={{["--fill" as string]:OUTCOME_FILL[i]}}>
-          <div className="case-visual"><p className="eyebrow text-white/80!">{o.sector}</p><OutcomeGraphic index={i}/></div>
-          <div className="case-copy"><p className="outcome-number"><CountUp value={o.value} play={seen && tab===i} duration={1100} /></p><p className="outcome-label">{o.label}</p>
-          <p className="outcome-description">{o.quote}</p><figcaption>{o.context}</figcaption></div>
-        </figure>)}
-      </div>
-      <GlanceList />
-    </div>
-    <p className="results-note">Illustrative decisions from the scenes above. Deployment results are measured against your own baseline.</p>
-  </section>;
-}
-
-/* ------------------------------------------------------------------ */
-
-function HowItWorks() {
-  const [path, setPath] = useState<keyof typeof PATHS>("custom");
-  const intro = "Two practical routes to the same outcome: an application working safely inside your operation. Scroll to walk the route.";
-  const title = ["One decision first.", <>Then <em className="spectrum-text">build from there.</em></>];
+  // One focus: the head, then one case card switched by the tabs. The facts band closes the Trail.
   return (
-    <section id="how" className="how scroll-mt-24 px-6 pt-16 md:px-10">
-      {/* Phones and tablets read the heading above the stacked steps; wider screens pin it with the panel. */}
-      <div className="how-head-stacked">
-        <Heading eyebrow="How it works" tone="violet" lines={title} intro={intro} />
-      </div>
-      <Roadmap
-        path={path}
-        setPath={setPath}
-        head={
-          <div className="roadmap-head">
-            <div>
-              <p data-reveal className="eyebrow inline-flex items-center gap-2.5"><span className="diamond" style={{ color: "var(--color-violet)" }} />How it works</p>
-              <h2 data-lines className="display roadmap-title"><Lines lines={title} /></h2>
-            </div>
-            <p data-reveal>{intro}</p>
+    <section ref={root} id="outcomes" className="results" aria-labelledby="outcomes-title">
+      <div className="page-wrap">
+        {/* Title left; the intro and the disclaimer right, so the head, tabs and card share one screen. */}
+        <div className="results-head">
+          <Head id="outcomes-title" label={OUTCOMES_COPY.eyebrow} headline={OUTCOMES_COPY.headline} />
+          <div className="results-head-side">
+            <p data-reveal className="t-lede">{OUTCOMES_COPY.intro}</p>
+            <p data-reveal className="t-small results-note">{OUTCOMES_COPY.note}</p>
           </div>
-        }
-      />
+        </div>
+        <SegmentedControl
+          className="results-tabs"
+          label={OUTCOMES_COPY.tabsAria}
+          items={OUTCOMES.map((o, i) => ({ value: String(i), label: o.sector, tone: OUTCOME_TONE[i], controls: `outcome-panel-${i}` }))}
+          value={String(tab)}
+          onChange={(v) => setTab(Number(v))}
+        />
+        <div className="outcome-card">
+          {OUTCOMES.map((o, i) => (
+            <figure
+              key={o.sector}
+              id={`outcome-panel-${i}`}
+              role="tabpanel"
+              aria-label={o.sector}
+              hidden={tab !== i}
+              className="outcome-figure"
+              style={toneVars(OUTCOME_TONE[i])}
+            >
+              <div className="outcome-visual">
+                <OutcomeGraphic index={i} />
+              </div>
+              <div className="outcome-copy">
+                <p className="outcome-number t-num-lg"><CountUp value={o.value} play={seen && tab === i} duration={1100} /></p>
+                <p className="outcome-label t-subtitle">{o.label}</p>
+                <p className="outcome-description t-body">{o.quote}</p>
+                <figcaption className="t-label">{o.context}</figcaption>
+              </div>
+            </figure>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
-const FAQ_META: { topic: string; tone: string }[] = [
-  { topic: "Integration", tone: "cobalt" },
-  { topic: "Data", tone: "saffron" },
-  { topic: "Security", tone: "violet" },
-  { topic: "Automation", tone: "emerald" },
-  { topic: "Control", tone: "tangerine" },
-  { topic: "Ownership", tone: "pink" },
-  { topic: "Getting started", tone: "cobalt" },
-  { topic: "Timeline", tone: "emerald" },
-];
-
-function Faq() {
-  const [open, setOpen] = useState<number | null>(null);
-  // The nav's Questions preview opens one answer and brings it into view.
-  useEffect(() => onQuestion((i) => { setOpen(i); scrollToTarget(`#faq-q-${i}`); }), []);
+function HowItWorks() {
   return (
-    <section id="faq" className="faq scroll-mt-24">
-      <div className="faq-side">
-        <div className="faq-sticky">
-          <p data-reveal className="eyebrow inline-flex items-center gap-2.5">
-            <span className="diamond" style={{ color: "var(--color-tangerine)" }} />
-            Before you begin
-          </p>
-          <h2 data-lines className="display faq-title">
-            <Lines lines={["Questions enterprise", <>teams <em className="spectrum-text">ask first.</em></>]} />
-          </h2>
-          <div className="faq-help">
-            <p className="faq-help-title">Still have a question?</p>
-            <p className="faq-help-text">Bring it to the free 30-minute audit.</p>
-            <button
-              onClick={() => {
-                scrollToTarget("#audit");
-                // Beside the form, the quickest help is to start it: put the cursor in the first field.
-                window.setTimeout(() => document.querySelector<HTMLInputElement>("#audit input")?.focus({ preventScroll: true }), 900);
-              }}
-              className="btn btn-primary"
-            >
-              Book a free AI audit
-            </button>
-          </div>
-        </div>
+    <section id="how" className="how" aria-labelledby="how-title">
+      <div className="page-wrap">
+        <Roadmap head={<Head id="how-title" label={HOW.eyebrow} headline={HOW.headline} lede={HOW.intro} className="how-title" />} />
       </div>
-      <ul className="faq-list">
-        {FAQ.map((f, i) => {
-          const on = open === i;
-          const { topic, tone } = FAQ_META[i];
-          return (
-            <li key={f.q} className="faq-item" data-open={on || undefined} style={{ ["--tone" as string]: `var(--color-${tone})` }}>
-              <button id={`faq-q-${i}`} onClick={() => setOpen(on ? null : i)} aria-expanded={on} aria-controls={`faq-a-${i}`} className="faq-q">
-                <span className="faq-n tabular" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
-                <span className="faq-q-text">
-                  <span className="sr-only">{topic}: </span>
-                  <span className="faq-q-title">{f.q}</span>
-                </span>
-                <span className="faq-plus" aria-hidden><i /><i /></span>
-              </button>
-              <div id={`faq-a-${i}`} role="region" aria-labelledby={`faq-q-${i}`} inert={!on} className="faq-a" style={{ gridTemplateRows: on ? "1fr" : "0fr" }}>
-                <div className="min-h-0 overflow-hidden">
-                  <p>{f.a}</p>
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/** Buyer objections on their own screen: the head, one link to the audit and the answer's figure left, the questions right. */
+function Faq() {
+  const fig = useFaqFigure();
+  return (
+    <section id="faq" className="faq" aria-labelledby="faq-title">
+      <div className="page-wrap faq-grid">
+        <div className="faq-side">
+          <Head id="faq-title" label={FAQ_COPY.eyebrow} headline={FAQ_COPY.headline} />
+          <p data-reveal className="faq-help">
+            <span>{FAQ_COPY.helpTitle}</span>
+            <SectionLink href="#audit" className="ed-link">
+              {FAQ_COPY.helpLink}
+              <Arrow />
+            </SectionLink>
+          </p>
+          <FaqFigure index={fig.index} />
+        </div>
+        <FaqList items={FAQ.map((f, i) => ({ ...f, topic: FAQ_TOPICS[i] }))} jump {...fig.list} />
+      </div>
     </section>
   );
 }

@@ -1,5 +1,7 @@
 # Baseline (captured 2026-10-07, commit b0558d2)
 
+> Historical record. The warm palette below (cream ground #FBF6EF, warm ink #14130F) was replaced by the cool neutral tokens in DESIGN.md and app/styles/tokens.css. Do not reintroduce it.
+
 Captured from `next dev` on localhost:3000 with headless Chromium (playwright-core), one screenshot per viewport height at 1440×900, 768×1024 and 390×844. That gave 40, 39 and 43 frames. **There were no console errors at any width.** At every width, document width equals viewport width, so nothing scrolls horizontally.
 
 ## Actual structure (differs from the brief's "sections 01–08")

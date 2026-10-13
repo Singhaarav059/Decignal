@@ -1,0 +1,141 @@
+/* Chrome infrastructure (jump veil, loader, skip link). Owned by the chrome-infra lane. */
+
+/* ---------------- Jump veil ---------------- */
+/* Long jumps cut through a solid background veil (lib/jump.ts): it closes, the page moves, the scene
+   draws the new spot, it opens. Below the nav, above every other layer. */
+.jump-veil {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-veil, 48);
+  background: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-3, 320ms) var(--ease),
+    visibility 0s linear var(--dur-3, 320ms);
+}
+html[data-jump="out"] .jump-veil {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--dur-2, 200ms) var(--ease);
+}
+html[data-jump="hold"] .jump-veil {
+  opacity: 1;
+  visibility: visible;
+  transition: none;
+}
+
+/* While a jump runs, and until the reader scrolls again, the nav holds its place instead of reading
+   the jump as a scroll down. */
+html[data-jump] .nav-shell {
+  transform: none !important;
+}
+
+/* A section that takes focus after a jump is announced and starts the Tab order, without a ring
+   around the whole section. */
+[data-jump-target]:focus {
+  outline: none;
+}
+
+/* ---------------- Loader ---------------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-loader, 70);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--dur-4, 600ms) var(--ease-in-out-quart, cubic-bezier(0.76, 0, 0.24, 1));
+}
+.loader[data-phase="leave"] {
+  clip-path: inset(0 0 100% 0);
+}
+/* Repeat visits: html.intro-seen (set before paint, or once the intro has played) keeps the server
+   markup from ever showing. Without JavaScript the layout's noscript style hides it. */
+.intro-seen .loader[data-phase="load"] {
+  display: none;
+}
+.loader-mark {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+.loader-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  animation: loaderDot 800ms var(--ease-out-expo) both;
+}
+@keyframes loaderDot {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.4);
+  }
+}
+.loader .logo .logo-mark {
+  width: 29px;
+  height: 29px;
+  transform: translateY(4px);
+}
+.loader-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 24px 28px;
+}
+.loader-count {
+  font-size: clamp(48px, 7vw, 96px);
+  line-height: 0.8;
+  letter-spacing: -0.022em;
+}
+/* Progress, as a hairline: its scaleX is the same real progress as the count. */
+.loader-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--color-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+@media (min-width: 768px) {
+  .loader-foot {
+    padding: 0 40px 36px;
+  }
+}
+
+/* ---------------- Skip link ---------------- */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: var(--z-skip, 80);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: var(--color-on-ink, #fff);
+  font-size: 14px;
+  font-weight: 600;
+  transform: translateY(-160%);
+  transition: transform var(--dur-2, 200ms) var(--ease);
+}
+.skip-link:focus {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader,
+  .jump-veil,
+  html[data-jump] .jump-veil,
+  .skip-link {
+    transition: none;
+  }
+  .loader-dot {
+    animation: none;
+  }
+}

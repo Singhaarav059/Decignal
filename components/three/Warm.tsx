@@ -13,7 +13,8 @@ export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
   const hidden: THREE.Object3D[] = [];
   const culled: THREE.Object3D[] = [];
   scene.traverse((o) => {
-    if (!o.visible) {
+    // Parts a Bake merged away are never drawn again: leave them hidden.
+    if (!o.visible && !o.userData.bakedAway) {
       hidden.push(o);
       o.visible = true;
     }

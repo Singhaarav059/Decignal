@@ -8,7 +8,8 @@ import { Person } from "./people";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { aluminium, cabTint, chrome, enamel, lamp, paint, rubber, steel } from "./materials";
-import { Wheel, box, cylX, cylY, cylZ, geo, merge, profile, rbox } from "./parts";
+import { Wheel, WheelSet, box, cylX, cylY, cylZ, geo, merge, profile, rbox, type WheelAt } from "./parts";
+import { Bake, LIVE } from "./Bake";
 
 /* ------------------------------------------------------------------ */
 /* Shared: rolling wheels and a body that settles on its suspension    */
@@ -18,7 +19,7 @@ function useRolling(radius: number, idle = 0) {
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const wheels = useRef<THREE.Group[]>([]);
-  const state = useMemo(() => ({ last: null as THREE.Vector3 | null, lean: 0, v: new THREE.Vector3(), s: new THREE.Vector3(), fwd: new THREE.Vector3() }), []);
+  const state = useMemo(() => ({ last: null as THREE.Vector3 | null, lean: 0, dist: 0, v: new THREE.Vector3(), s: new THREE.Vector3(), fwd: new THREE.Vector3() }), []);
   useFrame(({ clock }, dt) => {
     const r = root.current;
     if (!r) return;
@@ -28,6 +29,7 @@ function useRolling(radius: number, idle = 0) {
     let d = 0;
     if (state.last) d = state.fwd.dot(state.v.clone().sub(state.last)) / Math.max(state.s.x, 1e-4);
     state.last = (state.last ?? new THREE.Vector3()).copy(state.v);
+    state.dist += d;
     // Each wheel turns by distance / its own radius (stored on the group).
     wheels.current.forEach((w) => w && (w.rotation.z -= d / ((w.userData.r as number) ?? radius)));
     const speed = dt > 0 ? d / dt : 0;
@@ -45,7 +47,24 @@ function useRolling(radius: number, idle = 0) {
       if (!wheels.current.includes(g)) wheels.current.push(g);
     }
   };
-  return { root, body, spin };
+  /** Distance rolled so far (m): an instanced wheel set turns each wheel by it. */
+  const travel = () => state.dist;
+  return { root, body, spin, travel };
+}
+
+/** A vehicle's wheels: instanced while it can drive; as plain meshes when `parked`, so a Bake around a
+ *  parked vehicle merges them with the rest of the model. */
+function Wheels({ wheels, parked, travel, spin }: { wheels: WheelAt[]; parked: boolean; travel: () => number; spin: (r: number) => (g: THREE.Group | null) => void }) {
+  if (!parked) return <WheelSet wheels={wheels} travel={travel} />;
+  return (
+    <>
+      {wheels.map((w, i) => (
+        <group key={i} position={w.at}>
+          <Wheel spec={w.spec} side={w.side} rimColor={w.rimColor} spin={spin(w.spec.r)} />
+        </group>
+      ))}
+    </>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -338,6 +357,8 @@ function stakePockets() {
 type TruckProps = {
   cab?: string;
   accent: string;
+  /** Never drives (a model on a pad): its wheels are plain meshes a Bake can merge. */
+  parked?: boolean;
   /** Rendered in the trailer's frame, in metres; use TRUCK.slots and TRUCK.deckY to place cargo. */
   children?: React.ReactNode;
 };
@@ -346,7 +367,7 @@ type TruckProps = {
 function Exhaust({ at }: { at: [number, number, number] }) {
   const puffs = useRef<(THREE.Mesh | null)[]>([]);
   const mats = useMemo(
-    () => [0, 1, 2, 3].map(() => new THREE.MeshStandardMaterial({ color: "#E9E6E1", roughness: 1, transparent: true, depthWrite: false })),
+    () => [0, 1, 2, 3].map(() => new THREE.MeshStandardMaterial({ color: "#E6E9ED", roughness: 1, transparent: true, depthWrite: false })),
     [],
   );
   useFrame(({ clock }) => {
@@ -370,37 +391,23 @@ function Exhaust({ at }: { at: [number, number, number] }) {
   );
 }
 
-export function SemiTruck({ cab = "#30343B", accent, children }: TruckProps) {
-  const { root, body, spin } = useRolling(0.52, 0.0035);
-  const steer = { r: 0.52, w: 0.32 };
-  const drive = { r: 0.52, w: 0.6, dual: true };
-  const trail = { r: 0.5, w: 0.56, dual: true, rim: "alu" as const };
+const SIDES = [-1, 1] as const;
+const TRUCK_WHEELS: WheelAt[] = [
+  ...SIDES.map((s): WheelAt => ({ spec: { r: 0.52, w: 0.32 }, at: [7.05, 0.52, s * 1.03], side: s })),
+  ...[4.35, 3.0].flatMap((x) => SIDES.map((s): WheelAt => ({ spec: { r: 0.52, w: 0.6, dual: true }, at: [x, 0.52, s * 0.95], side: s }))),
+  ...TRUCK.axles.flatMap((x) => SIDES.map((s): WheelAt => ({ spec: { r: 0.5, w: 0.56, dual: true, rim: "alu" }, at: [x, 0.5, s * 0.97], side: s }))),
+];
+
+export function SemiTruck({ cab = "#30343B", accent, parked = false, children }: TruckProps) {
+  const { root, body, spin, travel } = useRolling(0.52, 0.0035);
   return (
     <group ref={root}>
       {/* Wheels stay on the road; the body rides above them on its suspension. */}
-      {[7.05].map((x) =>
-        [-1, 1].map((s) => (
-          <group key={`${x}${s}`} position={[x, 0.52, s * 1.03]}>
-            <Wheel spec={steer} side={s as 1 | -1} spin={spin(0.52)} />
-          </group>
-        )),
-      )}
-      {[4.35, 3.0].map((x) =>
-        [-1, 1].map((s) => (
-          <group key={`${x}${s}`} position={[x, 0.52, s * 0.95]}>
-            <Wheel spec={drive} side={s as 1 | -1} spin={spin(0.52)} />
-          </group>
-        )),
-      )}
-      {TRUCK.axles.map((x) =>
-        [-1, 1].map((s) => (
-          <group key={`${x}${s}`} position={[x, 0.5, s * 0.97]}>
-            <Wheel spec={trail} side={s as 1 | -1} spin={spin(0.5)} />
-          </group>
-        )),
-      )}
+      <Wheels wheels={TRUCK_WHEELS} parked={parked} travel={travel} spin={spin} />
       <group ref={body}>
         <Exhaust at={[5.78, 4.08, -0.98]} />
+        {/* The body's parts never move against each other: one draw per finish. Cargo stays outside. */}
+        <Bake>
         {/* Tractor */}
         <mesh geometry={cabLower()} material={paint(cab)} castShadow receiveShadow />
         <mesh geometry={cabRoof()} material={paint(cab)} castShadow receiveShadow />
@@ -424,7 +431,7 @@ export function SemiTruck({ cab = "#30343B", accent, children }: TruckProps) {
         {/* Lamps: headlights, indicators, roof marker row */}
         {[-1, 1].map((s) => (
           <group key={s}>
-            <mesh position={[8.31, 1.02, s * 0.9]} material={lamp("#FFF6E0", 1.6)}>
+            <mesh position={[8.31, 1.02, s * 0.9]} material={lamp("#F4F8FF", 1.6)}>
               <boxGeometry args={[0.03, 0.16, 0.46]} />
             </mesh>
             <mesh position={[8.31, 1.02, s * 1.18]} material={lamp("#FFA21E", 1.0)}>
@@ -453,6 +460,7 @@ export function SemiTruck({ cab = "#30343B", accent, children }: TruckProps) {
             </mesh>
           </group>
         ))}
+        </Bake>
         {children}
       </group>
     </group>
@@ -564,31 +572,26 @@ function carriage() {
   });
 }
 
-export function Forklift({ color, lift, children }: { color: string; lift?: () => number; children?: React.ReactNode }) {
-  const { root, body, spin } = useRolling(0.33);
+const FORK_WHEELS: WheelAt[] = [
+  ...SIDES.map((s): WheelAt => ({ spec: { r: 0.33, w: 0.24 }, at: [0.28, 0.33, s * 0.5], side: s, rimColor: "#2E3035" })),
+  ...SIDES.map((s): WheelAt => ({ spec: { r: 0.27, w: 0.2 }, at: [-0.86, 0.27, s * 0.5], side: s, rimColor: "#2E3035" })),
+];
+
+export function Forklift({ color, lift, parked = false, children }: { color: string; lift?: () => number; parked?: boolean; children?: React.ReactNode }) {
+  const { root, body, spin, travel } = useRolling(0.33);
   const inner = useRef<THREE.Group>(null);
   const carr = useRef<THREE.Group>(null);
-  const beacon = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(({ clock }) => {
+  useFrame(() => {
     const h = THREE.MathUtils.clamp(lift ? lift() : 0, 0, FORK.maxLift);
     // Free lift first: the carriage rises inside the mast, then the inner mast extends.
     if (carr.current) carr.current.position.y = 0.05 + h;
     if (inner.current) inner.current.position.y = Math.max(0, h - 0.9);
-    if (beacon.current) beacon.current.emissiveIntensity = 0.6 + (Math.sin(clock.elapsedTime * 7) > 0.3 ? 1.6 : 0);
   });
   return (
     <group ref={root}>
-      {[
-        [0.28, 0.33, { r: 0.33, w: 0.24 }],
-        [-0.86, 0.27, { r: 0.27, w: 0.2 }],
-      ].map(([x, r, spec]) =>
-        [-1, 1].map((s) => (
-          <group key={`${x}${s}`} position={[x as number, r as number, s * 0.5]}>
-            <Wheel spec={spec as { r: number; w: number }} side={s as 1 | -1} rimColor="#2E3035" spin={spin(r as number)} />
-          </group>
-        )),
-      )}
+      <Wheels wheels={FORK_WHEELS} parked={parked} travel={travel} spin={spin} />
       <group ref={body}>
+        <Bake>
         <mesh geometry={forkBody()} material={paint(color, 0.36)} castShadow receiveShadow />
         <mesh geometry={forkDark()} material={enamel("#26282D", 0.55)} castShadow />
         <mesh geometry={forkGuardSlats()} material={enamel("#26282D", 0.55)} castShadow />
@@ -597,23 +600,25 @@ export function Forklift({ color, lift, children }: { color: string; lift?: () =
         <Person look="warehouse" pose="sit" seed={1.3} position={[-0.47, 1.25, 0]} />
         <mesh position={[-0.82, 2.3, 0.4]} castShadow>
           <cylinderGeometry args={[0.06, 0.07, 0.12, 20]} />
-          <meshStandardMaterial ref={beacon} color="#FF8A1E" emissive="#FF8A1E" emissiveIntensity={1} roughness={0.2} />
+          <meshStandardMaterial color="#FF8A1E" emissive="#FF8A1E" emissiveIntensity={0.5} roughness={0.2} />
         </mesh>
         {/* Work lights on the guard */}
         {[-0.44, 0.44].map((z) => (
-          <mesh key={z} position={[0.42, 2.1, z]} material={lamp("#FFF6E0", 1.3)}>
+          <mesh key={z} position={[0.42, 2.1, z]} material={lamp("#F4F8FF", 1.3)}>
             <boxGeometry args={[0.05, 0.08, 0.1]} />
           </mesh>
         ))}
         <mesh geometry={mastOuter()} material={steel("#2C2E33", 0.5)} castShadow />
-        <group ref={inner}>
+        </Bake>
+        {/* The mast extends and the carriage lifts: both move every frame. */}
+        <group ref={inner} userData={LIVE.userData}>
           <mesh geometry={mastInner()} material={steel("#35373D", 0.45)} castShadow />
           {/* Lift cylinder rod */}
           <mesh position={[0.72, 1.3, 0]} material={chrome()}>
             <cylinderGeometry args={[0.035, 0.035, 2.0, 16]} />
           </mesh>
         </group>
-        <group ref={carr}>
+        <group ref={carr} userData={LIVE.userData}>
           <mesh geometry={carriage()} material={steel("#24262B", 0.5)} castShadow />
           {/* Load on the forks: a pallet centred on the tines, which run through its openings */}
           <group position={[FORK.load, -0.02, 0]}>{children}</group>

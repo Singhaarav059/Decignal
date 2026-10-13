@@ -1,10 +1,19 @@
 // Card faces drawn as real product UI on a canvas, then used as textures.
+// Laid out on a 1600 x 1000 grid and drawn at any scale. The cards are a few hundred pixels wide on
+// screen, so the type is set large and sparse: the smallest text is 40 units, nothing is decoration-
+// sized, and detail lives in the page's own readouts beside the cards.
 import { FUNCTIONS, INDUSTRIES, LAYERS } from "@/lib/story";
+import { CONTROL, FACES } from "@/lib/copy";
+import { EXAMPLE, inrShort } from "@/lib/example";
 import { COLORS, TINTS } from "./palette";
 
+/** The reader's choice on the page's approval panel, which the decision face follows. */
+export type DecisionMode = "idle" | "approved" | "rejected";
+
 export type FaceSpec =
-  | { kind: "decision" }
-  | { kind: "layer"; k: number }
+  | { kind: "decision"; qty?: number; mode?: DecisionMode }
+  /** `fan`: the card is read fanned out, with only its left part in view, so all its text sits there. */
+  | { kind: "layer"; k: number; fan?: boolean }
   | { kind: "function"; k: number }
   | { kind: "industry"; k: number }
   | { kind: "final" };
@@ -12,13 +21,28 @@ export type FaceSpec =
 export const FACE_W = 1600;
 export const FACE_H = 1000;
 
-const INK = "#1D1D1F";
-const SOFT = "#6E6E73";
-const LINE = "#E6E6EA";
-const BG2 = "#F5F5F7";
+// Cool neutrals, matching the page tokens (ink, ink-soft, line, sunken).
+const INK = COLORS.ink;
+const SOFT = "#555D6B";
+const LINE = "#E3E6EB";
+const BG2 = "#EDEFF3";
 export const LAYER_TONE = [COLORS.signal, TINTS.violet, TINTS.saffron, TINTS.cobalt, TINTS.emerald];
 export const FUNCTION_TONE = [TINTS.cobalt, TINTS.emerald, TINTS.tangerine, TINTS.pink, TINTS.violet];
 const INDUSTRY_TONE = [TINTS.emerald, TINTS.cobalt, TINTS.pink, TINTS.tangerine, TINTS.violet, TINTS.saffron];
+
+/** A system colour as text: its darker ink (the page's --color-*-ink tokens). Saffron text is ink. */
+const TEXT_INK: Record<string, string> = {
+  [COLORS.signal]: "#C2331B",
+  [TINTS.cobalt]: "#2A52F0",
+  [TINTS.violet]: "#5B3BE6",
+  [TINTS.emerald]: "#087A54",
+  [TINTS.saffron]: INK,
+  [TINTS.tangerine]: "#C7440F",
+  [TINTS.pink]: "#C42B70",
+};
+const ink = (tone: string) => TEXT_INK[tone] ?? INK;
+/** Text on a solid tone fill: white only where it holds contrast (cobalt, violet, signal), else ink. */
+const onTone = (tone: string) => ([TINTS.cobalt, TINTS.violet, COLORS.signal] as string[]).includes(tone) ? "#fff" : INK;
 
 let fonts = { sans: "Figtree, Helvetica, Arial, sans-serif", display: "Helvetica, Arial, sans-serif", mono: "ui-monospace, Menlo, monospace" };
 export function readFonts() {
@@ -45,26 +69,44 @@ function rr(c: C, x: number, y: number, w: number, h: number, r: number) {
   c.roundRect(x, y, w, h, r);
 }
 
-function label(c: C, text: string, x: number, y: number, color = SOFT) {
-  font(c, 28, 500, true);
+const dot = (c: C, x: number, y: number, r: number, color: string) => {
   c.fillStyle = color;
-  c.letterSpacing = "3px";
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI * 2);
+  c.fill();
+};
+
+function label(c: C, text: string, x: number, y: number, color = SOFT) {
+  font(c, 46, 600, true);
+  c.fillStyle = color;
+  c.letterSpacing = "4px";
   c.fillText(text.toUpperCase(), x, y);
   c.letterSpacing = "0px";
 }
 
-function pill(c: C, text: string, xRight: number, y: number, color: string, filled = false) {
-  font(c, 30, 600);
-  const w = c.measureText(text).width + 84;
+/** Status pill, right-aligned: a tone dot and the status in the tone's ink, on the sunken grey. */
+function pill(c: C, text: string, xRight: number, y: number, tone: string) {
+  font(c, 42, 600);
+  const w = c.measureText(text).width + 104;
   const x = xRight - w;
-  rr(c, x, y - 40, w, 64, 32);
-  c.fillStyle = filled ? color : BG2;
+  rr(c, x, y - 58, w, 84, 42);
+  c.fillStyle = BG2;
   c.fill();
-  c.fillStyle = filled ? "#fff" : color;
-  c.beginPath();
-  c.arc(x + 34, y - 8, 8, 0, Math.PI * 2);
+  dot(c, x + 42, y - 16, 11, tone);
+  c.fillStyle = ink(tone);
+  c.fillText(text, x + 68, y);
+}
+
+/** Name chip, left-aligned: a tone dot and the name in ink, on the sunken grey. */
+function chip(c: C, text: string, x: number, y: number, tone: string) {
+  font(c, 46, 650);
+  const w = c.measureText(text).width + 112;
+  rr(c, x, y - 60, w, 88, 44);
+  c.fillStyle = BG2;
   c.fill();
-  c.fillText(text, x + 54, y + 2);
+  dot(c, x + 44, y - 16, 12, tone);
+  c.fillStyle = INK;
+  c.fillText(text, x + 72, y);
 }
 
 function hexA(hex: string, a: number) {
@@ -88,96 +130,87 @@ function wrap(c: C, text: string, x: number, y: number, maxW: number, lh: number
   return y;
 }
 
-function title(c: C, text: string, y: number, size = 92, color = INK, maxW = FACE_W - 180) {
+function title(c: C, text: string, y: number, size = 112, color = INK, maxW = FACE_W - 180) {
   font(c, size, 650);
   c.fillStyle = color;
   c.letterSpacing = `${-size * 0.03}px`;
-  const end = wrap(c, text, 90, y, maxW, size * 1.08);
+  const end = wrap(c, text, 90, y, maxW, size * 1.06);
   c.letterSpacing = "0px";
   return end;
 }
 
 function check(c: C, x: number, y: number, color: string) {
   c.strokeStyle = color;
-  c.lineWidth = 6;
+  c.lineWidth = 8;
   c.lineCap = "round";
   c.lineJoin = "round";
   c.beginPath();
-  c.moveTo(x - 11, y + 1);
-  c.lineTo(x - 3, y + 9);
-  c.lineTo(x + 12, y - 8);
+  c.moveTo(x - 14, y + 1);
+  c.lineTo(x - 4, y + 11);
+  c.lineTo(x + 15, y - 10);
   c.stroke();
 }
 
-function button(c: C, text: string, x: number, y: number, dark: boolean) {
-  font(c, 32, 600);
-  const w = c.measureText(text).width + 88;
-  rr(c, x, y, w, 84, 42);
-  if (dark) {
-    c.fillStyle = INK;
+/** A status pill, right-aligned. Outline: the tone as a hairline and its ink; solid: the tone as the
+ *  fill, with white or ink text (onTone). A state on the card, never a control. */
+function status(c: C, text: string, xRight: number, y: number, tone: string, solid: boolean) {
+  font(c, 44, 650);
+  const w = c.measureText(text).width + (solid ? 88 : 108);
+  const x = xRight - w;
+  rr(c, x, y - 60, w, 88, 44);
+  if (solid) {
+    c.fillStyle = tone;
     c.fill();
   } else {
-    c.strokeStyle = "#D2D2D7";
-    c.lineWidth = 3;
+    c.strokeStyle = tone;
+    c.lineWidth = 5;
     c.stroke();
+    dot(c, x + 42, y - 16, 11, tone);
   }
-  c.fillStyle = dark ? "#fff" : INK;
-  c.fillText(text, x + 44, y + 53);
-  return x + w + 20;
+  c.fillStyle = solid ? onTone(tone) : ink(tone);
+  c.fillText(text, x + (solid ? 44 : 66), y);
 }
 
 /* ------------------------------------------------------------------ */
 
-function decision(c: C) {
-  label(c, "Recommended action", 90, 128);
-  pill(c, "Ready for approval", FACE_W - 90, 128, TINTS.emerald);
-  title(c, "Transfer 240 units", 300, 112);
-  font(c, 58, 500);
+const T = EXAMPLE.transfer;
+
+/** The decision: what it is, what it costs, and where it stands. The page's panel holds the real
+ *  Approve, Adjust and Reject; the card only shows the state they leave it in. */
+function decision(c: C, qty: number = T.units, mode: DecisionMode = "idle") {
+  label(c, "Recommended action", 90, 138);
+  if (mode === "approved") status(c, `Approved · ${qty} units`, FACE_W - 90, 140, TINTS.emerald, true);
+  else if (mode === "rejected") status(c, "Rejected", FACE_W - 90, 140, COLORS.signal, true);
+  else status(c, "Ready for approval", FACE_W - 90, 140, TINTS.emerald, false);
+  title(c, CONTROL.title(qty), 330, 140, mode === "rejected" ? SOFT : INK);
+  font(c, 62, 500);
   c.fillStyle = SOFT;
-  c.fillText("from Plant 02 to Plant 01", 90, 385);
+  c.fillText(`from ${EXAMPLE.plant02.name} to ${EXAMPLE.plant01.name}`, 90, 428);
 
   const stats = [
-    ["Units", "240"],
-    ["Arrives", "2 days"],
-    ["Cost", "INR 38,000"],
+    ["Units", `${qty}`],
+    ["Arrives", `${T.arrivesDay} days`],
+    ["Cost", inrShort(qty * T.perUnitINR)],
   ];
-  const bw = (FACE_W - 180 - 40) / 3;
+  const bw = (FACE_W - 180 - 48) / 3;
   stats.forEach(([k, v], i) => {
-    const x = 90 + i * (bw + 20);
-    rr(c, x, 460, bw, 170, 28);
+    const x = 90 + i * (bw + 24);
+    rr(c, x, 492, bw, 230, 32);
     c.fillStyle = BG2;
     c.fill();
-    font(c, 30, 500);
+    font(c, 48, 500);
     c.fillStyle = SOFT;
-    c.fillText(k, x + 36, 522);
-    font(c, 56, 650);
+    c.fillText(k, x + 40, 574);
+    font(c, 92, 650);
     c.fillStyle = INK;
-    c.fillText(v, x + 36, 598);
+    c.fillText(v, x + 40, 678);
   });
 
-  let x = button(c, "Approve", 90, 720, true);
-  x = button(c, "Adjust", x, 720, false);
-  button(c, "Reject", x, 720, false);
-  font(c, 28, 500);
+  // What approving does, as a quiet line: the ERP's dot, then the words.
+  dot(c, 108, 864, 13, TINTS.cobalt);
+  font(c, 54, 500);
   c.fillStyle = SOFT;
-  c.textAlign = "right";
-  c.fillText("Creates a transfer order in SAP", FACE_W - 90, 772);
-  c.textAlign = "left";
-
-  // Evidence strip: the six systems it was built from.
-  const tones = [TINTS.cobalt, TINTS.violet, TINTS.emerald, TINTS.saffron, TINTS.tangerine, TINTS.pink];
-  const names = ["ERP", "CRM", "MES", "WMS", "SUPPLIERS", "EXTERNAL"];
-  let ex = 90;
-  font(c, 26, 500, true);
-  names.forEach((n, i) => {
-    c.fillStyle = tones[i];
-    c.beginPath();
-    c.arc(ex + 9, 893, 9, 0, Math.PI * 2);
-    c.fill();
-    c.fillStyle = SOFT;
-    c.fillText(n, ex + 28, 902);
-    ex += c.measureText(n).width + 76;
-  });
+  c.fillText(FACES.decisionFoot, 142, 882);
 }
 
 /** The fact each layer contributes, set large in the left column so it reads even when the cards fan out. */
@@ -188,115 +221,135 @@ const LAYER_METRIC: [string, string][] = [
   ["3 / 3", "Policy checks passed"],
 ];
 
-function layer(c: C, k: number) {
+/** Fanned, a layer card shows about its left 42%: every word sits there, the drawing to its right. */
+const FAN_W = 0.42 * FACE_W;
+
+function layer(c: C, k: number, fan = false) {
   if (k === 4) return decision(c);
   const tone = LAYER_TONE[k];
   const L = LAYERS[k];
   const [metric, caption] = LAYER_METRIC[k];
-  label(c, `0${k + 1}  ${L.name}`, 90, 128, tone);
-  pill(c, "Checked", FACE_W - 90, 128, TINTS.emerald);
+  label(c, `0${k + 1}  ${L.name}`, 90, 138, ink(tone));
+  if (!fan) status(c, "Checked", FACE_W - 90, 140, TINTS.emerald, false);
 
-  // Left column: the one number that matters.
-  font(c, 190, 650);
+  // Left column: the one number that matters, as large as the column allows.
+  const colW = FAN_W - 140;
+  let size = 230;
+  c.letterSpacing = "-8px";
+  for (; size > 150; size -= 10) {
+    font(c, size, 650);
+    if (c.measureText(metric).width <= colW) break;
+  }
   c.fillStyle = INK;
-  c.letterSpacing = "-7px";
-  c.fillText(metric, 82, 420);
+  c.fillText(metric, 80, 430);
   c.letterSpacing = "0px";
-  rr(c, 90, 470, 72, 10, 5);
-  c.fillStyle = tone;
-  c.fill();
-  font(c, 42, 500);
+  // No accent rule under the number: the label above and the drawing carry the tone.
+  font(c, 64, 500);
   c.fillStyle = SOFT;
-  wrap(c, caption, 90, 560, 420, 54);
+  wrap(c, caption, 90, 556, colW, 78);
 
-  // Right column: the statement and its evidence.
-  const x0 = 640;
+  // Right column: the drawing. Its words (the statement, the figures on it) only where the whole
+  // card is in view; fanned, it is a drawing alone, so no word is ever cut by the card in front.
+  const x0 = fan ? FAN_W + 60 : 720;
   const x1 = FACE_W - 90;
   const w = x1 - x0;
-  font(c, 54, 650);
-  c.fillStyle = INK;
-  c.letterSpacing = "-1.5px";
-  wrap(c, L.text, x0, 290, w, 62);
-  c.letterSpacing = "0px";
+  if (!fan) {
+    font(c, 60, 650);
+    c.fillStyle = INK;
+    c.letterSpacing = "-1.5px";
+    wrap(c, L.text, x0, 300, w, 72);
+    c.letterSpacing = "0px";
+  }
 
-  const top = 470;
-  const bottom = 880;
+  const top = fan ? 300 : 500;
+  const bottom = 900;
   if (k === 0) {
     // Stock running down through safety stock.
-    const safety = 760;
+    const safety = bottom - 120;
+    const span = safety - top + 60;
     c.strokeStyle = hexA(COLORS.signal, 0.8);
-    c.setLineDash([16, 14]);
-    c.lineWidth = 4;
+    c.setLineDash([18, 16]);
+    c.lineWidth = 5;
     c.beginPath();
     c.moveTo(x0, safety);
     c.lineTo(x1, safety);
     c.stroke();
     c.setLineDash([]);
     c.strokeStyle = INK;
-    c.lineWidth = 9;
+    c.lineWidth = 11;
     c.lineCap = "round";
     c.beginPath();
     for (let i = 0; i <= 24; i++) {
       const x = x0 + (i / 24) * w;
-      const y = top + 30 + Math.pow(i / 24, 1.25) * 360;
+      const y = top + 20 + Math.pow(i / 24, 1.25) * span;
       if (i) c.lineTo(x, y);
       else c.moveTo(x, y);
     }
     c.stroke();
-    const cross = x0 + Math.pow((safety - top - 30) / 360, 1 / 1.25) * w;
-    c.fillStyle = COLORS.signal;
-    c.beginPath();
-    c.arc(cross, safety, 20, 0, Math.PI * 2);
-    c.fill();
-    font(c, 30, 600);
-    c.fillText("Day 6", cross - 120, safety + 62);
+    const cross = x0 + Math.pow((safety - top - 20) / span, 1 / 1.25) * w;
+    dot(c, cross, safety, 24, COLORS.signal);
+    if (!fan) {
+      font(c, 46, 650);
+      c.fillStyle = ink(COLORS.signal);
+      c.textAlign = "right";
+      c.fillText("Day 6", cross - 40, safety + 80);
+      c.textAlign = "left";
+    }
   } else if (k === 1) {
     // Orders rising week on week.
     const vals = [0.42, 0.48, 0.5, 0.58, 0.66, 0.78, 0.92];
-    const gap = 20;
+    const gap = 22;
     const bw = (w - gap * (vals.length - 1)) / vals.length;
     vals.forEach((v, i) => {
       const h = v * (bottom - top);
-      rr(c, x0 + i * (bw + gap), bottom - h, bw, h, 14);
+      rr(c, x0 + i * (bw + gap), bottom - h, bw, h, 16);
       c.fillStyle = i === vals.length - 1 ? tone : hexA(tone, 0.25);
       c.fill();
     });
   } else if (k === 2) {
-    // Plant 02 holds more than its plan; Plant 01 is short.
+    // Plant 02 holds more than its plan; Plant 01 is short. The line marks each plant's plan.
     const rows: [string, number][] = [
-      ["Plant 02", 620],
-      ["Plant 01", 140],
+      [EXAMPLE.plant02.name, EXAMPLE.plant02.stock],
+      [EXAMPLE.plant01.name, EXAMPLE.plant01.day6Without],
     ];
-    const plan = 380;
+    const plan = EXAMPLE.plant02.ownPlan;
+    const pitch = fan ? 260 : 190;
     rows.forEach(([n, v], i) => {
-      const y = top + 40 + i * 170;
-      font(c, 32, 600);
-      c.fillStyle = SOFT;
-      c.fillText(n, x0, y);
-      const by = y + 24;
-      rr(c, x0, by, w, 64, 32);
+      const y = top + 44 + i * pitch;
+      if (!fan) {
+        font(c, 44, 600);
+        c.fillStyle = SOFT;
+        c.fillText(n, x0, y);
+      }
+      const by = y + 28;
+      rr(c, x0, by, w, 84, 42);
       c.fillStyle = BG2;
       c.fill();
-      rr(c, x0, by, Math.max((v / 700) * w, 64), 64, 32);
+      rr(c, x0, by, Math.max((v / 700) * w, 120), 84, 42);
       c.fillStyle = i === 0 ? tone : COLORS.signal;
       c.fill();
       c.fillStyle = INK;
-      c.fillRect(x0 + (plan / 700) * w - 3, by - 14, 6, 92);
-      font(c, 30, 650);
-      c.fillStyle = i === 0 ? INK : "#fff";
-      c.fillText(`${v}`, x0 + 24, by + 43);
+      c.fillRect(x0 + (plan / 700) * w - 4, by - 16, 8, 116);
+      if (!fan) {
+        font(c, 46, 650);
+        c.fillStyle = i === 0 ? INK : "#fff";
+        c.fillText(`${v}`, x0 + 32, by + 58);
+      }
     });
-    font(c, 26, 500);
-    c.fillStyle = SOFT;
-    c.fillText("Line marks plan", x0, bottom + 10);
   } else {
-    // Policy checks passed.
-    ["Inter-plant transfer allowed", "Plant 02 stays at plan", "Planner approval required"].forEach((t, i) => {
-      const y = top + 50 + i * 120;
-      check(c, x0 + 26, y, i === 2 ? TINTS.cobalt : TINTS.emerald);
-      font(c, 38, 550);
+    // Policy checks passed: the checks themselves where they can be read, else three ticked rows.
+    FACES.policyChecks.forEach((t, i) => {
+      const y = top + (fan ? 90 : 60) + i * (fan ? 170 : 130);
+      check(c, x0 + 28, y - 4, i === 2 ? TINTS.cobalt : TINTS.emerald);
+      if (fan) {
+        rr(c, x0 + 90, y - 20, (w - 90) * [0.9, 0.7, 0.8][i], 34, 17);
+        c.fillStyle = BG2;
+        c.fill();
+        return;
+      }
+      font(c, 52, 550);
       c.fillStyle = INK;
-      c.fillText(t, x0 + 80, y + 13);
+      c.fillText(t, x0 + 90, y + 14);
     });
   }
 }
@@ -304,24 +357,23 @@ function layer(c: C, k: number) {
 /* Each function shows its decision through the evidence that function actually works with:
    a lane between plants, a maintenance schedule, a regional allocation, a case cluster, a ledger. */
 
-const FN_TOP = 520;
-const FN_BOTTOM = 820;
+const FN_TOP = 560;
 
 /** Supply chain: the lane between two plants, with the transfer on it. */
 function fnLane(c: C, tone: string) {
-  const y = 650;
-  const a = 200;
-  const b = FACE_W - 200;
+  const y = 720;
+  const a = 230;
+  const b = FACE_W - 230;
   c.strokeStyle = LINE;
-  c.lineWidth = 10;
+  c.lineWidth = 12;
   c.lineCap = "round";
   c.beginPath();
   c.moveTo(a, y);
   c.lineTo(b, y);
   c.stroke();
   c.strokeStyle = tone;
-  c.setLineDash([2, 26]);
-  c.lineWidth = 12;
+  c.setLineDash([2, 28]);
+  c.lineWidth = 14;
   c.beginPath();
   c.moveTo(a, y);
   c.lineTo(b * 0.62 + a * 0.38, y);
@@ -330,64 +382,64 @@ function fnLane(c: C, tone: string) {
   const node = (x: number, name: string, sub: string, col: string) => {
     c.fillStyle = "#fff";
     c.beginPath();
-    c.arc(x, y, 34, 0, Math.PI * 2);
+    c.arc(x, y, 40, 0, Math.PI * 2);
     c.fill();
     c.strokeStyle = col;
-    c.lineWidth = 10;
+    c.lineWidth = 12;
     c.stroke();
-    font(c, 34, 650);
+    font(c, 50, 650);
     c.fillStyle = INK;
     c.textAlign = "center";
-    c.fillText(name, x, y - 70);
-    font(c, 28, 500);
+    c.fillText(name, x, y - 80);
+    font(c, 44, 500);
     c.fillStyle = SOFT;
-    c.fillText(sub, x, y + 90);
+    c.fillText(sub, x, y + 110);
     c.textAlign = "left";
   };
   node(a, "Plant 02", "620 units", TINTS.saffron);
   node(b, "Plant 01", "140 units", COLORS.signal);
   // The shipment on the lane
   const tx = b * 0.62 + a * 0.38;
-  rr(c, tx - 80, y - 34, 160, 68, 34);
+  rr(c, tx - 100, y - 42, 200, 84, 42);
   c.fillStyle = tone;
   c.fill();
-  font(c, 30, 650);
-  c.fillStyle = "#fff";
+  font(c, 48, 650);
+  c.fillStyle = onTone(tone);
   c.textAlign = "center";
-  c.fillText("240", tx, y + 11);
+  c.fillText("240", tx, y + 16);
   c.textAlign = "left";
 }
 
 /** Operations: Line 04 week plan, the bearing swap slotted before Friday's run. */
 function fnSchedule(c: C, tone: string) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-  const x0 = 250;
+  const x0 = 320;
   const x1 = FACE_W - 90;
   const dw = (x1 - x0) / days.length;
-  font(c, 30, 500, true);
+  font(c, 42, 600, true);
   c.fillStyle = SOFT;
-  days.forEach((d, i) => c.fillText(d.toUpperCase(), x0 + i * dw + 12, FN_TOP));
+  days.forEach((d, i) => c.fillText(d.toUpperCase(), x0 + i * dw + 14, FN_TOP + 10));
   const rows: [string, [number, number, string][]][] = [
     ["Line 03", [[0, 2.4, BG2], [2.6, 4.9, BG2]]],
-    ["Line 04", [[0, 3.1, BG2], [3.15, 3.85, tone], [3.9, 4.9, BG2]]],
+    ["Line 04", [[0, 3.05, BG2], [3.1, 3.95, tone], [4.0, 4.9, BG2]]],
     ["Line 05", [[0.4, 4.6, BG2]]],
   ];
   rows.forEach(([name, bars], r) => {
-    const y = FN_TOP + 50 + r * 92;
-    font(c, 30, 600);
+    const y = FN_TOP + 44 + r * 100;
+    font(c, 46, 600);
     c.fillStyle = r === 1 ? INK : SOFT;
-    c.fillText(name, 90, y + 44);
+    c.fillText(name, 90, y + 54);
     bars.forEach(([s, e, col]) => {
-      rr(c, x0 + s * dw, y, (e - s) * dw - 8, 62, 16);
+      rr(c, x0 + s * dw, y, (e - s) * dw - 10, 76, 20);
       c.fillStyle = col;
       c.fill();
     });
   });
   // Label the slot
-  const sx = x0 + 3.15 * dw;
-  font(c, 26, 650);
-  c.fillStyle = "#fff";
-  c.fillText("Swap", sx + 16, FN_TOP + 50 + 92 + 41);
+  const sx = x0 + 3.1 * dw;
+  font(c, 42, 650);
+  c.fillStyle = onTone(tone);
+  c.fillText("Swap", sx + 22, FN_TOP + 44 + 100 + 53);
 }
 
 /** Commercial: allocation by region, 12% moving from North to West. */
@@ -402,18 +454,18 @@ function fnAllocation(c: C, tone: string) {
   const w = FACE_W - 180;
   // Before and after, as two stacked bars
   [0, 1].forEach((row) => {
-    const y = FN_TOP + 20 + row * 150;
+    const y = FN_TOP + 10 + row * 170;
     label(c, row ? "Proposed" : "Today", x0, y);
     let x = x0;
     regions.forEach(([name, v, d], i) => {
       const share = v + (row ? d : 0);
-      const bw = share * w - 8;
-      rr(c, x, y + 22, bw, 70, 16);
+      const bw = share * w - 10;
+      rr(c, x, y + 26, bw, 88, 20);
       c.fillStyle = row && d !== 0 ? (d > 0 ? tone : hexA(tone, 0.35)) : i === 0 || i === 1 ? hexA(tone, 0.18) : BG2;
       c.fill();
-      font(c, 32, 600);
-      c.fillStyle = row && d > 0 ? "#fff" : INK;
-      c.fillText(`${name} ${Math.round(share * 100)}%`, x + 22, y + 67);
+      font(c, 44, 600);
+      c.fillStyle = row && d > 0 ? onTone(tone) : INK;
+      c.fillText(`${name} ${Math.round(share * 100)}%`, x + 26, y + 86);
       x += share * w;
     });
   });
@@ -421,17 +473,16 @@ function fnAllocation(c: C, tone: string) {
 
 /** Customer: 14 cases that look separate, traced to one root cause. */
 function fnCases(c: C, tone: string) {
-  const cx = FACE_W - 330;
-  const cy = 680;
-  // Root cause node
+  const cx = FACE_W - 360;
+  const cy = 730;
   const dots: [number, number][] = [];
   for (let i = 0; i < 14; i++) {
     const a = (i / 14) * Math.PI * 2 + 0.3;
-    const r = 150 + (i % 3) * 28;
-    dots.push([cx + Math.cos(a) * r * 1.5, cy + Math.sin(a) * r * 0.62]);
+    const r = 140 + (i % 3) * 26;
+    dots.push([cx + Math.cos(a) * r * 1.55, cy + Math.sin(a) * r * 0.62]);
   }
   c.strokeStyle = hexA(tone, 0.35);
-  c.lineWidth = 3;
+  c.lineWidth = 4;
   dots.forEach(([x, y]) => {
     c.beginPath();
     c.moveTo(cx, cy);
@@ -441,52 +492,43 @@ function fnCases(c: C, tone: string) {
   dots.forEach(([x, y]) => {
     c.fillStyle = "#fff";
     c.beginPath();
-    c.arc(x, y, 16, 0, Math.PI * 2);
+    c.arc(x, y, 18, 0, Math.PI * 2);
     c.fill();
     c.strokeStyle = tone;
-    c.lineWidth = 6;
+    c.lineWidth = 7;
     c.stroke();
   });
-  c.fillStyle = tone;
-  c.beginPath();
-  c.arc(cx, cy, 40, 0, Math.PI * 2);
-  c.fill();
-  font(c, 120, 650);
+  dot(c, cx, cy, 44, tone);
+  font(c, 170, 650);
   c.fillStyle = INK;
-  c.letterSpacing = "-4px";
-  c.fillText("14", 90, 680);
+  c.letterSpacing = "-6px";
+  c.fillText("14", 82, 730);
   c.letterSpacing = "0px";
-  font(c, 34, 500);
+  font(c, 48, 500);
   c.fillStyle = SOFT;
-  c.fillText("cases, one cause:", 90, 740);
+  c.fillText(FACES.casesCause[0], 90, 810);
   c.fillStyle = INK;
-  c.fillText("Batch 2207 seal", 90, 790);
+  c.fillText(FACES.casesCause[1], 90, 876);
 }
 
 /** Finance and risk: the invoice ledger, three held until goods are received. */
 function fnLedger(c: C, tone: string) {
-  const rows: [string, string, boolean][] = [
-    ["INV-4471", "INR 2.4L", false],
-    ["INV-4472", "INR 86k", true],
-    ["INV-4475", "INR 1.1L", true],
-    ["INV-4478", "INR 64k", true],
-  ];
-  rows.forEach(([id, amt, hold], i) => {
-    const y = FN_TOP - 30 + i * 84;
+  FACES.ledger.forEach(([id, amt, hold], i) => {
+    const y = FN_TOP - 24 + i * 92;
     if (hold) {
-      rr(c, 70, y - 8, FACE_W - 140, 72, 18);
+      rr(c, 70, y - 6, FACE_W - 140, 82, 20);
       c.fillStyle = BG2;
       c.fill();
     }
-    font(c, 30, 500, true);
+    font(c, 48, 600, true);
     c.fillStyle = hold ? INK : SOFT;
-    c.fillText(id, 100, y + 38);
-    font(c, 32, 600);
-    c.fillText(amt, 520, y + 38);
-    font(c, 28, 600);
-    c.fillStyle = hold ? tone : TINTS.emerald;
+    c.fillText(id, 104, y + 52);
+    font(c, 50, 600);
+    c.fillText(amt, 560, y + 52);
+    font(c, 48, 600);
+    c.fillStyle = hold ? ink(tone) : ink(TINTS.emerald);
     c.textAlign = "right";
-    c.fillText(hold ? "Hold · no GRN" : "Matched", FACE_W - 100, y + 38);
+    c.fillText(hold ? "Hold · no GRN" : "Matched", FACE_W - 104, y + 52);
     c.textAlign = "left";
   });
 }
@@ -496,14 +538,12 @@ const FN_VISUAL = [fnLane, fnSchedule, fnAllocation, fnCases, fnLedger];
 function fn(c: C, k: number) {
   const tone = FUNCTION_TONE[k];
   const f = FUNCTIONS[k];
-  pillLeft(c, f.name, 90, 128, tone);
-  pill(c, "Ready for approval", FACE_W - 90, 128, TINTS.emerald);
-  title(c, f.decision, 300, 84, INK, FACE_W - 180);
+  chip(c, f.name, 90, 140, tone);
+  pill(c, "Ready for approval", FACE_W - 90, 140, TINTS.emerald);
+  title(c, f.decision, 310, 104, INK, FACE_W - 180);
   FN_VISUAL[k](c, tone);
   // Footer: the systems this function's decision drew on
-  c.fillStyle = LINE;
-  c.fillRect(90, FN_BOTTOM + 40, FACE_W - 180, 3);
-  label(c, FN_SOURCES[k], 90, FN_BOTTOM + 110);
+  label(c, FN_SOURCES[k], 90, 958);
 }
 
 const FN_SOURCES = [
@@ -514,37 +554,28 @@ const FN_SOURCES = [
   "ERP · AP · Receiving",
 ];
 
-function pillLeft(c: C, text: string, x: number, y: number, color: string) {
-  font(c, 32, 650);
-  const w = c.measureText(text).width + 64;
-  rr(c, x, y - 44, w, 70, 35);
-  c.fillStyle = color;
-  c.fill();
-  c.fillStyle = "#fff";
-  c.fillText(text, x + 32, y + 3);
-}
-
+/** Industries: one board, one decision. Three things on it, set to read from across the room: the
+ *  industry, what kind of thing this is, and the decision. Its systems are on the page beside it. */
 function industry(c: C, k: number) {
   const ind = INDUSTRIES[k];
   const tone = INDUSTRY_TONE[k];
-  pillLeft(c, ind.name, 90, 128, tone);
-  pill(c, "Ready", FACE_W - 90, 128, TINTS.emerald);
-  label(c, "Recommended action", 90, 270);
-  title(c, ind.decision, 380, 96, INK, FACE_W - 180);
-  label(c, "Connected systems", 90, 790);
-  let x = 90;
-  font(c, 34, 600);
-  ind.system.split(" · ").forEach((s) => {
-    const w = c.measureText(s).width + 64;
-    rr(c, x, 830, w, 76, 38);
-    c.fillStyle = BG2;
-    c.fill();
-    c.fillStyle = INK;
-    c.fillText(s, x + 32, 880);
-    x += w + 18;
-  });
+  font(c, 64, 650);
+  const w = c.measureText(ind.name).width + 136;
+  rr(c, 90, 76, w, 112, 56);
+  c.fillStyle = BG2;
+  c.fill();
+  dot(c, 146, 132, 16, tone);
+  c.fillStyle = INK;
+  c.fillText(ind.name, 182, 155);
+  font(c, 58, 600, true);
+  c.fillStyle = SOFT;
+  c.letterSpacing = "5px";
+  c.fillText("RECOMMENDED ACTION", 90, 404);
+  c.letterSpacing = "0px";
+  title(c, ind.decision, 560, 132, INK, FACE_W - 180);
 }
 
+/** The ending: the lead magnet, standing where the six systems meet. */
 function final(c: C) {
   // Logo mark
   const marks: [string, number][] = [
@@ -562,11 +593,23 @@ function final(c: C) {
     c.closePath();
     c.fill();
   });
-  font(c, 64, 650);
+  font(c, 80, 650);
   c.fillStyle = INK;
-  c.fillText("decignal", 240, 200);
-  title(c, "Your first decision, in production in weeks.", 470, 100, INK, FACE_W - 180);
-  pillLeft(c, "Free AI audit · 30 minutes", 90, 880, TINTS.cobalt);
+  c.fillText("decignal", 240, 206);
+  // The six systems that feed it, one dot each, as the threads arrive on the ground around it.
+  [TINTS.cobalt, TINTS.violet, TINTS.emerald, TINTS.saffron, TINTS.tangerine, TINTS.pink].forEach((t, i) => dot(c, FACE_W - 110 - (5 - i) * 56, 178, 17, t));
+  title(c, FACES.final.title, 440, 136, INK, FACE_W - 180);
+  // What it is: a quiet tag, not a button (the page carries the real call to action).
+  // Set at 88 units so it stays at least 11 CSS px on the ending's card on a desktop screen.
+  font(c, 88, 650);
+  const text = FACES.final.pill;
+  const w = Math.min(c.measureText(text).width + 156, FACE_W - 180);
+  rr(c, 90, 778, w, 152, 76);
+  c.fillStyle = BG2;
+  c.fill();
+  dot(c, 160, 854, 17, TINTS.emerald);
+  c.fillStyle = INK;
+  c.fillText(text, 204, 886);
 }
 
 /** Draws a face. rotate turns it upside down for faces seen after a half turn; scale draws it into a
@@ -584,10 +627,10 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
   c.textBaseline = "alphabetic";
   switch (spec.kind) {
     case "decision":
-      decision(c);
+      decision(c, spec.qty, spec.mode);
       break;
     case "layer":
-      layer(c, spec.k);
+      layer(c, spec.k, spec.fan);
       break;
     case "function":
       fn(c, spec.k);
@@ -605,4 +648,15 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
   c.strokeRect(2, 2, FACE_W - 4, FACE_H - 4);
 }
 
-export const faceKey = (s: FaceSpec) => ("k" in s ? `${s.kind}-${s.k}` : s.kind);
+export function faceKey(s: FaceSpec) {
+  switch (s.kind) {
+    case "decision":
+      return `decision-${s.qty ?? T.units}-${s.mode ?? "idle"}`;
+    case "layer":
+      return `layer-${s.k}${s.fan ? "-fan" : ""}`;
+    case "final":
+      return "final";
+    default:
+      return `${s.kind}-${s.k}`;
+  }
+}

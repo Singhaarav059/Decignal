@@ -18,23 +18,23 @@ export function Studio({ resolution = 1024 }: { resolution?: number }) {
       <Lightformer form="rect" intensity={0.9} position={[0, 1, 9]} scale={[10, 3, 1]} />
       <Lightformer form="ring" intensity={1.2} position={[3, 5, 6]} scale={2} />
       {/* A dark studio floor and back wall in the reflections, so chrome and glass read as chrome and glass */}
-      <Lightformer form="rect" color="#8C8780" intensity={1} position={[0, -3, 0]} rotation-x={-Math.PI / 2} scale={[40, 40, 1]} />
+      <Lightformer form="rect" color="#8A8F98" intensity={1} position={[0, -3, 0]} rotation-x={-Math.PI / 2} scale={[40, 40, 1]} />
       <Lightformer form="rect" color="#3A3B40" intensity={1} position={[0, 0.6, -10]} scale={[30, 0.8, 1]} />
     </Environment>
   );
 }
 
-/** Key light: warm late-morning sun with a crisp, slightly softened shadow, and a cool sky fill. */
+/** Key light: neutral white daylight with a crisp, slightly softened shadow, and a cool sky fill. */
 export function KeyLight({ extent = 11 }: { extent?: number }) {
   // A phone shows the scene at about a third of desktop size, so a 2048 map gives its shadows the same
   // sharpness per screen pixel that 4096 gives a desktop, at a quarter of the cost per frame.
   const map = isPhone() ? 2048 : 4096;
   return (
     <>
-    <hemisphereLight args={["#DCE6F5", "#F3E6D3", 0.35]} />
+    <hemisphereLight args={["#E9EEF6", "#E6E9EE", 0.35]} />
     <directionalLight
       position={[6, 10, 7]}
-      color="#FFE8CC"
+      color="#FFFFFF"
       intensity={1.65}
       castShadow
       shadow-mapSize={[map, map]}

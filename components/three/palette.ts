@@ -1,13 +1,12 @@
-// Mirrors the CSS tokens in app/globals.css.
+// Mirrors the CSS tokens in app/globals.css. The world is cool neutral; colour lives on the objects.
 export const COLORS = {
-  bg: "#FBF6EF",
-  envBase: "#F6EEE4",
-  shadow: "#3B2A22",
-  porcelain: "#FFFDF8",
-  plinth: "#1C2C8C",
-  ink: "#14130F",
-  inkSoft: "#6E685E",
-  inkOnDark: "#FFFDF8",
+  bg: "#F6F7F9",
+  envBase: "#EEF1F5",
+  shadow: "#1B2230",
+  porcelain: "#FFFFFF",
+  ink: "#0F1217",
+  inkSoft: "#5E6675",
+  inkOnDark: "#FFFFFF",
   signal: "#F2361F", // risk
   demand: "#2E5BFF", // demand / information
   ok: "#0FA874", // approved / protected
@@ -29,7 +28,7 @@ export const INK_ON: Record<keyof typeof TINTS, { ink: string; soft: string }> =
   cobalt: { ink: "#FFFFFF", soft: "#C6D3FF" },
   violet: { ink: "#FFFFFF", soft: "#DDD4FF" },
   emerald: { ink: "#FFFFFF", soft: "#C4EEDF" },
-  saffron: { ink: "#2A1A00", soft: "#6B4800" },
+  saffron: { ink: "#0F1217", soft: "#3D4350" },
   tangerine: { ink: "#FFFFFF", soft: "#FFE0D1" },
   pink: { ink: "#FFFFFF", soft: "#FFE1EE" },
   porcelain: { ink: COLORS.ink, soft: COLORS.inkSoft },

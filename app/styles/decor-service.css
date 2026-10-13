@@ -1,0 +1,185 @@
+/* Decor pass (service lane). Loaded after the section sheets so it can refine them. */
+
+/* ---- Service drawings (ExpectArt, WhyArt) ----
+   Labels hold 11px on screen through --svg-k (useSvgScale). Data in the area's tone, or in the colour
+   of the system it came from; risk in signal red; axes, guides and hairlines neutral. */
+.svc-art { display: block; width: 100%; height: auto; overflow: visible; }
+.svc-art text {
+  font-family: var(--font-heading);
+  font-size: calc(11px / var(--svg-k, 1));
+  font-weight: 600;
+  letter-spacing: .07em;
+  fill: var(--color-ink-soft);
+}
+.svc-art[data-small] text { display: none; }
+.svc-art .k-val { font-size: calc(12px / var(--svg-k, 1)); letter-spacing: 0; fill: var(--color-ink); font-variant-numeric: tabular-nums; }
+.svc-art .k-txt,
+.svc-art .k-title,
+.svc-art .k-btn { font-family: var(--font-sans); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.svc-art .k-txt { font-size: calc(12px / var(--svg-k, 1)); font-weight: 500; fill: var(--color-ink-2); }
+.svc-art .k-title { font-size: calc(13px / var(--svg-k, 1)); fill: var(--color-ink); }
+.svc-art .k-btn { font-size: calc(12px / var(--svg-k, 1)); }
+.svc-art .k-strong { fill: var(--color-ink); }
+.svc-art .k-risk-ink { fill: var(--color-signal-ink); }
+.svc-art .k-on { fill: var(--color-on-ink); }
+
+.svc-art .k-sheet { fill: var(--color-surface); stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.svc-art .k-missing { fill: var(--color-surface); stroke: var(--color-signal); stroke-width: 1.2; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.svc-art .k-hair { fill: none; stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.svc-art .k-hair-strong { fill: none; stroke: var(--color-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.svc-art .k-axis { fill: none; stroke: var(--color-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.svc-art .k-guide { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+/* A threshold: safety stock, a vibration limit, an escalation line. */
+.svc-art .k-safety { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; stroke-dasharray: 5 3; vector-effect: non-scaling-stroke; }
+.svc-art .k-plan,
+.svc-art .k-mark { fill: none; stroke: var(--color-ink); stroke-width: 2; stroke-linecap: round; }
+.svc-art .k-plan { stroke-width: 1.5; }
+.svc-art .k-track { fill: var(--color-track); }
+.svc-art .k-track.faint { fill: var(--color-wash); }
+.svc-art .k-fill { fill: var(--tone); }
+.svc-art .k-soft { fill: color-mix(in srgb, var(--tone) 16%, white); stroke: var(--tone); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.svc-art .k-soft-fill { fill: color-mix(in srgb, var(--tone) 34%, white); }
+.svc-art .k-ink { fill: var(--color-ink); }
+.svc-art .k-dot { fill: var(--color-ink-muted); }
+.svc-art .k-risk { fill: var(--color-signal); stroke: var(--color-surface); stroke-width: 1.5; }
+.svc-art .k-ring { fill: var(--color-surface); stroke: var(--tone); stroke-width: 2; }
+.svc-art .k-node { fill: var(--color-surface); stroke: var(--color-ink-muted); stroke-width: 1.5; }
+.svc-art .k-line { fill: none; stroke: var(--tone); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.svc-art .k-line.thick { stroke-width: 3.5; }
+.svc-art .k-risk-line { fill: none; stroke: var(--color-signal); stroke-width: 2; stroke-linecap: round; }
+.svc-art .k-link { fill: none; stroke: var(--tone); stroke-opacity: .34; stroke-width: 1; }
+.svc-art .k-sys { fill: none; stroke: var(--tone); stroke-opacity: .6; stroke-width: 1.4; }
+.svc-art .k-sys.none { stroke: var(--color-ink-muted); stroke-opacity: .45; }
+.svc-art .k-flow { fill: none; stroke: var(--color-ink-muted); stroke-width: 1.4; }
+.svc-art .k-tick { fill: none; stroke: var(--color-on-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* One-time draw-on. Nothing hides until ArtKit arms the drawing on the client (server HTML and
+   reduced motion stay complete); each part waits its --d, then strokes draw, marks rise or settle. */
+.svc-art .k-draw,
+.svc-art .k-tick { stroke-dasharray: 1 1; }
+.svc-art .k-up { transform-box: fill-box; transform-origin: 50% 100%; }
+.svc-art .k-grow { transform-box: fill-box; transform-origin: 0 50%; }
+.svc-art .k-pop { transform-box: fill-box; transform-origin: 50% 50%; }
+.svc-art[data-arm] :is(.k-draw, .k-tick) { transition: stroke-dashoffset var(--dur-5) var(--ease) var(--d, 0ms); }
+.svc-art[data-arm] :is(.k-rise, .k-pop, .k-grow, .k-up) {
+  transition: opacity var(--dur-4) var(--ease) var(--d, 0ms), transform var(--dur-4) var(--ease) var(--d, 0ms);
+}
+.svc-art[data-arm]:not([data-in]) :is(.k-draw, .k-tick) { stroke-dashoffset: 1; }
+.svc-art[data-arm]:not([data-in]) .k-rise { opacity: 0; transform: translateY(6px); }
+.svc-art[data-arm]:not([data-in]) .k-pop { opacity: 0; transform: scale(.4); }
+.svc-art[data-arm]:not([data-in]) .k-grow { transform: scaleX(0); }
+.svc-art[data-arm]:not([data-in]) .k-up { transform: scaleY(0); }
+/* The approval pill slides from a neighbouring choice onto the decision; its label turns white as it lands. */
+.svc-art[data-arm] .xa-pill { transition: transform var(--dur-4) var(--ease) 260ms; }
+.svc-art[data-arm] .xa-chosen { transition: fill var(--dur-3) var(--ease) 520ms; }
+.svc-art[data-arm]:not([data-in]) .xa-pill { transform: translateX(var(--from)); }
+.svc-art[data-arm]:not([data-in]) .xa-chosen { fill: var(--color-ink-soft); }
+/* Exceptions slide from arrival order into risk order. */
+.svc-art[data-arm] .xa-row { transition: transform var(--dur-5) var(--ease) calc(var(--d, 0ms) + 240ms); }
+.svc-art[data-arm]:not([data-in]) .xa-row { transform: translateY(var(--from)); }
+
+/* ---- What to expect: a drawing well above each promise ---- */
+.svc-expect .svc-expect-card { display: grid; grid-template-rows: auto 1fr; align-content: stretch; gap: 24px; }
+.svc-expect-art { padding: 14px; border-radius: var(--radius-sm); background: var(--color-sunken); }
+.svc-expect-copy { display: grid; align-content: start; gap: 8px; }
+.svc-expect .svc-expect-copy h3 { margin-top: 4px; }
+@media (min-width: 768px) and (max-width: 1199px) {
+  /* Tablet and small laptop: one row per promise, the drawing beside its words (labels stay at 11px). */
+  .svc-expect { grid-template-columns: minmax(0, 1fr); }
+  .svc-expect .svc-expect-card { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); grid-template-rows: none; column-gap: 32px; align-items: center; }
+}
+@media (min-width: 1200px) {
+  .svc-expect { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ---- Why Decignal: three points as one chain (systems, evidence, approver) ----
+   Each card fills its column, so its edges line up with the hairline and copy below. */
+.svc-points.svc-chain { row-gap: 48px; }
+.svc-chain > li { display: grid; align-content: start; gap: 24px; padding-top: 0; border-top: 0; }
+.svc-chain-art { position: relative; }
+.svc-chain-copy { padding-top: 20px; border-top: 1px solid var(--color-line-strong); }
+@media (min-width: 640px) and (max-width: 1023px) {
+  .svc-points.svc-chain { grid-template-columns: minmax(0, 1fr); }
+  .svc-chain > li { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--col-gap); align-items: center; }
+}
+@media (min-width: 1024px) {
+  .svc-points.svc-chain { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--col-gap); }
+  /* The connector across each column gap, on the panels' shared centre: the read-only line runs on into
+     the evidence card, and the evidence card hands over to the approver. It draws on after its panel. */
+  .svc-chain > li:not(:last-child) .svc-chain-art::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: var(--col-gap);
+    height: 1.5px;
+    margin-top: -0.75px;
+    background: var(--color-ink-muted);
+    transform-origin: 0 50%;
+    transition: transform var(--dur-3) var(--ease) var(--dur-4);
+  }
+  .svc-chain-art:has(> .svc-art[data-arm]:not([data-in]))::after { transform: scaleX(0); }
+}
+.svc-chain .k-flow { stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+/* ---- Area cards: a 2px lift, the arrow nudges, the drawing leans in ---- */
+.svc-area { transition: box-shadow var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
+.svc-area:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+@media (hover: hover) {
+  .svc-area:hover { transform: translateY(-2px); }
+}
+.svc-area:focus-visible { transform: translateY(-2px); box-shadow: var(--edge-strong); }
+.svc-area:focus-visible .svc-area-go svg { transform: translate(2px, -2px); }
+
+/* Hub (/solutions): every card leads with its area's drawing; the first, with the most applications,
+   runs wide with the drawing beside its copy. 2 columns from 640, 3 from 1200. */
+.svc-area-body { display: contents; }
+.svc-areas[data-art] { gap: var(--col-gap); }
+.svc-areas[data-art] .svc-area { gap: 0; padding: 0; overflow: hidden; grid-template-rows: auto 1fr; align-content: stretch; }
+.svc-areas[data-art] .svc-area-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; height: 100%; padding: var(--card-pad); }
+.svc-areas[data-art] .svc-area-go { margin-top: auto; padding-top: 12px; }
+.svc-areas[data-art] .svc-area-top { margin-bottom: 8px; }
+.svc-area-art { display: block; padding: 20px var(--card-pad) 12px; border-bottom: 1px solid var(--color-line); }
+.svc-area-art .area-art { width: 100%; max-width: none; height: 150px; margin: 0; transform-origin: 50% 100%; transition: transform var(--dur-4) var(--ease); }
+@media (hover: hover) {
+  .svc-area:hover .svc-area-art .area-art { transform: scale(1.03); }
+}
+.svc-area:focus-visible .svc-area-art .area-art { transform: scale(1.03); }
+
+.svc-areas[data-art][data-count] > li:nth-child(n) { grid-column: auto; }
+@media (min-width: 640px) {
+  .svc-areas[data-art][data-count] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .svc-areas[data-art][data-count] > li:first-child { grid-column: 1 / -1; }
+  .svc-areas[data-art] > li:first-child .svc-area { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); grid-template-rows: none; }
+  .svc-areas[data-art] > li:first-child .svc-area-art {
+    order: 1;
+    display: grid;
+    align-items: center;
+    padding: 24px var(--card-pad);
+    border-bottom: 0;
+    border-left: 1px solid var(--color-line);
+  }
+  .svc-areas[data-art] > li:first-child .svc-area-art .area-art { height: clamp(150px, 15vw, 200px); transform-origin: 50% 50%; }
+  .svc-areas[data-art] > li:first-child .svc-area-body { padding: var(--panel-pad); }
+  .svc-areas[data-art] > li:first-child .t-subtitle { font-size: var(--fs-title-card); font-weight: 560; letter-spacing: -.02em; line-height: 1.1; }
+  .svc-areas[data-art] > li:first-child .svc-area-lead { font-size: var(--fs-body); max-width: 34ch; }
+}
+@media (min-width: 1200px) {
+  .svc-areas[data-art][data-count] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .svc-areas[data-art][data-count] > li:first-child { grid-column: span 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svc-area,
+  .svc-area-art .area-art { transition: none; }
+  .svc-area:hover,
+  .svc-area:focus-visible { transform: none; }
+}
+
+/* The wide hub card names its applications, so its copy column carries real content, not air. */
+.svc-area-apps { display: none; }
+@media (min-width: 640px) {
+  .svc-areas[data-art] > li:first-child .svc-area-apps { display: grid; align-self: stretch; max-width: 34ch; margin-top: 20px; border-top: 1px solid var(--color-line); }
+  .svc-area-apps > span { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--color-line); color: var(--color-ink-2); font-weight: 500; }
+  .svc-area-apps .svc-dot { width: 5px; height: 5px; }
+}

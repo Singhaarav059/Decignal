@@ -1,0 +1,218 @@
+/* Primitives: type roles, layout, the one card, the segmented control and the section title.
+   In the components layer, so a Tailwind utility on the same element can still adjust them. */
+
+@layer components {
+  /* ---- Type roles: headline (display, title, subtitle, numerals), text (lede, body, small), label ---- */
+  .t-display,
+  .t-title,
+  .t-title-card {
+    font-family: var(--font-heading);
+    font-optical-sizing: auto;
+    font-weight: 560;
+    text-wrap: balance;
+  }
+  .t-display { font-size: var(--fs-display); line-height: 0.98; letter-spacing: -0.032em; }
+  .t-title { font-size: var(--fs-title); line-height: 1.04; letter-spacing: -0.026em; }
+  .t-title-card { font-size: var(--fs-title-card); line-height: 1.06; letter-spacing: -0.026em; }
+  .t-subtitle {
+    font-family: var(--font-heading);
+    font-optical-sizing: auto;
+    font-size: var(--fs-subtitle);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+  .t-lede {
+    font-family: var(--font-sans);
+    font-size: var(--fs-lede);
+    font-weight: 450;
+    line-height: 1.5;
+    color: var(--color-ink-2);
+    text-wrap: pretty;
+  }
+  .t-body { font-family: var(--font-sans); font-size: var(--fs-body); font-weight: 450; line-height: 1.55; }
+  .t-small { font-family: var(--font-sans); font-size: var(--fs-small); font-weight: 500; line-height: 1.4; }
+  .t-label {
+    font-family: var(--font-heading);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    font-stretch: 92%;
+    line-height: 1.2;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+  .t-num-lg,
+  .t-num-md {
+    font-family: var(--font-heading);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .t-num-lg { font-size: var(--fs-num-lg); line-height: 0.95; letter-spacing: -0.035em; }
+  .t-num-md { font-size: var(--fs-num-md); line-height: 1; letter-spacing: -0.02em; }
+  /* Text in a tone: its text-safe ink (set with lib/tone.ts toneVars). */
+  .t-tone { color: var(--tone-ink, var(--color-ink)); }
+  /* Two-line headline: the second line takes the section's text-safe ink. */
+  :is(.t-display, .t-title, .t-title-card) .accent {
+    display: block;
+    font-style: normal;
+    color: var(--accent-ink, var(--color-cobalt-ink));
+  }
+
+  /* ---- Layout: one container and a 12-column grid sharing --edge ---- */
+  .page-wrap {
+    width: min(100% - 2 * var(--gutter), var(--grid-max));
+    margin-inline: auto;
+  }
+  .grid-12 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+  }
+  @media (min-width: 768px) {
+    .grid-12 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .grid-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  }
+  /* Every editorial section; pinned story and explorer screens are 100svh and skip it. */
+  .section { padding-block: var(--section-y); }
+
+  /* ---- The one card ---- */
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--edge-line);
+    padding: var(--card-pad);
+  }
+  /* Anything holding a graphic or a whole section's content. */
+  .card--panel { border-radius: var(--radius-lg); padding: var(--panel-pad); }
+  /* Rows, cells and readout items inside a card. */
+  .card-inset {
+    background: var(--color-sunken);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  /* A layer floating over content (glance panel, island popover, sticky CTA, phone dock). */
+  .card--float { box-shadow: var(--edge-line), var(--shadow-float); }
+  /* The single strong surface: the closing audit panel. */
+  .card--accent { background: var(--color-ink); color: var(--color-on-ink); box-shadow: none; }
+  .card[data-interactive] {
+    transition: box-shadow var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+  }
+  @media (hover: hover) {
+    .card[data-interactive]:hover { box-shadow: var(--edge-strong); }
+  }
+  .card:is([aria-selected="true"], [aria-current]:not([aria-current="false"]), [data-active]) {
+    box-shadow: var(--edge-selected);
+  }
+  /* The story's bottom-left info card (chapters and explorer share its geometry). */
+  .card--story {
+    position: absolute;
+    left: var(--card-x);
+    bottom: var(--card-b);
+    width: var(--card-w);
+    border-radius: var(--radius-lg);
+  }
+
+  /* ---- Segmented control (components/ui/SegmentedControl.tsx) ----
+     selector: tabs that switch content; the active item is a solid ink pill with white text.
+     location: nav links and the dock; the current item sits on a sunken pill in ink. */
+  .seg {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
+    padding: 4px;
+    border-radius: var(--radius-pill);
+  }
+  .seg[data-variant="selector"] {
+    background: var(--color-surface);
+    box-shadow: var(--edge-line);
+  }
+  .seg-pill {
+    position: absolute;
+    z-index: -1;
+    top: 4px;
+    bottom: 4px;
+    left: 0;
+    width: var(--seg-w, 0);
+    border-radius: var(--radius-pill);
+    transform: translateX(var(--seg-x, 0));
+    opacity: 0;
+    pointer-events: none;
+  }
+  .seg[data-variant="selector"] .seg-pill { background: var(--color-ink); }
+  .seg[data-variant="location"] .seg-pill { background: var(--color-sunken); }
+  .seg-pill[data-show] { opacity: 1; }
+  .seg-pill[data-glide] {
+    transition:
+      transform var(--dur-3) var(--ease),
+      width var(--dur-3) var(--ease),
+      opacity var(--dur-2) var(--ease);
+  }
+  .seg-item {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-ink-2);
+    white-space: nowrap;
+    text-decoration: none;
+    transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+  }
+  .seg[data-size="sm"] .seg-item { min-height: 32px; padding: 0 12px; }
+  .seg[data-size="lg"] .seg-item { min-height: 44px; padding: 0 18px; font-size: var(--fs-body); }
+  .seg-item:hover { color: var(--color-ink); }
+  .seg-item:disabled,
+  .seg-item[aria-disabled="true"] { color: var(--color-ink-muted); cursor: default; }
+  .seg[data-variant="selector"] .seg-item[aria-selected="true"] { color: var(--color-on-ink); }
+  .seg[data-variant="location"] .seg-item[aria-current]:not([aria-current="false"]) { color: var(--color-ink); }
+  /* Before the pill is measured (first paint, no JS) the active item draws its own pill. */
+  .seg:not([data-ready]) .seg-item:is([aria-selected="true"], [aria-current]:not([aria-current="false"])) {
+    background: var(--seg-fill);
+  }
+  .seg[data-variant="selector"] { --seg-fill: var(--color-ink); }
+  .seg[data-variant="location"] { --seg-fill: var(--color-sunken); }
+  .seg-item:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; border-radius: var(--radius-pill); }
+  .seg-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--tone, currentColor);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .seg-pill[data-glide], .seg-item { transition: none; }
+  }
+
+  /* ---- Section title (components/ui/SectionTitle.tsx): label, two lines, optional lede ---- */
+  .section-title-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--tone, var(--color-ink));
+  }
+  .section-title-label + :is(h1, h2, h3) { margin-top: var(--stack-label); }
+  .section-title-lede { margin-top: var(--stack-lede); max-width: 40ch; }
+  .section-title[data-align="center"] { text-align: center; }
+  .section-title[data-align="center"] .section-title-label { justify-content: center; }
+  .section-title[data-align="center"] .section-title-lede { margin-inline: auto; }
+}

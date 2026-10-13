@@ -1,12 +1,22 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { BRAND, HERO_LINES, LOGO_ICON_VIEWBOX, LOGO_PLATES, OG_FOOTER, SITE_NAME } from "@/lib/site";
 
-export const alt = "Decignal · Turn information into decisions";
+export const alt = `${SITE_NAME}: ${HERO_LINES.join(" ")} ${OG_FOOTER}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const TONES = ["#2E5BFF", "#7C5CFF", "#0FA874", "#FFB21E", "#FF7438", "#FF5FA2"];
+// Satori reads woff (not woff2): the same static files troika uses for the 3D labels.
+const font = (file: string) => readFile(join(process.cwd(), "public/fonts", file));
 
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  const [display700, display600, body600] = await Promise.all([
+    font("bricolage-grotesque-latin-700-normal.woff"),
+    font("bricolage-grotesque-latin-600-normal.woff"),
+    font("figtree-latin-600-normal.woff"),
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -17,27 +27,44 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          background: "#FBF6EF",
-          color: "#14130F",
+          background: BRAND.bg,
+          color: BRAND.ink,
+          fontFamily: "Bricolage",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 40, fontWeight: 700 }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            {TONES.map((c) => (
-              <div key={c} style={{ width: 18, height: 18, borderRadius: 9, background: c }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
+          <svg width={50} height={50} viewBox={LOGO_ICON_VIEWBOX}>
+            {LOGO_PLATES.map((p) => (
+              <path key={p.d} d={p.d} fill={p.fill} />
             ))}
-          </div>
+          </svg>
           decignal
         </div>
-        <div style={{ display: "flex", flexDirection: "column", fontSize: 104, fontWeight: 700, lineHeight: 1.02, letterSpacing: -3 }}>
-          <div>Your operation.</div>
-          <div style={{ color: "#2E5BFF" }}>Seen as a whole.</div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            fontSize: 104,
+            fontWeight: 700,
+            lineHeight: 1.02,
+            letterSpacing: -2,
+          }}
+        >
+          <div>{HERO_LINES[0]}</div>
+          <div style={{ color: BRAND.cobalt }}>{HERO_LINES[1]}</div>
         </div>
-        <div style={{ display: "flex", fontSize: 30, color: "#524D44" }}>
-          Turn information from the systems you already run into decisions your teams approve.
+        <div style={{ display: "flex", maxWidth: 820, fontFamily: "Figtree", fontSize: 30, fontWeight: 600, lineHeight: 1.35, color: BRAND.inkSoft }}>
+          {OG_FOOTER}
         </div>
       </div>
     ),
-    size,
+    {
+      ...size,
+      fonts: [
+        { name: "Bricolage", data: display700, weight: 700, style: "normal" },
+        { name: "Bricolage", data: display600, weight: 600, style: "normal" },
+        { name: "Figtree", data: body600, weight: 600, style: "normal" },
+      ],
+    },
   );
 }

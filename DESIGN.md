@@ -1,17 +1,48 @@
 # Decignal design direction
 
-Preserve the warm miniature operational world, the current logo, Bricolage Grotesque (headlines) and Figtree (body) typography, and chapter colour changes. Improve the existing story; do not replace it with a generic SaaS landing page.
+Preserve the neutral isometric operational world, one accent per chapter, the current logo, Bricolage Grotesque (headlines, numbers, labels) and Figtree (body) typography. Improve the existing story in place; do not replace it with a generic SaaS landing page.
 
-- Palette: background #FBF6EF, paper #FFFDF9, ink #14130F. Cobalt #2E5BFF, violet #7C5CFF, emerald #0FA874, saffron #FFB21E, tangerine #FF7438, pink #FF5FA2. Red #F2361F means risk; emerald means a valid or approved outcome. Source systems retain their existing colours.
-- Hierarchy: section headlines 32–60px, weight 620, tracking -0.045em; body 13–17px; labels 11px minimum in the label face. One primary statement per scene. Copy names the decision; the object explains it.
-- Spacing: 4/8/12/16/24/32/48px increments; content max-width 1152px; page gutters 24px mobile, 40px desktop. Preserve breathing room around the 3D subject while keeping controls and metadata compact.
-- Surfaces: quiet hairlines and paper, satin paint, metal, concrete and ribbed plastic. Use rounded corners for buttons and physical objects, not for every section. No decorative glow or unrelated gradient backgrounds.
-- Motion: animate cause and effect—stock moves, evidence connects, an object resolves into focus. Applications continue the scroll narrative on a sticky, borderless stage. Signal, context and decision unfold automatically, with continuous scroll progress driving stock movement. Interaction feedback 200–400ms; object positioning uses damped easing. Avoid constant bouncing or motion that competes with reading.
-- Product demonstrations: mark examples as illustrative. Every application has a distinct operational object and a concrete signal, evidence and action. Never imply a marketing demo sends an order to a live system.
-- Responsive: desktop copy beside a floating scene; mobile copy above the scene. No catalogue panel or required step buttons. Fit the whole model to the available width. Keep text away from the model and controls usable at 390px.
-- Verification: inspect desktop, tablet and mobile, keyboard interaction, reduced motion, scroll-driven application progression and policy feedback. Preserve the established theme through every refinement.
+The tokens live in `app/styles/tokens.css`; the type roles, layout, card and segmented control live in `app/styles/primitives.css`. Change a value there, not at a call site.
 
-Values reflect the repository's tokens and this implementation, not measurements inferred from the reference videos.
+## Colour
+
+- Neutrals are cool (hue about 218). No brown, beige or cream anywhere, in the DOM or in 3D.
+  - bg #F6F7F9, surface #FFFFFF (paper is an alias), sunken #EDEFF3 (bg-2 is an alias)
+  - ink #0F1217, ink-2 #252A33, ink-soft #555D6B, ink-muted #7A8290 (icons, axes and disabled only, never body text)
+  - line rgb(15 18 23 / .10), line-strong /.22, wash /.04 (hover fill), track /.08 (progress tracks), on-ink #FFFFFF
+- System colours: cobalt #2E5BFF (ERP), violet #7C5CFF (CRM), emerald #0FA874 (MES; also a valid or approved outcome), saffron #FFB21E (WMS), tangerine #FF7438 (suppliers), pink #FF5FA2 (external). Signal red #F2361F means risk and nothing else.
+- Text in a system colour uses its text-safe ink, never a mix with ink: cobalt-ink #2A52F0, violet-ink #5B3BE6, emerald-ink #087A54, pink-ink #C42B70, tangerine-ink #C7440F, signal-ink #C2331B. Saffron is never text (its ink is ink). In TSX set colour with `toneVars(tone)` from `lib/tone.ts` (`--tone` for fills and strokes, `--tone-ink` for text); CSS reads `var(--tone-ink, var(--color-ink))`.
+- Colour lives only in dots, numerals, text-ink, drawings and the chapter's 3D object. Area tone colours chapter chrome only (dot, number, the headline's accent line); data uses the colour of the system it came from.
+- Surfaces are white or neutral. The one strong surface is ink: the closing audit panel and the active selector pill. No cobalt-filled panels.
+
+## Type
+
+Three roles, nine classes (`.t-*`, in the components layer so a utility can still adjust them):
+
+- Headline: `.t-display` (hero and final statement only, Bricolage 560, clamp(40px, min(6.2vw, 10.5vh), 96px), tracking -.032em), `.t-title` (section heads, 560, clamp(32px, min(3.8vw, 6.4vh), 56px), -.026em), `.t-title-card` (a title inside the StoryCard, up to 40px), `.t-subtitle` (600, 17-20px), `.t-num-lg` (600, 48-80px, tabular), `.t-num-md` (600, 28px, tabular).
+- Text: `.t-lede` (Figtree 450, 16-18px, ink-2), `.t-body` (450, 15px; buttons, nav links and CTAs at 600), `.t-small` (500, 13px).
+- Label: `.t-label` (Bricolage 600, 11px, .1em, uppercase, 92% width, ink-soft). `.eyebrow` is the same role.
+- Two-line headlines use `components/ui/SectionTitle.tsx`: line one in ink, line two in the tone's ink on its own line, an optional label above (16px) and lede below (24px).
+- No rendered text under 11px, including SVG labels after viewBox scaling. No em dashes in copy.
+
+## Layout, spacing, radius, elevation
+
+- Grid: `--grid-max` 71rem, `--gutter` clamp(20px, 5vw, 72px), `--edge` = max(gutter, (100% - grid-max) / 2): 152px at 1440, 72 at 1280, 20 at 390. Fixed layers (nav, story card) use `--edge`; flow content uses `.page-wrap` and `.grid-12`. Never 100vw inside calc.
+- Spacing: a 4px scale, 4 8 12 16 24 32 48 64 96 128. Every editorial section uses `.section` (`--section-y` clamp(80px, 10vw, 144px)). Header stack: label to title 16, title to lede 24, lede to actions 32, header to content 64.
+- Radius: xs 6, sm 10, md 16, lg 24, xl 32, pill. A nested element takes the next step down. (Tailwind `rounded-xs` to `rounded-xl` now map to this scale.)
+- One card: `.card` (surface, radius md, hairline edge, `--card-pad`), `.card--panel` (radius lg) for anything holding a graphic or a section's content, `.card-inset` (sunken, radius sm) for rows inside a card. The StoryCard uses `--card-x`, `--card-b`, `--card-w` and radius lg.
+- Elevation: hairlines only (`--edge-line`, `--edge-strong` on hover, `--edge-selected` ink ring when selected). The only drop shadow is `--shadow-float`, for layers floating over content. No gradients, glass, backdrop blur, glow or translucent surfaces. Tone appears in an item's dot or numeral, never as a ring or an underline.
+- Stacking: canvas 10 < story 20 < island 28/29 < editorial 30 < rail 40 < pill/dock 45 < menu 47 < veil 48 < nav 50 < loader 70 < skip link 80 (`--z-*`).
+
+## Controls and motion
+
+- Tabs that switch content and location links share `components/ui/SegmentedControl.tsx`: selector variant = solid ink pill, white text, tone dot; location variant = sunken pill, ink text. The pill slides; arrow keys move with a roving tabindex.
+- Motion uses only `--dur-1..5` (120/200/320/600/900ms) and `--ease`. Animate cause and effect: stock moves, evidence connects, an object resolves. No pops, strobes or visibility toggles of on-screen 3D. Live markers pulse their own opacity, never a spreading ring. Respect reduced motion.
+
+## Product honesty and verification
+
+- Mark examples as illustrative. Never invent clients, quotes, logos or result numbers; never imply a demo sends an order to a live system.
+- Verify desktop (1440x900, 1280x680), tablet and phone (390x844) at device scale 2, plus keyboard, reduced motion and `node scripts/rules-check.mjs`.
 
 ## Completed precision pass
 

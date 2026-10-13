@@ -1,114 +1,124 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { CH, INDUSTRIES, INDUSTRY_TONE, clamp01, gToProgress, localIn, subscribe } from "@/lib/story";
-import { industryF } from "@/lib/story";
-import { scrollToTarget } from "../SmoothScroll";
+import { useLayoutEffect, useState } from "react";
+import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE, industryF, subscribe } from "@/lib/story";
+import { APPLICATIONS } from "@/lib/content";
+import { CHAPTER_COPY, INDUSTRY } from "@/lib/copy";
+import { showApplication } from "@/lib/jump";
+import { accentVars, toneVars } from "@/lib/tone";
+import { TONE, goToStory, industryAt } from "./chapters";
+import { StoryPills } from "./StoryPills";
+import { Arrow } from "../ui/Arrow";
 
-/** Local progress in the Industries chapter where industry k has settled (inverse of industryF). */
-const settleAt = (k: number) => 0.04 + (Math.min(k + 0.1, INDUSTRIES.length - 1) / (INDUSTRIES.length - 1)) * 0.86;
+/**
+ * Local progress in Industries where industry k holds still: the middle of the span where industryF
+ * rests on k, found from industryF itself so it stays right whatever the timeline's holds are.
+ */
+function holdAt(k: number) {
+  const ts = CHAPTERS[CH.industries].ts;
+  let lo = -1;
+  let hi = -1;
+  for (let t = 0; t <= ts; t += 0.002) {
+    if (Math.abs(industryF(t) - k) < 0.004) {
+      if (lo < 0) lo = t;
+      hi = t;
+    }
+  }
+  return lo < 0 ? ((k + 0.5) / INDUSTRIES.length) * ts : (lo + hi) / 2;
+}
 
-/** What Decignal does in the industry on screen, and an index to jump between them. */
-export function IndustryDetail() {
-  const root = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const blocks = Array.from(el.querySelectorAll<HTMLElement>("[data-ind-detail]"));
-    const items = Array.from(el.querySelectorAll<HTMLElement>("[data-ind-item]"));
+const goToIndustry = (k: number) => goToStory(CH.industries, holdAt(k));
+
+/** The industry facing the front, as React state: it changes once, at the middle of the board's half-turn. */
+function useIndustryAt() {
+  const [at, setAt] = useState(0);
+  useLayoutEffect(() => {
     let last = -1;
     return subscribe((g) => {
-      const f = industryF(localIn(CH.industries, g));
-      blocks.forEach((b, k) => {
-        // Each block holds while its industry faces the viewer, then hands over.
-        const w = 1 - clamp01(Math.abs(f - k) * 2.6);
-        b.style.opacity = String(w);
-        b.style.transform = `translate3d(0, ${(k - f) * 14}px, 0)`;
-        b.style.visibility = w < 0.01 ? "hidden" : "visible";
-        // The card unfolds as soon as its frame starts to appear, so the card is never seen empty:
-        // rows, checks and figures arrive in sequence while the frame fades in, and leave as it fades out.
-        b.toggleAttribute("data-on", w > 0.08);
-      });
-      const now = Math.round(f);
-      if (now !== last) {
-        last = now;
-        items.forEach((it, k) => it.toggleAttribute("aria-current", k === now));
-        // The current entry takes the colour of the industry facing the viewer.
-        el.style.setProperty("--ind-tone", `var(--color-${INDUSTRY_TONE[now]})`);
-      }
+      const v = industryAt(g);
+      if (v === last) return;
+      last = v;
+      setAt(v);
     });
   }, []);
+  return at;
+}
 
-  const go = (k: number) => {
-    const el = document.getElementById("story");
-    if (!el) return;
-    const start = el.getBoundingClientRect().top + window.scrollY;
-    const range = el.offsetHeight - window.innerHeight;
-    scrollToTarget(start + gToProgress(CH.industries + clamp01(settleAt(k))) * range);
-  };
+/**
+ * 08's title: "Built for" over the industry's name. The name swaps once, at the middle of the board's
+ * half-turn (with the pills and the body): a short reel on a timer, so a scroll stopped mid-turn never
+ * holds two names. The old name leaves first, the new one rolls in after it, in the scroll's direction.
+ */
+export function IndustryTitle() {
+  const at = useIndustryAt();
+  const lines = CHAPTER_COPY[CH.industries]?.title ?? INDUSTRY.title("");
+  return (
+    <h2 className="t-title-card story-title" style={accentVars(TONE[CH.industries])}>
+      <span className="story-title-line">{lines[0]}</span>{" "}
+      <span className="accent ind-roll" aria-hidden>
+        {INDUSTRIES.map((ind, k) => (
+          <span key={ind.name} data-at={k < at ? "past" : k > at ? "next" : "on"} style={accentVars(INDUSTRY_TONE[k])}>
+            {INDUSTRY.title(ind.name)[1]}
+          </span>
+        ))}
+      </span>
+      {/* The heading as one sentence for assistive tech: the slot above is decoration. */}
+      <span className="sr-only">{lines[1]}</span>
+    </h2>
+  );
+}
+
+/**
+ * 08, inside the story card: every industry as one selector (click turns the board to it), then the
+ * industry's challenge, what Decignal recommends there and how to start. The card never fades
+ * between industries; the text swaps in place.
+ */
+export function IndustryCard() {
+  const at = useIndustryAt();
 
   return (
-    <div ref={root} className="ind-detail pointer-events-none absolute inset-x-6 top-[25vh] bottom-[13vh] md:inset-x-10 md:bottom-[14vh]">
-      {/* Left: the industry's challenge, the decisions Decignal makes there, how to start */}
-      <div className="absolute inset-x-0 bottom-0 h-[180px] md:h-[250px] md:max-w-[560px] lg:relative lg:h-full lg:w-[min(310px,24vw)] lg:max-w-none">
-        {INDUSTRIES.map((ind, k) => (
-          <div
-            key={ind.name}
-            data-ind-detail
-            className="absolute inset-x-0 max-lg:bottom-0 lg:top-0"
-            style={{ opacity: 0, "--tone": `var(--color-${INDUSTRY_TONE[k]})` } as React.CSSProperties}
-          >
-            <div className="ind-card">
-              <p className="ind-eyebrow ind-reveal eyebrow tabular max-md:hidden" style={{ ["--d" as string]: 0 }}>
-                {String(k + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")} · The challenge
-              </p>
-              <p className="ind-reveal mt-2 text-[15.5px] font-medium max-md:hidden leading-[1.4] tracking-[-0.01em] text-ink" style={{ ["--d" as string]: 1 }}>{ind.challenge}</p>
-              <p className="ind-reveal eyebrow md:mt-5" style={{ ["--d" as string]: 2 }}>Decisions Decignal makes</p>
-              <ul className="mt-2">
-                {ind.decisions.map((d, i) => (
-                  <li key={d} className="ind-row ind-reveal" style={{ ["--d" as string]: 3 + i }}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" className="ind-check shrink-0" aria-hidden>
-                      <circle cx="8" cy="8" r="7" />
+    <div className="ind-card">
+      <StoryPills
+        label={INDUSTRY.indexAria}
+        items={INDUSTRIES.map((ind, k) => ({ label: ind.name, tone: INDUSTRY_TONE[k], controls: `ind-${k}` }))}
+        value={at}
+        onChange={goToIndustry}
+      />
+      <div className="story-stack">
+        {INDUSTRIES.map((ind, k) => {
+          const app = APPLICATIONS.findIndex((a) => a.name === ind.start);
+          return (
+            <div key={ind.name} id={`ind-${k}`} role="tabpanel" className="story-stack-item ind-block" data-on={k === at || undefined} style={toneVars(INDUSTRY_TONE[k])}>
+              <p className="t-body ind-challenge">{ind.challenge}</p>
+              <p className="t-label ind-label">{INDUSTRY.decisions}</p>
+              <ul className="ind-rows">
+                {ind.decisions.map((d) => (
+                  <li key={d} className="t-small">
+                    <svg width="16" height="16" viewBox="0 0 16 16" className="ind-check" aria-hidden>
                       <path d="M4.6 8.3l2.2 2.2 4.6-4.8" />
                     </svg>
                     {d}
                   </li>
                 ))}
               </ul>
-              <dl className="ind-reveal ind-facts" style={{ ["--d" as string]: 3 + ind.decisions.length }}>
-                <div>
-                  <dt className="eyebrow">Connects</dt>
-                  <dd className="ind-chips">
-                    {ind.system.split(/\s*·\s*|,\s*/).map((sys) => <span key={sys}>{sys}</span>)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="eyebrow">Typical start</dt>
-                  <dd className="mt-1.5 text-[13px] font-medium text-ink">
-                    {ind.start}
-                    <span className="tabular block text-[12px] font-normal text-ink-soft">{ind.weeks} weeks</span>
-                  </dd>
-                </div>
-              </dl>
+              {app >= 0 && (
+                <a
+                  href="#applications"
+                  className="story-link t-small"
+                  onClick={(e) => {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    showApplication(app);
+                  }}
+                >
+                  {INDUSTRY.startLink(ind.start, ind.weeks)}
+                  <Arrow />
+                </a>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
-      {/* Right: every industry, the current one marked; click to turn the card to it */}
-      <nav aria-label="Industries" className="ind-index pointer-events-auto absolute right-0 top-0 max-md:hidden">
-        <ol>
-          {INDUSTRIES.map((ind, k) => (
-            <li key={ind.name}>
-              <button type="button" data-ind-item onClick={() => go(k)} className="ind-item">
-                <span className="tabular eyebrow w-6">{String(k + 1).padStart(2, "0")}</span>
-                <span className="ind-item-dot" style={{ background: `var(--color-${INDUSTRY_TONE[k]})` }} aria-hidden />
-                {ind.name}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
     </div>
   );
 }

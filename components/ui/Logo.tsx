@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 /** Three stacked plates: the systems, the context, the signal on top. */
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
@@ -9,21 +11,13 @@ export function LogoMark({ className = "" }: { className?: string }) {
   );
 }
 
+/** Mark and wordmark. The wordmark sits in .logo-word so the compact phone nav can fold it away
+ *  (app/styles/chrome.css); sizes follow --logo. */
 export function Logo({ size = 26 }: { size?: number }) {
   return (
-    <span className="logo inline-flex items-center gap-2.5">
+    <span className="logo inline-flex items-center" style={{ "--logo": `${size}px` } as CSSProperties}>
       <LogoMark className="shrink-0" />
-      <span className="font-serif leading-none tracking-[-0.019em]" style={{ fontSize: size }}>
-        decignal
-      </span>
-      <style>{`
-        .logo .logo-mark { width: ${Math.round(size * 0.95)}px; height: ${Math.round(size * 0.95)}px; overflow: visible; transform: translateY(${Math.round(size * 0.12)}px); }
-        .logo .logo-mark path { transition: transform 600ms var(--ease-out-expo); }
-        @media (hover: hover) {
-          .logo:hover .lm-1 { transform: translateY(-3px); }
-          .logo:hover .lm-3 { transform: translateY(3px); }
-        }
-      `}</style>
+      <span className="logo-word font-serif leading-none tracking-[-0.019em]">decignal</span>
     </span>
   );
 }

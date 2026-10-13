@@ -1,143 +1,363 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { APPLICATIONS, CATEGORY_TONE } from "@/lib/content";
-import { APPLICATION_DEMOS } from "@/lib/application-demos";
-import { scrollToTarget } from "../SmoothScroll";
-import { TINTS } from "../three/palette";
+import { APPLICATION_DEMOS, DEMO_PINS } from "@/lib/application-demos";
+import { APPLICATIONS_COPY } from "@/lib/copy";
+import { setExplorer } from "@/lib/explorer";
+import { jumpTo, onApplication } from "@/lib/jump";
+import { accentVars, toneVars } from "@/lib/tone";
+import type { Frame } from "../three/ApplicationScene";
+import SegmentedControl from "../ui/SegmentedControl";
+import { SceneBoundary } from "../three/SceneBoundary";
+import { AreaArt } from "./AreaArt";
+import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
 
 gsap.registerPlugin(ScrollTrigger);
-// Viewport heights per application, about 0.7 of the first cut: every stop (signal, evidence, action) still
-// gets its own stretch of scroll, the run through all eight just reads faster. Inventory keeps the most for its truck.
+// Viewport heights per application, by APPLICATIONS index: every stop (signal, evidence, action) gets its
+// own stretch of scroll. Inventory keeps the most for its truck.
 const CHAPTER_LENGTHS = [1.35, 0.9, 1.1, 1.2, 1.1, 0.9, 0.95, 0.95];
-const CHAPTER_NAMES = ["Inventory", "Demand", "Production", "Maintenance", "Supply risk", "Sales", "Service", "Finance"];
+/** Where each stage sits inside its chapter (a click on Signal, Evidence or Action lands here). */
+const STAGE_AT = [0.18, 0.48, 0.84];
+const ALL = APPLICATIONS.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Text that changes in place: the old words fade up and out while the new ones rise in (opacity and
+ * 8px, --dur-3). Only the words change; nothing around them remounts (E15).
+ */
+function Swap({ text, render = (t) => t, className }: { text: string; render?: (text: string, live: boolean) => ReactNode; className?: string }) {
+  const [now, setNow] = useState(text);
+  const [old, setOld] = useState<string | null>(null);
+  if (text !== now) {
+    setOld(now);
+    setNow(text);
+  }
+  useEffect(() => {
+    if (old === null) return;
+    const t = window.setTimeout(() => setOld(null), 340);
+    return () => window.clearTimeout(t);
+  }, [old]);
+  return (
+    <span className={`swap${className ? ` ${className}` : ""}`}>
+      {old !== null && <span key={`o:${old}`} className="swap-out" aria-hidden>{render(old, false)}</span>}
+      <span key={`n:${now}`} className="swap-in">{render(now, true)}</span>
+    </span>
+  );
+}
+
+const headline = (t: string) => {
+  const [a, b] = t.split("\n");
+  return <>{a} <span className="accent">{b}</span></>;
+};
+
+type Props = {
+  /** APPLICATIONS indices to show, in order. Default: all eight. */
+  apps?: number[];
+  /** Older name for `apps`. */
+  indices?: number[];
+  /** Service pages: no chapter stepper for a single application, and the chapter rail is not told. */
+  compact?: boolean;
+  /** Scroll length per application, times CHAPTER_LENGTHS. Default 1, and 1.6 for one application. */
+  pace?: number;
+};
 
 /** One continuous stage, driven by the same Lenis/GSAP scroll as the lead story. */
-export function ApplicationExplorer({ indices }: { indices: number[] }) {
+export function ApplicationExplorer({ apps, indices, compact = false, pace }: Props) {
+  // A new array on every parent render must not rebuild the ScrollTrigger: key the list by its contents.
+  const key = (apps ?? indices ?? ALL).join(",");
+  const list = useMemo(() => key.split(",").map(Number), [key]);
+  const speed = pace ?? (list.length === 1 ? 1.6 : 1);
+  const lens = useMemo(() => list.map((i) => CHAPTER_LENGTHS[i] * speed), [list, speed]);
+  const kinds = useMemo(() => list.map((i) => APPLICATION_DEMOS[i].kind), [list]);
+
   const root = useRef<HTMLDivElement>(null);
-  const visual = useRef<HTMLDivElement>(null);
-  const motion = useRef({ progress: 0 });
+  const stage = useRef<HTMLDivElement>(null);
+  const world = useRef<HTMLDivElement>(null);
+  const head = useRef<HTMLDivElement>(null);
+  const card = useRef<HTMLDivElement>(null);
+  const motion = useRef({ progress: 0, edge: 1 });
+  /** The scene's free area, measured from the head and the card; read by the camera every frame. */
+  const frameBox = useRef<Frame>({ left: 0, top: 0, right: 0, bottom: 0 });
+  /** The object the reader points at in the card: its pin opens in the scene. */
+  const pin = useRef<string | null>(null);
   const [frame, setFrame] = useState({ chapter: 0, step: 0 });
   const [active, setActive] = useState(false);
+  const [near, setNear] = useState(false);
   const [still, setStill] = useState(true);
-  const selected = indices[frame.chapter];
+  const [open, setOpen] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  const opened = useRef(open);
+  const ids = useId();
+  const drawerId = `${ids}-evidence`;
+  const sentenceId = `${ids}-stage`;
+
+  const selected = list[frame.chapter];
   const app = APPLICATIONS[selected];
   const demo = APPLICATION_DEMOS[selected];
-  const color = TINTS[CATEGORY_TONE[app.category] as keyof typeof TINTS];
-  const chapterNav = useRef<HTMLElement>(null);
-  const [jumping, setJumping] = useState(false);
-  const jump = (chapter: number, local = 0.48) => {
+  const tone = CATEGORY_TONE[app.category];
+  const done = frame.step === 2;
+  const count = list.length;
+
+  /** Page y of a point in a chapter (local 0..1). */
+  const yAt = useCallback((chapter: number, local: number) => {
+    const el = root.current;
+    if (!el) return 0;
+    const total = lens.reduce((a, b) => a + b, 0);
+    const before = lens.slice(0, chapter).reduce((a, b) => a + b, 0);
+    return el.getBoundingClientRect().top + window.scrollY + ((el.offsetHeight - window.innerHeight) * (before + lens[chapter] * local)) / total;
+  }, [lens]);
+
+  // A glide within reach, a veil cut beyond it, an instant landing under reduced motion (jumpTo, D9).
+  const jump = useCallback((chapter: number, local = STAGE_AT[1]) => void jumpTo(yAt(chapter, local)), [yAt]);
+  /** Open on a narrow screen, the evidence is a sheet over the scene: no tag opens under it. */
+  const sheet = useRef(false);
+  const setPin = useCallback((id: string | null) => {
+    // "" matches no pin, so pointing away with the sheet up leaves every tag shut.
+    pin.current = id ?? (sheet.current ? "" : null);
+  }, []);
+
+  // The area panels and the chapter rail ask for an application by its APPLICATIONS index.
+  useEffect(() => onApplication((i) => {
+    const n = list.indexOf(i);
+    if (n >= 0) jump(n);
+  }), [list, jump]);
+
+  useEffect(() => {
+    if (open) return;
+    const t = window.setTimeout(() => setDrawer(false), 340);
+    return () => window.clearTimeout(t);
+  }, [open]);
+  useEffect(() => {
+    opened.current = open;
+    sheet.current = open && window.matchMedia("(max-width: 1023px)").matches;
+    if (!pin.current) pin.current = sheet.current ? "" : null;
+  }, [open]);
+
+  // The 3D world mounts on approach, never at load, and stays built once mounted. Home looks two screens
+  // ahead; service pages (compact) one, since their explorer starts only about 2.5 screens down.
+  useEffect(() => {
     const el = root.current;
     if (!el) return;
-    const go = (immediate: boolean) => {
-    const total = indices.reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
-    const before = indices.slice(0, chapter).reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
-    scrollToTarget(el.getBoundingClientRect().top + window.scrollY + (el.offsetHeight - window.innerHeight) * (before + CHAPTER_LENGTHS[indices[chapter]] * local) / total, immediate);
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      setNear(true);
+      io.disconnect();
+    }, { rootMargin: compact ? "100% 0px" : "200% 0px" });
+    io.observe(el);
+    // Fetch the scene's code once the loader has lifted and the page is idle, so the mount is quick.
+    const html = document.documentElement;
+    let idle = 0;
+    const prefetch = () => {
+      const run = () => void import("../three/ApplicationScene");
+      idle = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(run, { timeout: 4000 }) : window.setTimeout(run, 1500);
     };
-    // Within a chapter, glide. Across chapters, a smooth scroll would replay every chapter in
-    // between (and the edge fades at each boundary read as a flicker), so the stage dips, cuts, and returns.
-    if (chapter === frame.chapter || still) return go(still);
-    setJumping(true);
-    window.setTimeout(() => { go(true); requestAnimationFrame(() => setJumping(false)); }, 180);
-  };
-
-  // Area panels above ask for a chapter by application index.
-  useEffect(() => {
-    const onJump = (e: Event) => {
-      const i = indices.indexOf((e as CustomEvent<number>).detail);
-      if (i < 0 || !root.current) return;
-      const top = root.current.getBoundingClientRect().top + window.scrollY;
-      const total = indices.reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
-      const before = indices.slice(0, i).reduce((sum, index) => sum + CHAPTER_LENGTHS[index], 0);
-      scrollToTarget(top + (root.current.offsetHeight - window.innerHeight) * (before + CHAPTER_LENGTHS[indices[i]] * 0.48) / total, true);
+    let mo: MutationObserver | null = null;
+    if (html.classList.contains("ready")) prefetch();
+    else {
+      mo = new MutationObserver(() => {
+        if (!html.classList.contains("ready")) return;
+        mo?.disconnect();
+        prefetch();
+      });
+      mo.observe(html, { attributes: true, attributeFilter: ["class"] });
+    }
+    return () => {
+      io.disconnect();
+      mo?.disconnect();
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
+      window.clearTimeout(idle);
     };
-    window.addEventListener("application-jump", onJump);
-    return () => window.removeEventListener("application-jump", onJump);
-  }, [indices]);
+  }, [compact]);
+
+  // The free area for the scene: right of the copy column on wide screens, between the head and the
+  // card on narrow ones. The card's height is read while the drawer is shut (open, it is a sheet).
+  useLayoutEffect(() => {
+    const st = stage.current;
+    const h = head.current;
+    const c = card.current;
+    if (!st || !h || !c) return;
+    const measure = () => {
+      const s = st.getBoundingClientRect();
+      const hb = h.getBoundingClientRect();
+      st.style.setProperty("--head-b", `${Math.round(hb.bottom - s.top)}px`);
+      if (opened.current) return;
+      const cb = c.getBoundingClientRect();
+      frameBox.current = s.width >= 1024
+        ? { left: Math.max(hb.right, cb.right) - s.left + 40, top: 96, right: 32, bottom: 40 }
+        : { left: 12, right: 12, top: hb.bottom - s.top + 16, bottom: s.bottom - cb.top + 16 };
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    [st, h, c].forEach((el) => ro.observe(el));
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
-    const nav = chapterNav.current;
-    const selectedTab = nav?.querySelector<HTMLElement>('[aria-current="step"]');
-    if (nav && selectedTab) nav.scrollTo({ left: selectedTab.offsetLeft - nav.clientWidth / 2 + selectedTab.offsetWidth / 2, behavior: still ? "instant" : "smooth" });
-  }, [frame.chapter, still]);
-
-  useEffect(() => {
+    const el = root.current;
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setStill(media.matches);
-    sync(); media.addEventListener("change", sync);
+    sync();
+    media.addEventListener("change", sync);
     const observer = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting));
-    if (root.current) observer.observe(root.current);
+    if (el) observer.observe(el);
+    const total = lens.reduce((a, b) => a + b, 0);
+    const last = { op: "", tf: "" };
     const apply = (progress: number) => {
-      let distance = progress * indices.reduce((total,i) => total + CHAPTER_LENGTHS[i], 0);
+      let distance = progress * total;
       let chapter = 0;
-      while (chapter < indices.length - 1 && distance > CHAPTER_LENGTHS[indices[chapter]]) { distance -= CHAPTER_LENGTHS[indices[chapter]]; chapter++; }
-      const local = Math.min(0.9999, distance / CHAPTER_LENGTHS[indices[chapter]]);
+      while (chapter < lens.length - 1 && distance > lens[chapter]) {
+        distance -= lens[chapter];
+        chapter++;
+      }
+      const local = Math.min(0.9999, distance / lens[chapter]);
       motion.current.progress = Math.max(0, Math.min(1, (local - 0.12) / 0.74));
       const step = local < 0.32 ? 0 : local < 0.62 ? 1 : 2;
-      setFrame((previous) => previous.chapter === chapter && previous.step === step ? previous : { chapter, step });
-      if (visual.current) {
-        // Edge fades last a fixed distance (about an eighth of a screen), whatever the chapter's length.
-        const len = CHAPTER_LENGTHS[indices[chapter]];
-        const edge = Math.min(1, chapter === 0 ? 1 : local / (0.125 / len), chapter === indices.length - 1 ? 1 : (1 - local) / (0.11 / len));
-        visual.current.style.opacity = String(edge);
-        visual.current.style.transform = media.matches ? "none" : `translate3d(0, ${(1 - edge) * 22}px,0)`;
-      }
+      setFrame((p) => (p.chapter === chapter && p.step === step ? p : { chapter, step }));
+      if (!compact) setExplorer({ index: chapter, step });
+      // The hand-off lasts a fixed distance (about an eighth of a screen) whatever the chapter's length:
+      // the outgoing world slides left and dims to 35%, the incoming one arrives from the right. One
+      // transform on the world; its tags close below 60% so no ghost text crosses the copy.
+      const len = lens[chapter];
+      const inEdge = chapter === 0 ? 1 : Math.min(1, local / (0.125 / len));
+      const outEdge = chapter === lens.length - 1 ? 1 : Math.min(1, (1 - local) / (0.11 / len));
+      const edge = Math.min(inEdge, outEdge);
+      motion.current.edge = edge;
+      const w = world.current;
+      if (!w) return;
+      const shift = media.matches ? 0 : (outEdge < inEdge ? -6 : 6) * (1 - edge);
+      const op = (0.35 + 0.65 * edge).toFixed(3);
+      const tf = shift ? `translate3d(${shift.toFixed(2)}%, 0, 0)` : "none";
+      if (op !== last.op) w.style.opacity = last.op = op;
+      if (tf !== last.tf) w.style.transform = last.tf = tf;
     };
-    const trigger = ScrollTrigger.create({ trigger: root.current, start: "top top", end: "bottom bottom",
-      onUpdate: (self) => apply(self.progress), onRefresh: (self) => apply(self.progress) });
-    return () => { trigger.kill(); observer.disconnect(); media.removeEventListener("change", sync); };
-  }, [indices]);
+    const trigger = ScrollTrigger.create({
+      trigger: el,
+      start: "top top",
+      end: "bottom bottom",
+      onUpdate: (self) => apply(self.progress),
+      onRefresh: (self) => apply(self.progress),
+      onToggle: (self) => !compact && setExplorer({ on: self.isActive }),
+    });
+    if (!compact) setExplorer({ apps: list });
+    return () => {
+      trigger.kill();
+      observer.disconnect();
+      media.removeEventListener("change", sync);
+      if (!compact) setExplorer({ on: false });
+    };
+  }, [lens, list, compact]);
 
-  return <div ref={root} className="application-journey" style={{ height: `${indices.reduce((total,i) => total + CHAPTER_LENGTHS[i] * 100, 100)}svh`, ["--tone" as string]: color }}>
-    <div className="application-stage" data-step={frame.step} data-jumping={jumping || undefined}>
-      <nav ref={chapterNav} className="application-chapter-bar" aria-label="Application chapters">{indices.map((index,i)=><button key={index} aria-label={`Show ${APPLICATIONS[index].name}`} aria-current={i===frame.chapter?"step":undefined} onClick={()=>jump(i)}><span>{String(i+1).padStart(2,"0")}</span>{CHAPTER_NAMES[index]}<i/></button>)}</nav>
-      <div className="application-copy" key={selected}>
-        <p className="eyebrow"><span className="diamond" style={{color:"var(--tone)"}} />{String(selected + 1).padStart(2, "0")} / {app.category}</p>
-        <h3 className="display">{demo.headline.split("\n").map((line,i)=><span key={line} className="block">{i===1?<em style={{color:"var(--tone)"}}>{line}</em>:line}</span>)}</h3>
-        <p className="application-summary">{app.name}</p>
-        <nav className="application-phase-nav" aria-label={`${app.name} story stages`}>{["Signal", "Evidence", "Action"].map((label,i)=><button key={label} aria-current={i===frame.step?"step":undefined} onClick={()=>jump(frame.chapter,[0.18,0.48,0.84][i])}><span>0{i+1}</span>{label}</button>)}</nav>
-        <div className="application-narrative" key={`${selected}-${frame.step}`}>
-          <span className="spec-label">{["The signal", "Connected evidence", "Recommended action"][frame.step]}</span>
-          <p>{[demo.signal, demo.evidence, demo.action][frame.step]}</p>
-          <span className="application-measure">{frame.step === 2 ? demo.result : demo.sources}</span>
+  const stages = useMemo(
+    () => APPLICATIONS_COPY.stages.map((label, i) => ({ value: String(i), label, controls: `${sentenceId} ${drawerId}` })),
+    [sentenceId, drawerId],
+  );
+  const moved = DEMO_PINS[demo.kind].moved;
+  const name = (n: number) => APPLICATIONS[list[n]].name;
+
+  return (
+    <div
+      ref={root}
+      className="application-journey"
+      data-app={selected}
+      style={{ height: `${lens.reduce((total, l) => total + l * 100, 100)}svh`, ...toneVars(tone) }}
+    >
+      <div ref={stage} className="application-stage" data-step={frame.step} data-count={count} data-compact={compact || undefined} data-open={open || undefined}>
+        <div ref={world} className="application-world" role="img" aria-label={`${app.name}. ${demo.line}`}>
+          {near && (
+            <SceneBoundary label={`${app.name}. ${demo.line}`} fallback={<AreaArt area={app.category} />}>
+              <ApplicationScene kind={demo.kind} kinds={kinds} step={frame.step} active={active} still={still} motion={motion} pin={pin} frame={frameBox} />
+            </SceneBoundary>
+          )}
         </div>
-        <div className="application-sources"><span className="spec-label">Connected sources</span><p>{app.connects.join(" · ")}</p></div>
-        {/* The decision trail: the three beats of this workflow, filling as the scroll moves through them. */}
-        <div className="application-trail-wrap">
-          <ol className="application-trail" aria-label="Decision trail">
-            {demo.beats.map((beat, i) => (
-              <li key={beat} data-state={i < frame.step ? "done" : i === frame.step ? "now" : "next"}>
-                <i aria-hidden />
-                <span className="tabular">0{i + 1}</span>
-                {beat}
-                <em>{i < frame.step ? "Done" : i === frame.step ? "Now" : "Next"}</em>
-              </li>
-            ))}
-          </ol>
-          <div className="application-outcome" data-done={frame.step === 2 || undefined}>
-            <span className="spec-label">Outcome</span>
-            <strong className="tabular">{demo.metric}</strong>
+
+        {/* The copy, marked for the scene's tags (ScreenTag keeps labels off text inside [data-ch]):
+            no tag opens over the head or the card. No box of its own. */}
+        <div data-ch="0" style={{ display: "contents" }}>
+          <div ref={head} className="application-head" style={accentVars(tone)} data-obstacle>
+            <div className="application-head-row">
+              <p className="application-label t-label">
+                <span className="application-dot" aria-hidden />
+                <Swap text={`${pad(frame.chapter + 1)} · ${app.name}`} />
+              </p>
+              {count > 1 && (
+                <nav className="application-stepper" aria-label={APPLICATIONS_COPY.chaptersAria}>
+                  <button type="button" disabled={frame.chapter === 0} aria-label={frame.chapter > 0 ? `Previous: ${name(frame.chapter - 1)}` : "Previous"} onClick={() => jump(frame.chapter - 1)}>
+                    <ChevronLeft size={16} strokeWidth={2} aria-hidden />
+                  </button>
+                  <span className="application-count" aria-current="step">{pad(frame.chapter + 1)} / {pad(count)}</span>
+                  <button type="button" disabled={frame.chapter === count - 1} aria-label={frame.chapter < count - 1 ? `Next: ${name(frame.chapter + 1)}` : "Next"} onClick={() => jump(frame.chapter + 1)}>
+                    <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                  </button>
+                </nav>
+              )}
+            </div>
+            <h3 className="t-title-card application-title">
+              <Swap text={demo.headline} render={headline} />
+            </h3>
+          </div>
+
+          <div ref={card} className="card card--story application-card" data-obstacle>
+            <SegmentedControl
+              label={`${app.name}: ${APPLICATIONS_COPY.stages.join(", ")}`}
+              items={stages}
+              value={String(frame.step)}
+              onChange={(v) => jump(frame.chapter, STAGE_AT[Number(v)])}
+              className="application-stages"
+            />
+            {/* One body that scrolls when it must, between the stage control and the foot: the summary
+                (one number, one sentence) and the evidence that replaces it when opened. */}
+            <div className="application-body" data-lenis-prevent>
+              <div className="application-fold application-summary" data-shut={open || undefined}>
+                <div className="application-fold-inner" inert={open}>
+                  <p className="application-metric" data-done={done || undefined} onPointerEnter={() => setPin(moved)} onPointerLeave={() => setPin(null)}>
+                    <Swap text={demo.metric} className="application-metric-value t-num-lg" render={(t, live) => (live && done ? <CountUp key={`${t}:done`} value={t} duration={700} /> : t)} />
+                    <Swap text={demo.metricLabel} className="application-metric-label t-small" />
+                  </p>
+                  <p id={sentenceId} role="tabpanel" className="application-sentence t-lede">
+                    <Swap text={demo.steps[frame.step]} />
+                  </p>
+                </div>
+              </div>
+              <div id={drawerId} className="application-fold application-drawer" data-open={open || undefined}>
+                <div className="application-fold-inner" inert={!open}>
+                  {(open || drawer) && (
+                    <>
+                      <OperationEvidence kind={demo.kind} step={frame.step} onPin={setPin} />
+                      <p className="application-sources t-small">
+                        <span className="t-label">{APPLICATIONS_COPY.sources}</span> {app.connects.join(" · ")}
+                      </p>
+                      <p className="application-asset t-label">{demo.asset}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="application-card-foot">
+              <button
+                type="button"
+                className="application-toggle"
+                aria-expanded={open}
+                aria-controls={drawerId}
+                onClick={() => {
+                  setDrawer(true);
+                  setOpen((o) => !o);
+                }}
+              >
+                <ChevronUp size={16} strokeWidth={2} aria-hidden />
+                {open ? APPLICATIONS_COPY.hideEvidence : APPLICATIONS_COPY.showEvidence}
+              </button>
+              <span className="application-example t-small">{APPLICATIONS_COPY.example}</span>
+            </div>
           </div>
         </div>
       </div>
-      <div ref={visual} className="application-world" role="img" aria-label={`${app.name}: ${[demo.signal, demo.evidence, demo.result][frame.step]}`}>
-        <ApplicationScene kind={demo.kind} step={frame.step} tone={color} active={active} still={still} motion={motion} />
-
-      </div>
-      <div className="operation-readout" key={'readout-'+selected}>
-        <OperationEvidence kind={demo.kind} step={frame.step} />
-      </div>
-      <div className="application-progress" aria-label={'Application '+(frame.chapter+1)+' of '+indices.length}>
-        <span>{String(frame.chapter + 1).padStart(2, '0')} / {String(indices.length).padStart(2, '0')} · {app.category}</span>
-        <span className="application-scroll-note">Scroll to follow the decision <span aria-hidden>↓</span></span>
-        <span>{demo.asset}</span>
-      </div>
-      <span className="application-example">Illustrative workflows</span>
     </div>
-  </div>;
+  );
 }

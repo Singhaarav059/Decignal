@@ -4,49 +4,123 @@
 // Plants are modelled in metres (scaled by the parent); island models in scene units.
 import * as THREE from "three";
 import { Person, Walker } from "./people";
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { aluminium, brass, chrome, cladding, clearGlass, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, rubber, steel } from "./materials";
-import { Bearing, LoadedPallet, Tote, box, cylY, geo, merge, rbox } from "./parts";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GlobeMaterial, SignMaterial, aluminium, brushed, chrome, cladding, clearGlass, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, rubber, steel } from "./materials";
+import { Bake, LIVE } from "./Bake";
+import { NEUTRAL } from "./accent";
+import { LoadedPallet, Tote, box, cylY, geo, merge, rbox } from "./parts";
 import { Forklift, SemiTruck } from "./vehicles";
 import { CRATE, ISLAND_TOTE } from "@/lib/scene";
-import { TINTS } from "./palette";
+import { COLORS, INK_ON, TINTS } from "./palette";
+import { FACES } from "@/lib/copy";
 
-/* ---------------- Canvas text for signs ---------------- */
+/* ---------------- Signs: lettering drawn at the size it shows on screen ---------------- */
 
-function useSign(text: string, bg: string, fg: string, w = 1024, h = 192, weight = 700) {
-  const tex = useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = w;
-    c.height = h;
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = 16;
-    return t;
-  }, [w, h]);
+/** Lettering that reads on a system colour: ink on saffron, white on the others (palette INK_ON). */
+export function inkOn(tone: string) {
+  const key = (Object.keys(TINTS) as (keyof typeof TINTS)[]).find((k) => TINTS[k].toLowerCase() === tone.toLowerCase());
+  return key ? INK_ON[key].ink : "#FFFFFF";
+}
+
+/** Canvas widths a sign can be drawn at. It picks the one nearest its width on screen in device
+ *  pixels, so the lettering is never shrunk through mipmaps (soft) or stretched (blurred). */
+const SIGN_TIERS = [128, 192, 256, 384, 512, 768, 1024, 1536];
+const signA = new THREE.Vector3();
+const signB = new THREE.Vector3();
+
+/**
+ * A painted sign, w x h, facing +z. The panel takes `bg` and the lettering `fg`; in the story a model's
+ * accent driver eases both (to ink on white) when its system is not the subject.
+ */
+export function Sign({ text, bg, fg, w, h, weight = 700, ...props }: React.ComponentProps<"mesh"> & { text: string; bg: string; fg: string; w: number; h: number; weight?: number }) {
+  const gl = useThree((st) => st.gl);
+  const ref = useRef<THREE.Mesh>(null);
+  const [tier, setTier] = useState(3);
+  const want = useRef({ tier: 3, for: 0 });
+  const { tex, mat } = useMemo(() => {
+    const t = new THREE.CanvasTexture(document.createElement("canvas"));
+    // A coverage mask (data, not colour): the material mixes panel and lettering from it.
+    t.colorSpace = THREE.NoColorSpace;
+    t.anisotropy = Math.min(16, gl.capabilities.getMaxAnisotropy());
+    const m = new SignMaterial({ map: t, roughness: 0.45 });
+    m.userData.neutral = "#F7F9FB";
+    m.userData.fgNeutral = COLORS.ink;
+    return { tex: t, mat: m };
+  }, [gl]);
+  useEffect(() => {
+    mat.color.set(bg);
+    mat.fg.set(fg);
+    mat.userData.fgTone = fg;
+  }, [mat, bg, fg]);
+  useEffect(
+    () => () => {
+      tex.dispose();
+      mat.dispose();
+    },
+    [tex, mat],
+  );
   useEffect(() => {
     let live = true;
-    document.fonts.ready.then(() => {
+    const draw = () => {
       if (!live) return;
+      const W = SIGN_TIERS[tier];
+      const H = Math.max(16, Math.round((W * h) / w));
       const c = tex.image as HTMLCanvasElement;
+      // A new size needs new GPU storage: release the old one before the canvas changes.
+      if (c.width !== W || c.height !== H) {
+        tex.dispose();
+        c.width = W;
+        c.height = H;
+      }
       const x = c.getContext("2d")!;
-      x.fillStyle = bg;
-      x.fillRect(0, 0, w, h);
+      x.fillStyle = "#000";
+      x.fillRect(0, 0, W, H);
       const fam = getComputedStyle(document.body).fontFamily;
-      x.font = `${weight} ${h * 0.5}px ${fam}`;
-      x.fillStyle = fg;
+      let size = H * 0.5;
+      // Letter-spaced caps, like signage on a real plant; shrunk only if the name would not fit.
+      const spacing = (x as CanvasRenderingContext2D & { letterSpacing: string });
+      for (; size > H * 0.25; size -= 1) {
+        x.font = `${weight} ${size}px ${fam}`;
+        spacing.letterSpacing = `${size * 0.12}px`;
+        if (x.measureText(text).width <= W * 0.86) break;
+      }
+      x.fillStyle = "#FFF";
       x.textAlign = "center";
       x.textBaseline = "middle";
-      // Letter-spaced caps, like signage on a real plant
-      (x as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${h * 0.06}px`;
-      x.fillText(text, w / 2, h * 0.54);
+      x.fillText(text, W / 2 + size * 0.06, H * 0.54);
       tex.needsUpdate = true;
-    });
+    };
+    draw();
+    if (document.fonts.status !== "loaded") document.fonts.ready.then(draw);
     return () => {
       live = false;
     };
-  }, [tex, text, bg, fg, w, h, weight]);
-  return tex;
+  }, [tex, text, tier, w, h, weight]);
+  useFrame(({ camera, size }, dt) => {
+    const m = ref.current;
+    for (let o: THREE.Object3D | null = m; o; o = o.parent) if (!o.visible) return;
+    if (!m) return;
+    // Width on screen in device pixels: the sign's left and right edges, projected.
+    m.localToWorld(signA.set(-w / 2, 0, 0)).project(camera);
+    m.localToWorld(signB.set(w / 2, 0, 0)).project(camera);
+    if (signA.z > 1 || signB.z > 1) return;
+    const px = Math.hypot((signA.x - signB.x) * size.width, (signA.y - signB.y) * size.height) * 0.5 * gl.getPixelRatio();
+    if (px < 2) return;
+    let t = SIGN_TIERS.findIndex((v) => v >= px * 0.95);
+    if (t < 0) t = SIGN_TIERS.length - 1;
+    const wt = want.current;
+    if (t !== wt.tier) {
+      wt.tier = t;
+      wt.for = 0;
+    } else wt.for += dt;
+    if (t !== tier && wt.for > (t > tier ? 0.25 : 1)) setTier(t);
+  });
+  return (
+    <mesh ref={ref} material={mat} {...props}>
+      <planeGeometry args={[w, h]} />
+    </mesh>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -169,36 +243,37 @@ function PlantCrew() {
 
 /**
  * `ground` is the height (m) of whatever paving the scene lays in front of the plant: the bay
- * lines and the crew stand on top of it rather than underneath.
+ * lines and the crew stand on top of it rather than underneath. `neutral` paints it without its
+ * colour (grey fascia, ink lettering on a white sign, white bay lines) for a chapter whose colour
+ * belongs to something else.
  */
-export function Plant({ accent, name, crew = true, ground = 0 }: { accent: string; name: string; crew?: boolean; ground?: number }) {
+export function Plant({ accent, name, crew = true, ground = 0, neutral = false }: { accent: string; name: string; crew?: boolean; ground?: number; neutral?: boolean }) {
   const { W, D, H } = PLANT;
-  const sign = useSign(name, accent, "#FFFFFF");
   const wall = H - 1.2;
+  const fascia = neutral ? NEUTRAL : accent;
   return (
     <group>
-      <mesh geometry={plantShell()} material={concrete("#D9D5CD")} castShadow receiveShadow />
+      {/* Nothing in the shed moves: one draw per finish. The crew walk, so they stay outside. */}
+      <Bake key={`${accent}-${neutral}`}>
+      <mesh geometry={plantShell()} material={concrete("#D5D9DF")} castShadow receiveShadow />
       {/* Walls: horizontal-span ribbed steel, rib pitch about 0.5 m on every face */}
-      <mesh position={[0, 1.2 + wall / 2, D / 2 - 0.05]} material={cladding("#EEEDEA", Math.round(W / 0.5))} castShadow receiveShadow>
+      <mesh position={[0, 1.2 + wall / 2, D / 2 - 0.05]} material={cladding("#ECEEF1", Math.round(W / 0.5))} castShadow receiveShadow>
         <boxGeometry args={[W, wall, 0.1]} />
       </mesh>
-      <mesh position={[0, 1.2 + wall / 2, -D / 2 + 0.05]} material={cladding("#EEEDEA", Math.round(W / 0.5))} castShadow receiveShadow>
+      <mesh position={[0, 1.2 + wall / 2, -D / 2 + 0.05]} material={cladding("#ECEEF1", Math.round(W / 0.5))} castShadow receiveShadow>
         <boxGeometry args={[W, wall, 0.1]} />
       </mesh>
       {[-1, 1].map((s) => (
-        <mesh key={s} position={[(s * W) / 2 - s * 0.05, 1.2 + wall / 2, 0]} rotation-y={Math.PI / 2} material={cladding("#EEEDEA", Math.round(D / 0.5))} castShadow receiveShadow>
+        <mesh key={s} position={[(s * W) / 2 - s * 0.05, 1.2 + wall / 2, 0]} rotation-y={Math.PI / 2} material={cladding("#ECEEF1", Math.round(D / 0.5))} castShadow receiveShadow>
           <boxGeometry args={[D - 0.2, wall, 0.1]} />
         </mesh>
       ))}
       {/* Fascia band in the plant's colour, with its name */}
-      <mesh position={[0, H - 0.5, 0]} material={enamel(accent, 0.4)} castShadow>
+      <mesh position={[0, H - 0.5, 0]} material={enamel(fascia, 0.4)} castShadow>
         <boxGeometry args={[W + 0.14, 1.0, D + 0.14]} />
       </mesh>
-      <mesh position={[-W / 2 + 4.6, H - 0.5, D / 2 + 0.075]}>
-        <planeGeometry args={[6.4, 1.2]} />
-        <meshStandardMaterial map={sign} roughness={0.45} />
-      </mesh>
-      <mesh geometry={plantRoof()} material={enamel("#D6D4D0", 0.6)} castShadow receiveShadow />
+      <Sign text={name} bg={neutral ? "#F7F9FB" : accent} fg={neutral ? COLORS.ink : inkOn(accent)} w={6.4} h={1.2} position={[-W / 2 + 4.6, H - 0.5, D / 2 + 0.075]} />
+      <mesh geometry={plantRoof()} material={enamel("#D3D7DD", 0.6)} castShadow receiveShadow />
       <mesh geometry={plantGlass()} material={darkGlass()} />
       <mesh geometry={plantTrim()} material={aluminium(0.4)} castShadow />
       <mesh geometry={plantDark()} material={enamel("#1E1F23", 0.75)} castShadow />
@@ -210,14 +285,15 @@ export function Plant({ accent, name, crew = true, ground = 0 }: { accent: strin
       ))}
       {/* Dock lights */}
       {[0.6, 4.6].map((x) => (
-        <mesh key={x} position={[x, 5.25, D / 2 + 0.12]} material={lamp("#FFF4DA", 1.2)}>
+        <mesh key={x} position={[x, 5.25, D / 2 + 0.12]} material={lamp("#F4F8FF", 1.2)}>
           <boxGeometry args={[0.5, 0.12, 0.12]} />
         </mesh>
       ))}
-      <mesh geometry={bollards()} material={enamel("#FFB21E", 0.4)} castShadow />
+      <mesh geometry={bollards()} material={enamel(neutral ? NEUTRAL : "#FFB21E", 0.4)} castShadow />
       {/* Dock edges in hazard chevrons, and painted bay lines on the apron */}
       <mesh geometry={dockHazard()} material={hazard()} />
-      <mesh geometry={bayLines()} material={enamel("#F2C230", 0.55)} position-y={ground} receiveShadow />
+      <mesh geometry={bayLines()} material={enamel(neutral ? "#F3F5F7" : "#F2C230", 0.55)} position-y={ground} receiveShadow />
+      </Bake>
       {crew && (
         <group position-y={ground}>
           <PlantCrew />
@@ -273,6 +349,8 @@ function useServerFace() {
   }, []);
 }
 
+const rackBands = () => geo("rack-bands", () => merge([-0.21, 0.21].map((x) => rbox(0.38, 0.034, 0.012, 0.004, x, 0.997, 0.283, 1))));
+
 let rackGlassMat: THREE.Material | null = null;
 /** Smoked glass door: the servers show through, the studio reflects on top. */
 const rackGlass = () =>
@@ -282,14 +360,9 @@ const rackGlass = () =>
 export function ServerRacks() {
   const face = useServerFace();
   const faceMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ map: face.map, emissiveMap: face.emissive, emissive: "#FFFFFF", emissiveIntensity: 1.4, roughness: 0.5 }),
+    () => new THREE.MeshStandardMaterial({ map: face.map, emissiveMap: face.emissive, emissive: "#FFFFFF", emissiveIntensity: 1.1, roughness: 0.5 }),
     [face],
   );
-  // The racks are live: lights flicker as the system reads and writes.
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    faceMat.emissiveIntensity = 1.1 + Math.sin(t * 9) * 0.25 + (Math.sin(t * 23.0) > 0.7 ? 0.5 : 0);
-  });
   const body = geo("rack-body", () =>
     merge(
       [-0.21, 0.21].flatMap((x) => [
@@ -335,6 +408,8 @@ export function ServerRacks() {
           </group>
         ))}
         <mesh geometry={trim} material={aluminium(0.3)} castShadow />
+        {/* The cabinets' nameplate bands over the doors, in the system's colour */}
+        <mesh geometry={rackBands()} material={enamel(TINTS.cobalt, 0.4)} />
         {/* Cables dropping into the racks, in the system's colour */}
         {[-0.3, -0.12, 0.12, 0.3].map((x, i) => (
           <mesh key={x} position={[x, 1.08, -0.16]} material={plastic(i % 2 ? TINTS.cobalt : "#2B2C31", 0.5)}>
@@ -346,9 +421,9 @@ export function ServerRacks() {
   );
 }
 
-/** CRM: a shopfront with a striped awning, display windows and a lit sign. */
-export function Storefront() {
-  const sign = useSign("STORE", TINTS.violet, "#FFFFFF", 512, 128);
+/** CRM: a shopfront with a striped awning, display windows and a lit sign. `accent` is CRM violet
+ *  by default; scenes where the store is not the CRM pass a neutral. */
+export function Storefront({ accent = TINTS.violet }: { accent?: string } = {}) {
   const awning = geo("awning", () => {
     // Scalloped, sloped stripes
     const parts: THREE.BufferGeometry[] = [];
@@ -385,31 +460,28 @@ export function Storefront() {
   return (
     <group>
       {/* Building: rendered walls over a dark base course */}
-      <mesh position={[0, 0.3, 0]} material={enamel("#F5F2EC", 0.75)} castShadow receiveShadow>
+      <mesh position={[0, 0.3, 0]} material={enamel("#F3F5F8", 0.75)} castShadow receiveShadow>
         <boxGeometry args={[1.0, 0.6, 0.62]} />
       </mesh>
-      <mesh position={[0, 0.62, 0]} material={enamel("#E7E3DC", 0.7)} castShadow>
+      <mesh position={[0, 0.62, 0]} material={enamel("#E4E7EB", 0.7)} castShadow>
         <boxGeometry args={[1.06, 0.05, 0.68]} />
       </mesh>
       {/* Recessed dark interior, then glass */}
       <mesh position={[0, 0.25, 0.3]} material={enamel("#2A2733", 0.8)}>
         <boxGeometry args={[0.92, 0.38, 0.01]} />
       </mesh>
-      <mesh geometry={interior} material={enamel("#E9E5DF", 0.6)} />
-      <mesh geometry={goods} material={plastic(TINTS.violet, 0.5)} />
+      <mesh geometry={interior} material={enamel("#E6E9ED", 0.6)} />
+      <mesh geometry={goods} material={plastic(accent, 0.5)} />
       <mesh position={[0, 0.25, 0.31]} material={clearGlass()}>
         <boxGeometry args={[0.92, 0.38, 0.006]} />
       </mesh>
       <mesh geometry={frames} material={aluminium(0.35)} castShadow />
       {/* Sign band */}
-      <mesh position={[0, 0.53, 0.312]}>
-        <planeGeometry args={[0.62, 0.11]} />
-        <meshStandardMaterial map={sign} roughness={0.4} emissiveMap={sign} emissive="#FFFFFF" emissiveIntensity={0.18} />
-      </mesh>
+      <Sign text="STORE" bg={accent} fg={inkOn(accent)} w={0.62} h={0.11} position={[0, 0.53, 0.312]} />
       {/* Awning, tilted out from the facade */}
       <group position={[0, 0.47, 0.31]} rotation-x={0.42}>
-        <mesh geometry={awning} material={enamel(TINTS.violet, 0.6)} castShadow />
-        <mesh geometry={awningB} material={enamel(TINTS.violet, 0.6)} castShadow />
+        <mesh geometry={awning} material={enamel(accent, 0.6)} castShadow />
+        <mesh geometry={awningB} material={enamel(accent, 0.6)} castShadow />
       </group>
       {/* Staff at the door and a shopper passing along the pavement */}
       <group scale={0.13}>
@@ -417,7 +489,7 @@ export function Storefront() {
         <Walker look="shopper" speed={0.9} path={[[-3.6, 4.4], [2.2, 4.4], [2.2, 5.2], [-3.6, 5.2]]} />
       </group>
       {/* A planter by the door and an A-board on the pavement */}
-      <mesh position={[0.38, 0.05, 0.42]} material={concrete("#D9D5CD")} castShadow>
+      <mesh position={[0.38, 0.05, 0.42]} material={concrete("#D5D9DF")} castShadow>
         <boxGeometry args={[0.12, 0.1, 0.12]} />
       </mesh>
       <mesh position={[0.38, 0.14, 0.42]} material={enamel("#3F8F5E", 0.8)} castShadow>
@@ -471,10 +543,10 @@ export function Factory() {
   return (
     <group position-x={-0.05}>
       {/* Walls */}
-      <mesh position={[-0.18, 0.21, -0.08]} material={cladding("#F0EEEA", 24)} castShadow receiveShadow>
+      <mesh position={[-0.18, 0.21, -0.08]} material={cladding("#EEF0F3", 24)} castShadow receiveShadow>
         <boxGeometry args={[1.08, 0.42, 0.64]} />
       </mesh>
-      <mesh position={[-0.18, 0.04, -0.08]} material={concrete("#D9D5CD")} castShadow>
+      <mesh position={[-0.18, 0.04, -0.08]} material={concrete("#D5D9DF")} castShadow>
         <boxGeometry args={[1.1, 0.08, 0.66]} />
       </mesh>
       {[0, 1, 2].map((k) => (
@@ -486,7 +558,7 @@ export function Factory() {
         <boxGeometry args={[0.22, 0.26, 0.01]} />
       </mesh>
       {/* Stack with steel bands */}
-      <mesh position={[0.4, 0.6, -0.22]} castShadow material={concrete("#E9E6E0")}>
+      <mesh position={[0.4, 0.6, -0.22]} castShadow material={concrete("#E6E9ED")}>
         <cylinderGeometry args={[0.055, 0.07, 0.8, 28]} />
       </mesh>
       {[0.85, 0.95].map((y) => (
@@ -521,7 +593,7 @@ export function Factory() {
             <boxGeometry args={[0.015, 0.08, 0.08]} />
           </mesh>
         ))}
-        <group ref={boxes} position-y={0.12}>
+        <group ref={boxes} position-y={0.12} userData={LIVE.userData}>
           {[0, 1, 2].map((i) => (
             <mesh key={i} material={plastic(TINTS.emerald, 0.5)} castShadow>
               <boxGeometry args={[0.05, 0.04, 0.06]} />
@@ -570,7 +642,7 @@ export function Warehouse({ accent = TINTS.saffron, crates = true }: { accent?: 
         </group>
       )}
       <group position={[-0.36, 0, 0.42]} rotation-y={0.35} scale={0.085}>
-        <Forklift color={TINTS.saffron} lift={() => 0.25 + Math.sin(performance.now() / 900) * 0.2}>
+        <Forklift color={TINTS.saffron} parked lift={() => 0.25 + Math.sin(performance.now() / 900) * 0.2}>
           <group rotation-y={Math.PI / 2}>
             <LoadedPallet tote={tote} />
           </group>
@@ -588,7 +660,7 @@ export function SupplierTruck() {
       <group position-x={-1.65}>
         {/* The driver checks the load sheet beside the cab */}
         <Person look="driver" pose="tablet" seed={2.6} position={[6.2, 0, 1.85]} rotation-y={Math.PI / 2 + 0.6} />
-        <SemiTruck accent={TINTS.tangerine}>
+        <SemiTruck accent={TINTS.tangerine} parked>
           {[3.6, 0.95].map((x) => (
             <group key={x} position={[x, 1.56, 0]} rotation-y={Math.PI / 2}>
               <LoadedPallet tote={tote} />
@@ -626,73 +698,85 @@ const inside = (lon: number, lat: number, poly: [number, number][]) => {
   return c;
 };
 
-function useWorldTexture(dot: string) {
-  return useMemo(() => {
-    const W = 2048;
-    const H = 1024;
-    const c = document.createElement("canvas");
-    c.width = W;
-    c.height = H;
-    const x = c.getContext("2d")!;
-    x.fillStyle = "#FBFAF7";
-    x.fillRect(0, 0, W, H);
-    // Printed land silhouettes stay legible at the miniature's display size.
-    x.fillStyle = dot;
-    x.globalAlpha = 0.34;
-    LAND.forEach((polygon) => {
-      x.beginPath();
-      polygon.forEach(([lon, lat], i) => {
-        const px = ((lon + 180) / 360) * W;
-        const py = ((90 - lat) / 180) * H;
-        if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
-      });
-      x.closePath();
-      x.fill();
-    });
-    x.globalAlpha = 1;
-    // Graticule
-    x.strokeStyle = "rgba(20,19,15,0.07)";
-    x.lineWidth = 2;
-    for (let lon = -180; lon <= 180; lon += 30) {
+let worldMask: THREE.CanvasTexture | null = null;
+/** The printed world as a mask: red = land (a light fill and an even field of dots), green = the
+ *  graticule. GlobeMaterial colours the land with the material's colour and prints the rest white. */
+function worldMaskTexture() {
+  if (worldMask) return worldMask;
+  const W = 2048;
+  const H = 1024;
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const x = c.getContext("2d")!;
+  x.fillStyle = "#000";
+  x.fillRect(0, 0, W, H);
+  // Graticule
+  x.strokeStyle = "rgb(0,255,0)";
+  x.lineWidth = 2;
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const px = ((lon + 180) / 360) * W;
+    x.beginPath();
+    x.moveTo(px, 0);
+    x.lineTo(px, H);
+    x.stroke();
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const py = ((90 - lat) / 180) * H;
+    x.beginPath();
+    x.moveTo(0, py);
+    x.lineTo(W, py);
+    x.stroke();
+  }
+  // Printed land silhouettes stay legible at the miniature's display size.
+  x.fillStyle = "rgba(255,0,0,0.34)";
+  LAND.forEach((polygon) => {
+    x.beginPath();
+    polygon.forEach(([lon, lat], i) => {
       const px = ((lon + 180) / 360) * W;
-      x.beginPath();
-      x.moveTo(px, 0);
-      x.lineTo(px, H);
-      x.stroke();
-    }
-    for (let lat = -60; lat <= 60; lat += 30) {
       const py = ((90 - lat) / 180) * H;
+      if (i === 0) x.moveTo(px, py);
+      else x.lineTo(px, py);
+    });
+    x.closePath();
+    x.fill();
+  });
+  // Land as an even field of dots: equal spacing on the sphere, not on the map.
+  x.fillStyle = "rgb(255,0,0)";
+  const step = 2.2;
+  for (let lat = -58; lat <= 82; lat += step) {
+    const ls = step / Math.max(Math.cos((lat * Math.PI) / 180), 0.15);
+    for (let lon = -180; lon < 180; lon += ls) {
+      if (!LAND.some((p) => inside(lon, lat, p))) continue;
+      const px = ((lon + 180) / 360) * W;
+      const py = ((90 - lat) / 180) * H;
+      const rx = 3.4 / Math.max(Math.cos((lat * Math.PI) / 180), 0.15);
       x.beginPath();
-      x.moveTo(0, py);
-      x.lineTo(W, py);
-      x.stroke();
+      x.ellipse(px, py, rx, 3.4, 0, 0, Math.PI * 2);
+      x.fill();
     }
-    // Land as an even field of dots: equal spacing on the sphere, not on the map.
-    x.fillStyle = dot;
-    const step = 2.2;
-    for (let lat = -58; lat <= 82; lat += step) {
-      const ls = step / Math.max(Math.cos((lat * Math.PI) / 180), 0.15);
-      for (let lon = -180; lon < 180; lon += ls) {
-        if (!LAND.some((p) => inside(lon, lat, p))) continue;
-        const px = ((lon + 180) / 360) * W;
-        const py = ((90 - lat) / 180) * H;
-        const rx = 3.4 / Math.max(Math.cos((lat * Math.PI) / 180), 0.15);
-        x.beginPath();
-        x.ellipse(px, py, rx, 3.4, 0, 0, Math.PI * 2);
-        x.fill();
-      }
-    }
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = 16;
-    return t;
-  }, [dot]);
+  }
+  worldMask = new THREE.CanvasTexture(c);
+  worldMask.colorSpace = THREE.NoColorSpace;
+  worldMask.anisotropy = 16;
+  return worldMask;
+}
+
+function useWorldMaterial(land: string) {
+  const m = useMemo(() => {
+    const g = new GlobeMaterial({ map: worldMaskTexture(), color: land, roughness: 0.32, clearcoat: 0.8, clearcoatRoughness: 0.12 });
+    // The land greys to a quiet dot field when the story looks elsewhere.
+    g.userData.neutral = "#B4BAC4";
+    return g;
+  }, [land]);
+  useEffect(() => () => m.dispose(), [m]);
+  return m;
 }
 
 export function Globe() {
   const globe = useRef<THREE.Group>(null);
   const sat = useRef<THREE.Group>(null);
-  const world = useWorldTexture(TINTS.pink);
+  const world = useWorldMaterial(TINTS.pink);
   useFrame(({ clock }, dt) => {
     if (globe.current) globe.current.rotation.y += dt * 0.3;
     if (sat.current) sat.current.rotation.y = clock.elapsedTime * 0.6;
@@ -704,25 +788,24 @@ export function Globe() {
       <mesh position-y={0.03} castShadow receiveShadow material={paint("#2A2B30", 0.35)}>
         <cylinderGeometry args={[0.24, 0.28, 0.06, 48]} />
       </mesh>
-      <mesh position-y={0.066} material={brass()}>
+      <mesh position-y={0.066} material={brushed()}>
         <cylinderGeometry args={[0.2, 0.2, 0.012, 48]} />
       </mesh>
-      <mesh position-y={0.15} material={brass()} castShadow>
+      <mesh position-y={0.15} material={brushed()} castShadow>
         <cylinderGeometry args={[0.022, 0.03, 0.18, 20]} />
       </mesh>
       <group position-y={0.62} rotation-z={tilt}>
         {/* Meridian arc */}
-        <mesh rotation-y={Math.PI / 2} material={brass()} castShadow>
+        <mesh rotation-y={Math.PI / 2} material={brushed()} castShadow>
           <torusGeometry args={[0.43, 0.012, 12, 96, Math.PI * 1.2]} />
         </mesh>
-        <group ref={globe}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.4, 96, 64]} />
-            <meshPhysicalMaterial map={world} roughness={0.32} clearcoat={0.8} clearcoatRoughness={0.12} />
+        <group ref={globe} userData={LIVE.userData}>
+          <mesh castShadow material={world}>
+            <sphereGeometry args={[0.4, 72, 48]} />
           </mesh>
           {/* Axis pins */}
           {[-1, 1].map((s) => (
-            <mesh key={s} position-y={s * 0.425} material={brass()}>
+            <mesh key={s} position-y={s * 0.425} material={brushed()}>
               <cylinderGeometry args={[0.01, 0.01, 0.05, 12]} />
             </mesh>
           ))}
@@ -730,9 +813,9 @@ export function Globe() {
       </group>
       {/* A weather satellite on its orbit */}
       <group position-y={0.62} rotation-x={0.35}>
-        <group ref={sat}>
+        <group ref={sat} userData={LIVE.userData}>
           <group position={[0.58, 0, 0]} rotation-y={Math.PI / 2}>
-            <mesh material={paint("#F2F0EB", 0.3)} castShadow>
+            <mesh material={paint("#F0F2F5", 0.3)} castShadow>
               <boxGeometry args={[0.05, 0.05, 0.07]} />
             </mesh>
             {[-1, 1].map((s) => (
@@ -751,59 +834,46 @@ export function Globe() {
 }
 
 let bearingEtchTexCache: THREE.CanvasTexture | null = null;
-function useBearingEtchTexture() {
-  return useMemo(() => {
-    if (bearingEtchTexCache) return bearingEtchTexCache;
-    const size = 512;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d")!;
-    ctx.clearRect(0, 0, size, size);
+/** The etched ring text, drawn once and shared by every bearing. */
+const bearingEtchTexture = () => (bearingEtchTexCache ??= drawBearingEtch());
+function drawBearingEtch() {
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, size, size);
 
+  ctx.save();
+  ctx.translate(size / 2, size / 2);
+  ctx.font = "bold 19px monospace";
+  ctx.fillStyle = "rgba(45, 50, 60, 0.85)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const text = FACES.crate;
+  const radius = size * 0.44;
+  const step = (Math.PI * 2) / text.length;
+  for (let i = 0; i < text.length; i++) {
     ctx.save();
-    ctx.translate(size / 2, size / 2);
-    ctx.font = "bold 19px monospace";
-    ctx.fillStyle = "rgba(45, 50, 60, 0.85)";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const text = "DECIGNAL · X90-6204 · MADE IN GERMANY · C3 · LOT 8842 · ";
-    const radius = size * 0.44;
-    const step = (Math.PI * 2) / text.length;
-    for (let i = 0; i < text.length; i++) {
-      ctx.save();
-      ctx.rotate(i * step);
-      ctx.fillText(text[i], 0, -radius);
-      ctx.restore();
-    }
+    ctx.rotate(i * step);
+    ctx.fillText(text[i], 0, -radius);
     ctx.restore();
+  }
+  ctx.restore();
 
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.anisotropy = 16;
-    bearingEtchTexCache = tex;
-    return tex;
-  }, []);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 16;
+  return tex;
 }
 
-/** Single high-precision deep-groove ball bearing (SKF 6204 / Decignal X90 specification) */
-export function PrecisionBearing({
-  position = [0, 0, 0],
-  rotation = [0, 0, 0],
-  highlighted = false,
-}: {
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  highlighted?: boolean;
-}) {
-  const etchTex = useBearingEtchTexture();
+/* ---------------- The signal tote's contents: X90 bearings in a foam insert ---------------- */
 
-  // Outer and inner rings with lathe geometry and chamfers
-  const outerRingGeo = useMemo(() => {
-    const ro = 0.06;
-    const ri = 0.047;
-    const wd = 0.026;
-    const pts = [
+/** Deep-groove ball bearing (6204 class): a chamfered ring turned from its section. */
+const bearingRing = (ro: number, ri: number, wd: number) =>
+  new THREE.LatheGeometry(
+    [
       [ri + 0.002, -wd / 2],
       [ro - 0.002, -wd / 2],
       [ro, -wd / 2 + 0.002],
@@ -813,137 +883,102 @@ export function PrecisionBearing({
       [ri, wd / 2 - 0.002],
       [ri, -wd / 2 + 0.002],
       [ri + 0.002, -wd / 2],
-    ].map(([a, b]) => new THREE.Vector2(a, b));
-    return new THREE.LatheGeometry(pts, 48);
-  }, []);
+    ].map(([a, b]) => new THREE.Vector2(a, b)),
+    40,
+  );
 
-  const innerRingGeo = useMemo(() => {
-    const ro = 0.033;
-    const ri = 0.02;
-    const wd = 0.026;
-    const pts = [
-      [ri + 0.002, -wd / 2],
-      [ro - 0.002, -wd / 2],
-      [ro, -wd / 2 + 0.002],
-      [ro, wd / 2 - 0.002],
-      [ro - 0.002, wd / 2],
-      [ri + 0.002, wd / 2],
-      [ri, wd / 2 - 0.002],
-      [ri, -wd / 2 + 0.002],
-      [ri + 0.002, -wd / 2],
-    ].map(([a, b]) => new THREE.Vector2(a, b));
-    return new THREE.LatheGeometry(pts, 48);
-  }, []);
+/** The insert has twelve pockets in a 4 x 3 grid; the bearing in each, front row last. */
+const BED_X = [-0.2025, -0.0675, 0.0675, 0.2025];
+const BED_Z = [-0.12, 0, 0.12];
+const BED_SLOTS = BED_Z.flatMap((z) => BED_X.map((x) => [x, z] as const));
+const BEARING_S = 0.9;
+const POCKET_R = 0.058;
 
-  // Stamped brass retainer cage
-  const cageGeo = useMemo(() => {
-    const parts: THREE.BufferGeometry[] = [];
-    const n = 10;
-    const rCage = 0.04;
-    // Upper and lower annular brass bands
-    const bandUpper = new THREE.RingGeometry(0.0345, 0.0455, 32);
-    bandUpper.rotateX(-Math.PI / 2);
-    bandUpper.translate(0, 0.009, 0);
-    parts.push(bandUpper);
-
-    const bandLower = new THREE.RingGeometry(0.0345, 0.0455, 32);
-    bandLower.rotateX(Math.PI / 2);
-    bandLower.translate(0, -0.009, 0);
-    parts.push(bandLower);
-
-    // Retention bridges between balls
-    for (let i = 0; i < n; i++) {
-      const a = (i + 0.5) * ((Math.PI * 2) / n);
-      parts.push(cylY(0.0025, 0.016, Math.cos(a) * rCage, 0, Math.sin(a) * rCage, 8));
+type BedSteel = { rings: THREE.BufferGeometry; balls: THREE.BufferGeometry; cages: THREE.BufferGeometry; etch: THREE.BufferGeometry };
+const bedSteelCache = new Map<number, BedSteel>();
+/** The bearings in the first `filled` pockets, merged per finish. */
+function bedSteel(filled: number): BedSteel {
+  const hit = bedSteelCache.get(filled);
+  if (hit) return hit;
+  const rings: THREE.BufferGeometry[] = [];
+  const balls: THREE.BufferGeometry[] = [];
+  const cages: THREE.BufferGeometry[] = [];
+  const etch: THREE.BufferGeometry[] = [];
+  const m = new THREE.Matrix4();
+  const up = new THREE.Vector3(0, 1, 0);
+  BED_SLOTS.slice(0, filled).forEach(([x, z], i) => {
+    // Each bearing sits in its pocket at its own turn, so the etched text never lines up.
+    m.compose(new THREE.Vector3(x, 0, z), new THREE.Quaternion().setFromAxisAngle(up, i * 1.37), new THREE.Vector3(BEARING_S, BEARING_S, BEARING_S));
+    rings.push(bearingRing(0.06, 0.047, 0.026).applyMatrix4(m), bearingRing(0.033, 0.02, 0.026).applyMatrix4(m));
+    for (let b = 0; b < 10; b++) {
+      const a = (b / 10) * Math.PI * 2;
+      balls.push(new THREE.SphereGeometry(0.0084, 12, 9).translate(Math.cos(a) * 0.04, 0, Math.sin(a) * 0.04).applyMatrix4(m));
     }
-    return merge(parts);
-  }, []);
-
-  const steelMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#DDE0E5", roughness: 0.12, metalness: 0.94 }),
-    [],
-  );
-
-  return (
-    <group position={position} rotation={rotation}>
-      {/* Outer raceway ring */}
-      <mesh geometry={outerRingGeo} material={steelMat} castShadow receiveShadow />
-
-      {/* Laser-etched ring face marking */}
-      <mesh position-y={0.0131} rotation-x={-Math.PI / 2}>
-        <ringGeometry args={[0.048, 0.0595, 48]} />
-        <meshBasicMaterial map={etchTex} transparent opacity={0.88} depthWrite={false} />
-      </mesh>
-
-      {/* Inner raceway ring & shaft bore */}
-      <mesh geometry={innerRingGeo} material={steelMat} castShadow receiveShadow />
-
-      {/* Stamped brass ball cage */}
-      <mesh geometry={cageGeo} material={brass()} castShadow />
-
-      {/* 10 Precision mirror-chrome bearing balls */}
-      {Array.from({ length: 10 }, (_, i) => {
-        const a = (i / 10) * Math.PI * 2;
-        return (
-          <mesh
-            key={i}
-            position={[Math.cos(a) * 0.04, 0, Math.sin(a) * 0.04]}
-            material={chrome()}
-            castShadow
-          >
-            <sphereGeometry args={[0.0084, 16, 12]} />
-          </mesh>
-        );
-      })}
-
-      {/* Highlight glow ring for active inspection focus */}
-      {highlighted && (
-        <mesh position-y={0.014} rotation-x={-Math.PI / 2}>
-          <ringGeometry args={[0.059, 0.062, 48]} />
-          <meshBasicMaterial color="#F2361F" transparent opacity={0.65} depthWrite={false} />
-        </mesh>
-      )}
-    </group>
-  );
+    // Stamped steel cage: two annular bands and a bridge between each pair of balls
+    cages.push(new THREE.RingGeometry(0.0345, 0.0455, 32).rotateX(-Math.PI / 2).translate(0, 0.009, 0).applyMatrix4(m));
+    cages.push(new THREE.RingGeometry(0.0345, 0.0455, 32).rotateX(Math.PI / 2).translate(0, -0.009, 0).applyMatrix4(m));
+    for (let b = 0; b < 10; b++) {
+      const a = (b + 0.5) * ((Math.PI * 2) / 10);
+      cages.push(cylY(0.0025, 0.016, Math.cos(a) * 0.04, 0, Math.sin(a) * 0.04, 6).applyMatrix4(m));
+    }
+    etch.push(new THREE.RingGeometry(0.048, 0.0595, 48).rotateX(-Math.PI / 2).translate(0, 0.0131, 0).applyMatrix4(m));
+  });
+  const empty = () => new THREE.BufferGeometry();
+  const out = filled
+    ? { rings: merge(rings), balls: merge(balls), cages: merge(cages), etch: merge(etch) }
+    : { rings: empty(), balls: empty(), cages: empty(), etch: empty() };
+  bedSteelCache.set(filled, out);
+  return out;
 }
 
-/** Contents of the signal tote: bearings nestled in an anti-static ESD foam tray. */
-export function BearingBed() {
-  const foamTray = useMemo(() => {
-    const parts: THREE.BufferGeometry[] = [];
-    // Base ESD conductive foam block
-    parts.push(rbox(CRATE.w - 0.036, 0.03, CRATE.d - 0.036, 0.008, 0, -0.016, 0));
-    // Raised protective perimeter rim
-    parts.push(box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, CRATE.d / 2 - 0.024));
-    parts.push(box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, -CRATE.d / 2 + 0.024));
-    parts.push(box(0.012, 0.008, CRATE.d - 0.04, CRATE.w / 2 - 0.024, 0.002, 0));
-    parts.push(box(0.012, 0.008, CRATE.d - 0.04, -CRATE.w / 2 + 0.024, 0.002, 0));
-    return merge(parts);
-  }, []);
-  const foamMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#181A1E", roughness: 0.88, metalness: 0.06 }),
-    [],
-  );
+/**
+ * Every part of the insert, merged per finish: one draw each for the foam, the pockets, the rings,
+ * the balls, the cages and the etching, however many bearings it holds.
+ */
+function bearingBed(filled: number) {
+  return {
+    foam: geo("bed-foam", () =>
+      merge([
+        // Base ESD conductive foam block with a raised rim
+        rbox(CRATE.w - 0.036, 0.03, CRATE.d - 0.036, 0.008, 0, -0.016, 0),
+        box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, CRATE.d / 2 - 0.024),
+        box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, -CRATE.d / 2 + 0.024),
+        box(0.012, 0.008, CRATE.d - 0.04, CRATE.w / 2 - 0.024, 0.002, 0),
+        box(0.012, 0.008, CRATE.d - 0.04, -CRATE.w / 2 + 0.024, 0.002, 0),
+      ]),
+    ),
+    // An empty pocket reads as a cut-out: a dark round floor where a bearing is missing.
+    pockets: geo(`bed-pockets-${filled}`, () =>
+      filled < BED_SLOTS.length
+        ? merge(BED_SLOTS.slice(filled).map(([x, z]) => new THREE.CircleGeometry(POCKET_R, 32).rotateX(-Math.PI / 2).translate(x, 0.0005, z)))
+        : new THREE.BufferGeometry(),
+    ),
+    ...bedSteel(filled),
+  };
+}
 
+let bedMats: { foam: THREE.Material; pocket: THREE.Material; steel: THREE.Material; etch: THREE.Material } | null = null;
+const bearingBedMats = () =>
+  (bedMats ??= {
+    foam: new THREE.MeshStandardMaterial({ color: "#181A1E", roughness: 0.88, metalness: 0.06 }),
+    pocket: new THREE.MeshStandardMaterial({ color: "#0C0D10", roughness: 0.95, metalness: 0 }),
+    steel: new THREE.MeshStandardMaterial({ color: "#DDE0E5", roughness: 0.12, metalness: 0.94 }),
+    etch: new THREE.MeshBasicMaterial({ map: bearingEtchTexture(), transparent: true, opacity: 0.88, depthWrite: false }),
+  });
+
+/** Contents of the signal tote: X90 bearings in an anti-static foam insert. `filled` of its 12
+ *  pockets hold a bearing; the empty ones show the tote running short. */
+export function BearingBed({ filled = 7 }: { filled?: number }) {
+  const g = bearingBed(Math.max(0, Math.min(BED_SLOTS.length, Math.round(filled))));
+  const m = bearingBedMats();
   return (
     <group position-y={CRATE.h / 2 - 0.028}>
-      <mesh geometry={foamTray} material={foamMat} receiveShadow />
-      {[
-        [-0.17, -0.07, 0.1],
-        [0.0, -0.08, 0.6],
-        [0.17, -0.06, 1.2],
-        [-0.09, 0.08, 2.1],
-        [0.09, 0.08, 0.3],
-        [0.21, 0.09, 2.6],
-        [-0.22, 0.09, 1.5],
-      ].map(([x, z, r], i) => (
-        <PrecisionBearing
-          key={i}
-          position={[x, i === 1 ? 0.008 : 0, z]}
-          rotation={[0, r, 0]}
-          highlighted={i === 1}
-        />
-      ))}
+      <mesh geometry={g.foam} material={m.foam} receiveShadow />
+      <mesh geometry={g.pockets} material={m.pocket} />
+      <mesh geometry={g.rings} material={m.steel} castShadow receiveShadow />
+      <mesh geometry={g.balls} material={chrome()} />
+      <mesh geometry={g.cages} material={brushed()} />
+      <mesh geometry={g.etch} material={m.etch} />
     </group>
   );
 }

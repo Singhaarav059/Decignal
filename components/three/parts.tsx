@@ -3,10 +3,12 @@
 // Shared real-world parts: wheels, totes, bearings, pallets. Geometry is built once in code,
 // merged per material, and reused, so detailed objects stay cheap to draw.
 import * as THREE from "three";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CRATE } from "@/lib/scene";
-import { aluminium, chrome, darkGlass, plastic, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
+import { aluminium, chrome, darkGlass, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
 
 /* ---------------- Geometry helpers ---------------- */
 
@@ -69,8 +71,9 @@ function tyreGeometry(r: number, w: number) {
     [r * 0.965, -h * 0.9],
     [r * 0.995, -h * 0.72],
   ];
-  const s1 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, b)), 72);
-  const s2 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, -b)).reverse(), 72);
+  // 56 facets around: a wheel is at most about 60 device pixels across in the story.
+  const s1 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, b)), 56);
+  const s2 = new THREE.LatheGeometry(side.map(([a, b]) => new THREE.Vector2(a, -b)).reverse(), 56);
   const sidewall = merge([s1, s2]).rotateX(Math.PI / 2);
   const band = new THREE.LatheGeometry(
     [
@@ -79,11 +82,12 @@ function tyreGeometry(r: number, w: number) {
       [r, h * 0.4],
       [r * 0.995, h * 0.72],
     ].map(([a, b]) => new THREE.Vector2(a, b)),
-    72,
+    56,
   ).rotateX(Math.PI / 2);
   // Tread blocks: the lathe U runs around the tyre, so the tread repeats around the circumference.
   const uv = band.attributes.uv as THREE.BufferAttribute;
   for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * 46);
+
   return { sidewall, band };
 }
 
@@ -101,9 +105,9 @@ function rimGeometry(r: number, w: number, dual: boolean) {
       [rr * 0.3, h * (dual ? 0.44 : 0.68)],
       [0.0001, h * (dual ? 0.44 : 0.68)],
     ].map(([a, b]) => new THREE.Vector2(a, b)),
-    48,
+    40,
   ).rotateX(Math.PI / 2);
-  const back = new THREE.CylinderGeometry(rr * 0.98, rr * 0.98, w * 0.8, 48, 1, true).rotateX(Math.PI / 2);
+  const back = new THREE.CylinderGeometry(rr * 0.98, rr * 0.98, w * 0.8, 40, 1, true).rotateX(Math.PI / 2);
   return merge([face, back]);
 }
 
@@ -170,6 +174,82 @@ export function Wheel({ spec, side = 1, rimColor = "#E9EAEC", spin }: { spec: Wh
   );
 }
 
+/** One wheel of a set: where its hub sits, which side it faces, and its rim paint. */
+export type WheelAt = { spec: WheelSpec; at: [number, number, number]; side: 1 | -1; rimColor?: string };
+
+const wm = new THREE.Matrix4();
+const wq = new THREE.Quaternion();
+const wqs = new THREE.Quaternion();
+const wp = new THREE.Vector3();
+const ONE = new THREE.Vector3(1, 1, 1);
+const Y = new THREE.Vector3(0, 1, 0);
+const Z = new THREE.Vector3(0, 0, 1);
+const FLIP = new THREE.Quaternion().setFromAxisAngle(Y, Math.PI);
+
+/**
+ * Every wheel of a vehicle that drives. Wheels of the same size share instanced meshes, five draws per
+ * size instead of five per wheel. A far-side wheel is the near one turned half round (a wheel is
+ * symmetric about its axle), never mirrored, so the instances keep their winding. `travel()` is the
+ * distance rolled so far; each wheel turns by it over its own radius.
+ */
+export function WheelSet({ wheels, travel }: { wheels: WheelAt[]; travel: () => number }) {
+  const sets = useMemo(() => {
+    const groups = new Map<string, WheelAt[]>();
+    wheels.forEach((w) => {
+      const key = `${w.spec.r}-${w.spec.w}-${!!w.spec.dual}-${w.spec.rim ?? "steel"}-${w.rimColor ?? "#E9EAEC"}`;
+      groups.set(key, [...(groups.get(key) ?? []), w]);
+    });
+    return [...groups.values()].map((list) => {
+      const p = wheelParts(list[0].spec);
+      const rim = list[0].spec.rim === "alu" ? aluminium(0.22) : rimEnamel(list[0].rimColor ?? "#E9EAEC");
+      const parts: [THREE.BufferGeometry, THREE.Material, boolean][] = [
+        [p.tyres, rubber(), true],
+        [p.bands, tyre(), true],
+        [p.rimG, rim, true],
+        [p.nuts, chrome(), false],
+        [p.holes, steel("#202226", 0.6), false],
+      ];
+      const meshes = parts.map(([g, m, cast]) => {
+        const im = new THREE.InstancedMesh(g, m, list.length);
+        im.castShadow = cast;
+        im.receiveShadow = true;
+        // The set moves with its vehicle; its bounds are the vehicle's, not one wheel's.
+        im.frustumCulled = false;
+        return im;
+      });
+      return { list, meshes };
+    });
+  }, [wheels]);
+  useEffect(() => () => sets.forEach((s) => s.meshes.forEach((m) => m.dispose())), [sets]);
+  const last = useRef(NaN);
+  useFrame(() => {
+    const d = travel();
+    if (d === last.current) return;
+    last.current = d;
+    for (const { list, meshes } of sets)
+      list.forEach((w, i) => {
+        // A wheel turned half round spins the other way about its own axle.
+        wqs.setFromAxisAngle(Z, (-d / w.spec.r) * w.side);
+        if (w.side < 0) wq.copy(FLIP).multiply(wqs);
+        else wq.copy(wqs);
+        wm.compose(wp.set(...w.at), wq, ONE);
+        meshes.forEach((m) => m.setMatrixAt(i, wm));
+      });
+    for (const { meshes } of sets) meshes.forEach((m) => (m.instanceMatrix.needsUpdate = true));
+  });
+  return (
+    <>
+      {sets.map(({ meshes }, n) => (
+        <group key={n}>
+          {meshes.map((m, k) => (
+            <primitive key={k} object={m} />
+          ))}
+        </group>
+      ))}
+    </>
+  );
+}
+
 const rimMats = new Map<string, THREE.Material>();
 function rimEnamel(color: string) {
   let m = rimMats.get(color);
@@ -200,49 +280,64 @@ function toteShell(open: boolean) {
       }
     } else parts.push(rbox(w + 0.006, 0.045, d + 0.006, 0.014, 0, h / 2 - 0.0225, 0, 2));
     // Foot band
-    parts.push(rbox(w - 0.045, 0.018, d - 0.045, 0.008, 0, -h / 2 + 0.009, 0, 2));
-    // Vertical ribs on the long sides and short ends
+    parts.push(rbox(w - 0.045, 0.018, d - 0.045, 0.008, 0, -h / 2 + 0.009, 0, 1));
+    // Vertical ribs on the long sides and short ends. A rib is a centimetre wide: one bevel segment
+    // rounds it as well as three, at a fifth of the triangles (22 ribs on every tote in the story).
     const ribs = 7;
     for (let i = 0; i < ribs; i++) {
       const x = -w / 2 + 0.06 + (i * (w - 0.12)) / (ribs - 1);
-      for (const s of [-1, 1]) parts.push(rbox(0.016, h - 0.07, 0.012, 0.005, x, -0.03, s * (d / 2 - 0.012)));
+      for (const s of [-1, 1]) parts.push(rbox(0.016, h - 0.07, 0.012, 0.005, x, -0.03, s * (d / 2 - 0.012), 1));
     }
     for (let i = 0; i < 4; i++) {
       const z = -d / 2 + 0.07 + (i * (d - 0.14)) / 3;
-      for (const s of [-1, 1]) parts.push(rbox(0.012, h - 0.07, 0.016, 0.005, s * (w / 2 - 0.012), -0.03, z));
+      for (const s of [-1, 1]) parts.push(rbox(0.012, h - 0.07, 0.016, 0.005, s * (w / 2 - 0.012), -0.03, z, 1));
     }
     // A horizontal stiffening band below the lip
-    parts.push(rbox(w - 0.016, 0.016, d - 0.016, 0.006, 0, h / 2 - 0.07, 0, 2));
+    parts.push(rbox(w - 0.016, 0.016, d - 0.016, 0.006, 0, h / 2 - 0.07, 0, 1));
     if (!open) {
       // Attached lid: two hinged flaps with a ridge where they meet
       parts.push(rbox(w - 0.004, 0.014, d - 0.004, 0.006, 0, h / 2 + 0.007, 0, 2));
-      parts.push(rbox(w - 0.06, 0.008, 0.01, 0.003, 0, h / 2 + 0.017, 0, 2));
+      parts.push(rbox(w - 0.06, 0.008, 0.01, 0.003, 0, h / 2 + 0.017, 0, 1));
     }
     return merge(parts);
   });
 }
 
-/** Dark parts: handle cut-outs on both ends, and the open recess. */
-function toteDark(open: boolean) {
-  return geo(`tote-dark-${open}`, () => {
+/** Paints a merged geometry one colour, as vertex colours (linear), so differently coloured trims share a draw. */
+function painted(g: THREE.BufferGeometry, color: string) {
+  const c = new THREE.Color(color);
+  const n = g.attributes.position.count;
+  const a = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) a.set([c.r, c.g, c.b], i * 3);
+  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  return g;
+}
+
+/** Where the label card sits on the long side (the signal tote prints its bin label over it). */
+export const TOTE_LABEL = { w: 0.2, h: 0.085, x: 0.12, y: -0.025, z: T.d / 2 - 0.008 };
+
+/** Trim in one draw: the dark handle cut-outs on both ends (and the open recess), plus the white
+ *  card in its label holder on the long side. */
+function toteTrim(open: boolean) {
+  return geo(`tote-trim-${open}`, () => {
     const { w, h, d } = T;
-    const parts: THREE.BufferGeometry[] = [];
-    for (const s of [-1, 1]) parts.push(rbox(0.006, 0.05, 0.16, 0.012, s * (w / 2 - 0.006), h / 2 - 0.105, 0, 3));
-    if (open) parts.push(box(w - 0.05, 0.004, d - 0.05, 0, h / 2 - 0.042, 0));
-    return merge(parts);
+    const dark: THREE.BufferGeometry[] = [];
+    for (const s of [-1, 1]) dark.push(rbox(0.006, 0.05, 0.16, 0.012, s * (w / 2 - 0.006), h / 2 - 0.105, 0, 2));
+    if (open) dark.push(box(w - 0.05, 0.004, d - 0.05, 0, h / 2 - 0.042, 0));
+    const L = TOTE_LABEL;
+    const card = merge([rbox(L.w, L.h, 0.004, 0.006, L.x, L.y, L.z, 2)]);
+    return mergeGeometries([painted(merge(dark), "#2A2E35"), painted(card, "#FFFFFF")], false)!;
   });
 }
 
-/** White card in its label holder on the long side. */
-const toteLabel = () => geo("tote-label", () => merge([rbox(0.2, 0.085, 0.004, 0.006, 0.12, h0(), T.d / 2 - 0.008)]));
-const h0 = () => -0.025;
+let trimMat: THREE.MeshStandardMaterial | null = null;
+const toteTrimMat = () => (trimMat ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65, metalness: 0 }));
 
 export function Tote({ material, open = false, children }: { material: THREE.Material; open?: boolean; children?: React.ReactNode }) {
   return (
     <group>
       <mesh geometry={toteShell(open)} material={material} castShadow receiveShadow />
-      <mesh geometry={toteDark(open)} material={plastic("#2B2A27", 0.7)} />
-      <mesh geometry={toteLabel()} material={plastic("#FFFFFF", 0.6)} />
+      <mesh geometry={toteTrim(open)} material={toteTrimMat()} />
       {children}
     </group>
   );
@@ -314,7 +409,8 @@ function loadGeometry() {
           const x = -0.39 + i * 0.395;
           const z = -0.197 + j * 0.394;
           const y = 0.144 + th / 2 + l * (th + 0.005);
-          parts.push(rbox(tw - 0.02, th - 0.02, td - 0.02, 0.02, x, y - 0.006, z, 2));
+          // Seen under shrink wrap: one bevel segment reads the same as two.
+          parts.push(rbox(tw - 0.02, th - 0.02, td - 0.02, 0.02, x, y - 0.006, z, 1));
           parts.push(rbox(tw, 0.02, td, 0.006, x, y + th / 2 - 0.01, z, 1));
         }
     return merge(parts);

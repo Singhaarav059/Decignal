@@ -104,3 +104,9 @@ Logs per section are in `docs/loop-log-{control,scale-industries,final,applicati
 - The approved message says "would be sent to your ERP". Softer wording is proposed in docs/copy-proposals.md and needs the owner's decision.
 - The decision card at the Decide hub is too small to read.
 - Real-device 60fps check of the camera orbit.
+
+## Premium pass, Wave 1 (2026-10-12)
+
+- **3D palette reversed to cool neutrals (F-11, S69-08, NAV-12):** the warm key light, the per-chapter background tints and the warm fog are gone. One neutral (#F6F7F9) sits behind the stage, the fog matches it, and colour stays only on objects that carry a system meaning. Brass and timber props are now brushed steel and cool grey.
+- **Crisp 3D text:** story tags are real HTML at 13/12px (ScreenTag) and card faces are drawn at their on-screen size, so text no longer blurs through 3x to 7x mipmap shrinking.
+- **Loader:** the scene now reports its first full frame (`markSceneReady`), so first visits lift as soon as the story has drawn instead of at the 3500ms cap.

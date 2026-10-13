@@ -1,0 +1,270 @@
+/* Service pages (/solutions, /solutions/[slug]) and the 404. One column grid on the shared --edge,
+   the type roles, the one card, hairline edges only. The area tone (set on main.svc with toneVars)
+   colours dots, numbers and the headline's accent line; system chips stay neutral. */
+
+.svc { display: block; outline: none; }
+.svc-dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--tone, var(--color-ink));
+}
+.svc-n { color: var(--tone-ink, var(--color-ink)); }
+
+/* ---- Hero: breadcrumb, two-line headline, value line and CTAs, the area's decision card ---- */
+.svc-hero { padding-top: calc(68px + clamp(32px, 7vh, 88px)); }
+.svc-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.svc-crumbs li { display: inline-flex; align-items: center; gap: 8px; }
+.svc-crumbs li + li::before { content: "/"; margin-right: 2px; color: var(--color-ink-muted); }
+.svc-crumbs a { color: var(--color-ink-soft); text-decoration: none; transition: color var(--dur-2) var(--ease); }
+.svc-crumbs a:hover { color: var(--color-ink); }
+.svc-crumbs [aria-current] { color: var(--color-ink); }
+.svc-hero-title { margin-top: var(--stack-label); max-width: 24ch; }
+.svc-hero-row { display: grid; gap: 40px; margin-top: clamp(24px, 4.5vh, 48px); }
+.svc-hero-lede { max-width: 62ch; }
+.svc-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: var(--stack-actions); }
+
+.svc-hero-card { display: grid; gap: 14px; padding: var(--card-pad); }
+/* Labels size themselves to 11px from the drawing's scale (useSvgScale) and drop out under 0.8, so
+   the drawing keeps a scale of 0.8 or more wherever it carries labels. */
+.svc-hero-card .area-art { display: block; width: 100%; max-width: none; height: 150px; margin: 0 0 4px; }
+/* 360 wide: the drawing takes the card's side padding back (296 of 360 units, 0.82). */
+@media (max-width: 400px) {
+  .svc-hero-card .area-art { width: calc(100% + 16px); margin-inline: -8px; }
+}
+.svc-signal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-sunken);
+}
+.svc-signal-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-signal);
+  box-shadow: 0 0 0 3px var(--color-surface);
+}
+.svc-signal .t-label { flex: none; color: var(--color-signal-ink); }
+.svc-signal-text { min-width: 0; font-size: var(--fs-body); font-weight: 600; line-height: 1.35; }
+.svc-moves { display: grid; }
+.svc-moves li { border-bottom: 1px solid var(--color-line); }
+/* Each move opens its application's chapter in the explorer below. */
+.svc-move-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-inline: -10px;
+  padding: 12px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: background-color var(--dur-2) var(--ease);
+}
+@media (hover: hover) {
+  .svc-move-link:hover { background: var(--color-wash); }
+  .svc-move-link:hover .svc-move-weeks { color: var(--color-ink); }
+}
+.svc-move { display: grid; gap: 4px; min-width: 0; }
+.svc-move-text { font-size: var(--fs-body); font-weight: 600; line-height: 1.35; }
+.svc-move-weeks { flex: none; color: var(--color-ink-soft); white-space: nowrap; }
+.svc-card-note { color: var(--color-ink-soft); }
+
+@media (min-width: 1024px) {
+  .svc-hero-row { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
+  .svc-hero-copy { grid-column: 1 / span 7; }
+  .svc-hero-card { grid-column: 8 / span 5; }
+}
+/* Short laptop screens: the card gives up height before the headline does. */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .svc-hero { padding-top: calc(68px + 20px); }
+  .svc-hero-title { margin-top: 12px; }
+  .svc-hero-row { margin-top: 24px; }
+  .svc-hero-card { gap: 8px; padding-block: 20px; }
+  /* 120 of 150 units: 0.8, the smallest scale that keeps the labels. */
+  .svc-hero-card .area-art { height: 120px; }
+  .svc-signal { padding-block: 9px; }
+  .svc-move-link { padding-block: 8px; }
+}
+/* 1280x680 and similar: the three-application card still ends above the fold. */
+@media (min-width: 1024px) and (max-height: 720px) {
+  .svc-hero-row { margin-top: 16px; }
+  .svc-hero-card { gap: 6px; padding-block: 14px; }
+  .svc-move-link { padding-block: 7px; }
+}
+
+/* ---- Sections: one headline, one visual, at most two lines of copy ---- */
+.svc-section { padding-top: var(--section-y); }
+
+.svc-expect { display: grid; gap: var(--col-gap); margin-top: var(--stack-content); }
+.svc-expect .card { display: grid; align-content: start; gap: 10px; }
+.svc-expect h3 { margin-top: 32px; }
+.svc-expect .t-body { color: var(--color-ink-2); }
+@media (min-width: 768px) {
+  .svc-expect { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Applications: the section title sits on the grid; the explorer below runs full width. */
+.svc-apps-section > .svc-section { padding-bottom: 0; }
+/* Without 3D the explorer gives way to the same applications as cards. */
+.svc-app-list { display: grid; gap: var(--col-gap); padding-top: var(--stack-content); }
+.svc-app { display: grid; align-content: start; gap: 12px; }
+.svc-app .t-label { display: flex; align-items: center; gap: 8px; }
+.svc-app-line { color: var(--color-ink-2); max-width: 52ch; }
+.svc-app-steps { display: grid; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--color-line); }
+.svc-app-steps dd { margin-top: 4px; color: var(--color-ink-2); }
+.svc-app-foot { margin-top: 4px; color: var(--color-ink-soft); }
+@media (min-width: 768px) {
+  .svc-app-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .svc-app-list:has(> li:nth-child(3)) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Head on the left (held while its list scrolls), content on the right. */
+.svc-split { display: grid; gap: var(--stack-content); }
+@media (min-width: 1024px) {
+  .svc-split { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
+  .svc-split > .svc-split-head { grid-column: 1 / span 4; position: sticky; top: 112px; }
+  .svc-split > :last-child { grid-column: 6 / span 7; }
+}
+
+.svc-checks { display: grid; border-top: 1px solid var(--color-line-strong); }
+.svc-checks li { display: flex; align-items: flex-start; gap: 14px; padding: 18px 2px; border-bottom: 1px solid var(--color-line); }
+.svc-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: -1px;
+  border-radius: var(--radius-pill);
+  background: var(--color-sunken);
+  color: var(--tone-ink, var(--color-ink));
+}
+@media (min-width: 768px) {
+  .svc-checks { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: calc(var(--col-gap) * 1.5); }
+}
+
+/* How it works: four steps on one hairline track, a tone dot where each begins. */
+.svc-steps { display: grid; gap: 40px; margin-top: var(--stack-content); }
+.svc-step { position: relative; padding-top: 26px; border-top: 1px solid var(--color-line-strong); }
+.svc-step-mark {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: var(--tone, var(--color-ink));
+  box-shadow: 0 0 0 4px var(--color-bg);
+}
+.svc-step-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.svc-step h3 { margin-top: 18px; }
+.svc-step-text { margin-top: 8px; color: var(--color-ink-2); }
+.svc-step-gets-label { margin-top: 22px; }
+.svc-gets { display: grid; gap: 8px; margin-top: 10px; }
+.svc-gets li { display: flex; align-items: center; gap: 8px; color: var(--color-ink-2); }
+.svc-gets svg { flex: none; color: var(--tone-ink, var(--color-ink)); }
+@media (min-width: 768px) {
+  .svc-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--col-gap); row-gap: 48px; }
+}
+@media (min-width: 1100px) {
+  .svc-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Why Decignal: the differentiator and its illustrative example, then the three shared points. */
+.svc-why { display: grid; gap: 40px; }
+.svc-example { display: grid; gap: 12px; }
+.svc-example .t-num-lg { margin-top: 8px; }
+.svc-example-text { color: var(--color-ink-2); }
+.svc-example-note { padding-top: 12px; border-top: 1px solid var(--color-line); color: var(--color-ink-soft); }
+.svc-points { display: grid; gap: 28px; margin-top: var(--stack-content); }
+.svc-points li { padding-top: 20px; border-top: 1px solid var(--color-line-strong); }
+.svc-points .t-body { margin-top: 8px; color: var(--color-ink-2); }
+@media (min-width: 768px) {
+  .svc-points { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--col-gap); }
+}
+@media (min-width: 1024px) {
+  .svc-why { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
+  .svc-why > .section-title { grid-column: 1 / span 7; }
+  .svc-why > .section-title .section-title-lede { max-width: 52ch; }
+  .svc-example { grid-column: 9 / span 4; }
+}
+
+/* FAQ: the list is the home page's FaqList; the side holds the way to all questions and the audit. */
+.svc-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  font-weight: 600;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-2) var(--ease);
+}
+.svc-text-link:hover { text-decoration-color: currentColor; }
+.svc-faq-help { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--color-line-strong); }
+.svc-faq-help .t-body { margin: 6px 0 16px; color: var(--color-ink-2); }
+/* One column: the questions come first, the way to ask your own after them. */
+@media (max-width: 1023px) {
+  .svc-questions > .svc-split-head { display: contents; }
+  .svc-questions .svc-faq-help { order: 1; margin-top: 0; padding-top: 0; border-top: 0; }
+}
+/* The audit block (Audit.tsx) is its own .section; the area links follow it without a second gap. */
+.svc-others { padding-top: 0; padding-bottom: var(--section-y); }
+
+/* ---- Area links: cards (other areas) or index rows (hub, 404) ---- */
+.svc-others h2 { margin-bottom: 20px; }
+.svc-areas { display: grid; gap: 12px; }
+.svc-area {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  height: 100%;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.svc-area-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.svc-area-lead { color: var(--color-ink-2); }
+.svc-area-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-weight: 600;
+  color: var(--tone-ink, var(--color-ink));
+}
+.svc-area-go svg { transition: transform var(--dur-3) var(--ease); }
+@media (hover: hover) {
+  .svc-area:hover .svc-area-go svg { transform: translate(2px, -2px); }
+}
+@media (min-width: 640px) {
+  .svc-areas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--col-gap); }
+}
+@media (min-width: 1024px) {
+  .svc-areas[data-count="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .svc-areas[data-count="5"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .svc-areas[data-count="5"] > li { grid-column: span 2; }
+  .svc-areas[data-count="5"] > li:nth-child(n + 4) { grid-column: span 3; }
+}
+
+/* Hub and 404: a short page, the area list follows the actions. */
+.svc-index-list { margin-top: var(--stack-content); }
+.svc-crumbs-label { display: flex; align-items: center; gap: 8px; }
+.svc-404 .svc-hero-lede,
+.svc-index .svc-hero-lede { margin-top: var(--stack-lede); }
+.svc-404,
+.svc-index { padding-bottom: var(--section-y); }
+
+@media (prefers-reduced-motion: reduce) {
+  .svc-area-go svg { transition: none; }
+}

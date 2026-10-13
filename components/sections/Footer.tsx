@@ -1,30 +1,34 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, CATEGORIES, CATEGORY_TONE } from "@/lib/content";
-import { scrollToTarget } from "../SmoothScroll";
+import { APPLICATIONS, CATEGORIES } from "@/lib/content";
+import { areaHref, areaOf } from "@/lib/areas";
+import { CTA, FOOTER } from "@/lib/copy";
+import { CONTACT_EMAIL } from "@/lib/site";
+import { jumpTo } from "@/lib/jump";
+import { toneVars } from "@/lib/tone";
 import { LogoMark } from "../ui/Logo";
 import { Arrow } from "../ui/Arrow";
-import { showArea } from "./GrowlioSections";
+import { SectionLink } from "../ui/SectionLink";
+import SectionTitle from "../ui/SectionTitle";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const STRATA = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
 
-/** Each section of the page as a ruled row: its number in the section colour, what it holds, a way in. */
-const NAV: { label: string; href: string; tone: string; blurb: string }[] = [
-  { label: "Applications", href: "#applications", tone: "cobalt", blurb: "Eight applications across five business areas" },
-  { label: "Outcomes", href: "#outcomes", tone: "emerald", blurb: "What changed, measured in three operations" },
-  { label: "How it works", href: "#how", tone: "violet", blurb: "One decision first, live in weeks" },
-  { label: "Questions", href: "#faq", tone: "tangerine", blurb: "What enterprise teams ask first" },
-];
-
+/**
+ * The page's close: a two-line headline and the one CTA, the home sections as ruled links, the five
+ * areas linking to their service pages, a legal row and the wordmark. Rendered outside <main> (it is
+ * the contentinfo landmark), so it carries its own surface and layer over the story canvas.
+ */
 export function Footer() {
   const word = useRef<HTMLDivElement>(null);
   const motif = useRef<SVGSVGElement>(null);
+  const path = usePathname();
 
   // The six system threads draw in and meet once the footer is in view.
   useEffect(() => {
@@ -64,122 +68,114 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="relative mt-16 overflow-hidden md:mt-20">
+    <footer className="site-footer">
       {/* Six plate edges: every system, one foundation */}
-      <div className="flex h-3" aria-hidden>
+      <div className="footer-strata" aria-hidden>
         {STRATA.map((c) => (
-          <span key={c} className="flex-1" style={{ background: `var(--color-${c})` }} />
+          <span key={c} style={{ background: `var(--color-${c})` }} />
         ))}
       </div>
 
-      <div className="bg-paper px-6 pt-16 md:px-10 md:pt-16">
-        <div className="mx-auto grid max-w-[71rem] gap-9 gap-y-12 lg:grid-cols-[1fr_1.35fr] lg:gap-x-16">
-          <div>
-            {/* Six systems, one resolved decision: the story's opening network, closed. */}
-            <svg ref={motif} className="footer-motif mb-7 block h-[72px] w-[220px]" viewBox="0 0 220 72" aria-hidden>
-              {STRATA.map((c, i) => {
-                const y = 6 + i * 12;
-                return (
-                  <g key={c} style={{ ["--i" as string]: i }}>
-                    <path
-                      d={`M10 ${y} C 90 ${y}, 120 36, 196 36`}
-                      className="footer-thread"
-                      pathLength={1}
-                      fill="none"
-                      stroke={`var(--color-${c})`}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <circle cx={10} cy={y} r={4} fill={`var(--color-${c})`} />
-                  </g>
-                );
-              })}
-              <g className="footer-motif-node">
-                <circle cx={200} cy={36} r={11} fill="var(--color-emerald)" />
-                <path d="M195 36.5l3.4 3.4 6.4-7" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </g>
-            </svg>
-            <p className="display text-[clamp(32px,3.4vw,52px)]">
-              Bring us one decision.
-              <br />
-              <span className="spectrum-text">We will show you</span>
-              <br />
-              <span className="spectrum-text">the rest.</span>
-            </p>
-            <button onClick={() => scrollToTarget("#audit")} className="btn btn-primary mt-9">
-              Book a free AI audit
-              <Arrow />
-            </button>
-          </div>
-
-          <nav aria-label="Footer" className="footer-nav">
-            <p className="eyebrow">Explore</p>
-            <ul className="footer-cards mt-4">
-              {NAV.map(({ label, href, tone, blurb }, i) => (
-                <li key={href} style={{ ["--tone" as string]: `var(--color-${tone})` }}>
-                  <button onClick={() => scrollToTarget(href)} className="footer-card">
-                    <span className="footer-card-n tabular" aria-hidden>0{i + 1}</span>
-                    <strong>{label}</strong>
-                    <small>{blurb}</small>
-                    <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
-                  </button>
-                </li>
-              ))}
-              <li style={{ ["--tone" as string]: "var(--color-saffron)" }}>
-                <button onClick={() => scrollToTarget("#audit")} className="footer-card">
-                  <span className="footer-card-n tabular" aria-hidden>05</span>
-                  <strong>Free AI audit</strong>
-                  <small>30 minutes on one decision in your operation. No commitment.</small>
-                  <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
-                </button>
-              </li>
-            </ul>
-
-            <p className="eyebrow mt-9">Where Decignal works</p>
-            {/* Each area opens its panel in Applications. */}
-            <ul className="footer-areas mt-4">
-              {CATEGORIES.map((c, i) => {
-                const n = APPLICATIONS.filter((a) => a.category === c).length;
-                return (
-                  <li key={c}>
-                    <button onClick={() => showArea(i)} className="footer-area" style={{ ["--tone" as string]: `var(--color-${CATEGORY_TONE[c]})` }}>
-                      <i aria-hidden />
-                      {c}
-                      <span className="tabular">{n}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+      <div className="page-wrap footer-grid">
+        <div className="footer-lead">
+          {/* Six systems, one resolved decision: the story's opening network, closed. */}
+          <svg ref={motif} className="footer-motif" viewBox="0 0 220 72" aria-hidden>
+            {STRATA.map((c, i) => {
+              const y = 6 + i * 12;
+              return (
+                <g key={c} style={{ ["--i" as string]: i }}>
+                  <path
+                    d={`M10 ${y} C 90 ${y}, 120 36, 196 36`}
+                    className="footer-thread"
+                    pathLength={1}
+                    fill="none"
+                    stroke={`var(--color-${c})`}
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                  />
+                  <circle cx={10} cy={y} r={4} fill={`var(--color-${c})`} />
+                </g>
+              );
+            })}
+            <g className="footer-motif-node">
+              <circle cx={200} cy={36} r={11} fill="var(--color-emerald)" />
+              <path d="M195 36.5l3.4 3.4 6.4-7" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+          </svg>
+          <SectionTitle lines={[FOOTER.headline[0], FOOTER.headline[1]]} tone="ink" className="ed-title" id="footer-title" />
+          <SectionLink href={CTA.href} className="btn btn-primary footer-cta">
+            {CTA.primary}
+            <Arrow />
+          </SectionLink>
         </div>
 
-        <div className="mx-auto mt-12 flex max-w-[71rem] flex-col gap-4 border-t border-line pt-6 text-[13px] text-ink-soft md:flex-row md:items-center md:justify-between">
-          <span>Decision intelligence for enterprises across India and Africa.</span>
-          <div className="flex items-center gap-6">
-            <span>© 2026 Decignal</span>
-            <button onClick={() => scrollToTarget(0)} className="footer-top">
-              Back to top
+        <nav aria-label="Footer" className="footer-nav">
+          <p className="t-label">{FOOTER.navTitle}</p>
+          <ul className="footer-cards">
+            {FOOTER.nav.map(({ label, href, blurb }, i) => (
+              <li key={href}>
+                <SectionLink href={`/${href}`} className="footer-card">
+                  <span className="footer-card-n tabular" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
+                  <strong>{label}</strong>
+                  <small>{blurb}</small>
+                  <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
+                </SectionLink>
+              </li>
+            ))}
+          </ul>
+
+          <p className="t-label footer-areas-title">{FOOTER.areasTitle}</p>
+          {/* Each area opens its service page. */}
+          <ul className="footer-areas">
+            {CATEGORIES.map((c) => {
+              const area = areaOf(c);
+              const n = APPLICATIONS.filter((a) => a.category === c).length;
+              const href = areaHref(c);
+              return (
+                <li key={c}>
+                  <SectionLink href={href} className="footer-area" style={toneVars(area.tone)} aria-current={path === href ? "page" : undefined}>
+                    <i aria-hidden />
+                    {c}
+                    <span className="tabular" aria-hidden>{n}</span>
+                    <span className="sr-only">, {FOOTER.areaCount(n)}</span>
+                  </SectionLink>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+
+      <div className="page-wrap footer-legal">
+        <span>{FOOTER.positioning}</span>
+        <ul className="footer-legal-links">
+          <li>{FOOTER.copyright}</li>
+          <li><SectionLink href="/privacy">{FOOTER.privacy}</SectionLink></li>
+          <li><SectionLink href="/terms">{FOOTER.terms}</SectionLink></li>
+          {CONTACT_EMAIL && <li><a href={`mailto:${CONTACT_EMAIL}`}>{FOOTER.contact(CONTACT_EMAIL)}</a></li>}
+          <li>
+            <button onClick={() => jumpTo(0, { focus: ".nav-logo" })} className="footer-top">
+              {FOOTER.top}
               <span aria-hidden>
                 <ArrowUp size={14} strokeWidth={2.2} />
               </span>
             </button>
-          </div>
-        </div>
+          </li>
+        </ul>
+      </div>
 
-        {/* The wordmark, set across the full width */}
-        <div ref={word} className="mt-10 flex items-end justify-center gap-[1.5vw] overflow-hidden pt-[1vw] pb-[4.5vw]" aria-hidden>
-          <span data-letter className="inline-block">
-            <LogoMark className="block h-[13vw] w-[13vw]" />
-          </span>
-          <span className="flex font-serif text-[20vw] leading-[0.9] tracking-[-0.033em]">
-            {"decignal".split("").map((ch, i) => (
-              <span key={i} data-letter className="inline-block">
-                {ch}
-              </span>
-            ))}
-          </span>
-        </div>
+      {/* The wordmark, set across the full width */}
+      <div ref={word} className="footer-wordmark" aria-hidden>
+        <span data-letter className="inline-block">
+          <LogoMark className="footer-wordmark-mark" />
+        </span>
+        <span className="footer-wordmark-word">
+          {"decignal".split("").map((ch, i) => (
+            <span key={i} data-letter className="inline-block">
+              {ch}
+            </span>
+          ))}
+        </span>
       </div>
     </footer>
   );

@@ -2,38 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePhone } from "@/lib/device";
-import { STACK_ROWS } from "@/lib/content";
-import { BRANDS } from "@/lib/brands";
+import { CONNECTS } from "@/lib/content";
+import { SYSTEMS_STRIP } from "@/lib/copy";
+import { toneVars } from "@/lib/tone";
 
-const SYSTEMS = STACK_ROWS.flat().map((s) => ({ ...s, ...BRANDS[s.name] }));
-
-/** A system's own mark, drawn in its brand colour. */
-function BrandMark({ path, className }: { path: string; className: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path d={path} />
-    </svg>
-  );
-}
-
-/** What the card reads from each system as its tile passes through. */
-const READS: Record<string, string> = {
-  SAP: "Plant 02 stock 210, safety 175",
-  Snowflake: "21-day demand forecast refreshed",
-  Databricks: "Supplier lead time model, p90 9 days",
-  "Google Cloud": "Shipment events streaming",
-  MongoDB: "Order lines for Plant 01 updated",
-  PostgreSQL: "Transfer policy: max 300 units",
-  HubSpot: "Key account renewal at risk",
-  Atlassian: "Line 3 maintenance ticket opened",
-  Zendesk: "4 open cases mention late delivery",
-};
+/** The six system types in their system colours (D8: types, never vendors or logos). */
+const SYSTEMS = CONNECTS.map((c) => ({ ...c, mono: c.id.toUpperCase() }));
 
 const COUNT = 18;
 
 const LOOP_MS = 26000;
 
-/** Growlio-style ribbon: systems flow along one curve, through Decignal, and leave as decisions. */
+/**
+ * Growlio-style ribbon: the system types flow along one curve, through Decignal, and leave as
+ * decisions. The card is the running example's feed: what Decignal reads from each type (not a live
+ * counter), ending in the recommended transfer.
+ */
 export function SystemsRibbon() {
   const stage = useRef<HTMLDivElement>(null);
   const path = useRef<SVGPathElement>(null);
@@ -41,7 +25,6 @@ export function SystemsRibbon() {
   const card = useRef<HTMLDivElement>(null);
   const tiles = useRef<(HTMLLIElement | null)[]>([]);
   const [feed, setFeed] = useState<number[]>([0, 1, 2]);
-  const [reads, setReads] = useState(1284);
   // Phones run the curve steeply up a narrow stage: each system rides once, spaced out and upright,
   // so the tiles never touch and their names read level.
   const phone = usePhone();
@@ -142,7 +125,6 @@ export function SystemsRibbon() {
           if (zone === 1 && lastZone[i] === 0) {
             const sys = i % SYSTEMS.length;
             setFeed((f) => [sys, ...f.filter((x) => x !== sys)].slice(0, 3));
-            setReads((r) => r + 1);
           }
           lastZone[i] = zone;
         }
@@ -175,42 +157,43 @@ export function SystemsRibbon() {
               ref={(n) => { tiles.current[i] = n; }}
               className="ribbon-tile"
               aria-hidden={i >= SYSTEMS.length || undefined}
-              style={{ ["--tone" as string]: s.hex }}
-              title={`${s.name} · ${s.role}`}
+              style={toneVars(s.tone)}
+              title={`${s.full}: ${s.reads}`}
             >
-              <span className="ribbon-mark"><BrandMark path={s.path} className="ribbon-logo" /><small>{s.role}</small></span>
+              <span className="ribbon-mark" aria-hidden><i />{s.mono}</span>
               <span className="ribbon-done" aria-hidden>
                 <svg viewBox="0 0 16 16"><path d="M4 8.4l2.6 2.6L12 5.4" /></svg>
               </span>
-              <span className="sr-only">{s.name}, {s.role}</span>
+              <span className="sr-only">{s.name}: {s.reads}</span>
             </li>
           );
         })}
       </ul>
 
-      <div ref={card} className="ribbon-card" aria-live="polite">
+      {/* Not a live region: the feed turns over every couple of seconds, which would talk over the page. */}
+      <div ref={card} className="ribbon-card">
         <div className="ribbon-card-head">
-          <span className="ribbon-badge"><span className="ribbon-pulse" />Reading live</span>
-          <span className="ribbon-count tabular">{reads.toLocaleString("en-IN")} reads today</span>
+          <span className="ribbon-badge t-label"><span className="ribbon-badge-dot" aria-hidden />{SYSTEMS_STRIP.card.badge}</span>
         </div>
         <ol className="ribbon-feed">
           {feed.map((k, j) => {
             const s = SYSTEMS[k];
             return (
-              <li key={s.name} style={{ ["--tone" as string]: s.hex, opacity: 1 - j * 0.28 }}>
-                <span className="ribbon-feed-mark"><BrandMark path={s.path} className="ribbon-feed-logo" /></span>
+              // Older reads recede, but the oldest still reads at about 4.5:1.
+              <li key={s.id} style={{ ...toneVars(s.tone), opacity: 1 - j * 0.2 }}>
+                <span className="ribbon-feed-mark" aria-hidden>{s.mono}</span>
                 <span>
-                  <span className="ribbon-feed-src">{s.name} · {s.role}</span>
-                  <span className="ribbon-feed-read">{READS[s.name]}</span>
+                  <span className="ribbon-feed-src">{s.name}</span>
+                  <span className="ribbon-feed-read">{s.read}</span>
                 </span>
               </li>
             );
           })}
         </ol>
         <div className="ribbon-decision">
-          <span className="eyebrow">Recommended</span>
-          <p>Transfer 240 units, Plant 02 → Plant 01</p>
-          <span className="ribbon-await">Awaiting approval</span>
+          <span className="t-label">{SYSTEMS_STRIP.card.recommended}</span>
+          <p>{SYSTEMS_STRIP.card.decision}</p>
+          <span className="ribbon-await">{SYSTEMS_STRIP.card.status}</span>
         </div>
       </div>
     </div>

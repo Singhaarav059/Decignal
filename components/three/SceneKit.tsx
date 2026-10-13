@@ -1,183 +1,71 @@
 "use client";
 
-import { Billboard } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import { enamel, aluminium, concrete } from "./materials";
+import { ScreenTag } from "./ScreenTag";
 
-export type Motion = RefObject<{ progress: number }>;
+/** Scroll progress through the current stage (0..1), and the hand-off presence at a chapter's edges. */
+export type Motion = RefObject<{ progress: number; edge?: number }>;
 export type Vec = [number, number, number];
 export const phase = (p: number, a: number, b: number) => THREE.MathUtils.smoothstep(p, a, b);
 
 /** Linear 0..1 progress between a and b (no easing), for choreography that must stay in step. */
 export const ramp = (p: number, a: number, b: number) => THREE.MathUtils.clamp((p - a) / (b - a), 0, 1);
 
-/** Canvas px → screen px. Labels keep one reading size in every scene, whatever the camera zoom. */
-const LABEL_RES = 3;
-/** Phones: world width per 680 canvas px for every tag, so all tags share one text size. */
-const PHONE_TAG = 2.8;
-const edge = { c: new THREE.Vector3(), r: new THREE.Vector3() };
+/** A pin's hover override: the object the reader points at in the card (or on its dot), else null. */
+export type PinRef = RefObject<string | null>;
+
+/** Presence of the explorer's tags: they go with the world through a hand-off and are gone (no ghost
+ *  text) while it is under 60%. */
+const presence = (motion: Motion) => () => {
+  const e = motion.current.edge ?? 1;
+  return e < 0.6 ? 0 : e;
+};
 
 /**
- * Industrial equipment telemetry tag: razor-sharp retina canvas, soft lift, status dot.
- * Proportioned directly in world units matching the lead story's tags, so it never balloons or clips.
+ * A pin on an object in an application scene: a tone dot that opens into a label of real page text
+ * (ScreenTag: 13px title, 12px value, whole pixels at any density). One label is open at a time: the
+ * stage's subject (`subject`), or the object the reader points at in the card or on its dot.
  */
-export function AssetLabel({
-  title,
-  detail: detailText,
-  position,
-  color = "#6E685E",
-  width = 2.1,
-  phone = true,
-}: {
+export function Pin({ id, at, title, value, tone, alert, motion, pin, subject }: {
+  id: string;
+  at: Vec;
   title: string;
-  detail?: string;
-  position: Vec;
-  color?: string;
-  width?: number;
-  pin?: boolean;
-  /** false: left out on phones, where the scene is too small for every tag and the card lists the fact. */
-  phone?: boolean;
+  value?: string;
+  /** The dot: the system colour of the object, signal red at risk, emerald once resolved. */
+  tone: string;
+  alert?: boolean;
+  motion: Motion;
+  pin?: PinRef;
+  /** The pin the stage opens when the reader is not pointing at anything. */
+  subject: string | null;
 }) {
-  const holder = useRef<THREE.Group>(null);
-  // Phones show the scene at about a third of desktop size: one line, larger type, the pill hugging its name.
-  // The detail line is left to the evidence card under the scene, which carries the same figures.
-  const compact = useThree((state) => state.size.width < 768);
-  const detail = compact ? undefined : detailText;
-  const tagK = compact ? 1.22 : 1;
-  const ts = compact ? 1.5 : 1;
-  const pop = useRef(0);
-  const first = useRef(true);
-  const [fontsReady, setFontsReady] = useState(0);
-
+  const latest = useRef(subject);
   useEffect(() => {
-    let live = true;
-    document.fonts?.ready.then(() => live && setFontsReady((n) => n + 1));
-    return () => { live = false; };
-  }, []);
-
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    pop.current = 1;
-  }, [title, detail, color]);
-
-  const sans = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-  // The tag grows to fit its text instead of clipping it: long titles widen the pill, never cut it.
-  const W = useMemo(() => {
-    const m = document.createElement("canvas").getContext("2d")!;
-    m.font = `650 ${compact ? 40 * ts : 34}px ${sans}`;
-    const t = m.measureText(title).width + 140;
-    m.font = `500 ${27 * ts}px ${sans}`;
-    const d = detail ? m.measureText(detail).width + 96 : 0;
-    return Math.ceil(Math.max(compact ? 0 : 680, t, d));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, detail, fontsReady, ts, compact]);
-  const H = (detail ? 210 : 126) + (compact ? (detail ? 50 : 30) : 0);
-
-  const texture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = W * LABEL_RES;
-    canvas.height = H * LABEL_RES;
-    const c = canvas.getContext("2d")!;
-    c.setTransform(LABEL_RES, 0, 0, LABEL_RES, 0, 0);
-
-    // Pill background with subtle elevation shadow
-    c.save();
-    c.shadowColor = "rgba(20, 19, 15, 0.14)";
-    c.shadowBlur = 18;
-    c.shadowOffsetY = 6;
-    c.beginPath();
-    c.roundRect(16, 12, W - 32, H - 24, 36);
-    c.fillStyle = "#FFFFFF";
-    c.fill();
-    c.restore();
-
-    // Precision boundary stroke
-    c.strokeStyle = "rgba(20, 19, 15, 0.09)";
-    c.lineWidth = 2;
-    c.stroke();
-
-    const m = document.createElement("canvas").getContext("2d")!;
-
-    // Status dot
-    const dotY = detail ? 64 * (compact ? 1.25 : 1) : H / 2;
-    c.fillStyle = color;
-    c.beginPath();
-    c.arc(56, dotY, 13 * (compact ? 1.3 : 1), 0, Math.PI * 2);
-    c.fill();
-
-    // Measure and fit title
-    let titleSize = 40 * ts;
-    m.font = `650 ${titleSize}px ${sans}`;
-    while (m.measureText(title).width > W - 140 && titleSize > 26) {
-      titleSize -= 2;
-      m.font = `650 ${titleSize}px ${sans}`;
-    }
-    c.font = `650 ${titleSize}px ${sans}`;
-    c.fillStyle = "#14130F";
-    c.fillText(title, compact ? 100 : 94, detail ? dotY + titleSize * 0.35 : H / 2 + titleSize * 0.35);
-
-    // Measure and fit detail if present
-    if (detail) {
-      let detailSize = 31 * ts;
-      m.font = `500 ${detailSize}px ${sans}`;
-      while (m.measureText(detail).width > W - 90 && detailSize > 22) {
-        detailSize -= 2;
-        m.font = `500 ${detailSize}px ${sans}`;
-      }
-      c.font = `500 ${detailSize}px ${sans}`;
-      c.fillStyle = "#4A463E";
-      c.fillText(detail, 56, compact ? 192 : 146);
-    }
-
-    const t = new THREE.CanvasTexture(canvas);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = 16;
-    return t;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, detail, color, fontsReady, W, H, compact, ts]);
-
-  useEffect(() => () => texture.dispose(), [texture]);
-
-  const plane = ((compact ? PHONE_TAG : width) * W) / 680;
-  useFrame(({ camera, size }, dt) => {
-    const h = holder.current;
-    if (!h) return;
-    pop.current = Math.max(0, pop.current - Math.min(dt, 0.05) * 2.4);
-    const k = pop.current;
-    const bump = Math.sin(Math.min(1, (1 - k) * 2) * Math.PI) * k * 0.12;
-    h.scale.setScalar((1 + bump) * tagK);
-    if (!compact) return;
-    // Phones: a tag near the frame's edge slides along the screen until it sits a margin inside it.
-    // The holder lives under the billboard, so its local x is the camera's right.
-    h.parent!.getWorldPosition(edge.c);
-    edge.r.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(plane * tagK * 0.5).add(edge.c);
-    const cx = edge.c.project(camera).x;
-    const half = Math.abs(edge.r.project(camera).x - cx);
-    if (half < 1e-6) return;
-    const room = 1 - 28 / size.width;
-    const over = Math.max(0, cx + half - room) - Math.max(0, -room - (cx - half));
-    h.position.x = THREE.MathUtils.damp(h.position.x, (-over / half) * plane * tagK * 0.5, 12, Math.min(dt, 0.05));
-  });
-
-  if (compact && !phone) return null;
+    latest.current = subject;
+  }, [subject]);
+  const show = useMemo(() => presence(motion), [motion]);
   return (
-    <group position={position}>
-      <Billboard>
-        <group ref={holder}>
-          <mesh renderOrder={20}>
-            {/* Phones: one text size for every tag (the pill hugs its text), so long status lines never outgrow the screen. */}
-            <planeGeometry args={[plane, ((compact ? PHONE_TAG : width) * H) / 680]} />
-            <meshBasicMaterial map={texture} transparent depthTest={false} depthWrite={false} toneMapped={false} />
-          </mesh>
-        </group>
-      </Billboard>
+    <group position={at}>
+      <ScreenTag
+        title={title}
+        value={value}
+        tone={tone}
+        alert={alert}
+        show={show}
+        open={() => (pin?.current ?? latest.current) === id}
+        onHover={pin ? (on) => {
+          if (on) pin.current = id;
+          else if (pin.current === id) pin.current = null;
+        } : undefined}
+      />
     </group>
   );
 }
 
-export function Route({points,color="#CBC6BD",radius=0.018,dashed=false,flow=false,speed=0.28,pulseCount=2,pulseColor}:
+export function Route({points,color="#C3C8D0",radius=0.018,dashed=false,flow=false,speed=0.28,pulseCount=2,pulseColor}:
   {points:Vec[];color?:string;radius?:number;dashed?:boolean;flow?:boolean;speed?:number;pulseCount?:number;pulseColor?:string}){
   const curve=useMemo(()=>{
     const c=new THREE.CurvePath<THREE.Vector3>();
@@ -227,15 +115,14 @@ export function Route({points,color="#CBC6BD",radius=0.018,dashed=false,flow=fal
   </group>;
 }
 
-export function Box({at,size,color="#E7E3DC",metal=false}:{at:Vec;size:Vec;color?:string;metal?:boolean}){
+export function Box({at,size,color="#E3E6EB",metal=false}:{at:Vec;size:Vec;color?:string;metal?:boolean}){
   return <mesh position={at} material={metal?aluminium():enamel(color)} castShadow receiveShadow><boxGeometry args={size}/></mesh>;
 }
+/** The scene's floor: a painted area level with the ground, a hair thick, so it never reads as a raised slab. */
 export function Floor({size=[7,0.035,4] as Vec}:{size?:Vec}){
-  return <mesh position-y={-0.035} material={concrete("#ECE6DC")} receiveShadow><boxGeometry args={size}/></mesh>;
+  // Top stays where the old slab's top was (scenes stand on it); only the visible edge goes.
+  return <mesh position-y={-0.035+size[1]/2-0.002} material={concrete("#EEF0F3")} receiveShadow><boxGeometry args={[size[0],0.004,size[2]]}/></mesh>;
 }
 export function Bolts({radius=0.6,z=0,count=8}:{radius?:number;z?:number;count?:number}){
   return <>{Array.from({length:count},(_,i)=><mesh key={i} position={[Math.cos(i/count*Math.PI*2)*radius,Math.sin(i/count*Math.PI*2)*radius,z]} material={aluminium(0.25)} rotation-x={Math.PI/2} castShadow><cylinderGeometry args={[0.035,0.035,0.055,6]}/></mesh>)}</>;
-}
-export function Bollards({x,z,count=4}:{x:number;z:number;count?:number}){
-  return <>{Array.from({length:count},(_,i)=><group key={i} position={[x+i*0.23,0,z]}><mesh position-y={0.09} material={enamel("#FFB21E")} castShadow><cylinderGeometry args={[0.024,0.024,0.18,12]}/></mesh><mesh position-y={0.11} material={enamel("#3A3D43")}><cylinderGeometry args={[0.025,0.025,0.035,12]}/></mesh></group>)}</>;
 }

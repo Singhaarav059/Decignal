@@ -49,7 +49,7 @@ Each video was sampled at 1fps for an overview. Dense sampling was then done at 
   6. Settles on the exact hero angle over the last ~1.5s, easing out.
 - Total ~13s. All moves use ease-in-out with no linear segments, so the camera always decelerates into a hold.
 - Realism comes from light. Warm interior glow spills onto the plinth, there are wet-floor reflections, rim light separates the roof edge, and soft contact shadows ground the model. Geometry detail is modest.
-- **For Decignal:** use warm daylight instead of night neon. A soft key light, a sky fill and contact shadows on cream. Tilt the camera between Signal → Context → Approval and return to the hero angle for the footer.
+- **For Decignal:** use neutral daylight instead of night neon. A soft white key light, a cool sky fill and contact shadows on the cool neutral ground (no cream or warm tint; see DESIGN.md). Tilt the camera between Signal → Context → Approval and return to the hero angle for the footer.
 
 ## Proposed motion system (to be added as tokens)
 

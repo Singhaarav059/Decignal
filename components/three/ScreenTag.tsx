@@ -1,0 +1,315 @@
+"use client";
+
+// Story tags as page text. A tag is a pin on its object (a small tone dot) that opens into a label
+// when it is the chapter's subject or the reader points at it. The label is real HTML placed on whole
+// pixels at the projected 3D anchor, so it is crisp at any pixel density and the same size on screen
+// however far away the camera is. One label is open at a time: the next opens once the last has closed.
+
+import * as THREE from "three";
+import { addAfterEffect, useThree } from "@react-three/fiber";
+import { useLayoutEffect, useRef } from "react";
+
+export type ScreenTagProps = {
+  title: string;
+  value?: string;
+  /** The dot's colour: the system or object the tag names. */
+  tone: string;
+  /** Risk: the value reads in signal red. */
+  alert?: boolean;
+  /** 0..1: how present the tag's object is right now. */
+  show: () => number;
+  /** True while this tag is the open label: the chapter's pin, or the one pointed at. */
+  open: () => boolean;
+  /** What a closed tag leaves on its object: the pin dot, or nothing. */
+  rest?: "dot" | "none";
+  /** The pointer is over the dot or the label. Tags with a handler take the pointer. */
+  onHover?: (on: boolean) => void;
+};
+
+type Els = { root: HTMLDivElement; dot: HTMLSpanElement; stem: HTMLSpanElement; card: HTMLDivElement; title: HTMLSpanElement; value: HTMLSpanElement };
+
+type Entry = {
+  anchor: React.RefObject<THREE.Group | null>;
+  props: React.RefObject<ScreenTagProps>;
+  get: () => { camera: THREE.Camera; size: { width: number; height: number } };
+  els: Els;
+  /** Presence, label openness and the update pop, each 0..1. */
+  p: number;
+  k: number;
+  pop: number;
+  /** Label size in px, measured when its text changes. */
+  w: number;
+  h: number;
+  /** The label would sit on the page's copy: it stays closed. */
+  blocked: boolean;
+  /** Which side of its pin the label sits on. */
+  side: Side;
+  /** Last written style values, so a still tag writes nothing. */
+  last: Record<string, string>;
+};
+
+const entries = new Set<Entry>();
+const v = new THREE.Vector3();
+let stop: (() => void) | null = null;
+let prevT = 0;
+let frame = 0;
+let reduced = false;
+/** Labels stay clear of the fixed nav bar. */
+const TOP_SAFE = 76;
+
+// Flat: white, a hairline, a tone dot. No shadows, no blur.
+const CARD_CSS =
+  "position:absolute;left:0;top:0;display:flex;flex-direction:column;gap:1px;padding:7px 11px 8px 10px;" +
+  "background:#fff;border:1px solid var(--color-line-strong);border-radius:var(--radius-sm,10px);white-space:nowrap;" +
+  "font-family:var(--font-sans);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;transform-origin:50% 100%;opacity:0;pointer-events:none";
+const DOT_CSS =
+  "position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 3px var(--color-line-strong);pointer-events:none";
+const STEM_CSS = "position:absolute;left:0;bottom:5px;width:1px;height:8px;background:var(--color-line-strong);opacity:0";
+
+/** One layer of tags per canvas, over the canvas and under the story copy. */
+const layers = new WeakMap<HTMLElement, HTMLDivElement>();
+function layerFor(canvas: HTMLCanvasElement) {
+  const host = canvas.parentElement!;
+  let layer = layers.get(host);
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.dataset.stagLayer = "";
+    // The facts a label shows are also in the page's copy; screen readers read them there once.
+    layer.setAttribute("aria-hidden", "true");
+    layer.style.cssText = "position:absolute;inset:0;overflow:hidden;pointer-events:none;contain:layout style";
+    host.appendChild(layer);
+    layers.set(host, layer);
+  }
+  return layer;
+}
+
+function build(layer: HTMLDivElement, entry: () => Entry | null) {
+  const root = document.createElement("div");
+  root.dataset.stag = "";
+  root.style.cssText = "position:absolute;left:0;top:0;width:0;height:0;visibility:hidden;will-change:transform";
+  const dot = document.createElement("span");
+  dot.style.cssText = DOT_CSS;
+  const stem = document.createElement("span");
+  stem.style.cssText = STEM_CSS;
+  const card = document.createElement("div");
+  card.style.cssText = CARD_CSS;
+  const head = document.createElement("span");
+  head.style.cssText = "display:flex;align-items:center;gap:6px;font-size:13px;line-height:16px;font-weight:600;color:var(--color-ink)";
+  const chip = document.createElement("i");
+  chip.style.cssText = "width:6px;height:6px;border-radius:50%;flex:none";
+  const title = document.createElement("span");
+  head.append(chip, title);
+  const value = document.createElement("span");
+  value.style.cssText = "padding-left:12px;font-size:12px;line-height:15px;font-weight:500;color:var(--color-ink-soft)";
+  card.append(head, value);
+  root.append(stem, dot, card);
+  layer.appendChild(root);
+  // Pointing at the dot or the label counts as pointing at the object.
+  const hover = (on: boolean) => () => entry()?.props.current.onHover?.(on);
+  for (const el of [dot, card]) {
+    el.addEventListener("pointerenter", hover(true));
+    el.addEventListener("pointerleave", hover(false));
+  }
+  return { root, dot, stem, card, title, value, chip };
+}
+
+const put = (e: Entry, el: HTMLElement, key: string, prop: string, value: string) => {
+  if (e.last[key] === value) return;
+  e.last[key] = value;
+  el.style.setProperty(prop, value);
+};
+
+const damp = (a: number, b: number, lambda: number, dt: number) => b + (a - b) * Math.exp(-lambda * dt);
+
+/** Text blocks of the story copy that are on screen; a label never sits on them. */
+let blocks: DOMRect[] = [];
+function readBlocks() {
+  blocks = [];
+  const seen = new Set<Element>();
+  document.querySelectorAll<HTMLElement>("[data-ch], [data-ind]").forEach((ch) => {
+    const o = parseFloat(ch.style.opacity || "1");
+    if (o < 0.3 || ch.style.visibility === "hidden") return;
+    ch.querySelectorAll<HTMLElement>("h1, h2, h3, p, dl, ul, ol, button, a, [data-obstacle]").forEach((el) => {
+      seen.add(el);
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) blocks.push(r);
+    });
+  });
+  // Page copy marked as an obstacle anywhere else (the explorer's head and card), when on screen.
+  document.querySelectorAll<HTMLElement>("[data-obstacle]").forEach((el) => {
+    if (seen.has(el)) return;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0 || r.bottom < 0 || r.top > innerHeight) return;
+    if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return;
+    blocks.push(r);
+  });
+}
+
+type Side = "up" | "right" | "left" | "down";
+const SIDES: Side[] = ["up", "right", "left", "down"];
+const ORIGIN: Record<Side, string> = { up: "50% 100%", down: "50% 0", right: "0 50%", left: "100% 50%" };
+const SLIDE: Record<Side, [number, number]> = { up: [0, 6], down: [0, -6], right: [-6, 0], left: [6, 0] };
+const GAP = 13;
+
+/** The label's top-left corner in page pixels for a side of its pin at (x, y); above and below, it
+ *  slides along the pin to stay on screen. */
+function place(side: Side, x: number, y: number, e: Entry, size: { width: number }): [number, number] {
+  if (side === "right") return [x + GAP, y - Math.round(e.h / 2)];
+  if (side === "left") return [x - GAP - e.w, y - Math.round(e.h / 2)];
+  const left = x + Math.round(THREE.MathUtils.clamp(-e.w / 2, 8 - x, size.width - 8 - x - e.w));
+  return [left, side === "up" ? y - GAP - e.h : y + GAP];
+}
+
+/** The label at [left, top] would leave the screen, slip under the nav, or sit on the copy. */
+function hits([l, t]: [number, number], e: Entry, size: { width: number; height: number }) {
+  if (t < TOP_SAFE || t + e.h > size.height - 8 || l < 8 || l + e.w > size.width - 8) return true;
+  return blocks.some((b) => l < b.right + 8 && l + e.w > b.left - 8 && t < b.bottom + 8 && t + e.h > b.top - 8);
+}
+
+const visibleChain = (o: THREE.Object3D | null) => {
+  for (let x = o; x; x = x.parent) if (!x.visible) return false;
+  return true;
+};
+
+function tick(t: number) {
+  const dt = Math.min(Math.max((t - prevT) / 1000, 0), 1 / 30);
+  prevT = t;
+  // Refresh the copy's footprint a few times a second, only while a label wants to open.
+  if (frame++ % 12 === 0 && [...entries].some((e) => e.props.current.open())) readBlocks();
+
+  // The most open label other than each tag: a tag opens only once the previous one has closed.
+  let first = 0;
+  let second = 0;
+  let top: Entry | null = null;
+  for (const e of entries) {
+    if (e.k > first) {
+      second = first;
+      first = e.k;
+      top = e;
+    } else if (e.k > second) second = e.k;
+  }
+
+  for (const e of entries) {
+    const P = e.props.current;
+    const a = e.anchor.current;
+    const { camera, size } = e.get();
+    const { root, dot, stem, card } = e.els;
+    const show = a && visibleChain(a) ? THREE.MathUtils.clamp(P.show(), 0, 1) : 0;
+    e.p = damp(e.p, show, 10, dt);
+    if (!a || (e.p < 0.004 && e.k < 0.004 && show === 0)) {
+      e.p = 0;
+      e.k = 0;
+      put(e, root, "r.vis", "visibility", "hidden");
+      continue;
+    }
+    a.getWorldPosition(v).project(camera);
+    const behind = v.z > 1;
+    const x = Math.round((v.x * 0.5 + 0.5) * size.width);
+    const y = Math.round((-v.y * 0.5 + 0.5) * size.height);
+
+    if (!e.w) {
+      e.w = card.offsetWidth;
+      e.h = card.offsetHeight;
+    }
+    // Where the label goes: above its pin by default; beside it, or below it, when the page's copy
+    // (or the nav) is in the way; if every side is taken it stays shut. Chosen while it is closed.
+    if (e.k < 0.02) e.side = SIDES.find((side) => !hits(place(side, x, y, e, size), e, size)) ?? "up";
+    const at = place(e.side, x, y, e, size);
+    e.blocked = hits(at, e, size);
+    const left = at[0] - x;
+    const top_ = at[1] - y;
+
+    const others = e === top ? second : first;
+    const want = P.open() && show > 0.5 && !behind && !e.blocked;
+    e.k = damp(e.k, want && (others < 0.08 || e.k > 0.02) ? 1 : 0, want ? 14 : 18, dt);
+    if (e.k < 0.002) e.k = 0;
+    if (e.k > 0.998) e.k = 1;
+    e.pop = Math.max(0, e.pop - dt * 2.4);
+
+    const rest = P.rest ?? "dot";
+    const dotO = behind ? 0 : rest === "dot" ? 1 : Math.min(1, e.k * 2);
+    put(e, root, "r.vis", "visibility", "visible");
+    put(e, root, "r.tf", "transform", `translate3d(${x}px, ${y}px, 0)`);
+    put(e, root, "r.op", "opacity", e.p > 0.995 ? "1" : e.p.toFixed(3));
+    put(e, dot, "d.op", "opacity", dotO.toFixed(3));
+    // An update gives the dot one small pulse; the text itself never scales at rest.
+    const bump = Math.sin(Math.min(1, (1 - e.pop) * 2) * Math.PI) * e.pop;
+    put(e, dot, "d.tf", "transform", bump > 0.001 && !reduced ? `scale(${(1 + bump * 0.7).toFixed(3)})` : "none");
+    const vertical = e.side === "up" || e.side === "down";
+    put(e, stem, "s.op", "opacity", vertical ? e.k.toFixed(3) : "0");
+    put(e, stem, "s.side", "transform", e.side === "down" ? "translateY(18px)" : "none");
+    put(e, card, "c.left", "left", `${left}px`);
+    put(e, card, "c.top", "top", `${top_}px`);
+    put(e, card, "c.origin", "transform-origin", ORIGIN[e.side]);
+    put(e, card, "c.op", "opacity", e.k.toFixed(3));
+    // Opening: a short slide out from the pin; fully open it sits on whole pixels with no transform.
+    const [dx, dy] = SLIDE[e.side];
+    const m = reduced ? 0 : 1 - e.k;
+    put(e, card, "c.tf", "transform", e.k === 1 || reduced ? "none" : `translate3d(${Math.round(dx * m)}px, ${Math.round(dy * m)}px, 0) scale(${(0.96 + 0.04 * e.k).toFixed(4)})`);
+    const takes = !!P.onHover && e.p > 0.5;
+    put(e, card, "c.pe", "pointer-events", takes && e.k > 0.5 ? "auto" : "none");
+    put(e, dot, "d.pe", "pointer-events", takes && rest === "dot" ? "auto" : "none");
+    put(e, card, "c.cur", "cursor", takes ? "pointer" : "");
+    put(e, dot, "d.cur", "cursor", takes ? "pointer" : "");
+  }
+}
+
+/** A tag on a 3D anchor: place it where the label's pin should sit (above the object). */
+export function ScreenTag(props: ScreenTagProps) {
+  const anchor = useRef<THREE.Group>(null);
+  const gl = useThree((s) => s.gl);
+  const get = useThree((s) => s.get);
+  const latest = useRef(props);
+  const entry = useRef<Entry | null>(null);
+  const els = useRef<(Els & { chip: HTMLElement }) | null>(null);
+
+  useLayoutEffect(() => {
+    latest.current = props;
+  });
+
+  useLayoutEffect(() => {
+    reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const built = build(layerFor(gl.domElement), () => entry.current);
+    els.current = built;
+    const e: Entry = { anchor, props: latest, get, els: built, p: 0, k: 0, pop: 0, w: 0, h: 0, blocked: false, side: "up", last: {} };
+    entry.current = e;
+    entries.add(e);
+    if (!stop) {
+      prevT = performance.now();
+      stop = addAfterEffect(tick);
+    }
+    // Web fonts change the label's width once they arrive.
+    let live = true;
+    document.fonts?.ready.then(() => {
+      if (live) e.w = 0;
+    });
+    return () => {
+      live = false;
+      entries.delete(e);
+      built.root.remove();
+      entry.current = null;
+      if (!entries.size && stop) {
+        stop();
+        stop = null;
+      }
+    };
+  }, [gl, get]);
+
+  const { title, value = "", tone, alert = false } = props;
+  useLayoutEffect(() => {
+    const el = els.current;
+    const e = entry.current;
+    if (!el || !e) return;
+    const changed = el.value.textContent !== "" && el.value.textContent !== value;
+    el.title.textContent = title;
+    el.value.textContent = value;
+    el.value.style.display = value ? "" : "none";
+    el.value.style.color = alert ? "var(--color-signal-ink)" : "var(--color-ink-soft)";
+    el.dot.style.background = tone;
+    el.chip.style.background = tone;
+    e.w = 0;
+    if (changed) e.pop = 1;
+  }, [title, value, tone, alert]);
+
+  return <group ref={anchor} />;
+}

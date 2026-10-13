@@ -68,13 +68,14 @@ export function liftAt(t: number, out: Lift): Lift {
   return Object.assign(out, { x: px, z: pz, h: THREE.MathUtils.lerp(1.44, 0.06, smoothstep(0.64, 0.9, u)) });
 }
 
-/** Where each pallet is: 0 staged in the yard, 1 on the forks, 2 on the trailer. */
-export function palletStates(t: number, lift: Lift) {
-  return Array.from({ length: PALLETS }, (_, i) => {
-    if (t >= BEATS.load[1] || i < lift.trip) return 2;
-    if (i > lift.trip) return 0;
-    if (lift.carry) return 1;
-    return lift.h > 1 || lift.z > PICK_Z + 0.05 ? 2 : 0;
-  });
+/** Where each pallet is: 0 staged in the yard, 1 on the forks, 2 on the trailer. Writes into `out` when given. */
+export function palletStates(t: number, lift: Lift, out: number[] = new Array(PALLETS)) {
+  for (let i = 0; i < PALLETS; i++) {
+    if (t >= BEATS.load[1] || i < lift.trip) out[i] = 2;
+    else if (i > lift.trip) out[i] = 0;
+    else if (lift.carry) out[i] = 1;
+    else out[i] = lift.h > 1 || lift.z > PICK_Z + 0.05 ? 2 : 0;
+  }
+  return out;
 }
 

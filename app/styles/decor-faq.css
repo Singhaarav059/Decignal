@@ -1,0 +1,168 @@
+/* Decor pass (faq lane). Loaded after the section sheets so it can refine them.
+   The home FAQ's answer figures (components/sections/FaqArt.tsx): desktop shows one figure under the
+   help line that follows the open, hovered or focused question; below 1024px the figure sits inside
+   the opened answer instead, where it reads next to its own text. */
+
+/* ---- The figure panel (desktop) ---- */
+.faq-fig {
+  display: none;
+  margin: 48px 0 0;
+  padding: clamp(16px, 1.6vw, 24px);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line);
+}
+@media (min-width: 1024px) {
+  .faq-fig { display: block; }
+  /* The question the figure shows keeps its number in ink, so the two read as one control. */
+  .faq-item[data-shown] .faq-n { color: var(--tone-ink, var(--color-ink)); }
+}
+.faq-fig-stage { display: grid; }
+.faq-fig-stage > .faq-art {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-2) var(--ease), visibility 0s linear var(--dur-2);
+}
+.faq-fig-stage > .faq-art[data-on] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--dur-3) var(--ease), visibility 0s;
+}
+
+/* Caption: topic and one line, crossfading on a fixed footprint (the tallest line sets the height). */
+.faq-fig-cap {
+  display: grid;
+  margin-top: clamp(16px, 1.6vw, 24px);
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+}
+.faq-fig-ex, .faq-fig-lines { grid-area: 1 / 1; }
+.faq-fig-ex { justify-self: end; align-self: start; }
+.faq-fig-lines { display: grid; }
+.faq-fig-line {
+  grid-area: 1 / 1;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity var(--dur-2) var(--ease), transform 0s linear var(--dur-2), visibility 0s linear var(--dur-2);
+}
+.faq-fig-line[data-on] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity var(--dur-3) var(--ease) var(--stagger), transform var(--dur-3) var(--ease) var(--stagger), visibility 0s;
+}
+.faq-fig-topic { display: flex; gap: 10px; color: var(--color-ink); }
+.faq-fig-n { color: var(--color-ink-soft); }
+.faq-fig-text { max-width: 46ch; color: var(--color-ink-2); text-wrap: pretty; }
+
+/* ---- Inside the opened answer (phones and tablets) ---- */
+.faq-a-fig {
+  max-width: 460px;
+  margin: 0 0 24px calc(2ch + 20px);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line);
+}
+@media (max-width: 640px) {
+  /* Full row width keeps the drawing's labels at their 11px size on a 390px screen. */
+  .faq-a-fig { margin-left: 0; padding: 12px; }
+}
+@media (min-width: 1024px) {
+  .faq-a-fig { display: none; }
+}
+
+/* ---- The drawings ---- */
+.faq-art { display: block; width: 100%; height: auto; overflow: visible; }
+.faq-art text {
+  font-family: var(--font-heading);
+  font-size: calc(11px / var(--svg-k, 1));
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  fill: var(--color-ink-soft);
+}
+.faq-art .fa-v {
+  font-size: calc(12px / var(--svg-k, 1));
+  letter-spacing: -0.005em;
+  fill: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.faq-art .fa-s {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0;
+  fill: var(--color-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.faq-art .fa-num { letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.faq-art .fa-rank { font-family: var(--font-heading); font-weight: 700; fill: var(--color-ink); }
+.faq-art text.fa-on-ink { fill: var(--color-on-ink); }
+.faq-art .fa-risk-text { fill: var(--color-signal-ink); }
+
+.faq-art .fa-well { fill: var(--color-sunken); }
+.faq-art .fa-sheet { fill: var(--color-surface); stroke: var(--color-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.faq-art .fa-ink { fill: var(--color-ink); }
+.faq-art .fa-hair { fill: none; stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.faq-art .fa-hair.strong { stroke: var(--color-line-strong); }
+.faq-art .fa-grid { fill: none; stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.faq-art .fa-axis { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.faq-art .fa-dashed { stroke-dasharray: 3 4; }
+.faq-art .fa-today { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.faq-art .fa-past { fill: none; stroke: var(--color-ink-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.faq-art .fa-past-dot { fill: var(--color-ink-muted); stroke: var(--color-sunken); stroke-width: 2; }
+.faq-art .fa-link { fill: none; stroke: var(--color-ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.faq-art .fa-line { fill: none; stroke: var(--tone); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.faq-art .fa-dot { fill: var(--tone); }
+.faq-art .fa-risk { fill: var(--color-signal); }
+.faq-art .fa-ok { fill: var(--color-emerald); }
+.faq-art .fa-track { fill: var(--color-track); }
+.faq-art .fa-limit { fill: none; stroke: var(--color-ink); stroke-width: 1.5; }
+.faq-art .fa-check { fill: none; stroke: var(--color-emerald); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.faq-art .fa-check.fa-on-ok { stroke: var(--color-on-ink); }
+.faq-art .fa-faded { opacity: 0.55; }
+
+/* ---- Draw-in: strokes draw, bars grow, results rise, each a stagger step after the last.
+   Off, everything resets only once the figure has faded out, so nothing undraws on screen. ---- */
+.faq-art .fa-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0s linear var(--dur-4);
+}
+.faq-art .fa-grow {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0s linear var(--dur-4);
+}
+.faq-art .fa-rise {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0s linear var(--dur-4), transform 0s linear var(--dur-4);
+}
+.faq-art[data-on] .fa-draw {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--dur-4) var(--ease) calc(80ms + var(--i, 0) * var(--stagger));
+}
+.faq-art[data-on] .fa-grow {
+  transform: none;
+  transition: transform var(--dur-4) var(--ease) calc(120ms + var(--i, 0) * var(--stagger));
+}
+.faq-art[data-on] .fa-rise {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-3) var(--ease) calc(160ms + var(--i, 0) * var(--stagger)),
+    transform var(--dur-3) var(--ease) calc(160ms + var(--i, 0) * var(--stagger));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Fully drawn and still; figures only crossfade. */
+  .faq-art .fa-draw, .faq-art .fa-grow, .faq-art .fa-rise { stroke-dashoffset: 0; transform: none; opacity: 1; transition: none; }
+  .faq-fig-line, .faq-fig-line[data-on] { transform: none; transition: opacity var(--dur-2) var(--ease), visibility 0s; }
+  .faq-fig-stage > .faq-art, .faq-fig-stage > .faq-art[data-on] { transition: opacity var(--dur-2) var(--ease), visibility 0s; }
+}

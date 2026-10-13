@@ -1,0 +1,206 @@
+/* Base: page, type, buttons and the shared helpers every area uses. */
+
+html {
+  background: var(--color-bg);
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Body stays transparent so the colour fields behind the stage show through. */
+body {
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 450;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tailwind's reset leaves buttons on the arrow cursor. Anything that acts shows the hand; zero
+   specificity, so a component can still opt out (e.g. a tab that is only a label on phones). */
+:where(button:not(:disabled), [role="button"], [role="tab"], summary, select, a[href], label:has(> input[type="checkbox"], > input[type="radio"])) {
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--color-cobalt);
+  color: var(--color-on-ink);
+}
+
+/* Headings: Bricolage Grotesque, optical size on so large sizes draw tight and small ones open.
+   The role classes (.t-*) carry their own family; this list covers classes not yet moved to a role. */
+h1, h2, h3, h4, .display, .font-serif,
+.glance-num, .faq-q-title,
+.peek-side-figure, .peek-case-value, dd.tabular, p.tabular.font-semibold {
+  font-family: var(--font-heading);
+  font-optical-sizing: auto;
+}
+/* Labels set in the display face run slightly condensed, the way a mono label would read. */
+.eyebrow, [class*="font-mono"] {
+  font-stretch: 92%;
+}
+
+/* Display type: the headline role's weight and tracking (sizes come from the call site). */
+.display {
+  font-weight: 560;
+  letter-spacing: -0.032em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+.display em {
+  font-style: normal;
+}
+/* The serif utility maps to the headline face at the subtitle weight. */
+.font-serif {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* The label role (same as .t-label, kept for existing call sites). */
+.eyebrow {
+  font-family: var(--font-label);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.diamond {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.hairline {
+  border-color: var(--color-line);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons: 44px high, 15px/600 text. */
+.btn {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-pill);
+  padding: 0 20px;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  transition:
+    transform var(--dur-2) var(--ease),
+    color var(--dur-3) var(--ease),
+    border-color var(--dur-3) var(--ease);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+}
+/* Cobalt rises through the button on hover. */
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-cobalt);
+  transform: translateY(101%);
+  transition: transform var(--dur-4) var(--ease-out-expo);
+}
+.btn-ghost {
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+}
+.btn-ghost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-ink);
+  transform: translateY(101%);
+  transition: transform var(--dur-4) var(--ease-out-expo);
+}
+.btn .arrow {
+  display: inline-grid;
+  overflow: hidden;
+  width: 14px;
+}
+.btn .arrow > span {
+  grid-area: 1 / 1;
+  transition: transform var(--dur-4) var(--ease-out-expo);
+}
+.btn .arrow > span + span {
+  transform: translateX(-120%);
+}
+@media (hover: hover) {
+  .btn-primary:hover::before,
+  .btn-ghost:hover::before {
+    transform: none;
+  }
+  .btn-ghost:hover {
+    color: var(--color-on-ink);
+    border-color: var(--color-ink);
+  }
+  .btn:hover .arrow > span:first-child {
+    transform: translateX(120%);
+  }
+  .btn:hover .arrow > span + span {
+    transform: none;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Line reveal: each line rises out of its own mask. */
+.line-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.16em;
+  margin-bottom: -0.16em;
+}
+.line-mask > span {
+  display: block;
+}
+
+/* In the base layer, so a component's or utility's own radius and outline still win. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-cobalt);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
+  }
+}
+
+/* ---- Phones: solid surfaces over the moving 3D ---- */
+@media (max-width: 767px) {
+  .btn-ghost { background: var(--color-surface); }
+}

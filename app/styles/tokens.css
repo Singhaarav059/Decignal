@@ -1,0 +1,164 @@
+/* Design tokens: the Tailwind theme (colours, fonts, radii, motion) and the root custom properties.
+   Neutrals are one cool hue (~218). System colours fill dots, strokes and drawings; text in a system
+   colour always uses its -ink token, never a mix with ink (that renders brown). See DESIGN.md. */
+
+@theme static {
+  /* Neutrals. bg-2 and paper are kept as aliases so existing utilities keep working. */
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-paper: #ffffff;
+  --color-sunken: #edeff3;
+  --color-bg-2: #edeff3;
+  --color-ink: #0f1217;
+  --color-ink-2: #252a33;
+  --color-ink-soft: #555d6b;
+  /* Icons, chart axes and disabled states only; never body text (3.6:1). */
+  --color-ink-muted: #7a8290;
+  --color-on-ink: #ffffff;
+  --color-line: rgb(15 18 23 / 0.1);
+  --color-line-strong: rgb(15 18 23 / 0.22);
+  /* Hover fill and progress-track fill. */
+  --color-wash: rgb(15 18 23 / 0.04);
+  --color-track: rgb(15 18 23 / 0.08);
+
+  /* One colour per source system. Signal red is reserved for risk. */
+  --color-cobalt: #2e5bff;
+  --color-violet: #7c5cff;
+  --color-emerald: #0fa874;
+  --color-saffron: #ffb21e;
+  --color-tangerine: #ff7438;
+  --color-pink: #ff5fa2;
+  --color-signal: #f2361f;
+  --color-demand: #2e5bff;
+  --color-ok: #0fa874;
+
+  /* Text-safe inks: the only way a system colour becomes text (hue kept, at least 4.5:1 on bg and
+     white). Saffron is never text: its ink is ink. Tangerine ink on sunken only at 18px+/600. */
+  --color-cobalt-ink: #2a52f0;
+  --color-violet-ink: #5b3be6;
+  --color-emerald-ink: #087a54;
+  --color-saffron-ink: #0f1217;
+  --color-tangerine-ink: #c7440f;
+  --color-pink-ink: #c42b70;
+  --color-signal-ink: #c2331b;
+  --color-demand-ink: #2a52f0;
+  --color-ok-ink: #087a54;
+
+  /* Bricolage Grotesque (next/font --font-display): headlines, numbers and labels.
+     Figtree (--font-body): everything people read. --font-serif and --font-mono are temporary
+     aliases of --font-heading until their call sites move to the role classes. */
+  --font-heading: var(--font-display), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-body), "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-heading);
+  --font-mono: var(--font-heading);
+
+  /* Radius: six steps. Nested elements take the next step down. */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Motion system: one curve, five durations. New work uses only these. See docs/motion-notes.md. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 600ms;
+  --dur-5: 900ms;
+  --stagger: 60ms;
+}
+
+:root {
+  color-scheme: light;
+  /* Labels (eyebrows, counts, tags) are the display face, a touch condensed. */
+  --font-label: var(--font-heading);
+
+  /* Text inks by tone name, for inline styles (lib/tone.ts toneVars sets --tone and --tone-ink). */
+  --tone-ink-cobalt: var(--color-cobalt-ink);
+  --tone-ink-violet: var(--color-violet-ink);
+  --tone-ink-emerald: var(--color-emerald-ink);
+  --tone-ink-saffron: var(--color-saffron-ink);
+  --tone-ink-tangerine: var(--color-tangerine-ink);
+  --tone-ink-pink: var(--color-pink-ink);
+  --tone-ink-signal: var(--color-signal-ink);
+  --tone-ink-demand: var(--color-demand-ink);
+  --tone-ink-ok: var(--color-ok-ink);
+  --tone-ink-ink: var(--color-ink);
+
+  /* Type: three roles. Headline (display, title, subtitle, numerals), text (lede, body, small),
+     label. Sizes scale with the viewport, so per-viewport font overrides are not needed. */
+  --fs-display: clamp(40px, min(6.2vw, 10.5vh), 96px);
+  --fs-title: clamp(32px, min(3.8vw, 6.4vh), 56px);
+  /* A title inside the bottom-left StoryCard (chapters 02-08). */
+  --fs-title-card: clamp(28px, min(2.8vw, 5.2vh), 40px);
+  --fs-subtitle: clamp(17px, 1.35vw, 20px);
+  --fs-lede: clamp(16px, 1.25vw, 18px);
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-label: 11px;
+  --fs-num-lg: clamp(48px, 5vw, 80px);
+  --fs-num-md: 28px;
+  /* The footer wordmark is a logo, not a heading. */
+  --wordmark: clamp(120px, 20vw, 288px);
+
+  /* Grid: one 12-column container whose edge every layer shares (nav, story card, editorial).
+     --edge resolves against the parent width, so use it in full-width fixed layers; flow content
+     uses .page-wrap. Never 100vw here (scrollbars). 152px at 1440, 72 at 1280, 20 at 390. */
+  --grid-max: 71rem;
+  --gutter: clamp(20px, 5vw, 72px);
+  --col-gap: clamp(16px, 2vw, 24px);
+  --edge: max(var(--gutter), calc((100% - var(--grid-max)) / 2));
+  --col: calc((min(100% - 2 * var(--gutter), var(--grid-max)) - 11 * var(--col-gap)) / 12);
+  --span-4: calc(4 * var(--col) + 3 * var(--col-gap));
+  --span-5: calc(5 * var(--col) + 4 * var(--col-gap));
+  --span-6: calc(6 * var(--col) + 5 * var(--col-gap));
+  /* Legacy name for the editorial column; same width as the grid. */
+  --content: var(--grid-max);
+
+  /* Spacing: a 4px scale (4 8 12 16 24 32 48 64 96 128 = Tailwind 1 2 3 4 6 8 12 16 24 32). */
+  --section-y: clamp(80px, 10vw, 144px);
+  --stack-label: 16px;
+  --stack-lede: 24px;
+  --stack-actions: 32px;
+  --stack-content: 64px;
+  --card-pad: clamp(20px, 2vw, 28px);
+  --panel-pad: clamp(24px, 3vw, 40px);
+
+  /* StoryCard geometry: one bottom-left card for the story and the explorer. */
+  --card-x: var(--edge);
+  --card-b: 32px;
+  --card-w: min(440px, 100% - 2 * var(--gutter));
+
+  /* Elevation: hairline edges only, plus one float shadow for layers over content
+     (nav glance panel, island popover, sticky CTA pill, phone dock). */
+  --edge-line: inset 0 0 0 1px var(--color-line);
+  --edge-strong: inset 0 0 0 1px var(--color-line-strong);
+  --edge-selected: inset 0 0 0 1.5px var(--color-ink);
+  --shadow-float: 0 1px 2px rgb(15 18 23 / 0.06), 0 16px 40px -20px rgb(15 18 23 / 0.28);
+
+  /* Stacking: one scale for every fixed layer. */
+  --z-canvas: 10;
+  --z-story: 20;
+  --z-island-leader: 28;
+  --z-island: 29;
+  --z-editorial: 30;
+  --z-rail: 40;
+  --z-dock: 45;
+  --z-menu: 47;
+  --z-veil: 48;
+  --z-nav: 50;
+  --z-loader: 70;
+  --z-skip: 80;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --card-b: max(16px, env(safe-area-inset-bottom));
+  }
+}

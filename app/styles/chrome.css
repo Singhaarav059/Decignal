@@ -1,0 +1,469 @@
+/* Chrome: the nav bar, its readout, the section glances, the phone menu, the CTA pill, the phone dock,
+   the chapter rail and the chapter pictures (components/Nav, NavPeek, CtaPill, PhoneDock, ChapterRail,
+   ChapterArt, ui/Logo). Every fixed layer takes its z from the token scale. */
+
+/* ---------------- Logo ---------------- */
+.logo .logo-mark {
+  width: round(calc(var(--logo, 26px) * 0.95), 1px);
+  height: round(calc(var(--logo, 26px) * 0.95), 1px);
+  overflow: visible;
+  transform: translateY(round(calc(var(--logo, 26px) * 0.12), 1px));
+}
+.logo .logo-mark path { transition: transform var(--dur-4) var(--ease); }
+@media (hover: hover) {
+  .logo:hover .lm-1 { transform: translateY(-3px); }
+  .logo:hover .lm-3 { transform: translateY(3px); }
+}
+.logo-word {
+  display: inline-block;
+  max-width: 6em;
+  margin-left: 10px;
+  overflow-x: clip;
+  font-size: var(--logo, 26px);
+  transition: max-width var(--dur-3) var(--ease), margin var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+/* ---------------- Skip link (styles in infra.css): on the page grid's left edge ---------------- */
+a.skip-link { left: var(--edge); }
+
+/* ---------------- Nav: on the page grid, one width; compact only lowers its height ---------------- */
+.nav-shell {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--z-nav);
+  padding-inline: var(--edge);
+  transition: transform var(--dur-4) var(--ease);
+}
+.nav-shell[data-hidden] { transform: translateY(-110%); }
+.nav-pill {
+  isolation: isolate;
+  height: 56px;
+  margin-top: 12px;
+  padding: 0 7px 0 6px;
+  transition:
+    height var(--dur-3) var(--ease),
+    margin var(--dur-3) var(--ease),
+    padding var(--dur-3) var(--ease);
+}
+@media (min-width: 1024px) {
+  .nav-pill { padding-left: 16px; }
+}
+.nav-pill[data-compact] {
+  height: 48px;
+  margin-top: 8px;
+  padding-right: 5px;
+}
+/* One solid surface, links straight on it. */
+.nav-surface { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--color-surface); box-shadow: var(--edge-line); transition: box-shadow var(--dur-3) var(--ease); }
+.nav-pill[data-solid] .nav-surface { box-shadow: var(--edge-strong); }
+.nav-logo { flex: none; padding: 4px 6px; border-radius: var(--radius-pill); }
+@media (min-width: 1024px) {
+  .nav-logo { padding-left: 0; }
+}
+.nav-burger { border-radius: var(--radius-pill); }
+.nav-burger-bar { position: absolute; inset: 0 0 auto; height: 1.5px; background: var(--color-ink); transition: transform var(--dur-3) var(--ease); }
+.nav-burger-bar-2 { inset: auto 0 0; }
+
+/* Readout: where the reader is. A ring fills with the story; the number rolls when it changes. */
+.nav-readout {
+  display: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  max-width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  border-radius: var(--radius-pill);
+  transition:
+    max-width var(--dur-4) var(--ease),
+    margin var(--dur-4) var(--ease),
+    opacity var(--dur-2) var(--ease);
+}
+.nav-readout[data-show] { max-width: 260px; margin-left: 8px; opacity: 1; }
+.nav-readout[data-mode="story"] { display: inline-flex; padding-right: 2px; }
+.nav-readout-rule { flex: none; width: 1px; height: 12px; margin-right: 4px; background: var(--color-line-strong); }
+.nav-readout-n { color: var(--tone-ink, var(--color-ink)); }
+.nav-readout-label { color: var(--color-ink-2); }
+.nav-roll { display: inline-block; animation: navRoll var(--dur-3) var(--ease) both; }
+@keyframes navRoll {
+  from { opacity: 0; transform: translateY(70%); }
+  to { opacity: 1; transform: none; }
+}
+.nav-ring { flex: none; width: 16px; height: 16px; transform: rotate(-90deg); }
+.nav-ring circle { fill: none; stroke-width: 2.4; }
+.nav-ring-track { stroke: var(--color-line); }
+.nav-ring-fill { stroke: var(--tone, var(--color-ink)); stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke var(--dur-3) var(--ease); }
+.nav-readout-caret { flex: none; width: 11px; height: 11px; fill: none; stroke: var(--color-ink-soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--dur-3) var(--ease); }
+.nav-readout[aria-expanded="true"] .nav-readout-caret { transform: rotate(180deg); }
+.nav-readout:hover .nav-readout-caret { stroke: var(--color-ink); }
+/* Phones (NAV-13): in the story the compact bar folds the wordmark to the mark and reads the chapter
+   in sentence case; tapping it opens the menu's chapter list. Past the story the dock names sections. */
+@media (max-width: 639px) {
+  .nav-pill[data-mini] .logo-word { max-width: 0; margin-left: 0; opacity: 0; }
+  .nav-readout[data-mode="story"] { gap: 6px; font-family: var(--font-sans); font-size: 12.5px; font-stretch: 100%; font-weight: 600; letter-spacing: -0.01em; text-transform: none; }
+  .nav-readout[data-mode="story"][data-show] { margin-left: 2px; }
+  .nav-readout-rule, .nav-readout-caret { display: none; }
+}
+@media (max-width: 379px) {
+  .nav-readout[data-mode="story"] .nav-ring { display: none; }
+}
+/* Tablets: no links on the bar, so past the story the readout names the section. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .nav-readout[data-mode="section"] { display: inline-flex; }
+}
+/* Desktop: the links name the section; the readout is the story's alone, and steps aside where the
+   centred links need its room. */
+@media (min-width: 1024px) and (max-width: 1179px) {
+  .nav-readout[data-mode] { display: none; }
+}
+
+.nav-links { position: absolute; left: 50%; translate: -50% 0; align-items: center; gap: 2px; }
+.nav-links a { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--radius-pill); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; white-space: nowrap; color: var(--color-ink-2); transition: color var(--dur-2) var(--ease); }
+.nav-links a:hover, .nav-links a[aria-current] { color: var(--color-ink); }
+.nav-links-hl { position: absolute; left: 0; top: 50%; height: 36px; margin-top: -18px; border-radius: var(--radius-pill); background: var(--color-sunken); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
+.nav-links-hl[data-glide] { transition: transform var(--dur-3) var(--ease), width var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease); }
+.nav-links-hl[data-show] { opacity: 1; }
+
+/* The CTA: solid ink; quiet (white, hairline) in the hero, whose own card carries the solid one. */
+.nav-cta { display: inline-flex; flex: none; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 18px; border-radius: var(--radius-pill); overflow: hidden; font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; white-space: nowrap; color: var(--color-on-ink); background: var(--color-ink); box-shadow: inset 0 0 0 1px transparent; transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), height var(--dur-3) var(--ease); }
+.nav-cta-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-pill); color: var(--color-ink); background: var(--color-surface); transition: transform var(--dur-4) var(--ease), background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), width var(--dur-3) var(--ease), height var(--dur-3) var(--ease); }
+.nav-cta[data-quiet] { color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-strong); }
+.nav-cta[data-quiet] .nav-cta-icon { color: var(--color-on-ink); background: var(--color-ink); }
+@media (hover: hover) {
+  .nav-cta:hover { color: var(--color-on-ink); background: var(--color-cobalt); box-shadow: inset 0 0 0 1px transparent; }
+  .nav-cta:hover .nav-cta-icon { transform: rotate(45deg); color: var(--color-cobalt); background: var(--color-surface); }
+}
+.nav-pill[data-compact] .nav-cta { height: 38px; }
+.nav-pill[data-compact] .nav-cta-icon { width: 28px; height: 28px; }
+@media (max-width: 639px) { .nav-cta { gap: 8px; padding-left: 14px; } }
+/* Narrow phones: a tighter CTA and logo keep clear air between the wordmark and the CTA. */
+@media (max-width: 379px) {
+  .nav-cta { gap: 6px; padding: 0 7px 0 12px; }
+  .nav-pill[data-compact] .nav-cta { padding-right: 5px; }
+  .nav-cta-icon, .nav-pill[data-compact] .nav-cta-icon { width: 28px; height: 28px; }
+  .nav-logo { padding-inline: 2px 4px; }
+}
+
+/* Entrance once the loader lifts: the bar drops in, then its links follow one by one. */
+html:not(.ready) .nav-pill { opacity: 0; }
+html.ready .nav-pill { animation: navIn var(--dur-5) var(--ease) both; }
+html.ready .nav-links a { animation: navItem var(--dur-4) var(--ease) both; animation-delay: calc(var(--dur-2) + var(--i) * var(--stagger)); }
+html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) var(--dur-3) both; }
+@keyframes navIn { from { opacity: 0; transform: translateY(-18px) scale(.97); } }
+@keyframes navItem { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------------- Nav glances: a preview of each section under the bar ---------------- */
+/* The panel is capped to the viewport it opens in (rules-check: allow vw-calc). */
+.nav-peek { position: absolute; top: calc(100% + 10px); width: min(820px, calc(100vw - 40px)); opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.98); transform-origin: var(--caret) 0; transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease), visibility 0s var(--dur-3), left var(--dur-3) var(--ease), width var(--dur-3) var(--ease); }
+/* rules-check: allow vw-calc */
+.nav-peek[data-wide] { width: min(840px, calc(100vw - 40px)); }
+.nav-peek[data-open] { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.nav-peek-caret { position: absolute; z-index: 0; top: -5px; left: clamp(28px, var(--caret), calc(100% - 28px)); width: 12px; height: 12px; margin-left: -6px; border-radius: 3px 0 0 0; background: var(--color-surface); box-shadow: -1px -1px 0 var(--color-line-strong); rotate: 45deg; transition: left var(--dur-3) var(--ease); }
+.nav-peek-body { position: relative; z-index: 1; height: var(--h); overflow: hidden; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-line-strong), var(--shadow-float); transition: height var(--dur-3) var(--ease); }
+.nav-peek-pane { position: absolute; top: 0; left: 0; right: 0; padding: 10px; opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
+.nav-peek-pane[data-from="left"] { transform: translateX(-32px); }
+.nav-peek-pane[data-from="right"] { transform: translateX(32px); }
+.nav-peek-pane[data-on] { opacity: 1; transform: none; pointer-events: auto; transition-delay: 60ms, 0s; }
+.nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: peekIn var(--dur-4) var(--ease) both; animation-delay: calc(40ms + var(--k) * 35ms); }
+@keyframes peekIn { from { opacity: 0; transform: translateY(8px); } }
+
+.peek-grid { display: grid; grid-template-columns: minmax(0, 1fr) 216px; gap: 10px; }
+.peek-list { display: grid; gap: 2px; align-content: start; }
+.peek-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 12px; border-radius: var(--radius-md); text-align: left; transition: background-color var(--dur-2) var(--ease); }
+.peek-row:hover, .peek-row:focus-visible { background: var(--color-wash); }
+.peek-row-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.peek-row-text b { font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; color: var(--color-ink); }
+.peek-arrow { flex: none; color: var(--color-ink); opacity: 0; transform: translateX(-6px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
+.peek-row:hover .peek-arrow, .peek-row:focus-visible .peek-arrow { opacity: 1; transform: none; }
+/* FAQ icons are neutral (D6): the questions carry no system meaning. */
+.peek-q-icon { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-sm); color: var(--color-ink-2); background: var(--color-sunken); transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
+.peek-q:hover .peek-q-icon, .peek-q:focus-visible .peek-q-icon { color: var(--color-on-ink); background: var(--color-ink); }
+
+.peek-side { display: flex; flex-direction: column; align-items: flex-start; min-height: 200px; padding: 18px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--edge-line); }
+.peek-side-label { margin-top: 6px; font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; }
+.peek-side-blurb { margin-top: 6px; font-size: var(--fs-small); line-height: 1.45; color: var(--color-ink-2); }
+.peek-go { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; margin-top: auto; padding: 0 14px; border-radius: var(--radius-pill); font-size: var(--fs-small); font-weight: 600; white-space: nowrap; color: var(--color-on-ink); background: var(--color-ink); transition: background-color var(--dur-2) var(--ease); }
+.peek-go svg { transition: transform var(--dur-3) var(--ease); }
+.peek-go:hover { background: var(--color-ink-2); }
+.peek-go:hover svg { transform: translateX(3px); }
+.peek-audit { color: var(--color-on-ink); background: var(--color-ink); box-shadow: none; }
+.peek-audit .peek-side-label { margin-top: 0; font-size: var(--fs-subtitle); font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+.peek-audit .peek-side-blurb { color: rgb(255 255 255 / .85); }
+.peek-audit .peek-go { margin-top: auto; color: var(--color-ink); background: var(--color-surface); }
+.peek-audit .peek-go:hover { color: var(--color-ink); background: var(--color-sunken); }
+.peek-audit .peek-go-quiet { margin-top: 6px; padding-left: 0; color: rgb(255 255 255 / .85); background: none; }
+.peek-audit .peek-go-quiet:hover { color: var(--color-on-ink); background: none; text-decoration: underline; text-underline-offset: 3px; }
+.peek-audit :focus-visible { outline-color: var(--color-on-ink); }
+
+/* Visual glances: each section previewed by the pictures it uses on the page, a strip below. */
+.peek-visual { display: grid; gap: 8px; }
+.peek-eyebrow { padding: 4px 6px 0; }
+.peek-tile { position: relative; display: grid; width: 100%; height: 100%; overflow: hidden; border-radius: var(--radius-md); text-align: left; transition: transform var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), background-color var(--dur-3) var(--ease); }
+.peek-tile:active { transform: scale(.985); }
+.peek-tile:hover, .peek-tile:focus-visible { background: var(--color-bg); box-shadow: var(--edge-strong); }
+
+.peek-areas { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.peek-areas li { grid-column: span 2; }
+.peek-areas li:nth-child(-n + 2) { grid-column: span 3; }
+.peek-area { align-content: end; gap: 2px; padding: 10px 14px 12px; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-strong); }
+.peek-area .peek-tile-chip { color: var(--color-ink-2); background: var(--color-bg); }
+.peek-area .area-art { display: block; width: 100%; max-width: none; height: 84px; margin: 0 0 6px; transition: transform var(--dur-4) var(--ease); }
+.peek-areas li:nth-child(-n + 2) .area-art { height: 104px; }
+.peek-area:hover .area-art { transform: scale(1.04); }
+.peek-tile-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.peek-tile-meta b { font-family: var(--font-heading); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; }
+.peek-tile-chip { flex: none; padding: 2px 8px; border-radius: var(--radius-pill); font: 600 11px var(--font-heading); }
+.peek-tile-hint { overflow: hidden; font-size: var(--fs-small); color: var(--color-ink-soft); text-overflow: ellipsis; white-space: nowrap; }
+
+.peek-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.peek-outcome { align-content: start; padding: 14px 16px 16px; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); }
+.peek-outcome-sector { font: 600 11px var(--font-heading); letter-spacing: 0.1em; text-transform: uppercase; color: var(--tone-ink, var(--color-ink-soft)); }
+.peek-outcome-value { margin-top: 8px; font-family: var(--font-heading); font-size: var(--fs-num-md); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--tone-ink, var(--color-ink)); }
+.peek-outcome .outcome-diagram { height: 74px; margin: 12px 0 10px; }
+.peek-outcome-label { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-2); }
+
+.peek-route { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.peek-step { align-content: start; gap: 3px; padding: 6px 6px 12px; background: var(--color-surface); box-shadow: var(--edge-line); }
+.peek-step .step-art { margin-bottom: 6px; padding: 6px; border-radius: var(--radius-sm); }
+.peek-step .peek-step-n, .peek-step b { padding-inline: 6px; }
+.peek-step b { font-family: var(--font-heading); font-size: var(--fs-body); font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; }
+.peek-step-n { font-family: var(--font-heading); font-size: 11px; font-weight: 600; color: var(--tone-ink, var(--color-ink)); }
+
+.peek-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 4px 2px 8px; }
+.peek-foot p { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.peek-foot b { font-family: var(--font-heading); font-size: var(--fs-num-md); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--color-ink); }
+.peek-foot span { flex: none; font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; }
+.peek-foot small { overflow: hidden; font-size: var(--fs-small); color: var(--color-ink-soft); text-overflow: ellipsis; white-space: nowrap; }
+.peek-foot .peek-go { margin-top: 0; }
+
+/* Story glance: three acts side by side, each chapter with its picture. */
+.peek-story { padding: 6px; }
+.peek-story-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 8px 8px 14px; border-bottom: 1px solid var(--color-line); }
+.peek-story-title { font-family: var(--font-heading); font-size: var(--fs-subtitle); font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+.peek-story-sub { margin-top: 3px; font-size: var(--fs-small); color: var(--color-ink-soft); }
+.peek-story-progress { flex: none; display: grid; justify-items: end; gap: 6px; font-family: var(--font-heading); font-size: 12px; font-weight: 600; color: var(--color-ink); }
+.peek-story-bar { display: block; width: 132px; height: 4px; overflow: hidden; border-radius: var(--radius-pill); background: var(--color-line); }
+.peek-story-bar span { display: block; height: 100%; background: var(--color-ink); transform: scaleX(var(--fill, 0)); transform-origin: left; }
+.peek-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.peek-act + .peek-act { border-left: 1px solid var(--color-line); padding-left: 6px; }
+.peek-act-name { display: flex; align-items: baseline; gap: 8px; padding: 2px 10px 8px; font-size: var(--fs-small); font-weight: 600; color: var(--color-ink-2); }
+.peek-act-name span { font-family: var(--font-heading); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+.peek-act ol { display: grid; gap: 6px; }
+.peek-act button { position: relative; display: grid; gap: 7px; width: 100%; padding: 6px 6px 11px; border-radius: var(--radius-md); text-align: left; color: var(--tone); background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
+.peek-act button:hover, .peek-act button:focus-visible { background: var(--color-bg); box-shadow: var(--edge-strong); }
+.peek-act button:active { transform: scale(.985); }
+.peek-act [data-here] button { background: var(--color-bg); box-shadow: var(--edge-selected); }
+.peek-chapter-top { display: flex; align-items: baseline; gap: 7px; padding-inline: 6px; }
+.peek-chapter-top b { font-family: var(--font-heading); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; color: var(--color-ink); }
+.peek-chapter-now { display: none; margin-left: auto; padding: 1px 7px; border-radius: var(--radius-pill); font: normal 600 11px var(--font-heading); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-on-ink); background: var(--color-ink); }
+.peek-act [data-here] .peek-chapter-now { display: inline-block; }
+.peek-act [data-read] .chapter-art { opacity: .78; }
+
+/* ---------------- Chapter pictures (ChapterArt): the 3D's objects, flat, on one ground line ---------------- */
+.chapter-art { display: block; width: 100%; height: 76px; overflow: visible; border-radius: var(--radius-sm); background: var(--color-surface); transition: opacity var(--dur-3) var(--ease); }
+/* 11px on screen at any scale (--k is the drawing's scale, set by ChapterArt). */
+.chapter-art text { font: 600 calc(11px / var(--k, 1)) var(--font-heading); letter-spacing: .02em; fill: var(--color-ink-2); }
+.chapter-art .ca-on { fill: var(--color-on-ink); }
+.chapter-art .ca-fill { fill: currentColor; }
+.chapter-art .ca-soft { fill-opacity: .42; }
+.chapter-art .ca-shade { fill: var(--color-ink); fill-opacity: .2; }
+.chapter-art .ca-ground { fill: none; stroke: var(--color-line-strong); stroke-width: 1.2; stroke-linecap: round; }
+.chapter-art .ca-track { fill: var(--color-track); }
+.chapter-art .ca-line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chapter-art .ca-faint { fill: none; stroke: var(--color-ink-soft); stroke-opacity: .45; stroke-width: 1.2; stroke-linecap: round; }
+.chapter-art .ca-edge { stroke: var(--color-line-strong); stroke-width: 1.2; }
+.chapter-art .ca-edge-ink { stroke: var(--color-line-strong); stroke-width: 1; }
+.chapter-art .ca-tick { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.chapter-art .ca-risk { fill: none; stroke: var(--color-signal); stroke-width: 1.4; }
+.chapter-art .ca-risk-fill { fill: var(--color-signal); }
+.chapter-art text.ca-risk-text { fill: var(--color-signal-ink); }
+.chapter-art .ca-bar { transform-box: fill-box; transform-origin: bottom; }
+.chapter-art .ca-deal { transition: transform var(--dur-4) var(--ease); }
+.chapter-art .ca-draw { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.chapter-art .ca-flow { stroke-dasharray: 3 4; }
+@keyframes ca-bob { 50% { transform: translateY(-3px); } }
+@keyframes ca-blink { 50% { opacity: .35; } }
+@keyframes ca-grow { from { transform: scaleY(.2); } }
+@keyframes ca-draw { from { stroke-dashoffset: 1; } }
+@keyframes ca-flow { to { stroke-dashoffset: -14; } }
+@keyframes ca-press { 50% { transform: scale(.94); } }
+@keyframes ca-pop { 50% { transform: scale(1.1); } }
+@keyframes ca-pass { to { transform: translateX(var(--run)); } }
+/* Motion only on the tile being pointed at, or the chapter being read; the rest hold still. */
+:is(.peek-act button:hover, .peek-act [data-here] button, .peek-act button:focus-visible) .chapter-art,
+.chapter-art[data-live] {
+  .ca-bob { animation: ca-bob 2.4s ease-in-out infinite; animation-delay: calc(var(--i) * -.4s); }
+  .ca-blink { animation: ca-blink 1.2s var(--ease) infinite; }
+  .ca-bar { animation: ca-grow var(--dur-4) var(--ease) both; animation-delay: calc(var(--i) * 50ms); }
+  .ca-draw { animation: ca-draw var(--dur-5) var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms); }
+  .ca-flow { animation: ca-flow 1.2s linear infinite; }
+  .ca-press { transform-box: fill-box; transform-origin: center; animation: ca-press 1.6s var(--ease) infinite; }
+  .ca-pop { transform-box: fill-box; transform-origin: center; animation: ca-pop 1.8s var(--ease) infinite; }
+  .ca-pass { animation: ca-pass 16s linear infinite; }
+  .ca-deal { transform: translateY(calc((2 - var(--i)) * (2 - var(--i)) * -1px - 2px)); }
+}
+@media (prefers-reduced-motion: reduce) { .chapter-art * { animation: none !important; } }
+
+/* ---------------- Phone and tablet menu: a dialog on the page grid ---------------- */
+.nav-menu {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-menu);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--color-bg);
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  transition: clip-path var(--dur-3) var(--ease), visibility 0s var(--dur-3);
+}
+.nav-menu[data-open] { clip-path: inset(0); visibility: visible; transition: clip-path var(--dur-4) var(--ease), visibility 0s; }
+/* The list scrolls below the bar, never under it. */
+.nav-menu-body { flex: 1; min-height: 0; display: grid; align-content: start; gap: 32px; margin-top: 76px; padding: 12px var(--edge) 24px; overflow-y: auto; overscroll-behavior: contain; }
+.nav-menu-group { opacity: 0; transform: translateY(12px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
+.nav-menu[data-open] .nav-menu-group { opacity: 1; transform: none; transition: opacity var(--dur-4) var(--ease), transform var(--dur-4) var(--ease); transition-delay: calc(var(--dur-1) + var(--i) * var(--stagger)); }
+.nav-menu-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--color-line); }
+.nav-menu-head .tabular { color: var(--color-ink); }
+.nav-menu-chapters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+.nav-menu-chapters button { display: grid; align-content: center; gap: 3px; width: 100%; min-height: 52px; padding: 6px 12px; border-radius: var(--radius-sm); text-align: left; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
+.nav-menu-chapters button[aria-current] { background: var(--color-sunken); box-shadow: none; }
+.nav-menu-chapters button:active { background: var(--color-sunken); }
+.nav-menu-n { font-family: var(--font-heading); font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--tone-ink, var(--color-ink-soft)); }
+.nav-menu-links li { border-bottom: 1px solid var(--color-line); }
+.nav-menu-link { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+.nav-menu-link .nav-menu-n { align-self: flex-start; margin-top: 6px; color: var(--color-ink-soft); }
+.nav-menu-areas li { border-bottom: 1px solid var(--color-line); }
+.nav-menu-area { display: flex; align-items: center; gap: 12px; min-height: 52px; font-size: var(--fs-lede); font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
+.nav-menu-area i { flex: none; width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--tone, var(--color-ink)); }
+.nav-menu-area svg { margin-left: auto; color: var(--color-ink-soft); transition: transform var(--dur-2) var(--ease); }
+.nav-menu-area:active svg { transform: translateX(3px); }
+.nav-menu-cta { flex: none; padding: 12px var(--edge) max(16px, env(safe-area-inset-bottom)); background: var(--color-bg); box-shadow: inset 0 1px 0 var(--color-line); }
+.nav-menu-cta .btn { justify-content: center; width: 100%; min-height: 52px; }
+
+/* ---------------- CTA pill (1024px and up): the CTA rises here while the nav steps aside ---------------- */
+.cta-pill {
+  position: fixed;
+  z-index: var(--z-dock);
+  left: 50%;
+  bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  padding: 0 7px 0 22px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--edge-strong), var(--shadow-float);
+  opacity: 0;
+  visibility: hidden;
+  translate: -50% calc(100% + 32px);
+  transition: translate var(--dur-4) var(--ease), opacity var(--dur-2) var(--ease), visibility 0s var(--dur-4);
+}
+.cta-pill[data-show] { opacity: 1; visibility: visible; translate: -50% 0; transition: translate var(--dur-4) var(--ease), opacity var(--dur-2) var(--ease), visibility 0s; }
+.cta-pill p { font-size: var(--fs-small); font-weight: 600; white-space: nowrap; color: var(--color-ink-2); }
+@media (max-width: 1023px) {
+  .cta-pill { display: none; }
+}
+
+/* ---------------- Phone dock (below 1024px): the sections and the CTA once the nav steps aside ---------------- */
+.phone-dock {
+  position: fixed;
+  z-index: var(--z-dock);
+  left: var(--edge);
+  right: var(--edge);
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  padding: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--edge-strong), var(--shadow-float);
+  visibility: hidden;
+  translate: 0 calc(100% + 24px);
+  transition: translate var(--dur-4) var(--ease), visibility 0s var(--dur-4);
+}
+.phone-dock[data-show] { visibility: visible; translate: 0 0; transition: translate var(--dur-4) var(--ease), visibility 0s; }
+@media (min-width: 640px) {
+  .phone-dock { left: 50%; right: auto; width: min(520px, 100% - 2 * var(--gutter)); translate: -50% calc(100% + 24px); }
+  .phone-dock[data-show] { translate: -50% 0; }
+}
+@media (min-width: 1024px) {
+  .phone-dock { display: none; }
+}
+.phone-dock .seg { flex: 1; display: flex; min-width: 0; padding: 0; }
+.phone-dock .seg-pill { top: 0; bottom: 0; }
+.phone-dock .seg-item { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 44px; padding: 0 4px; font-size: 12.5px; }
+.phone-dock-cta { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 44px; padding: 0 14px 0 16px; border-radius: var(--radius-pill); font-size: var(--fs-small); font-weight: 600; color: var(--color-on-ink); background: var(--color-ink); }
+.phone-dock .seg-item:active, .phone-dock-cta:active { scale: .97; }
+
+/* ---------------- Chapter rail (1024px and up, 560px tall and up) ---------------- */
+.chapter-rail {
+  --rail-p: 24px;
+  --rail-s: 24px;
+  --rail-g: 12px;
+  --rail-h: calc((9 + var(--n, 5)) * var(--rail-p) + var(--rail-g));
+  --rail-x: calc(8 * var(--rail-s));
+  position: fixed;
+  z-index: var(--z-rail);
+  left: max(4px, calc(var(--edge) / 2 - 12px));
+  /* Centred, but high enough that the application dots can open below without leaving the screen. */
+  top: clamp(72px, calc(50% - var(--rail-h) / 2), calc(100% - var(--rail-h) - var(--rail-x) - 16px));
+  display: none;
+  width: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-2) var(--ease), visibility 0s var(--dur-2);
+}
+@media (min-width: 1024px) and (min-height: 560px) {
+  .chapter-rail { display: block; }
+}
+@media (max-height: 679px) {
+  .chapter-rail { --rail-s: 20px; }
+}
+.chapter-rail[data-show] { opacity: 1; visibility: visible; transition: opacity var(--dur-3) var(--ease) var(--dur-4), visibility 0s; }
+.chapter-rail-list { position: relative; }
+.chapter-rail-gap { height: var(--rail-g); }
+.chapter-rail-item { display: grid; place-items: center; width: 24px; height: var(--rail-p); border-radius: var(--radius-pill); cursor: pointer; }
+.chapter-rail-item i { width: 6px; height: 6px; border-radius: var(--radius-pill); background: rgb(15 18 23 / 0.22); transition: background-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
+.chapter-rail-item[data-passed] i, .chapter-rail-item[data-parent] i { background: rgb(15 18 23 / 0.5); }
+.chapter-rail-item:hover i, .chapter-rail-item:focus-visible i { background: var(--color-ink); transform: scale(1.34); }
+.chapter-rail-item:focus-visible { outline-offset: 0; border-radius: var(--radius-pill); }
+.chapter-rail-sub { height: 0; overflow: hidden; transition: height var(--dur-3) var(--ease); }
+.chapter-rail[data-open] .chapter-rail-sub { height: var(--rail-x); }
+.chapter-rail-sub .chapter-rail-item { height: var(--rail-s); }
+.chapter-rail-sub .chapter-rail-item i { width: 4px; height: 4px; }
+/* The one marker: a solid pill in the chapter's colour (no text on it, D5), ink for sections. */
+.chapter-rail-pill { position: absolute; z-index: 1; top: 0; left: 9px; width: 6px; height: 16px; border-radius: var(--radius-pill); background: var(--tone, var(--color-ink)); transform: translateY(calc(var(--y, 12px) - 8px)); pointer-events: none; transition: background-color var(--dur-3) var(--ease); }
+.chapter-rail-pill[data-glide] { transition: transform var(--dur-3) var(--ease), height var(--dur-2) var(--ease), width var(--dur-2) var(--ease), left var(--dur-2) var(--ease), background-color var(--dur-3) var(--ease); }
+.chapter-rail-pill[data-sub] { left: 10px; width: 4px; height: 12px; transform: translateY(calc(var(--y, 12px) - 6px)); }
+/* Hover or focus names the dot: number, name and one line, on a plain white pill. */
+.chapter-rail-label { position: absolute; top: 0; left: 30px; display: flex; align-items: center; gap: 8px; height: 30px; max-width: 420px; padding: 0 14px 0 12px; border-radius: var(--radius-pill); white-space: nowrap; background: var(--color-surface); box-shadow: var(--edge-strong); pointer-events: none; opacity: 0; transform: translate(-4px, calc(var(--y, 0px) - 15px)); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
+.chapter-rail-label[data-show] { opacity: 1; transform: translate(0, calc(var(--y, 0px) - 15px)); }
+.chapter-rail-n { font-family: var(--font-heading); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--tone-ink, var(--color-ink)); }
+.chapter-rail-label b { font-size: var(--fs-small); font-weight: 600; color: var(--color-ink); }
+.chapter-rail-blurb { overflow: hidden; font-size: 12.5px; text-overflow: ellipsis; color: var(--color-ink-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  html.ready .nav-pill, html.ready .nav-links a, html.ready .nav-pill > .nav-cta, .nav-roll, .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: none; }
+  .nav-shell, .nav-pill, .nav-readout, .nav-peek, .nav-peek-body, .nav-peek-pane, .nav-peek-caret, .nav-links-hl[data-glide], .logo-word,
+  .nav-menu, .nav-menu[data-open], .nav-menu-group, .nav-menu[data-open] .nav-menu-group, .chapter-rail-pill[data-glide], .chapter-rail-sub, .chapter-rail-label { transition-duration: 0ms; transition-delay: 0ms; }
+  .cta-pill, .cta-pill[data-show] { translate: -50% 0; transition: opacity var(--dur-1) linear, visibility 0s; }
+  .phone-dock, .phone-dock[data-show] { translate: 0 0; transition: opacity var(--dur-1) linear, visibility 0s; }
+  .phone-dock:not([data-show]) { opacity: 0; }
+  @media (min-width: 640px) {
+    .phone-dock, .phone-dock[data-show] { translate: -50% 0; }
+  }
+}
+
+/* ---------------- Page foot (app/page.tsx): the footer sits outside <main>, still on the sheet ---------------- */
+.page-foot {
+  position: relative;
+  z-index: var(--z-editorial);
+  display: flow-root;
+  background: var(--color-bg);
+}

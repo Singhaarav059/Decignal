@@ -1,32 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getLenis, scrollToTarget } from "./SmoothScroll";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type PointerEvent } from "react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { Logo } from "./ui/Logo";
 import { Arrow } from "./ui/Arrow";
-import { ArrowUpRight } from "lucide-react";
-import { CHAPTERS, blendAt, store, subscribe } from "@/lib/story";
-import { toneVar } from "./story/chapters";
-import { pageBox, viewTop } from "@/lib/offsets";
-import { NavPeek, PEEKS, type PeekId } from "./NavPeek";
+import { SectionLink } from "./ui/SectionLink";
+import { AuditLink, plainClick } from "./CtaPill";
+import { CHAPTERS, store as story, subscribe, weight } from "@/lib/story";
+import { setChrome, useChrome, type ChromeSection } from "@/lib/chrome";
+import { getLenis, jumpTo, token } from "@/lib/jump";
+import { AREAS } from "@/lib/areas";
+import { CTA, FOOTER, NAV, STORY_PEEK } from "@/lib/copy";
+import { toneVars } from "@/lib/tone";
+import { TONE, goToChapter } from "./story/chapters";
+import { NavPeek, PEEKS, type PeekId, type SectionPeek } from "./NavPeek";
 
-const SECTIONS = [
-  ["applications", "Applications"],
-  ["outcomes", "Outcomes"],
-  ["how", "How it works"],
-  ["faq", "FAQ"],
-  ["audit", "Free audit"],
-] as const;
+const PEEK_OF: Record<string, SectionPeek> = { applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
+/** The four section links (the audit is the CTA). */
+const LINKS = NAV.sections.filter(([id]) => id !== "audit").map(([id, label]) => ({ id, label, peek: PEEK_OF[id] }));
 
-const LINKS = [
-  ["Applications", "#applications", "apps"],
-  ["Outcomes", "#outcomes", "outcomes"],
-  ["How it works", "#how", "how"],
-  ["FAQ", "#faq", "faq"],
-] as const;
+const pad = (n: number) => String(n).padStart(2, "0");
+const chapterTone = (i: number) => TONE[i] || "ink";
+const fine = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+const wide = () => window.matchMedia("(min-width: 1024px)").matches;
 
-/** Each link keeps its section's colour. */
-const LINK_TONES = ["cobalt", "emerald", "violet", "tangerine"];
+/** One value derived from the story position, re-rendering only when it changes. */
+function useStoryValue<T>(select: (g: number) => T, fallback: T): T {
+  return useSyncExternalStore(subscribe, () => select(story.g), () => fallback);
+}
 
 /** Hover intent: a short wait before the first preview opens, none when moving between links, and a
  *  grace period on leaving so the pointer can travel down into the panel. */
@@ -59,53 +62,42 @@ const ringX = (el: HTMLElement) => {
   return r.left + r.width / 2;
 };
 
-const fine = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+/** Focus the first control in an open glance. */
+const focusPeek = (id: PeekId) =>
+  window.setTimeout(() => document.querySelector<HTMLElement>(`#peek-${id} :is(a[href], button)`)?.focus(), 140);
 
-/** Primary links sit straight on the bar. A lit pill glides to the hovered link and rests on the
- *  section being read; hovering opens a glance of that section below the bar. */
+/** Primary links sit straight on the bar. A sunken pill glides to the hovered link and rests on the
+ *  section being read; hovering (or ArrowDown) opens a glance of that section below the bar. */
 function NavLinks({
-  go,
+  hrefFor,
+  active,
   peek,
   onPeek,
   onLeave,
   onBox,
+  onDone,
 }: {
-  go: (href: string) => void;
+  hrefFor: (id: string) => string;
+  active: string | null;
   peek: PeekId | null;
   onPeek: (id: PeekId) => void;
   onLeave: () => void;
   onBox: (x: number) => void;
+  onDone: () => void;
 }) {
   const root = useRef<HTMLElement>(null);
-  const [active, setActive] = useState(-1);
   const [hover, setHover] = useState(-1);
   const [box, setBox] = useState({ x: 0, w: 0, ready: false });
-  useEffect(() => {
-    const on = () => {
-      const vh = window.innerHeight;
-      let found = -1;
-      LINKS.forEach(([, href], i) => {
-        const el = document.querySelector(href);
-        if (el && viewTop(el) < vh * 0.45) found = i;
-      });
-      const audit = document.getElementById("audit");
-      if (audit && viewTop(audit) < vh * 0.45) found = -1;
-      setActive(found);
-    };
-    on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
-  }, []);
+  const current = LINKS.findIndex((l) => l.id === active);
+  const open = peek ? LINKS.findIndex((l) => l.peek === peek) : -1;
+  const lit = hover >= 0 ? hover : open >= 0 ? open : current;
 
-  const open = peek ? LINKS.findIndex((l) => l[2] === peek) : -1;
-  const lit = hover >= 0 ? hover : open >= 0 ? open : active;
   useLayoutEffect(() => {
-    const b = root.current?.querySelectorAll<HTMLElement>("button")[lit];
-    if (b) {
-      setBox((p) => ({ x: b.offsetLeft, w: b.offsetWidth, ready: p.ready || p.w > 0 }));
-      const nav = root.current!.getBoundingClientRect();
-      onBox(nav.left + b.offsetLeft + b.offsetWidth / 2);
-    }
+    const b = root.current?.querySelectorAll<HTMLElement>("a")[lit];
+    if (!b) return;
+    setBox((p) => ({ x: b.offsetLeft, w: b.offsetWidth, ready: p.ready || p.w > 0 }));
+    const nav = root.current!.getBoundingClientRect();
+    onBox(nav.left + b.offsetLeft + b.offsetWidth / 2);
   }, [lit, onBox]);
 
   return (
@@ -122,82 +114,161 @@ function NavLinks({
         className="nav-links-hl"
         data-show={lit >= 0 || undefined}
         data-glide={box.ready || undefined}
-        style={{ transform: `translateX(${box.x}px)`, width: box.w, ["--tone" as string]: lit >= 0 ? `var(--color-${LINK_TONES[lit]})` : undefined }}
+        style={{ transform: `translateX(${box.x}px)`, width: box.w }}
         aria-hidden
       />
-      {LINKS.map(([label, href, id], i) => (
-        <button
-          key={href}
-          style={{ ["--tone" as string]: `var(--color-${LINK_TONES[i]})`, ["--i" as string]: i }}
-          onClick={() => go(href)}
-          onPointerEnter={(e) => {
+      {LINKS.map(({ id, label, peek: pid }, i) => (
+        <SectionLink
+          key={id}
+          href={hrefFor(id)}
+          data-peek-link={pid}
+          style={{ ["--i" as string]: i }}
+          onDone={onDone}
+          onPointerEnter={(e: PointerEvent) => {
             if (e.pointerType !== "mouse" || !fine()) return;
             setHover(i);
-            onPeek(id);
+            onPeek(pid);
           }}
           onFocus={() => setHover(i)}
           onBlur={() => setHover(-1)}
           onKeyDown={(e) => {
             if (e.key !== "ArrowDown") return;
             e.preventDefault();
-            onPeek(id);
-            window.setTimeout(() => document.querySelector<HTMLElement>(`#peek-${id} button`)?.focus(), 140);
+            onPeek(pid);
+            focusPeek(pid);
           }}
-          aria-current={i === active ? "true" : undefined}
-          aria-expanded={peek === id}
-          aria-controls={`peek-${id}`}
+          aria-current={i === current ? "location" : undefined}
+          aria-keyshortcuts="ArrowDown"
         >
-          <i aria-hidden />
           {label}
-        </button>
+        </SectionLink>
       ))}
     </nav>
   );
 }
 
-export function Nav() {
-  const [solid, setSolid] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  const [compact, setCompact] = useState(false);
-  const [inStory, setInStory] = useState(true);
+/** Where the reader is, beside the logo. In the story a ring fills with progress and the readout opens
+ *  the chapter list (the glance at 1024px and up, the menu below). Past the story it names the section
+ *  where the links are hidden (640 to 1023px). The number and name roll when they change. */
+function Readout({
+  show,
+  mode,
+  chapter,
+  sectionLabel,
+  expanded,
+  onPeek,
+  onLeave,
+  onOpen,
+}: {
+  show: boolean;
+  mode: "story" | "section";
+  chapter: number;
+  sectionLabel: string;
+  expanded: boolean;
+  onPeek: (e: PointerEvent) => void;
+  onLeave: () => void;
+  onOpen: (e: MouseEvent) => void;
+}) {
+  const ring = useRef<SVGCircleElement>(null);
+  const isStory = mode === "story";
+  useEffect(() => {
+    if (!isStory) return;
+    return subscribe((g) => {
+      ring.current?.style.setProperty("stroke-dashoffset", String(1 - Math.min(Math.max(g / (CHAPTERS.length - 1), 0), 1)));
+    });
+  }, [isStory]);
+
+  if (!isStory) {
+    return (
+      <span className="nav-readout t-label" data-mode="section" data-show={(show && !!sectionLabel) || undefined}>
+        <span className="nav-readout-rule" aria-hidden />
+        <span key={sectionLabel} className="nav-roll">
+          {sectionLabel}
+        </span>
+      </span>
+    );
+  }
+  const n = pad(chapter + 1);
+  return (
+    <button
+      type="button"
+      className="nav-readout t-label"
+      data-mode="story"
+      data-show={show || undefined}
+      style={toneVars(chapterTone(chapter))}
+      onPointerEnter={onPeek}
+      onPointerLeave={onLeave}
+      onClick={onOpen}
+      aria-expanded={expanded}
+      aria-label={`Chapter ${n}, ${CHAPTERS[chapter].label}. Show all chapters`}
+      tabIndex={show ? 0 : -1}
+    >
+      <span className="nav-readout-rule" aria-hidden />
+      <svg className="nav-ring" viewBox="0 0 20 20" aria-hidden>
+        <circle cx="10" cy="10" r="7.5" className="nav-ring-track" />
+        <circle ref={ring} cx="10" cy="10" r="7.5" pathLength={1} className="nav-ring-fill" />
+      </svg>
+      <span key={`n${chapter}`} className="nav-roll nav-readout-n tabular">
+        {n}
+      </span>
+      <span key={`l${chapter}`} className="nav-roll nav-readout-label">
+        {CHAPTERS[chapter].label}
+      </span>
+      <svg className="nav-readout-caret" viewBox="0 0 12 12" aria-hidden>
+        <path d="M3 4.5 6 7.5 9 4.5" />
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * The site header. variant "home" carries the story readout and its chapter glance; "page" (service
+ * pages) is the same bar whose links reach home sections through /#id. Reads where the reader is from
+ * the shared chrome store (lib/chrome.ts); it adds no scroll listener of its own.
+ */
+export function Nav({ variant = "home", sections }: { variant?: "home" | "page"; sections?: ChromeSection[] }) {
+  const home = variant === "home";
+  const path = usePathname();
+  const navHidden = useChrome((s) => s.navHidden);
+  const inStory = useChrome((s) => s.inStory);
+  const chapter = useChrome((s) => s.chapter);
+  const section = useChrome((s) => s.section);
+  const sectionLabel = useChrome((s) => s.sectionLabel);
+  const compact = useChrome((s) => s.scrolled);
   const [open, setOpen] = useState(false);
   const [caret, setCaret] = useState(0);
   const { peek, open: openPeek, close: closePeek, hold } = usePeek();
-  const bar = useRef<HTMLDivElement>(null);
+  const shell = useRef<HTMLElement>(null);
+  const burger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const storyMode = home && inStory;
+  // One solid CTA on screen: the nav's goes quiet in the hero (its card holds one) and while the audit
+  // form or the footer, each with its own, is in view.
+  const heroQuiet = useStoryValue((g) => weight(0, g) > 0.6, true) && storyMode;
+  const endQuiet = useChrome((s) => !s.inStory && (s.auditNear || s.footerNear));
+  const hidden = navHidden && !open;
 
+  const hrefFor = useCallback(
+    (id: string) => (home || sections?.some((s) => s.id === id) ? `#${id}` : `/#${id}`),
+    [home, sections],
+  );
+
+  // Pages without the loader are ready at once (the bar fades in on html.ready).
   useEffect(() => {
-    const story = document.getElementById("story");
-    let lastY = window.scrollY;
-    const on = () => {
-      const y = window.scrollY;
-      const past = !!story && y > pageBox(story).height - window.innerHeight * 0.5;
-      const journey = document.querySelector(".application-journey");
-      const application = journey ? pageBox(journey) : null;
-      const readingApplication = !!application && application.top - y < 80 && application.top + application.height - y >= window.innerHeight;
-      setSolid(past);
-      setInStory(!past);
-      setCompact(y > 48);
-      // Past the story the nav steps aside while reading down, and returns on the way up.
-      if (Math.abs(y - lastY) > 6) {
-        setHidden(past && y > lastY && !readingApplication);
-        lastY = y;
-      }
-    };
-    on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
-  }, []);
+    if (!home) document.documentElement.classList.add("ready");
+  }, [home]);
 
-  // A glance closes on Escape, on a press outside the nav, or once the page has moved on under it.
+  // A glance closes on Escape (focus back on its link), on a press outside the nav, or once the page
+  // has moved on under it.
   useEffect(() => {
     if (!peek) return;
     const y0 = window.scrollY;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       closePeek(true);
-      document.querySelector<HTMLElement>(`[aria-controls="peek-${peek}"]`)?.focus();
+      document.querySelector<HTMLElement>(peek === "story" ? ".nav-readout[data-mode=story]" : `[data-peek-link="${peek}"]`)?.focus();
     };
-    const onDown = (e: PointerEvent) => !(e.target as Element).closest(".nav-shell") && closePeek(true);
+    const onDown = (e: globalThis.PointerEvent) => !(e.target as Element).closest(".nav-shell") && closePeek(true);
     const onScroll = () => Math.abs(window.scrollY - y0) > 60 && closePeek(true);
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onDown);
@@ -213,90 +284,183 @@ export function Nav() {
     if (hidden) closePeek(true);
   }, [hidden, closePeek]);
 
+  // The menu is a modal dialog: the page behind is inert and still, Tab stays between the menu and the
+  // close button, Escape or a desktop-width resize closes it, and focus returns to the burger.
   useEffect(() => {
-    const l = getLenis();
-    if (open) l?.stop();
-    else l?.start();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    setChrome({ menuOpen: open });
+    if (!open) return;
+    const lenis = getLenis();
+    lenis?.stop();
+    const box = menu.current;
+    const back = burger.current;
+    const keep = [shell.current, box];
+    const made: Element[] = [];
+    for (const el of Array.from(document.body.children)) {
+      if (el.hasAttribute("inert") || /^(SCRIPT|STYLE|NOSCRIPT)$/.test(el.tagName) || keep.some((k) => k && el.contains(k))) continue;
+      el.setAttribute("inert", "");
+      made.push(el);
+    }
+    const first = box?.querySelector<HTMLElement>("a[href], button");
+    first?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return setOpen(false);
+      if (e.key !== "Tab") return;
+      const list = [back, ...Array.from(box?.querySelectorAll<HTMLElement>("a[href], button") ?? [])].filter(
+        (el): el is HTMLElement => !!el && el.offsetParent !== null,
+      );
+      const at = list.indexOf(document.activeElement as HTMLElement);
+      e.preventDefault();
+      list[(at + (e.shiftKey ? -1 : 1) + list.length) % list.length]?.focus();
+    };
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onWide = () => mq.matches && setOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    mq.addEventListener("change", onWide);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      mq.removeEventListener("change", onWide);
+      made.forEach((el) => el.removeAttribute("inert"));
+      lenis?.start();
+      if (box?.contains(document.activeElement) || document.activeElement === document.body) back?.focus({ preventScroll: true });
+    };
   }, [open]);
+  useEffect(() => () => setChrome({ menuOpen: false }), []);
 
-  const go = (href: string | number) => {
+  // The live story percentage in the menu.
+  const pct = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open || !home) return;
+    return subscribe((g) => {
+      if (pct.current) pct.current.textContent = `${Math.round(Math.min(Math.max(g / (CHAPTERS.length - 1), 0), 1) * 100)}%`;
+    });
+  }, [open, home]);
+
+  const closeAll = useCallback(() => {
     setOpen(false);
     closePeek(true);
-    // Let the menu start closing before the page moves.
-    setTimeout(() => scrollToTarget(href), open ? 260 : 0);
+  }, [closePeek]);
+  // Let the menu start closing before the story moves.
+  const toChapter = (i: number) => {
+    closeAll();
+    window.setTimeout(() => goToChapter(i), open ? token("--dur-3", 320) : 0);
   };
 
   const onBox = useCallback((x: number) => setCaret(x), []);
 
   return (
     <>
+      <a
+        href="#main"
+        className="skip-link"
+        onClick={(e) => {
+          if (!plainClick(e)) return;
+          e.preventDefault();
+          // Home: past the story to the first editorial heading. Other pages: the main landmark.
+          const editorial = home ? document.querySelector<HTMLElement>(".editorial") : null;
+          const heading = editorial?.querySelector<HTMLElement>("h2");
+          void jumpTo(editorial ?? "#main", { focus: heading ?? true });
+        }}
+      >
+        Skip to content
+      </a>
       <header
-        className="nav-shell fixed inset-x-0 top-0 z-50 transition-transform duration-500 ease-[var(--ease-out-expo)]"
-        style={{ transform: hidden && !open ? "translateY(-110%)" : "none" }}
+        ref={shell}
+        className="nav-shell"
+        data-hidden={hidden || undefined}
+        onFocusCapture={() => navHidden && setChrome({ navHidden: false })}
       >
         <div
-          ref={bar}
           data-compact={compact && !open ? "" : undefined}
-          data-solid={solid || open || compact ? "" : undefined}
+          data-solid={!storyMode || open || compact ? "" : undefined}
           data-peek={peek ? "" : undefined}
-          className="nav-pill relative mx-3 mt-3 flex h-14 items-center justify-between gap-3 rounded-full pr-2 pl-3 md:mx-5 md:pl-5"
+          data-mini={compact && storyMode && !open ? "" : undefined}
+          className="nav-pill relative flex items-center justify-between gap-3 rounded-full"
         >
-          {/* Light layer: the bar's glass, and a sweep of the section's colour each time the reader moves on. */}
-          <span className="nav-glass" aria-hidden />
+          <span className="nav-surface" aria-hidden />
 
           <div className="relative flex min-w-0 items-center gap-1">
             <button
+              ref={burger}
+              type="button"
               onClick={() => setOpen((o) => !o)}
-              className="flex size-10 items-center justify-center rounded-full lg:hidden"
+              className="nav-burger flex size-11 flex-none items-center justify-center rounded-full lg:hidden"
               aria-expanded={open}
               aria-controls="menu"
+              aria-label={open ? NAV.menuClose : NAV.menuOpen}
             >
               <span className="relative block h-2.5 w-5" aria-hidden>
-                <span
-                  className="absolute inset-x-0 top-0 h-[1.5px] bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
-                  style={{ transform: open ? "translateY(4.5px) rotate(45deg)" : "none" }}
-                />
-                <span
-                  className="absolute inset-x-0 bottom-0 h-[1.5px] bg-ink transition-transform duration-500 ease-[var(--ease-out-expo)]"
-                  style={{ transform: open ? "translateY(-4.5px) rotate(-45deg)" : "none" }}
-                />
+                <span className="nav-burger-bar" style={{ transform: open ? "translateY(4.5px) rotate(45deg)" : "none" }} />
+                <span className="nav-burger-bar nav-burger-bar-2" style={{ transform: open ? "translateY(-4.5px) rotate(-45deg)" : "none" }} />
               </span>
-              <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
             </button>
-            <button onClick={() => go(0)} aria-label="Decignal, back to top" className="nav-logo flex items-center">
-              <Logo size={22} />
-            </button>
-            <Readout
-              show={compact && !open}
-              inStory={inStory}
-              expanded={peek === "story"}
-              onPeek={(e) => {
-                if (e.pointerType !== "mouse" || !fine()) return;
-                setCaret(ringX(e.currentTarget as HTMLElement));
-                openPeek("story");
-              }}
-              onLeave={() => closePeek()}
+            <Link
+              href="/"
+              aria-label={NAV.logoAria}
+              className="nav-logo flex items-center rounded-full"
               onClick={(e) => {
-                if (peek === "story") return closePeek(true);
-                setCaret(ringX(e.currentTarget as HTMLElement));
-                openPeek("story");
+                setOpen(false);
+                if (!home || !plainClick(e)) return;
+                e.preventDefault();
+                void jumpTo(0, { focus: false });
               }}
-            />
+            >
+              <Logo size={22} />
+            </Link>
+            {home ? (
+              <Readout
+                show={compact && !open}
+                mode={inStory ? "story" : "section"}
+                chapter={chapter}
+                sectionLabel={sectionLabel}
+                expanded={peek === "story"}
+                onPeek={(e) => {
+                  if (e.pointerType !== "mouse" || !fine() || !wide()) return;
+                  setCaret(ringX(e.currentTarget as HTMLElement));
+                  openPeek("story");
+                }}
+                onLeave={() => closePeek()}
+                onOpen={(e) => {
+                  // Below 1024px the chapter list lives in the menu.
+                  if (!wide()) return setOpen(true);
+                  if (peek === "story") return closePeek(true);
+                  setCaret(ringX(e.currentTarget as HTMLElement));
+                  openPeek("story");
+                  if (e.detail === 0) focusPeek("story");
+                }}
+              />
+            ) : (
+              <span className="nav-readout t-label" data-mode="section" data-show={(compact && !open && !!sectionLabel) || undefined}>
+                <span className="nav-readout-rule" aria-hidden />
+                <span key={sectionLabel} className="nav-roll">
+                  {sectionLabel}
+                </span>
+              </span>
+            )}
           </div>
 
-          <NavLinks go={go} peek={peek} onPeek={openPeek} onLeave={() => closePeek()} onBox={onBox} />
+          <NavLinks
+            hrefFor={hrefFor}
+            active={section}
+            peek={peek}
+            onPeek={openPeek}
+            onLeave={() => closePeek()}
+            onBox={onBox}
+            onDone={() => closePeek(true)}
+          />
 
-          <button onClick={() => go("#audit")} className="nav-cta relative">
-            <span className="hidden sm:inline">Book a free AI audit</span>
-            <span className="sm:hidden">Audit</span>
-            <span className="nav-cta-icon" aria-hidden><ArrowUpRight size={15} strokeWidth={2.4} /></span>
-          </button>
+          {/* Named by its visible text (the short form on phones), so speech input can say what it sees. */}
+          <AuditLink className="nav-cta relative" onDone={closeAll} data-quiet={heroQuiet || endQuiet || undefined}>
+            <span className="hidden sm:inline">{CTA.primary}</span>
+            <span className="sm:hidden">{CTA.compact}</span>
+            <span className="nav-cta-icon" aria-hidden>
+              <ArrowUpRight size={15} strokeWidth={2.4} />
+            </span>
+          </AuditLink>
         </div>
 
         <NavPeek
+          variant={variant}
+          hrefFor={hrefFor}
           peek={peek}
           caret={caret}
           onEnter={hold}
@@ -305,153 +469,93 @@ export function Nav() {
         />
       </header>
 
-      {/* Mobile and tablet menu */}
+      {/* Phone and tablet menu: a dialog on the page grid. */}
       <div
         id="menu"
-        className="fixed inset-0 z-40 flex flex-col justify-end bg-bg px-6 pb-10 lg:hidden"
-        style={{
-          clipPath: open ? "inset(0 0 0 0)" : "inset(0 0 100% 0)",
-          transition: "clip-path 700ms var(--ease-in-out-quart), visibility 700ms",
-          visibility: open ? "visible" : "hidden",
-        }}
-        aria-hidden={!open}
+        ref={menu}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        className="nav-menu lg:hidden"
+        data-open={open || undefined}
+        data-lenis-prevent
+        inert={!open}
       >
-        <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: "var(--spectrum)" }} aria-hidden />
-        <ul>
-          {LINKS.map(([label, href, id], i) => (
-            <li key={href} className="line-mask border-b border-line">
-              <button
-                onClick={() => go(href)}
-                className="menu-link flex w-full items-center justify-between gap-4 py-4 text-left"
-                style={{
-                  transform: open ? "none" : "translateY(110%)",
-                  transition: `transform 900ms var(--ease-out-expo) ${open ? 200 + i * 70 : 0}ms`,
-                  ["--tone" as string]: `var(--color-${LINK_TONES[i]})`,
-                }}
-                tabIndex={open ? 0 : -1}
-              >
-                <span>
-                  <span className="display block text-[clamp(40px,10vw,84px)]">{label}</span>
-                  <span className="mt-1 block text-[14px] text-ink-soft">{PEEKS[id].blurb}</span>
+        <div className="nav-menu-body">
+          {home && (
+            <section className="nav-menu-group" aria-labelledby="menu-story" style={{ ["--i" as string]: 0 }}>
+              <p className="nav-menu-head t-label">
+                <span id="menu-story">{STORY_PEEK.title}</span>
+                <span ref={pct} className="tabular">
+                  0%
                 </span>
-                <span className="menu-link-n eyebrow tabular">0{i + 1}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <button onClick={() => go("#audit")} className="btn btn-primary mt-10 self-start" tabIndex={open ? 0 : -1}>
-          Book a free AI audit
-          <Arrow />
-        </button>
+              </p>
+              <ol className="nav-menu-chapters">
+                {CHAPTERS.map((c, i) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onClick={() => toChapter(i)}
+                      aria-current={storyMode && i === chapter ? "step" : undefined}
+                      aria-label={`Chapter ${i + 1}: ${c.label}. ${STORY_PEEK.chapters[i]}`}
+                      style={toneVars(chapterTone(i))}
+                    >
+                      <span className="nav-menu-n tabular">{pad(i + 1)}</span>
+                      {c.label}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+          <section className="nav-menu-group" aria-labelledby="menu-sections" style={{ ["--i" as string]: 1 }}>
+            <p id="menu-sections" className="nav-menu-head t-label">
+              {FOOTER.navTitle}
+            </p>
+            <ul className="nav-menu-links">
+              {LINKS.map(({ id, label, peek: pid }, i) => (
+                <li key={id}>
+                  <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={!inStory && section === id ? "location" : undefined}>
+                    <span>
+                      <span className="t-title-card block">{label}</span>
+                      <span className="t-small mt-1 block text-ink-soft">{PEEKS[pid].blurb}</span>
+                    </span>
+                    <span className="nav-menu-n tabular">{pad(i + 1)}</span>
+                  </SectionLink>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="nav-menu-group" aria-labelledby="menu-areas" style={{ ["--i" as string]: 2 }}>
+            <p id="menu-areas" className="nav-menu-head t-label">
+              {FOOTER.areasTitle}
+            </p>
+            <ul className="nav-menu-areas">
+              {AREAS.map((a) => (
+                <li key={a.slug}>
+                  <Link
+                    href={`/solutions/${a.slug}`}
+                    className="nav-menu-area"
+                    style={toneVars(a.tone)}
+                    aria-current={path === `/solutions/${a.slug}` ? "page" : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    <i aria-hidden />
+                    <span>{a.name}</span>
+                    <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+        <div className="nav-menu-cta">
+          <AuditLink className="btn btn-primary" onDone={closeAll}>
+            {CTA.primary}
+            <Arrow />
+          </AuditLink>
+        </div>
       </div>
     </>
   );
 }
-
-/** Where the reader is: chapter number and name in the story, then the section name below it. */
-function where(): { n: string; label: string; tone: string; i: number } {
-  const story = document.getElementById("story");
-  const vh = window.innerHeight;
-  if (story && viewTop(story) + pageBox(story).height > vh * 0.5) {
-    const { i, j, e } = blendAt(store.g);
-    const idx = e < 0.5 ? i : j;
-    return { n: String(idx + 1).padStart(2, "0"), label: CHAPTERS[idx].label, tone: toneVar(idx), i: idx };
-  }
-  let found: (typeof SECTIONS)[number] | null = null;
-  const tones: Record<string, string> = { applications: "cobalt", outcomes: "emerald", how: "violet", faq: "tangerine", audit: "cobalt" };
-  for (const s of SECTIONS) {
-    const el = document.getElementById(s[0]);
-    if (el && viewTop(el) < vh * 0.4) found = s;
-  }
-  return { n: "", label: found ? found[1] : "", tone: found ? `var(--color-${tones[found[0]]})` : "var(--color-ink)", i: CHAPTERS.length };
-}
-
-/** Chapter readout beside the logo. In the story a ring fills with the reader's progress and the
- *  readout opens the chapter list; past it, it names the section. The number rolls when it changes. */
-function Readout({
-  show,
-  inStory,
-  expanded,
-  onPeek,
-  onLeave,
-  onClick,
-}: {
-  show: boolean;
-  inStory: boolean;
-  expanded: boolean;
-  onPeek: (e: React.PointerEvent) => void;
-  onLeave: () => void;
-  onClick: (e: React.MouseEvent) => void;
-}) {
-  const [state, setState] = useState({ n: "01", label: CHAPTERS[0].label, tone: "var(--color-ink)", key: 0 });
-  const ring = useRef<SVGCircleElement>(null);
-  useEffect(() => {
-    let lastKey = "";
-    const update = () => {
-      const w = where();
-      const key = w.n + w.label;
-      if (key !== lastKey) {
-        lastKey = key;
-        setState((s) => ({ n: w.n, label: w.label, tone: w.tone, key: s.key + 1 }));
-      }
-    };
-    const off = subscribe((g) => {
-      update();
-      ring.current?.style.setProperty("stroke-dashoffset", String(1 - Math.min(Math.max(g / (CHAPTERS.length - 1), 0), 1)));
-    });
-    window.addEventListener("scroll", update, { passive: true });
-    return () => {
-      off();
-      window.removeEventListener("scroll", update);
-    };
-  }, []);
-  const story = inStory && !!state.n;
-  const inner = (
-    <>
-      <span className="h-3 w-px bg-line-strong" aria-hidden />
-      {story && (
-        <svg className="nav-ring" viewBox="0 0 20 20" aria-hidden style={{ color: state.tone }}>
-          <circle cx="10" cy="10" r="7.5" className="nav-ring-track" />
-          <circle ref={ring} cx="10" cy="10" r="7.5" pathLength={1} className="nav-ring-fill" />
-        </svg>
-      )}
-      {state.n && (
-        <span key={`n${state.key}`} className="nav-roll" style={{ color: state.tone }}>
-          {state.n}
-        </span>
-      )}
-      <span key={`l${state.key}`} className="nav-roll text-ink-2">
-        {state.label}
-      </span>
-      {story && (
-        <svg className="nav-readout-caret" viewBox="0 0 12 12" aria-hidden>
-          <path d="M3 4.5 6 7.5 9 4.5" />
-        </svg>
-      )}
-    </>
-  );
-  return story ? (
-    <button
-      className="nav-readout eyebrow tabular hidden items-center gap-2 overflow-hidden whitespace-nowrap sm:inline-flex"
-      data-show={show && state.label ? "" : undefined}
-      onPointerEnter={onPeek}
-      onPointerLeave={onLeave}
-      onClick={onClick}
-      aria-expanded={expanded}
-      aria-controls="peek-story"
-      aria-label={`Chapter ${state.n}, ${state.label}. Show all chapters`}
-      tabIndex={show ? 0 : -1}
-    >
-      {inner}
-    </button>
-  ) : (
-    <span
-      className="nav-readout eyebrow tabular hidden items-center gap-2 overflow-hidden whitespace-nowrap sm:inline-flex"
-      data-show={show && state.label ? "" : undefined}
-      aria-live="polite"
-    >
-      {inner}
-    </span>
-  );
-}
-

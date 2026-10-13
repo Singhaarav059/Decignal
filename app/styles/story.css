@@ -1,0 +1,747 @@
+/* Story: the statements behind the 3D world, the one bottom-left StoryCard in front of it, the phone
+   decks, and the opened-island panel (components/story). Type comes from the role classes (.t-*). */
+
+/* ---- Layers ---- */
+.story-back { z-index: 0; }
+.story-canvas { z-index: var(--z-canvas); }
+.story-overlay { z-index: var(--z-story); }
+
+/* Server-rendered first frame: only the hero shows until the story writes each chapter's weight
+   (Story.tsx, StoryCard.tsx), so the markup matches the first frame and nothing flashes (PROD-09). */
+.story-back [data-ch]:not([data-ch="0"]),
+.story-overlay [data-ch]:not([data-ch="0"]) {
+  opacity: 0;
+  visibility: hidden;
+}
+[data-ch] { will-change: transform, opacity; }
+@media (prefers-reduced-motion: reduce) {
+  [data-ch] { transform: none !important; }
+}
+
+/* Hero entrance after the loader lifts. */
+.intro-line > span {
+  transform: translateY(105%);
+  transition: transform var(--dur-5) var(--ease-out-expo);
+}
+.intro-fade {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity var(--dur-5) var(--ease), transform var(--dur-5) var(--ease);
+}
+html.ready .intro-line > span,
+html.ready .intro-fade {
+  opacity: 1;
+  transform: none;
+}
+html.ready .intro-line:nth-child(2) > span { transition-delay: 90ms; }
+html.ready .intro-fade { transition-delay: 450ms; }
+.intro-stage {
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 1400ms var(--ease) 150ms, transform 1800ms var(--ease-out-expo) 150ms;
+}
+html.ready .intro-stage { opacity: 1; transform: none; }
+
+/* ---- Statements: the hero's h1 and the final headline, centred above the world (D14) ---- */
+.story-statement {
+  position: absolute;
+  inset-inline: 0;
+  top: 13vh;
+  padding-inline: var(--gutter);
+  text-align: center;
+}
+.story-statement .t-label + .t-display { margin-top: var(--stack-label); }
+.story-statement .t-display { transition: opacity var(--dur-4) var(--ease); }
+/* An opened system pushes the headline back. */
+.story-back[data-dim] .story-statement .t-display { opacity: 0.12; }
+
+/* ---- StoryCard: one card, bottom-left on the shared edge (--card-x, --card-b, --card-w) ---- */
+.story-card-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.story-card {
+  pointer-events: auto;
+  /* The frame never fades; only its content does. */
+}
+.story-card-body {
+  display: grid;
+  /* The incoming chapter is clipped while the card eases to its height; the padding keeps focus rings. */
+  overflow: hidden;
+  margin: -6px;
+  padding: 6px;
+}
+.story-card[data-ready] .story-card-body { transition: height var(--dur-3) var(--ease); }
+/* Before the first measure (and without JS), only the first chapter takes room. */
+.story-card-body:not([style*="height"]) > [data-ch]:not([data-ch="0"]) { display: none; }
+.story-pane {
+  grid-area: 1 / 1;
+  align-self: start;
+  min-width: 0;
+}
+/* The chapter swap (StoryCard writes the target opacity, offset and visibility): the old chapter fades
+   out quickly toward the scroll, then the new one rises in, its title a beat before the rest. */
+.story-card[data-ready] .story-pane {
+  transition: opacity var(--dur-1) linear, transform var(--dur-2) var(--ease), visibility 0s linear var(--dur-1);
+}
+.story-card[data-ready] .story-pane[data-on] {
+  transition: opacity var(--dur-2) var(--ease) var(--dur-1), transform var(--dur-3) var(--ease) var(--dur-1), visibility 0s;
+}
+.story-card[data-ready] .story-pane-rest { transition: opacity var(--dur-1) linear; }
+.story-card[data-ready] .story-pane:not([data-on]) > .story-pane-rest { opacity: 0; }
+.story-card[data-ready] .story-pane[data-on] > .story-pane-rest { transition: opacity var(--dur-3) var(--ease) var(--dur-2); }
+/* The whole card is an obstacle for the 3D labels (ScreenTag reads [data-obstacle] rects). */
+.story-card-hit {
+  position: absolute;
+  inset: calc(-1 * var(--card-pad) - 6px);
+  pointer-events: none;
+  visibility: hidden;
+}
+/* An open system takes a phone's screen: the card steps aside for its panel. */
+.story-overlay[data-dim] .story-card-wrap { transition: opacity var(--dur-3) var(--ease); }
+@media (max-width: 767px) {
+  .story-overlay[data-dim] .story-card-wrap { opacity: 0; pointer-events: none; }
+  .story-overlay[data-dim] .story-card { pointer-events: none; }
+}
+
+/* Label row: tone dot, chapter number and name, and the example label at the right. */
+.story-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.story-label-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--tone, var(--color-ink));
+}
+.story-label-note {
+  margin-left: auto;
+  padding-left: 12px;
+  white-space: nowrap;
+  letter-spacing: 0.06em;
+}
+.story-title { margin-top: 12px; }
+.story-body {
+  margin-top: 10px;
+  max-width: 44ch;
+  color: var(--color-ink-2);
+  text-wrap: pretty;
+}
+.story-pane-rest > .story-body:first-child { margin-top: 12px; }
+
+/* Short screens give the 3D the room: second-order lines step aside. */
+@media (max-height: 720px), (max-width: 767px) and (max-height: 760px) {
+  .story-card [data-optional] { display: none; }
+}
+
+/* Actions: the CTA, and on wide screens a scroll cue. */
+.story-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.story-cue {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+@media (min-width: 1024px) and (hover: hover) {
+  .story-cue { display: inline-flex; }
+}
+.story-cue-mouse {
+  position: relative;
+  width: 14px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.story-cue-wheel {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 2px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink-soft);
+  animation: story-cue 1.8s var(--ease) infinite;
+}
+@keyframes story-cue {
+  0% { opacity: 0; transform: translate(-50%, -2px); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 8px); }
+}
+
+/* System chips: each one points at its island. */
+.sys-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* Three by two in the card, so no system is left alone on a second row. */
+.story-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+.story-chips .sys-chip { width: 100%; padding: 0 10px; }
+.sys-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--color-ink-2);
+  transition: box-shadow var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+.sys-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--tone);
+}
+.sys-chip:hover { box-shadow: var(--edge-strong); color: var(--color-ink); }
+.sys-chip:active { transform: scale(0.97); }
+.sys-chip[aria-pressed="true"] { background: var(--color-ink); box-shadow: none; color: var(--color-on-ink); }
+
+/* Readout: one figure and what it counts; Details opens the figures behind it. */
+.story-readout {
+  margin-top: 16px;
+  padding-top: 14px;
+  box-shadow: inset 0 1px 0 var(--color-line);
+}
+.story-readout-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.story-readout-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.story-readout-figure strong { white-space: nowrap; }
+/* Narrow phones: the label goes under the figure instead of wrapping into a column beside it. */
+@media (max-width: 479px) {
+  .story-readout-figure { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
+.story-readout-figure .t-small { color: var(--color-ink-soft); }
+.story-readout-figure strong[data-risk] { color: var(--color-signal-ink); }
+.story-details-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--edge-line);
+  font-weight: 600;
+  color: var(--color-ink-2);
+  transition: box-shadow var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+.story-details-btn:hover { box-shadow: var(--edge-strong); color: var(--color-ink); }
+.story-details-btn svg { transition: transform var(--dur-3) var(--ease); }
+.story-details-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.story-details { margin-top: 10px; animation: story-in var(--dur-3) var(--ease) both; }
+@keyframes story-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Label and figure rows (details, application lists, decisions). */
+.story-rows > div,
+.story-rows > li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  box-shadow: inset 0 1px 0 var(--color-line);
+  font-size: var(--fs-small);
+  line-height: 1.35;
+}
+.story-rows dt { color: var(--color-ink-soft); }
+.story-rows dd { font-weight: 600; color: var(--color-ink); white-space: nowrap; }
+.story-rows [data-risk] { color: var(--color-signal-ink); }
+
+/* 02: the six days to the breach, as on the ring around the crate. */
+.signal-days {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.signal-days li { display: grid; gap: 4px; }
+.signal-days span {
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-track);
+  animation: day-in var(--dur-3) var(--ease) both;
+  animation-delay: calc(var(--i) * var(--stagger));
+  transform-origin: left;
+}
+.signal-days li[data-risk] span { background: var(--color-signal); }
+.signal-days small {
+  font-family: var(--font-heading);
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  color: var(--color-ink-soft);
+}
+.signal-days li[data-risk] small { color: var(--color-signal-ink); }
+@keyframes day-in { from { transform: scaleX(0); } to { transform: none; } }
+
+/* 04: the three checks, each tied to its island. The open pin's row sits on a neutral pill. */
+.evidence-checks { margin-top: 14px; display: grid; gap: 2px; }
+.evidence-checks button {
+  display: grid;
+  grid-template-columns: 7px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  font-size: var(--fs-small);
+  color: var(--color-ink-2);
+  transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+.evidence-checks button:hover,
+.evidence-checks button[data-active] { background: var(--color-wash); color: var(--color-ink); }
+.evidence-checks button:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 0; }
+.evidence-check-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.evidence-checks strong { font-weight: 600; color: var(--color-ink); white-space: nowrap; }
+
+/* 05: the transfer order's progress. */
+.stepper-wrap { margin-top: 16px; }
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.stepper-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.stepper-dot {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1.5px var(--color-line-strong);
+  transition: background-color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), transform var(--dur-3) var(--ease);
+}
+.stepper-step[data-state="done"] .stepper-dot { background: var(--color-emerald); box-shadow: inset 0 0 0 1.5px var(--color-emerald); }
+.stepper-step[data-state="now"] .stepper-dot { box-shadow: inset 0 0 0 3px var(--color-emerald); transform: scale(1.15); }
+.stepper-label {
+  font-family: var(--font-heading);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  font-stretch: 92%;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-ink-soft);
+  transition: color var(--dur-3) var(--ease);
+}
+.stepper-step:is([data-state="now"], [data-state="done"]) .stepper-label { color: var(--color-ink); }
+.stepper-line {
+  position: absolute;
+  top: 4px;
+  left: 14px;
+  right: 4px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--color-line);
+  overflow: hidden;
+}
+.stepper-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-emerald);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+@media (max-width: 479px) {
+  /* Narrow cards set the stages in the body face, wrapping under their dot. */
+  .stepper-label { font-family: var(--font-sans); font-stretch: normal; font-size: var(--fs-label); letter-spacing: 0; text-transform: none; white-space: normal; line-height: 1.2; padding-right: 4px; }
+}
+
+/* 06: the approval panel inside the card. */
+.decision-panel {
+  margin-top: 16px;
+  padding-top: 14px;
+  box-shadow: inset 0 1px 0 var(--color-line);
+}
+.decision-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+.decision-title { white-space: nowrap; }
+.decision-title > .t-label { display: block; margin-bottom: 6px; }
+.decision-actions { display: flex; gap: 8px; margin-top: 14px; }
+.decision-step { margin-top: 14px; }
+.decision-step > .decision-actions { margin-top: 12px; }
+.decision-note { margin-top: 10px; color: var(--color-ink-soft); }
+.decision-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: var(--edge-strong);
+  transition: transform var(--dur-1) var(--ease), background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.decision-btn:hover { background: var(--color-wash); }
+.decision-btn:active { transform: scale(0.97); }
+.decision-btn[data-primary] { background: var(--color-ink); color: var(--color-on-ink); box-shadow: none; }
+.decision-btn[data-primary]:hover { background: var(--color-cobalt); }
+.decision-range {
+  flex: 1;
+  height: 2px;
+  cursor: pointer;
+  appearance: none;
+  background: var(--color-line-strong);
+  accent-color: var(--color-ink);
+}
+.decision-result { margin-top: 14px; animation: plan-reveal var(--dur-3) var(--ease) both; }
+.decision-result-dot { flex: none; width: 6px; height: 6px; margin-top: 8px; border-radius: var(--radius-pill); background: var(--color-ok); }
+.decision-result-dot[data-tone="signal"] { background: var(--color-signal); }
+.decision-meta { margin-top: 6px; color: var(--color-ink-soft); }
+.decision-undo {
+  margin-top: 8px;
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: 4px;
+}
+.stock-balance { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: center; gap: 12px; padding-top: 12px; }
+.stock-balance > div > span:first-child { display: block; color: var(--color-ink-soft); font-size: var(--fs-label); }
+.stock-balance strong { display: block; margin-top: 4px; font-family: var(--font-heading); font-size: var(--fs-subtitle); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stock-balance small { font-family: var(--font-sans); font-size: var(--fs-label); font-weight: 450; color: var(--color-ink-soft); }
+.stock-balance-track { position: relative; display: block; height: 4px; margin-top: 7px; border-radius: var(--radius-pill); background: var(--color-line); }
+.stock-balance-track > span { display: block; height: 100%; border-radius: inherit; transition: width var(--dur-3) var(--ease); }
+.stock-balance-track i { position: absolute; top: -3px; height: 10px; width: 1px; background: var(--color-ink-soft); }
+.stock-balance-arrow { color: var(--color-ink-soft); font-size: var(--fs-subtitle); }
+.roll-num { display: inline; }
+.roll-digit { position: relative; display: inline-block; line-height: 1.15; clip-path: inset(0); }
+.roll-ghost { visibility: hidden; }
+.roll-col { position: absolute; inset: 0 0 auto; display: flex; flex-direction: column; transition: transform var(--dur-3) var(--ease); }
+.roll-col > span { display: block; height: 1.15em; text-align: center; }
+.decision-plan { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 8px 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--color-sunken); }
+.decision-plan-label { font-family: var(--font-heading); font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+.decision-plan-slot { grid-column: 2 / 4; justify-self: start; }
+.decision-plan-chip { display: inline-flex; align-items: center; gap: 2px; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--color-ink); color: var(--color-on-ink); font-size: var(--fs-label); font-weight: 600; animation: plan-travel var(--dur-4) var(--ease) both; }
+.decision-plan-track { grid-column: 1 / 3; height: 4px; border-radius: var(--radius-pill); background: var(--color-line); overflow: hidden; }
+.decision-plan-track > span { display: block; height: 100%; background: var(--color-ok); transform-origin: left; animation: plan-fill var(--dur-5) var(--ease) var(--dur-3) both; }
+.decision-plan-check { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--color-ok); color: var(--color-on-ink); font-size: var(--fs-label); font-weight: 600; animation: plan-pop var(--dur-2) var(--ease) calc(var(--dur-3) + var(--dur-5)) both; }
+.decision-commit-result { animation: plan-reveal var(--dur-3) var(--ease) calc(var(--dur-3) + var(--dur-5)) both; }
+.decision-commit-result .decision-result { animation: none; }
+@keyframes plan-travel { from { transform: translateY(-46px) scale(0.96); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes plan-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes plan-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes plan-reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 767px) {
+  .decision-plan { grid-template-rows: auto; padding: 8px 10px; }
+  .decision-plan-label { display: none; }
+  .decision-plan-slot, .decision-plan-track { grid-column: auto; }
+}
+
+/* ---- Selectors inside the card: the segmented control's look, wrapping to fit the card ---- */
+.story-seg {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 16px;
+  border-radius: 20px;
+}
+.story-seg .seg-pill {
+  top: 0;
+  bottom: auto;
+  height: var(--seg-h, 0);
+  transform: translate3d(var(--seg-x, 0), var(--seg-y, 0), 0);
+}
+.story-seg .seg-pill[data-glide] {
+  transition: transform var(--dur-3) var(--ease), width var(--dur-3) var(--ease), height var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease);
+}
+.story-seg .seg-item { min-height: 34px; padding: 0 12px; }
+@media (max-width: 767px) {
+  /* Phones: one row that scrolls sideways; vertical swipes still scroll the page. */
+  .story-seg {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    touch-action: pan-x pan-y;
+    border-radius: var(--radius-pill);
+  }
+  .story-seg::-webkit-scrollbar { display: none; }
+  .story-seg .seg-item { min-height: 36px; scroll-snap-align: center; }
+  /* A short set that must fit one row without scrolling (the five layers): items share the width. */
+  .story-seg--fit { overflow-x: visible; }
+  .story-seg--fit .seg-item { flex: 1 1 auto; justify-content: center; padding: 0 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-seg .seg-pill[data-glide] { transition: none; }
+}
+
+/* One block per option in the same cell; the selected one shows, the text swapping in place. It swaps
+   on the industry name's beat: the old block leaves first, the new one arrives with the new name. */
+.story-stack { display: grid; margin-top: 14px; }
+.story-stack-item {
+  grid-area: 1 / 1;
+  min-width: 0;
+  transition: opacity var(--dur-1) linear, visibility 0s linear var(--dur-1);
+}
+.story-stack-item:not([data-on]) { visibility: hidden; opacity: 0; }
+.story-stack-item[data-on] { transition: opacity var(--dur-2) var(--ease) var(--dur-1), visibility 0s; }
+
+/* A text link with the button arrow; when it wraps, the arrow follows the last word. */
+.story-link {
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 12px;
+  text-wrap: balance;
+  font-weight: 600;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-2) var(--ease);
+}
+.story-link:hover { text-decoration-color: currentColor; }
+.story-link .arrow { display: inline-grid; overflow: hidden; width: 14px; margin-left: 6px; vertical-align: -1px; }
+.story-link .arrow > span { grid-area: 1 / 1; transition: transform var(--dur-4) var(--ease-out-expo); }
+.story-link .arrow > span + span { transform: translateX(-120%); }
+@media (hover: hover) {
+  .story-link:hover .arrow > span:first-child { transform: translateX(120%); }
+  .story-link:hover .arrow > span + span { transform: none; }
+}
+
+/* 07: applications in the selected function. */
+.scale-rows { margin-top: 8px; }
+.scale-rows li .scale-app { font-weight: 500; color: var(--color-ink); }
+.scale-rows li > span:last-child { color: var(--color-ink-soft); white-space: nowrap; }
+.scale-systems { margin-top: 8px; color: var(--color-ink-soft); }
+
+/* 08: the industry's name in a one-line slot. At the swap the old name leaves first (up when scrolling
+   down), then the new one rolls in from the other side: one name is legible at any moment. */
+.ind-roll {
+  display: grid;
+  height: 1.22em;
+  margin-bottom: -0.16em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ind-roll > span {
+  grid-area: 1 / 1;
+  height: 1.22em;
+  line-height: 1.06;
+  color: var(--accent-ink);
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-1) linear;
+}
+.ind-roll > [data-at="past"] { opacity: 0; transform: translate3d(0, -0.6em, 0); }
+.ind-roll > [data-at="next"] { opacity: 0; transform: translate3d(0, 0.6em, 0); }
+.ind-roll > [data-at="on"] {
+  transition: transform var(--dur-3) var(--ease) var(--dur-1), opacity var(--dur-2) var(--ease) var(--dur-1);
+}
+.ind-challenge { color: var(--color-ink); }
+.ind-label { margin-top: 12px; }
+.ind-rows { margin-top: 6px; }
+.ind-rows li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  box-shadow: inset 0 1px 0 var(--color-line);
+  color: var(--color-ink-2);
+}
+.ind-check { flex: none; margin-top: 1px; color: var(--tone-ink, var(--color-ink)); }
+.ind-check path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 09: the example's results and the six systems behind them. */
+.final-card-title { margin-top: 16px; }
+.final-outcomes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.final-outcomes li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  box-shadow: inset 0 1px 0 var(--color-line);
+}
+.final-outcomes strong { white-space: nowrap; }
+.final-outcomes .t-small { color: var(--color-ink-2); }
+.final-card .story-actions { column-gap: 20px; }
+.final-card .story-actions .story-link { margin-top: 0; }
+.final-note { margin-top: 10px; max-width: 46ch; color: var(--color-ink-soft); }
+@media (max-width: 767px) {
+  /* Phones: each result on its own row, figure then what it means; the world keeps the room above
+     (the systems are read on the islands themselves, the headline carries the line). */
+  .final-outcomes { grid-template-columns: 1fr; gap: 0; }
+  .final-outcomes li { display: grid; grid-template-columns: 7.5em 1fr; align-items: baseline; gap: 12px; padding: 8px 0; }
+  .final-outcomes strong { font-size: var(--fs-subtitle); }
+  .final-card .story-chips, .final-card .story-body { display: none; }
+}
+
+/* ---- Phones: the decks stand in for the 3D cards, in the band between the nav and the card ---- */
+.story-stage { display: none; }
+@media (max-width: 767px) {
+  .story-stage {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    left: var(--gutter);
+    right: var(--gutter);
+    top: max(76px, 9vh);
+    bottom: calc(var(--card-b) + var(--stage-card, 0px) + 12px);
+    pointer-events: auto;
+  }
+}
+.layer-readout,
+.scale-phone {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.layer-readout .story-seg { margin-top: 0; }
+.phone-deck { flex: 1 1 auto; min-height: 96px; container-type: size; display: grid; place-items: center; margin-top: 10px; }
+/* The front card fills the space left, at the face's own 16:10, with room above for the cards behind to peek out. */
+.phone-deck-stack { position: relative; width: min(100cqw, (100cqh - 16px) * 1.6); aspect-ratio: 1.6; margin-top: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.phone-deck-card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line);
+  transform-origin: 50% 0;
+  transform: translateY(calc(var(--rank) * -8px)) scale(calc(1 - var(--rank) * 0.05));
+  opacity: calc(1 - var(--rank) * 0.28);
+  transition: transform var(--dur-4) var(--ease), opacity var(--dur-3) var(--ease);
+}
+.phone-deck-card:is([data-rank="3"], [data-rank="4"]) { opacity: 0; }
+.phone-deck-face { display: block; width: 100%; height: 100%; }
+.phone-deck-stack:active .phone-deck-card[data-rank="0"] { transform: scale(0.985); }
+
+/* ---- Opened system island: a spec sheet tied to its island by a leader line ---- */
+.island-panel {
+  position: fixed;
+  z-index: var(--z-island);
+  right: var(--edge);
+  top: 50%;
+  width: 360px;
+  padding: 16px 18px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line), var(--shadow-float);
+  opacity: 0;
+  transform: translate3d(12px, -50%, 0);
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease);
+}
+.island-panel[data-open] {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+  pointer-events: auto;
+  transition-delay: 80ms;
+}
+.island-leader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-island-leader);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+}
+.island-leader[data-open] { opacity: 1; transition-delay: 220ms; }
+/* Field rows with a dotted leader, like a printed spec sheet. */
+.spec-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 5px 0;
+  position: relative;
+  isolation: isolate;
+  font-size: var(--fs-small);
+}
+.spec-row::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  border-bottom: 1.5px dotted var(--color-line-strong);
+}
+.spec-row dt,
+.spec-row dd { background: var(--color-surface); white-space: nowrap; }
+.spec-row dt { padding-right: 6px; color: var(--color-ink-2); }
+.spec-row dd { padding-left: 6px; font-weight: 600; }
+.spec-bar { transition: width var(--dur-4) var(--ease); }
+.spec-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border-radius: var(--radius-sm);
+  font-weight: 550;
+  color: var(--color-ink-2);
+  transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+.spec-nav:hover { background: var(--color-wash); color: var(--color-ink); }
+.kbd {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: var(--radius-xs);
+  box-shadow: var(--edge-strong);
+  font-family: var(--font-heading);
+  font-size: var(--fs-label);
+  line-height: 16px;
+  color: var(--color-ink-2);
+}
+@media (max-width: 767px) {
+  .island-panel {
+    inset: auto var(--gutter) var(--card-b);
+    width: auto;
+    transform: translate3d(0, 12px, 0);
+  }
+  .island-panel[data-open] { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island-panel, .island-leader, .spec-bar, .roll-col, .stock-balance-track > span, .phone-deck-card,
+  .story-card-body, .story-pane, .story-pane-rest, .story-details-btn svg, .ind-roll > span, .story-stack-item { transition: none !important; }
+  .story-cue-wheel, .signal-days span, .story-details,
+  .decision-plan-chip, .decision-plan-track > span, .decision-plan-check, .decision-commit-result, .decision-result { animation: none; }
+}

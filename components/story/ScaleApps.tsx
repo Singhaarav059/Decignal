@@ -1,68 +1,109 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { FUNCTIONS, store } from "@/lib/story";
+import { useLayoutEffect, useState } from "react";
+import { CH, CHAPTERS, FUNCTIONS, localIn, scaleBeat, setPinHint, store, subscribe, weight } from "@/lib/story";
 import { APPLICATIONS, CATEGORY_TONE, type Category } from "@/lib/content";
-import { tone } from "../ui/systems";
+import { areaHref, areaOf } from "@/lib/areas";
+import { SCALE, STORY_UI } from "@/lib/copy";
+import { goToStory } from "./chapters";
+import { setDeckAt } from "./PhoneDeck";
+import { StoryPills } from "./StoryPills";
+import { SectionLink } from "../ui/SectionLink";
+import { Arrow } from "../ui/Arrow";
 
-/** Under each function's card: the applications Decignal offers there. Pointing at one reads its card. */
-export function ScaleApps() {
-  const root = useRef<HTMLDivElement>(null);
-  // A card under the pointer lights its column, so the two read as one thing.
-  useEffect(() => {
+/** Local progress in Scale where function k is brought forward (the middle of its step). */
+const slotAt = (k: number) => 0.04 + ((k + 0.5) / FUNCTIONS.length) * (CHAPTERS[CH.scale].ts - 0.08);
+
+/** Scrolls to function k's step: the 3D cards, the pills and the phone deck all follow the scroll. */
+export const goToFunction = (k: number) => goToStory(CH.scale, slotAt(k));
+
+const FN = FUNCTIONS.map((f) => {
+  const category = f.name as Category;
+  const apps = APPLICATIONS.filter((a) => a.category === category);
+  return {
+    name: f.name,
+    category,
+    tone: CATEGORY_TONE[category],
+    apps,
+    systems: [...new Set(apps.flatMap((a) => a.connects))].slice(0, 4),
+    area: areaOf(category),
+  };
+});
+
+/**
+ * 07 Scale, inside the story card: the five functions as one selector, then the applications Decignal
+ * offers in the selected one. The selection is the 3D card being read: the card under the pointer,
+ * else the one the scroll brings forward. Pointing at a pill brings its card forward; clicking scrolls to it.
+ */
+export function ScaleCard() {
+  const [at, setAt] = useState(0);
+
+  useLayoutEffect(() => {
     let raf = 0;
-    let last = -2;
-    const cols = Array.from(root.current?.querySelectorAll<HTMLElement>("[data-fn]") ?? []);
-    const tick = () => {
-      if (store.focus !== last) {
-        last = store.focus;
-        cols.forEach((c, k) => c.toggleAttribute("data-active", k === last));
-        root.current?.toggleAttribute("data-any", last >= 0);
-      }
-      raf = requestAnimationFrame(tick);
+    let last = -1;
+    const read = () => {
+      const g = store.g;
+      const v = store.focus >= 0 && store.focus < FN.length ? store.focus : scaleBeat(localIn(CH.scale, g));
+      if (v === last) return;
+      last = v;
+      setAt(v);
+      setDeckAt("scale", v);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    // The 3D card under the pointer changes without a scroll: poll while the chapter is on screen.
+    const loop = () => {
+      read();
+      raf = weight(CH.scale, store.g) > 0 ? requestAnimationFrame(loop) : 0;
+    };
+    const off = subscribe((g) => {
+      if (weight(CH.scale, g) > 0 && !raf) raf = requestAnimationFrame(loop);
+      read();
+    });
+    return () => {
+      off();
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
+  const hover = (k: number) => {
+    store.focusHint = k;
+    setPinHint(k >= 0 ? `fn:${k}` : null);
+  };
+
   return (
-    <div ref={root} className="scale-apps mx-auto grid max-w-[1280px] grid-cols-1 gap-y-2 lg:grid-cols-5 lg:gap-5">
-      {FUNCTIONS.map((f, k) => {
-        const apps = APPLICATIONS.filter((a) => a.category === (f.name as Category));
-        return (
-          <div
-            key={f.name}
-            data-fn
-            tabIndex={0}
-            onPointerEnter={() => (store.focusHint = k)}
-            onPointerLeave={() => (store.focusHint = -1)}
-            onFocus={() => (store.focusHint = k)}
-            onBlur={() => (store.focusHint = -1)}
-            className="scale-col"
-            style={{ "--tone": tone(CATEGORY_TONE[f.name as Category]) } as React.CSSProperties}
-          >
-            <p className="scale-col-head">
-              <span className="size-[7px] shrink-0 rounded-full" style={{ background: "var(--tone)" }} aria-hidden />
-              <span className="whitespace-nowrap">{f.name}</span>
-              <span className="scale-col-count tabular">{apps.length}</span>
-            </p>
-            <p className="mt-1 pl-[15px] text-[12.5px] leading-snug text-ink-2 lg:hidden">{apps.map((a) => a.name).join(" · ")}</p>
-            <ul className="scale-col-list max-lg:hidden">
-              {apps.map((a, i) => (
-                <li key={a.name} style={{ ["--i" as string]: i }} title={`Connects ${a.connects.join(", ")}`}>
-                  <span className="scale-app-name">{a.name}</span>
-                  <span className="scale-app-weeks tabular">{a.weeks.replace(" to ", "–")} wk</span>
-                </li>
-              ))}
-            </ul>
-            <p className="scale-col-foot max-lg:hidden">
-              {[...new Set(apps.flatMap((a) => a.connects))].slice(0, 4).map((c) => (
-                <span key={c}>{c}</span>
-              ))}
-            </p>
-          </div>
-        );
-      })}
+    <div className="scale-card">
+      <StoryPills
+        label={STORY_UI.functionsAria}
+        items={FN.map((f, k) => ({ label: f.name, tone: f.tone, controls: `scale-fn-${k}` }))}
+        value={at}
+        onChange={goToFunction}
+        onHover={hover}
+      />
+      <div className="story-stack">
+        {FN.map((f, k) => {
+          const link = SCALE.link(f.area.name);
+          return (
+            <div key={f.name} id={`scale-fn-${k}`} role="tabpanel" className="story-stack-item scale-fn" data-on={k === at || undefined}>
+              <p className="t-label">{SCALE.apps(f.apps.length)}</p>
+              <ul className="story-rows scale-rows">
+                {f.apps.map((a) => {
+                  const [name, weeks] = SCALE.appRow(a.name, a.weeks).split(" · ");
+                  return (
+                    <li key={a.name}>
+                      <span className="scale-app">{name}</span>
+                      <span className="tabular">{weeks}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="t-small scale-systems">{f.systems.join(" · ")}</p>
+              <SectionLink href={areaHref(f.category)} className="story-link t-small">
+                {link}
+                <Arrow />
+              </SectionLink>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

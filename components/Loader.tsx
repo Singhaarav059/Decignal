@@ -1,93 +1,169 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { getLenis } from "./SmoothScroll";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { getLenis, hashOffset, holdVeil, landOnHash, token } from "@/lib/jump";
+import { whenSceneReady } from "@/lib/chrome";
+import { Logo } from "./ui/Logo";
 
 const PLATES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
+const KEY = "decignal:intro";
+/** Shown at least this long once it starts counting, so the six systems can arrive. */
+const MIN = 600;
+/** Never covers the site longer than this: if the scene never reports ready, the curtain lifts anyway. */
+const CAP = 3500;
+/** Survives client navigation: the intro plays once per visit. */
+let played = false;
 
-/** Six systems stack into one while the stage loads, then the curtain lifts. */
+function seenBefore() {
+  if (played || document.documentElement.classList.contains("intro-seen")) return true;
+  try {
+    return sessionStorage.getItem(KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function remember() {
+  played = true;
+  try {
+    sessionStorage.setItem(KEY, "1");
+  } catch {}
+}
+
+/** Six systems stack into one while the site gets ready, then the curtain lifts. The count is real
+ *  progress: script running, fonts in, page loaded, first frame of the 3D scene drawn. Server markup
+ *  carries .loader, which CSS hides without JavaScript and on repeat visits (html.intro-seen). */
 export function Loader() {
   const [phase, setPhase] = useState<"load" | "leave" | "done">("load");
+  const root = useRef<HTMLDivElement>(null);
   const count = useRef<HTMLSpanElement>(null);
+  const bar = useRef<HTMLSpanElement>(null);
+
+  // A repeat visit has no curtain to hide a hash landing behind, so shut the veil before the first paint.
+  useLayoutEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const covering = !!root.current && getComputedStyle(root.current).display !== "none";
+    if (!reduce && !covering && seenBefore() && hashOffset() > 2) holdVeil();
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem("decignal:intro") === "1";
-      sessionStorage.setItem("decignal:intro", "1");
-    } catch {}
-    if (reduce) {
+    const covering = !!root.current && getComputedStyle(root.current).display !== "none";
+    let alive = true;
+    let raf = 0;
+    let leaveTimer = 0;
+    let capTimer = 0;
+
+    const finish = () => {
       html.classList.add("ready");
-      const t = window.setTimeout(() => setPhase("done"), 0);
-      return () => clearTimeout(t);
+      getLenis()?.start();
+      remember();
+    };
+    const lift = () => {
+      finish();
+      setPhase("leave");
+      leaveTimer = window.setTimeout(() => setPhase("done"), token("--dur-4", 600) + 60);
+    };
+
+    // Repeat visit, or reduced motion: no intro. Land on the hash and get out of the way.
+    if (seenBefore() || reduce) {
+      if (covering && !reduce) {
+        // No head script hid the loader: lift the curtain at once rather than popping it.
+        landOnHash().then(() => alive && lift());
+      } else {
+        finish();
+        void landOnHash({ veil: true });
+        queueMicrotask(() => alive && setPhase("done"));
+      }
+      return () => {
+        alive = false;
+        clearTimeout(leaveTimer);
+      };
     }
 
     getLenis()?.stop();
-    const duration = seen ? 700 : 1700;
-    const t0 = performance.now();
-    let raf = 0;
-    let finished = false;
+    const start = performance.now();
+    // On a full load the loader has been up since the first paint; on a client navigation, since now.
+    const since = document.readyState !== "complete" || start < CAP ? 0 : start;
+    const capAt = Math.max(since + CAP, start + MIN);
+
+    // Progress from real work, eased so the count rolls rather than jumps.
+    let target = 10;
+    let shown = 0;
+    let last = start;
+    let loadedAt = 0;
+    const bump = (p: number) => (target = Math.max(target, p));
     const tick = (t: number) => {
-      const p = Math.min((t - t0) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      if (count.current) count.current.textContent = String(Math.round(eased * 100)).padStart(3, "0");
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else finished = true;
+      // Page loaded, scene still building: keep rolling toward 90 on the time left before the cap, so
+      // the count never sits still. Only the scene (or the cap) takes it to 100.
+      if (loadedAt) bump(60 + 30 * Math.min((t - loadedAt) / Math.max(capAt - loadedAt, 1), 1));
+      shown += (target - shown) * (1 - Math.exp(-(t - last) / 110));
+      last = t;
+      if (target - shown < 0.4) shown = target;
+      if (count.current) count.current.textContent = String(Math.round(shown)).padStart(3, "0");
+      if (bar.current) bar.current.style.transform = `scaleX(${shown / 100})`;
+      if (shown < 100) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
 
-    const minTime = new Promise((r) => setTimeout(r, duration + 120));
-    let leaveTimer = 0;
-    Promise.all([minTime, document.fonts.ready]).then(() => {
-      if (!finished && count.current) count.current.textContent = "100";
-      setPhase("leave");
-      html.classList.add("ready");
-      getLenis()?.start();
-      leaveTimer = window.setTimeout(() => setPhase("done"), 1100);
+    const fonts = document.fonts.ready.then(() => bump(40));
+    const loaded =
+      document.readyState === "complete"
+        ? Promise.resolve()
+        : new Promise<void>((r) => window.addEventListener("load", () => r(), { once: true }));
+    loaded.then(() => {
+      bump(60);
+      loadedAt = performance.now();
     });
+    const scene = whenSceneReady().then(() => bump(100));
+
+    let lifted = false;
+    const go = async () => {
+      if (lifted || !alive) return;
+      lifted = true;
+      clearTimeout(capTimer);
+      bump(100);
+      // Under the curtain, so the reader arrives already on the linked section.
+      await landOnHash();
+      if (alive) lift();
+    };
+    Promise.all([fonts, scene, new Promise((r) => setTimeout(r, MIN))]).then(go);
+    capTimer = window.setTimeout(go, Math.max(capAt - performance.now(), 0));
+
     return () => {
+      alive = false;
       cancelAnimationFrame(raf);
       clearTimeout(leaveTimer);
+      clearTimeout(capTimer);
     };
   }, []);
+
+  // From here on the server markup stays hidden when the page comes back (client navigation).
+  useEffect(() => {
+    if (phase === "done") document.documentElement.classList.add("intro-seen");
+  }, [phase]);
 
   if (phase === "done") return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex flex-col bg-bg"
-      style={{
-        clipPath: phase === "leave" ? "inset(0 0 100% 0)" : "inset(0 0 0 0)",
-        transition: "clip-path 1000ms var(--ease-in-out-quart)",
-      }}
-      aria-hidden
-    >
-      <div className="flex flex-1 flex-col items-center justify-center gap-7">
+    <div ref={root} className="loader" data-phase={phase} aria-hidden>
+      <div className="loader-mark">
         {/* Six systems arrive, one by one */}
-        <div className="flex gap-2.5" aria-hidden>
+        <div className="flex gap-2.5">
           {PLATES.map((c, i) => (
-            <span
-              key={c}
-              className="loader-dot size-3.5 rounded-full"
-              style={{ background: `var(--color-${c})`, animationDelay: `${i * 110}ms` }}
-            />
+            <span key={c} className="loader-dot" style={{ background: `var(--color-${c})`, animationDelay: `${i * 110}ms` }} />
           ))}
         </div>
-        <p className="font-serif text-[30px] leading-none">decignal</p>
+        <Logo size={30} />
       </div>
-      <div className="flex items-end justify-between px-6 pb-7 md:px-10 md:pb-9">
+      <div className="loader-foot">
         <p className="eyebrow max-w-[30ch]">Decision intelligence for enterprises across India and Africa</p>
-        <span ref={count} className="tabular font-serif text-[clamp(48px,7vw,96px)] leading-[0.8] tracking-[-0.022em]">
+        <span ref={count} className="loader-count tabular font-serif">
           000
         </span>
       </div>
-      <div className="absolute inset-x-0 bottom-0 h-1" style={{ background: "var(--spectrum)" }} />
-      <style>{`
-        .loader-dot { animation: dot-in 800ms var(--ease-out-expo) both; }
-        @keyframes dot-in { from { opacity: 0; transform: translateY(14px) scale(0.4); } to { opacity: 1; transform: none; } }
-      `}</style>
+      <span ref={bar} className="loader-bar" />
     </div>
   );
 }

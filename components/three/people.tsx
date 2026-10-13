@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { LIVE } from "./Bake";
 
 export type Pose = "stand" | "walk" | "sit" | "tablet" | "point" | "wave";
 
@@ -36,12 +37,12 @@ export type Look = {
 
 const SKIN = ["#8A5A3C", "#C48A62", "#E2B48E", "#5C3A26", "#A86E4A", "#D6A17A"];
 export const LOOKS: Record<string, Look> = {
-  crew: { skin: SKIN[0], shirt: "#2F3A4A", trousers: "#262C36", vest: "#D7EE3A", hat: "#F4F2EC", hair: "#1E1A17", boots: "#4A3426", body: "m", hairStyle: "crop", beard: true, height: 1.02 },
-  warehouse: { skin: SKIN[1], shirt: "#3D4652", trousers: "#2A2F37", vest: "#FF7A1F", hat: "#F2C230", hair: "#2A211B", boots: "#3B2B20", body: "f", hairStyle: "ponytail", height: 0.96 },
-  planner: { skin: SKIN[2], shirt: "#EEF1F5", trousers: "#2E3646", vest: null, hat: null, hair: "#3A2A1E", boots: "#2A2421", body: "f", hairStyle: "bun", glasses: true, height: 0.97 },
-  driver: { skin: SKIN[3], shirt: "#33495F", trousers: "#272B33", vest: "#D7EE3A", hat: null, hair: "#141210", boots: "#2B231D", body: "m", hairStyle: "short", headwear: { kind: "cap", color: "#22344A" }, beard: true, height: 1.0 },
-  engineer: { skin: SKIN[4], shirt: "#24486E", trousers: "#1F2836", vest: null, hat: "#2F6DF6", hair: "#1B1714", boots: "#3A2A1F", body: "m", hairStyle: "short", height: 1.04 },
-  shopper: { skin: SKIN[5], shirt: "#B5476A", trousers: "#3B4F70", vest: null, hat: null, hair: "#5A3A22", boots: "#E9E6E0", body: "f", hairStyle: "long", height: 0.95 },
+  crew: { skin: SKIN[0], shirt: "#2F3A4A", trousers: "#262C36", vest: "#D7EE3A", hat: "#F3F5F7", hair: "#1E2126", boots: "#2A2E35", body: "m", hairStyle: "crop", beard: true, height: 1.02 },
+  warehouse: { skin: SKIN[1], shirt: "#3D4652", trousers: "#2A2F37", vest: "#FF7A1F", hat: "#F2C230", hair: "#2A2E35", boots: "#23262D", body: "f", hairStyle: "ponytail", height: 0.96 },
+  planner: { skin: SKIN[2], shirt: "#EEF1F5", trousers: "#2E3646", vest: null, hat: null, hair: "#16181C", boots: "#2A2E35", body: "f", hairStyle: "bun", glasses: true, height: 0.97 },
+  driver: { skin: SKIN[3], shirt: "#33495F", trousers: "#272B33", vest: "#D7EE3A", hat: null, hair: "#16181C", boots: "#23262D", body: "m", hairStyle: "short", headwear: { kind: "cap", color: "#22344A" }, beard: true, height: 1.0 },
+  engineer: { skin: SKIN[4], shirt: "#24486E", trousers: "#1F2836", vest: null, hat: "#2F6DF6", hair: "#1B1E23", boots: "#2A2E35", body: "m", hairStyle: "short", height: 1.04 },
+  shopper: { skin: SKIN[5], shirt: "#B5476A", trousers: "#3B4F70", vest: null, hat: null, hair: "#4A4F57", boots: "#E6E9ED", body: "f", hairStyle: "long", height: 0.95 },
 };
 
 /* ---------------- Geometry ---------------- */
@@ -71,17 +72,26 @@ function finish(g: THREE.BufferGeometry, color: string, rough: number) {
 type Part = [THREE.BufferGeometry, string, number?];
 const fuse = (parts: Part[]) => mergeGeometries(parts.map(([g, c, r]) => finish(g, c, r ?? R.fabric)), false)!;
 
+/** Segment scale while building: 1 for the full figure, lower for the far copy (see LITE). */
+let Q = 1;
+/** A segment count at the current quality, never below `min`. */
+const n = (seg: number, min = 3) => Math.max(min, Math.round(seg * Q));
+/** The far copy: a person under about 80 px tall reads the same with about a third of the segments. */
+const LITE = 0.34;
+/** Below this height on screen (CSS px) a moving person is drawn from the low-segment body. */
+const LITE_PX = 80;
+
 const rb = (w: number, h: number, d: number, r: number, x = 0, y = 0, z = 0) =>
-  new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)).translate(x, y, z);
-const ball = (r: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 18) => new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)).scale(sx, sy, sz).translate(x, y, z);
+  new RoundedBoxGeometry(w, h, d, Q < 1 ? 1 : 3, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)).translate(x, y, z);
+const ball = (r: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 18) => new THREE.SphereGeometry(r, n(seg, 6), n(seg * 0.75, 4)).scale(sx, sy, sz).translate(x, y, z);
 
 /**
  * A body section turned from a profile of [radius, y] points (y going up), then squashed front to
  * back by `depth` (x) so cross-sections are oval like a real body. Smoothed by a spline.
  */
 function lathe(profile: [number, number][], depth = 1, width = 1, seg = 20) {
-  const pts = new THREE.SplineCurve(profile.map(([r, y]) => new THREE.Vector2(r, y))).getPoints(profile.length * 4);
-  return new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(Math.max(p.x, 0.0005), p.y)), seg).scale(depth, 1, width);
+  const pts = new THREE.SplineCurve(profile.map(([r, y]) => new THREE.Vector2(r, y))).getPoints(n(profile.length * 4, profile.length));
+  return new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(Math.max(p.x, 0.0005), p.y)), n(seg, 6)).scale(depth, 1, width);
 }
 /** A limb hanging down from its joint: [radius, distance below the joint] pairs. */
 const limb = (profile: [number, number][], depth = 1, width = 1) => lathe(profile.map(([r, d]) => [r, -d] as [number, number]).reverse(), depth, width, 16);
@@ -89,10 +99,12 @@ const limb = (profile: [number, number][], depth = 1, width = 1) => lathe(profil
 const L = { hip: 0.95, hipW: 0.092, thigh: 0.43, shin: 0.41, shoulderY: 0.46, shoulderW: 0.19, upper: 0.29, fore: 0.25, neck: 0.585 };
 
 const geoCache = new Map<string, Record<string, THREE.BufferGeometry>>();
-function bodyParts(look: Look) {
-  const key = JSON.stringify(look);
+/** The body segments for a look, at full detail or as the far copy (`lite`). */
+function bodyParts(look: Look, lite = false) {
+  const key = JSON.stringify(look) + (lite ? "-lite" : "");
   const hit = geoCache.get(key);
   if (hit) return hit;
+  Q = lite ? LITE : 1;
   const { skin, shirt, trousers, vest, hat, hair, boots } = look;
   const f = look.body === "f";
   const style: Hair = look.hairStyle ?? "short";
@@ -122,7 +134,7 @@ function bodyParts(look: Look) {
     [ball(0.047, 0.105, -L.shin - 0.05, 0, 1.25, 0.72, 0.95), boots, R.shoe],
     [ball(0.044, -0.04, -L.shin - 0.045, 0, 0.95, 0.95, 0.98), boots, R.shoe],
   ];
-  if (vest) shin.push([new THREE.CylinderGeometry(0.052, 0.056, 0.07, 16).translate(0, -L.shin + 0.0, 0), boots, R.shoe]); // boot collar
+  if (vest) shin.push([new THREE.CylinderGeometry(0.052, 0.056, 0.07, n(16, 6)).translate(0, -L.shin + 0.0, 0), boots, R.shoe]); // boot collar
   parts.shin = fuse(shin);
 
   // Torso: waist, ribcage, chest and sloping shoulders, oval in section.
@@ -144,7 +156,7 @@ function bodyParts(look: Look) {
     [ball(0.062, 0, L.shoulderY - 0.005, L.shoulderW - 0.015, 1, 0.9, 1), shirt],
     [ball(0.062, 0, L.shoulderY - 0.005, -(L.shoulderW - 0.015), 1, 0.9, 1), shirt],
     // Neck, slightly forward of the spine
-    [new THREE.CylinderGeometry(0.047, 0.055, 0.09, 16).translate(0.008, L.neck - 0.02, 0), skin, R.skin],
+    [new THREE.CylinderGeometry(0.047, 0.055, 0.09, n(16, 6)).translate(0.008, L.neck - 0.02, 0), skin, R.skin],
   ];
   if (vest) {
     // Hi-vis vest over the shirt: open at the neck, two reflective hoops and shoulder braces, pockets
@@ -169,46 +181,46 @@ function bodyParts(look: Look) {
     [ball(0.094, -0.004, 0.118, 0, 1.06, 1.12, f ? 0.84 : 0.88, 24), skin, R.skin],
     [ball(0.066, 0.03, 0.058, 0, 0.95, 0.85, f ? 0.96 : 1.08, 20), skin, R.skin], // jaw
     [ball(0.024, 0.075, 0.035, 0, 0.9, 0.9, 1.1), skin, R.skin], // chin
-    [new THREE.ConeGeometry(0.019, 0.048, 12).rotateZ(-Math.PI / 2).scale(1, 1.25, 0.9).translate(0.103, 0.094, 0), skin, R.skin], // nose
+    [new THREE.ConeGeometry(0.019, 0.048, n(12, 4)).rotateZ(-Math.PI / 2).scale(1, 1.25, 0.9).translate(0.103, 0.094, 0), skin, R.skin], // nose
     [ball(0.012, 0.094, 0.073, 0, 0.6, 0.6, 1.4), skin, R.skin], // nostrils
     [ball(0.024, -0.008, 0.105, 0.083, 0.55, 1.05, 0.45), skin, R.skin], // ears
     [ball(0.024, -0.008, 0.105, -0.083, 0.55, 1.05, 0.45), skin, R.skin],
     [rb(0.012, 0.009, 0.042, 0.004, 0.086, 0.058, 0), "#8E4E3E", R.skin], // lips
   ];
   for (const z of [-0.034, 0.034]) {
-    head.push([ball(0.0125, 0.082, 0.118, z, 0.6, 0.85, 1.1), "#F4F1EC", R.eye]);
-    head.push([ball(0.0072, 0.09, 0.118, z, 0.5, 1, 1), "#2A1D16", R.eye]);
+    head.push([ball(0.0125, 0.082, 0.118, z, 0.6, 0.85, 1.1), "#F2F4F7", R.eye]);
+    head.push([ball(0.0072, 0.09, 0.118, z, 0.5, 1, 1), "#1E2228", R.eye]);
     head.push([rb(0.008, 0.007, 0.034, 0.003, 0.094, 0.142, z).rotateX(z > 0 ? 0.12 : -0.12), hair, R.hair]); // brows
   }
   if (look.beard) head.push([ball(0.07, 0.022, 0.052, 0, 0.95, 0.8, 1.1), hair, 0.95], [rb(0.01, 0.012, 0.05, 0.005, 0.092, 0.07, 0), hair, 0.95]);
   if (look.glasses) {
-    for (const z of [-0.034, 0.034]) head.push([new THREE.TorusGeometry(0.019, 0.0028, 6, 18).rotateY(Math.PI / 2).translate(0.101, 0.118, z), "#1D1E22", R.glass]);
+    for (const z of [-0.034, 0.034]) head.push([new THREE.TorusGeometry(0.019, 0.0028, n(6), n(18, 6)).rotateY(Math.PI / 2).translate(0.101, 0.118, z), "#1D1E22", R.glass]);
     head.push([rb(0.004, 0.004, 0.03, 0.002, 0.104, 0.12, 0), "#1D1E22", R.glass]);
     for (const z of [-1, 1]) head.push([rb(0.09, 0.004, 0.004, 0.002, 0.055, 0.122, z * 0.056), "#1D1E22", R.glass]);
   }
   // Hair
   const cap = (phi: number, sx = 1.08, sy = 1.15, sz = 0.92) =>
-    new THREE.SphereGeometry(0.098, 24, 14, 0, Math.PI * 2, 0, phi).scale(sx, sy, sz).translate(-0.01, 0.12, 0);
+    new THREE.SphereGeometry(0.098, n(24, 8), n(14, 4), 0, Math.PI * 2, 0, phi).scale(sx, sy, sz).translate(-0.01, 0.12, 0);
   if (style === "crop") head.push([cap(Math.PI * 0.4, 1.06, 1.1, 0.9), hair, R.hair], [ball(0.093, -0.03, 0.1, 0, 0.9, 1.0, 0.9), hair, R.hair]);
   else if (style === "short") head.push([cap(Math.PI * 0.42), hair, R.hair], [ball(0.095, -0.03, 0.1, 0, 0.9, 1.05, 0.92), hair, R.hair]);
   else {
     head.push([cap(Math.PI * 0.46, 1.1, 1.17, 0.95), hair, R.hair], [ball(0.098, -0.032, 0.095, 0, 0.92, 1.1, 0.96), hair, R.hair]);
-    if (style === "ponytail") head.push([ball(0.03, -0.11, 0.13, 0, 1, 1, 1), hair, R.hair], [new THREE.CapsuleGeometry(0.026, 0.12, 4, 10).rotateZ(-0.35).translate(-0.135, 0.06, 0), hair, R.hair]);
+    if (style === "ponytail") head.push([ball(0.03, -0.11, 0.13, 0, 1, 1, 1), hair, R.hair], [new THREE.CapsuleGeometry(0.026, 0.12, n(4, 2), n(10, 5)).rotateZ(-0.35).translate(-0.135, 0.06, 0), hair, R.hair]);
     if (style === "bun") head.push([ball(0.042, -0.085, 0.2, 0, 1, 0.9, 1), hair, R.hair]);
     if (style === "long") head.push([rb(0.06, 0.22, 0.17, 0.05, -0.06, 0.02, 0), hair, R.hair]);
   }
   // Headwear
   if (headwear?.kind === "hardhat") {
     const c = headwear.color;
-    head.push([new THREE.SphereGeometry(0.115, 26, 12, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.12, 0.95, 0.98).translate(0, 0.152, 0), c, R.gloss]);
-    head.push([new THREE.CylinderGeometry(0.122, 0.124, 0.012, 28).scale(1.2, 1, 1.04).translate(0.012, 0.155, 0), c, R.gloss]);
-    head.push([new THREE.CylinderGeometry(0.08, 0.06, 0.012, 20, 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 1.4).translate(0.11, 0.157, 0), c, R.gloss]); // front peak
+    head.push([new THREE.SphereGeometry(0.115, n(26, 8), n(12, 4), 0, Math.PI * 2, 0, Math.PI / 2).scale(1.12, 0.95, 0.98).translate(0, 0.152, 0), c, R.gloss]);
+    head.push([new THREE.CylinderGeometry(0.122, 0.124, 0.012, n(28, 8)).scale(1.2, 1, 1.04).translate(0.012, 0.155, 0), c, R.gloss]);
+    head.push([new THREE.CylinderGeometry(0.08, 0.06, 0.012, n(20, 6), 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 1.4).translate(0.11, 0.157, 0), c, R.gloss]); // front peak
     head.push([rb(0.21, 0.02, 0.026, 0.01, 0, 0.26, 0), c, R.gloss]);
     head.push([lathe([[0.112, 0.168], [0.113, 0.178]], 1.12, 0.98, 26), "#2B2D31", R.fabric]); // headband line
   } else if (headwear?.kind === "cap") {
     const c = headwear.color;
-    head.push([new THREE.SphereGeometry(0.103, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.08, 0.82, 0.96).translate(-0.005, 0.15, 0), c, R.fabric]);
-    head.push([new THREE.CylinderGeometry(0.075, 0.075, 0.008, 20, 1, false, -Math.PI / 2, Math.PI).scale(1.15, 1, 1.25).translate(0.088, 0.152, 0).rotateZ(-0.08), c, R.fabric]);
+    head.push([new THREE.SphereGeometry(0.103, n(24, 8), n(12, 4), 0, Math.PI * 2, 0, Math.PI / 2).scale(1.08, 0.82, 0.96).translate(-0.005, 0.15, 0), c, R.fabric]);
+    head.push([new THREE.CylinderGeometry(0.075, 0.075, 0.008, n(20, 6), 1, false, -Math.PI / 2, Math.PI).scale(1.15, 1, 1.25).translate(0.088, 0.152, 0).rotateZ(-0.08), c, R.fabric]);
   }
   parts.head = fuse(head);
 
@@ -224,8 +236,9 @@ function bodyParts(look: Look) {
     [lathe([[0.034, -(L.fore - 0.01)], [0.035, -(L.fore - 0.035)]], 1, 0.92, 16), gloves ? "#3A3D42" : shirt], // cuff
     [rb(0.07, 0.075, 0.028, 0.013, 0.006, -L.fore - 0.05, 0), handC, handR], // palm
     [rb(0.066, 0.06, 0.024, 0.011, 0.012, -L.fore - 0.11, 0).rotateZ(0.05), handC, handR], // fingers
-    [new THREE.CapsuleGeometry(0.011, 0.04, 3, 8).rotateZ(0.5).translate(0.04, -L.fore - 0.06, 0.006), handC, handR], // thumb
+    [new THREE.CapsuleGeometry(0.011, 0.04, n(3, 1), n(8, 4)).rotateZ(0.5).translate(0.04, -L.fore - 0.06, 0.006), handC, handR], // thumb
   ]);
+  Q = 1;
   geoCache.set(key, parts);
   return parts;
 }
@@ -283,6 +296,7 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
   const calm = useMemo(() => still(), []);
   const rootJ = useRef<THREE.Group>(null);
   const statueJ = useRef<THREE.Mesh>(null);
+  const liteOn = useRef(false);
   useEffect(() => () => statueJ.current?.geometry.dispose(), []);
 
   useFrame(({ clock, camera, size }) => {
@@ -298,6 +312,17 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
       P1.project(camera);
       const px = (Math.abs(P1.y - P0.y) * size.height) / 2;
       far = px < (pose === "walk" ? 16 : 30);
+      // Between the statue and close-up: still animated, from the low-segment body.
+      const lite = px < LITE_PX;
+      if (lite !== liteOn.current && pelvisJ.current) {
+        liteOn.current = lite;
+        const set = bodyParts(l, lite);
+        pelvisJ.current.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          const part = mesh.userData.part as string | undefined;
+          if (part && set[part]) mesh.geometry = set[part];
+        });
+      }
       if (far && statue.userData.ready) {
         statue.visible = true;
         if (pelvisJ.current) pelvisJ.current.visible = false;
@@ -380,10 +405,19 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
     j.foR!.rotation.z = foR;
     if (far && root && statue && !statue.userData.ready) {
       root.updateMatrixWorld(true);
+      // A figure scaled flat somewhere above it (an actor stepping out) has no pose to keep: try
+      // again on a later frame rather than bake a statue from a matrix with no inverse.
+      const det = root.matrixWorld.determinant();
+      if (!(Math.abs(det) > 1e-12)) return;
       INV.copy(root.matrixWorld).invert();
+      // The far copy is posed from the low-segment body: the same silhouette at a fraction of the triangles.
+      const lite = bodyParts(l, true);
       const parts: THREE.BufferGeometry[] = [];
       j.pelvis.traverse((o) => {
-        if ((o as THREE.Mesh).isMesh) parts.push((o as THREE.Mesh).geometry.clone().applyMatrix4(M4.multiplyMatrices(INV, o.matrixWorld)));
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const src = (mesh.userData.part && lite[mesh.userData.part as string]) || mesh.geometry;
+        parts.push(src.clone().applyMatrix4(M4.multiplyMatrices(INV, o.matrixWorld)));
       });
       statue.geometry = mergeGeometries(parts, false)!;
       parts.forEach((p) => p.dispose());
@@ -394,33 +428,34 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
   const m = personMat();
   const leg = (s: 1 | -1, k: "L" | "R") => (
     <group key={k} ref={k === "L" ? thighLJ : thighRJ} position={[0, -0.05, s * L.hipW]}>
-      <mesh geometry={g.thigh} material={m} castShadow />
+      <mesh geometry={g.thigh} userData={{ part: "thigh" }} material={m} castShadow />
       <group ref={k === "L" ? shinLJ : shinRJ} position-y={-L.thigh}>
-        <mesh geometry={g.shin} material={m} castShadow />
+        <mesh geometry={g.shin} userData={{ part: "shin" }} material={m} castShadow />
       </group>
     </group>
   );
   const arm = (s: 1 | -1, k: "L" | "R") => (
     <group key={k} ref={k === "L" ? upLJ : upRJ} position={[0, L.shoulderY - 0.02, s * L.shoulderW]}>
-      <mesh geometry={g.upper} material={m} castShadow />
+      <mesh geometry={g.upper} userData={{ part: "upper" }} material={m} castShadow />
       <group ref={k === "L" ? foLJ : foRJ} position-y={-L.upper}>
-        <mesh geometry={g.fore} material={m} castShadow />
+        <mesh geometry={g.fore} userData={{ part: "fore" }} material={m} castShadow />
       </group>
     </group>
   );
   // Height variety scales the whole figure; an explicit `scale` from the scene multiplies it.
   const s = typeof scale === "number" ? scale * h : h;
   return (
-    <group ref={rootJ} scale={s} {...props}>
+    // Joints move every frame: a Bake around a model leaves people as they are.
+    <group ref={rootJ} scale={s} userData={LIVE.userData} {...props}>
       <mesh ref={statueJ} material={m} visible={false} castShadow />
       <group ref={pelvisJ} position-y={L.hip}>
-        <mesh geometry={g.pelvis} material={m} castShadow />
+        <mesh geometry={g.pelvis} userData={{ part: "pelvis" }} material={m} castShadow />
         {leg(-1, "L")}
         {leg(1, "R")}
         <group ref={torsoJ} position-y={0.04}>
-          <mesh geometry={g.torso} material={m} castShadow />
+          <mesh geometry={g.torso} userData={{ part: "torso" }} material={m} castShadow />
           <group ref={headJ} position-y={L.neck + 0.02}>
-            <mesh geometry={g.head} material={m} castShadow />
+            <mesh geometry={g.head} userData={{ part: "head" }} material={m} castShadow />
           </group>
           {arm(-1, "L")}
           {arm(1, "R")}
@@ -447,7 +482,7 @@ export function Walker({ path, speed = 1.2, offset = 0, ...p }: Omit<PersonProps
     root.current.rotation.y = Math.atan2(-tan.z, tan.x);
   });
   return (
-    <group ref={root}>
+    <group ref={root} userData={LIVE.userData}>
       <Person {...p} pose={calm ? "stand" : "walk"} speed={speed} />
     </group>
   );

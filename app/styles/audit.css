@@ -1,0 +1,483 @@
+/* The free AI audit (components/sections/Audit.tsx): the ink panel carries the lead magnet, the white
+   card the three-step request (about you, your decision, preferred times). The panel and the card are
+   size containers, so the layout follows the space they get (home, service pages, any column). */
+
+.audit-panel {
+  /* White text on ink at three strengths, and a hairline. */
+  --on-ink-2: rgb(255 255 255 / 0.82);
+  --on-ink-soft: rgb(255 255 255 / 0.62);
+  --on-ink-line: rgb(255 255 255 / 0.16);
+  container: audit / inline-size;
+  padding: clamp(20px, 4vw, 48px);
+  border-radius: var(--radius-xl);
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+}
+.audit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "copy" "card" "next";
+  gap: 40px;
+}
+.audit-copy { grid-area: copy; container: auditcopy / inline-size; }
+.audit-next { grid-area: next; }
+/* Two columns: the pitch on the left, the card on the right. What happens next goes under whichever
+   column is shorter: the pitch while the card is narrow (one field per row), the card once it is wide. */
+@container audit (min-width: 800px) {
+  .audit-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "copy card" "next card";
+    column-gap: clamp(40px, 5cqi, 72px);
+    row-gap: 48px;
+  }
+  .audit-next { align-self: start; }
+}
+@container audit (min-width: 1000px) {
+  .audit-grid { grid-template-areas: "copy card" "copy next"; }
+}
+
+/* ---- The pitch ---- */
+.audit-copy .t-label,
+.audit-next .t-label { color: var(--on-ink-soft); }
+/* Home: a neutral dot and the cobalt accent line (the editorial heads' rule). A service page marks both
+   in its area tone. On ink the raw tone is used: the -ink tones are built for light grounds. */
+.audit-copy .section-title-dot { background: var(--color-on-ink); }
+.audit-copy[data-area] .section-title-dot { background: var(--tone); }
+.audit-copy .t-title .accent { color: var(--tone); }
+.audit-copy .t-lede { color: var(--on-ink-2); max-width: 40ch; }
+
+.audit-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--on-ink-line);
+}
+.audit-facts dd { margin-top: 6px; }
+@container auditcopy (min-width: 600px) {
+  .audit-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.audit-get { margin-top: 40px; }
+.audit-get ol { margin-top: var(--stack-label); border-top: 1px solid var(--on-ink-line); }
+.audit-get li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--on-ink-line);
+}
+.audit-get-n { padding-top: 5px; }
+.audit-get-title { display: block; }
+.audit-get-text { display: block; margin-top: 4px; color: var(--on-ink-2); }
+
+/* What happens next: four numbered steps that follow the form (the current one fills white). */
+.audit-next ol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px 24px;
+  margin-top: var(--stack-label);
+}
+.audit-next li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--on-ink-2);
+  transition: color var(--dur-3) var(--ease);
+}
+.audit-next-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: -2px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.32);
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
+}
+.audit-next li[data-state="current"] { color: var(--color-on-ink); }
+.audit-next li[data-state="current"] .audit-next-n { background: var(--color-on-ink); color: var(--color-ink); box-shadow: none; }
+.audit-next li[data-state="done"] .audit-next-n { background: var(--on-ink-line); box-shadow: none; }
+.audit-tail {
+  margin-top: 24px;
+  max-width: 52ch;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--on-ink-soft);
+}
+@container audit (min-width: 420px) {
+  .audit-next ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container audit (min-width: 560px) and (max-width: 799px) {
+  .audit-next ol { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---- The card ---- */
+.audit-card {
+  grid-area: card;
+  align-self: start;
+  container: auditcard / inline-size;
+  /* Clears the fixed nav when a step change glides back to the card top (NAV_CLEAR in Audit.tsx). */
+  scroll-margin-top: 88px;
+  padding: clamp(20px, 2.4vw, 32px);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Progress: three bars; a finished step is a button back to it. */
+.audit-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: -8px 0 12px;
+}
+.audit-steps :is(button, span[title]) {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  border-radius: var(--radius-xs);
+}
+.audit-steps button { cursor: pointer; }
+.audit-steps-bar {
+  display: block;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-track);
+  transition: background-color var(--dur-3) var(--ease);
+}
+.audit-steps li:is([data-state="current"], [data-state="done"]) .audit-steps-bar { background: var(--color-ink); }
+.audit-steps li[data-state="done"] button:hover .audit-steps-bar { background: var(--color-cobalt); }
+
+.audit-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-line-strong);
+}
+.audit-head-title {
+  font-family: var(--font-heading);
+  font-optical-sizing: auto;
+  font-size: clamp(24px, 2.2vw, 30px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.022em;
+  outline: none;
+}
+.audit-head .t-label { flex: none; }
+
+/* Fields: a label over an underlined control; the underline turns ink and thick on focus. */
+.audit-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 24px;
+}
+@container auditcard (min-width: 420px) {
+  .audit-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.audit-field {
+  position: relative;
+  padding: 16px 0 12px;
+  border-bottom: 1px solid var(--color-line);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.audit-field:focus-within {
+  border-color: var(--color-ink);
+  box-shadow: inset 0 -1px 0 var(--color-ink);
+}
+.audit-field[data-invalid] { border-color: var(--color-signal); }
+.audit-field[data-invalid]:focus-within { box-shadow: inset 0 -1px 0 var(--color-signal); }
+.audit-field > .t-label { display: block; }
+.audit-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-ink);
+  outline: none;
+}
+.audit-input::placeholder { color: var(--color-ink-soft); opacity: 0.85; }
+textarea.audit-input { resize: none; }
+.audit-field[data-select] .audit-input {
+  appearance: none;
+  padding-right: 28px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23252a33' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 4px center;
+  cursor: pointer;
+}
+.audit-field[data-select] .audit-input:invalid { color: var(--color-ink-soft); }
+.audit-error {
+  margin-top: 6px;
+  font-size: var(--fs-small);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-signal-ink);
+}
+
+/* Area and systems: real radios and checkboxes drawn as chips. The selected chip is the ink pill. */
+.audit-choices { padding: 20px 0 16px; border-bottom: 1px solid var(--color-line); }
+.audit-choices > legend { float: left; width: 100%; }
+.audit-chips { clear: both; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; }
+.audit-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--edge-strong);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.audit-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.audit-chip-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--tone);
+}
+.audit-chip:has(input:checked) { background: var(--color-ink); color: var(--color-on-ink); box-shadow: none; }
+.audit-chip:has(input:focus-visible) { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
+.audit-choices[data-invalid] .audit-chip:not(:has(input:checked)) { box-shadow: inset 0 0 0 1px var(--color-signal); }
+@media (hover: hover) {
+  .audit-chip:not(:has(input:checked)):hover { background: var(--color-wash); box-shadow: inset 0 0 0 1px var(--color-ink-muted); }
+}
+
+/* Preferred times: one row per working day, three windows each. */
+.audit-times { padding-top: 16px; }
+.audit-times-help { display: grid; gap: 2px; font-size: var(--fs-small); line-height: 1.45; color: var(--color-ink-soft); }
+.audit-times-help > span:first-child { font-weight: 600; color: var(--color-ink); }
+.audit-slots { margin-top: 16px; }
+.audit-slot-row {
+  display: grid;
+  grid-template-columns: minmax(56px, 1fr) repeat(3, minmax(0, 1.1fr));
+  align-items: center;
+  gap: 6px;
+  padding-block: 3px;
+}
+.audit-slot-row[data-week] { margin-top: 8px; padding-top: 11px; border-top: 1px solid var(--color-line); }
+.audit-slot-day { display: grid; font-size: var(--fs-small); line-height: 1.2; }
+.audit-slot-day > span:first-child { font-weight: 600; color: var(--color-ink); }
+.audit-slot-day > span:last-child { color: var(--color-ink-soft); }
+@container auditcard (min-width: 420px) {
+  .audit-slot-row { grid-template-columns: minmax(104px, 1.4fr) repeat(3, minmax(0, 1fr)); }
+  .audit-slot-day { display: block; }
+}
+.audit-slot-cell { display: block; }
+.audit-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 38px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--edge-strong);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+  transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.audit-slot:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; border-radius: var(--radius-pill); }
+.audit-slot[aria-pressed="true"] { background: var(--color-ink); color: var(--color-on-ink); box-shadow: none; }
+.audit-slot[aria-disabled="true"] { color: var(--color-ink-muted); box-shadow: var(--edge-line); cursor: default; }
+.audit-slots[data-invalid] .audit-slot:not([aria-pressed="true"]) { box-shadow: inset 0 0 0 1px rgb(242 54 31 / 0.5); }
+@media (hover: hover) {
+  .audit-slot:not([aria-pressed="true"]):not([aria-disabled="true"]):hover { background: var(--color-wash); box-shadow: inset 0 0 0 1px var(--color-ink-muted); }
+}
+/* The preference number: a small white disc on the ink pill, an ink disc in the list. */
+.audit-slot-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--color-on-ink);
+  color: var(--color-ink);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+/* A narrow card has no room beside the time: the number sits on the pill's corner. */
+@container auditcard (max-width: 419px) {
+  .audit-slot { position: relative; }
+  .audit-slot .audit-slot-n {
+    position: absolute;
+    top: -5px;
+    right: -3px;
+    width: 17px;
+    height: 17px;
+    box-shadow: 0 0 0 2px var(--color-surface), inset 0 0 0 1.5px var(--color-ink);
+  }
+}
+.audit-picks { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--color-line); }
+.audit-picks .t-label .tabular { margin-left: 6px; color: var(--color-ink); }
+.audit-picks ol { display: grid; gap: 6px; margin-top: 10px; }
+.audit-picks li { display: flex; align-items: center; gap: 10px; font-size: var(--fs-body); font-weight: 500; font-variant-numeric: tabular-nums; }
+.audit-picks li .audit-slot-n { background: var(--color-ink); color: var(--color-on-ink); }
+
+.audit-times-alt { margin-top: 12px; font-size: var(--fs-small); line-height: 1.45; color: var(--color-ink-soft); }
+.audit-times-alt a { font-weight: 600; color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line-strong); }
+.audit-times-alt a:hover { text-decoration-color: currentColor; }
+.audit-consent-wrap { margin-top: 12px; }
+.audit-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--color-ink-2);
+  cursor: pointer;
+}
+.audit-consent input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--color-ink);
+  cursor: pointer;
+}
+.audit-consent-wrap[data-invalid] .audit-consent input { outline: 1.5px solid var(--color-signal); outline-offset: 1px; }
+.audit-consent-wrap .audit-error { margin: 0 0 0 32px; }
+
+/* Errors on submit: one summary at the top of the step, each line a link to its field. */
+.audit-summary,
+.audit-notice {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-sunken);
+  font-size: var(--fs-small);
+  line-height: 1.45;
+}
+.audit-summary:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
+.audit-summary:focus:not(:focus-visible) { outline: none; }
+.audit-summary-title { font-weight: 600; color: var(--color-signal-ink); }
+.audit-summary ul { display: grid; gap: 2px; margin-top: 6px; }
+.audit-summary a { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line-strong); }
+.audit-summary a:hover { text-decoration-color: currentColor; }
+
+/* After a send that did not go through: the message and what to do instead. */
+.audit-notice { margin-top: 20px; padding: 16px; font-size: var(--fs-body); color: var(--color-ink); }
+.audit-notice-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 12px; }
+.audit-notice-mail { font-size: var(--fs-small); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Actions: Back on the left, the primary on the right; on a narrow card the primary goes first. */
+.audit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 28px;
+}
+.audit-actions .audit-submit { margin-left: auto; }
+.audit-back {
+  min-height: 44px;
+  padding: 0 6px;
+  margin-left: -6px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--color-ink-2);
+  text-underline-offset: 4px;
+}
+.audit-back:hover { color: var(--color-ink); text-decoration: underline; }
+@container auditcard (max-width: 339px) {
+  .audit-actions { flex-direction: column-reverse; align-items: stretch; }
+  .audit-actions .btn { justify-content: center; margin-left: 0; }
+  .audit-back { align-self: center; margin-left: 0; }
+}
+
+/* The submit keeps its width while it shows "Sending". */
+.audit-submit[aria-disabled="true"] { cursor: progress; }
+.audit-submit-face { display: inline-grid; }
+.audit-submit-face > span {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.audit-submit-face > span[data-off] { visibility: hidden; }
+.audit-spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: var(--color-on-ink);
+  border-radius: var(--radius-pill);
+  animation: auditSpin 0.8s linear infinite;
+}
+@keyframes auditSpin { to { transform: rotate(360deg); } }
+
+.audit-privacy {
+  margin-top: 16px;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+}
+.audit-privacy a { font-weight: 600; color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line-strong); }
+.audit-privacy a:hover { text-decoration-color: currentColor; }
+
+/* Honeypot: off screen, out of the tab order, hidden from assistive tech. */
+.audit-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Success: the check draws itself, then the times and the reference. */
+.audit-ok { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: var(--color-emerald-ink); }
+.audit-check { fill: none; stroke: var(--color-ok); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.audit-check circle { stroke-dasharray: 66; stroke-dashoffset: 66; animation: auditDraw var(--dur-4) var(--ease) var(--dur-2) forwards; }
+.audit-check path { stroke-dasharray: 16; stroke-dashoffset: 16; animation: auditDraw var(--dur-3) var(--ease) var(--dur-4) forwards; }
+@keyframes auditDraw { to { stroke-dashoffset: 0; } }
+.audit-done-title { margin-top: 16px; }
+.audit-done-body { margin-top: 12px; max-width: 44ch; }
+.audit-ref { margin-top: 16px; font-size: var(--fs-small); font-variant-numeric: tabular-nums; color: var(--color-ink-soft); }
+
+/* Each step slides in a little; focus has already moved to its heading. */
+.audit-step { animation: auditStep var(--dur-4) var(--ease) both; }
+@keyframes auditStep { from { opacity: 0; transform: translateY(8px); } }
+
+/* Phones: 44px targets. */
+@media (max-width: 767px) {
+  .audit-chip,
+  .audit-slot { min-height: 44px; }
+  .audit-steps :is(button, span[title]) { padding: 20px 0; }
+  .audit-steps { margin: -20px 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audit-step { animation: none; }
+  .audit-spin { animation: none; }
+  .audit-check circle, .audit-check path { animation: none; stroke-dashoffset: 0; }
+}

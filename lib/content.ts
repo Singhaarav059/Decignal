@@ -1,3 +1,16 @@
+// Product content: applications, outcomes, delivery paths, FAQ and the systems Decignal reads.
+// Section and chapter strings live in lib/copy.ts, the running example in lib/example.ts.
+//
+// Style rules (COPY-03), for every string on the site:
+// (a) "units", never "u".
+// (b) Durations are "N to M weeks" in full. NavPeek reads PATHS.catalogue.total, so keep it starting "N to M weeks".
+// (c) Currency is "INR" plus the full figure with western grouping ("INR 38,000"). "INR 38k" only under
+//     about 120px of width. Never lakh ("L").
+// (d) "safety stock" and "breach". "Day 6" in labels, "day 6" in sentences.
+// (e) "service cases", never tickets or records.
+// (f) The decision is "Transfer 240 units, Plant 02 to Plant 01".
+// (g) Curly apostrophes in rendered copy. No em dashes. British spelling.
+
 export const CATEGORIES = ["Supply Chain", "Operations", "Commercial", "Customer", "Finance & Risk"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
@@ -12,7 +25,7 @@ export const APPLICATIONS: {
   {
     name: "Inventory Intelligence",
     category: "Supply Chain",
-    text: "Prevent shortages and excess stock before service levels are affected.",
+    text: "Catch shortages and excess early, and move stock to where it is needed.",
     weeks: "4 to 6",
     connects: ["ERP", "WMS", "Demand plans", "Supplier feeds"],
     example: "Transfer 240 units, Plant 02 to Plant 01",
@@ -20,10 +33,10 @@ export const APPLICATIONS: {
   {
     name: "Demand & Replenishment",
     category: "Supply Chain",
-    text: "Sense changing demand and coordinate replenishment at the right level.",
+    text: "Spot demand shifts by region and adjust replenishment before stock runs short.",
     weeks: "5 to 7",
     connects: ["ERP", "POS", "WMS", "Planning"],
-    example: "Raise West DC order by 1,800 units",
+    example: "Raise the West DC order by 1,800 units",
   },
   {
     name: "Production Intelligence",
@@ -44,15 +57,15 @@ export const APPLICATIONS: {
   {
     name: "Supply Chain Risk",
     category: "Supply Chain",
-    text: "Recognise supplier and logistics disruption before it reaches operations.",
+    text: "See supplier and lane disruption early, and switch source before production feels it.",
     weeks: "5 to 8",
     connects: ["ERP", "TMS", "Supplier portals", "Risk feeds"],
-    example: "Dual-source 2 parts ahead of port delay",
+    example: "Dual-source 2 parts ahead of a port delay",
   },
   {
     name: "Sales & Dealer Intelligence",
     category: "Commercial",
-    text: "Explain performance changes and guide the next best commercial action.",
+    text: "See where orders outrun allocation, and move stock to the dealers who can sell it.",
     weeks: "4 to 6",
     connects: ["CRM", "DMS", "ERP", "Marketing"],
     example: "Shift 12% of allocation to the West region",
@@ -60,32 +73,50 @@ export const APPLICATIONS: {
   {
     name: "Customer Service Intelligence",
     category: "Customer",
-    text: "Prioritise issues, predict escalation and guide consistent resolution.",
+    text: "Link related cases by part and order history, and send one escalation to one owner.",
     weeks: "4 to 6",
-    connects: ["Service CRM", "Ticketing", "OMS", "Knowledge"],
-    example: "Escalate 14 cases, one root cause",
+    connects: ["Service CRM", "Service desk", "OMS", "Knowledge"],
+    example: "Escalate 14 service cases, one root cause",
   },
   {
     name: "Finance & Risk Operations",
     category: "Finance & Risk",
-    text: "Move high-volume exceptions from alert to governed resolution.",
+    text: "Check every exception against PO, receipt and policy before money moves.",
     weeks: "6 to 8",
     connects: ["Finance ERP", "Payments", "Documents", "Policy"],
-    example: "Hold 3 invoices pending GRN",
+    example: "Hold 3 invoices until goods arrive",
   },
 ];
 
+/** Three example decisions from the scenes above (COPY-09). `value` feeds CountUp: keep its digits and "→". */
 export const OUTCOMES = [
-  { value: "2 days", label: "to arrive before the day 6 risk", sector: "Earlier intervention", quote: "The transfer reaches Plant 01 before the projected safety-stock breach.", context: "Transfer timing · Stock forecast" },
-  { value: "380", label: "units protected at the source", sector: "Balanced decisions", quote: "Plant 02 gives up its transferable stock while retaining the full quantity reserved for its own plan.", context: "Available stock · Production plan" },
-  { value: "14 → 1", label: "cases, one coordinated escalation", sector: "Shared context", quote: "Related service records travel together, so the owner can address the shared part issue.", context: "Service cases · Part history" },
+  {
+    value: "2 days",
+    label: "to arrive, four days before the breach",
+    sector: "Act earlier",
+    quote: "The transfer reaches Plant 01 on day 2. Without it, stock falls below safety stock on day 6.",
+    context: "Transfer timing · Stock forecast",
+  },
+  {
+    value: "380",
+    label: "units Plant 02 keeps for its own plan",
+    sector: "Protect both plants",
+    quote: "Plant 02 sends only what sits above its own plan, so fixing one shortage does not create another.",
+    context: "Available stock · Production plan",
+  },
+  {
+    value: "14 → 1",
+    label: "service cases, one escalation",
+    sector: "Fix the cause once",
+    quote: "Cases linked by the same part reach one owner, who fixes the cause once.",
+    context: "Service cases · Part history",
+  },
 ];
 
 export const PATHS = {
   custom: {
     label: "Custom to your business",
-    intro:
-      "We begin with the operation that needs to change. The first month produces a clear blueprint before the production build begins.",
+    intro: "Month one maps the operation and ends in a blueprint you sign off before we build.",
     total: "6 to 12 weeks to the first production release",
     steps: [
       { when: "Days 0 to 14", title: "Map the operation", text: "Understand the decision, users, systems and constraints." },
@@ -96,8 +127,7 @@ export const PATHS = {
   },
   catalogue: {
     label: "From the catalogue",
-    intro:
-      "Start from an application that already solves a common decision, then fit it to your systems, policies and teams.",
+    intro: "Start from a catalogue application and fit it to your systems, policies and teams.",
     total: "4 to 8 weeks to the first production release",
     steps: [
       { when: "Week 1", title: "Choose the application", text: "Pick the decision and confirm the outcome to measure." },
@@ -108,53 +138,77 @@ export const PATHS = {
   },
 };
 
+/**
+ * Buyer objections (E08), each answered in at most three lines at 390px: keep answers to about 105 characters. Answers only restate what the
+ * site already says: read-only to start, named approval, thresholds, the audit, the delivery ranges.
+ * FAQ_TOPICS and FAQ_PEEK are index-aligned with this array: update them together.
+ */
 export const FAQ = [
   {
-    q: "Does Decignal replace our ERP, MES or CRM?",
-    a: "No. Decignal works across the systems you already run. It connects the context needed for a decision, adds intelligence and controls, and sends approved actions back into the right workflow.",
+    q: "We already have dashboards. Why add this?",
+    a: "A dashboard shows what happened. Decignal prepares the next action, with its evidence, for approval.",
   },
   {
-    q: "Do we need perfectly organised data before starting?",
-    a: "No. We begin with one decision and the minimum reliable context it requires. The audit identifies usable sources, material gaps and what should improve as the application moves toward production.",
+    q: "Do we have to replace our ERP, MES or CRM?",
+    a: "No. Decignal reads across the systems you already run, read-only to start. Nothing is ripped out.",
   },
   {
-    q: "Where does our data remain?",
-    a: "The deployment architecture is agreed with your technology and security teams. Data access, storage and model boundaries are configured around your environment, policies and regulatory requirements.",
+    q: "Our data is messy. Is that a blocker?",
+    a: "No. We start with one decision and the minimum data it needs. The audit shows which gaps matter.",
   },
   {
-    q: "Can Decignal take actions automatically?",
-    a: "Only where you choose. A workflow can provide recommendations, require named approval or automate a tightly defined low-risk action. The operating mode is explicit and can change as confidence grows.",
+    q: "Will our security team approve it?",
+    a: "Access is read-only to start. Hosting, storage and model limits are agreed with your security team first.",
   },
   {
-    q: "Can human approval always be required?",
-    a: "Yes. Approval roles, thresholds and escalation paths are part of the application design. Teams see the recommendation, supporting evidence and policy checks before anything changes downstream.",
+    q: "What if a recommendation is wrong?",
+    a: "A named person approves every action, within limits you set, after seeing the evidence and policy checks.",
   },
   {
-    q: "Who owns the application and business definitions?",
-    a: "Your enterprise retains its data, operating definitions and deployment-specific assets. The statement of work makes ownership, reusable platform components and ongoing responsibilities clear before delivery begins.",
+    q: "Our AI pilots never reached production. Why would this?",
+    a: "One decision first, not a platform. A catalogue application goes live in 4 to 8 weeks, custom in 6 to 12.",
   },
   {
-    q: "How do we choose the first use case?",
-    a: "We look for a frequent, measurable decision where better timing or context can materially change an operating result. The AI audit ranks candidates by value, feasibility, risk and time to production.",
+    q: "Who owns the application and our definitions?",
+    a: "You own your data and definitions. The statement of work sets out what is yours and who runs what.",
   },
   {
-    q: "How long does the first deployment take?",
-    a: "A catalogue application typically reaches its first production deployment in four to eight weeks. A custom application usually takes six to twelve weeks, depending on integrations, controls and validation requirements.",
+    q: "Where do we start?",
+    a: "With a frequent decision where timing changes the result. The free AI audit ranks the candidates for you.",
   },
 ];
 
-export const STACK = ["SAP", "Snowflake", "Databricks", "Google Cloud", "MongoDB", "PostgreSQL", "HubSpot", "Atlassian", "Zendesk"];
+/** One topic word per FAQ entry (Editorial FAQ_META), index-aligned with FAQ. Neutral chrome: no tones (D6). */
+export const FAQ_TOPICS = ["Dashboards", "Integration", "Data", "Security", "Control", "Delivery", "Ownership", "Getting started"];
 
-/** What each system contributes, grouped by the kind of signal it carries. */
-export const STACK_ROWS: { name: string; role: string }[][] = [
-  [
-    { name: "SAP", role: "ERP" }, { name: "Snowflake", role: "Warehouse" }, { name: "Databricks", role: "Lakehouse" },
-    { name: "Google Cloud", role: "Cloud" }, { name: "MongoDB", role: "Database" },
-  ],
-  [
-    { name: "PostgreSQL", role: "Database" }, { name: "HubSpot", role: "CRM" }, { name: "Atlassian", role: "Work" },
-    { name: "Zendesk", role: "Service" },
-  ],
+/** The five questions the nav's FAQ glance shows (NavPeek FAQ_PICK): integration, data, security, control, delivery. */
+export const FAQ_PEEK = [1, 2, 3, 4, 5];
+
+/**
+ * The systems strip (E10, COPY-10, D8): system types in their system colours and what Decignal reads
+ * from each. No vendor names or logos. `read` is the running example's fact from that system, for the
+ * strip's example feed card. Names match SYSTEM_TYPES in lib/audit.ts.
+ */
+export const CONNECTS: { id: string; name: string; full: string; tone: string; reads: string; read: string }[] = [
+  { id: "erp", name: "ERP", full: "Enterprise resource planning", tone: "cobalt", reads: "On-hand stock, safety stock, orders and costs", read: "Plant 01 on hand 410, safety stock 175" },
+  { id: "crm", name: "CRM", full: "Customer relationships", tone: "violet", reads: "Accounts, open orders and pipeline", read: "Open orders for X90 up 18% in 3 weeks" },
+  { id: "mes", name: "MES", full: "Manufacturing execution", tone: "emerald", reads: "Production plans, lines, lots and changeovers", read: "Line 02 uses 45 X90 bearings a day" },
+  { id: "wms", name: "WMS", full: "Warehouse management", tone: "saffron", reads: "Stock by site and bin, dock slots", read: "Plant 02 holds 620 units, 380 for its plan" },
+  { id: "sup", name: "Suppliers", full: "Supplier portals and feeds", tone: "tangerine", reads: "Confirmations, lead times and ETAs", read: "Vendor 1140 next delivery in 21 days" },
+  { id: "ext", name: "External feeds", full: "Freight, port and weather feeds", tone: "pink", reads: "Freight rates, port status and weather on the route", read: "Inter-plant lane clear, 2 days" },
+];
+
+/** Other system types the applications read, shown neutral (no system colour). */
+export const CONNECTS_MORE: { name: string; reads: string }[] = [
+  { name: "TMS", reads: "Shipments, lanes and carrier ETAs" },
+  { name: "CMMS", reads: "Assets, work orders and maintenance history" },
+  { name: "SCADA and IoT", reads: "Sensor readings such as vibration and temperature" },
+  { name: "QMS", reads: "Inspections, non-conformances and batch holds" },
+  { name: "POS", reads: "Sell-through by store and region" },
+  { name: "DMS", reads: "Dealer orders, stock and allocation" },
+  { name: "Service desk", reads: "Service cases, SLAs and part history" },
+  { name: "Data warehouse", reads: "History, forecasts and models you already keep" },
+  { name: "Spreadsheets", reads: "The plans and trackers that live outside systems" },
 ];
 
 /** Each business area keeps one colour everywhere it appears. */

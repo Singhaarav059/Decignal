@@ -17,6 +17,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent tooling, stale worktrees and reference material: not app code.
+    ".claude/**",
+    ".agent/**",
+    ".agents/**",
+    ".gemini/**",
+    ".gsd/**",
+    "references/**",
   ]),
 ]);
 

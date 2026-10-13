@@ -175,7 +175,7 @@ export const cladding = (color: string, repeat = 12, rough = 0.48) =>
     return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.25, normalMap: n, normalScale: new THREE.Vector2(1, 1) });
   });
 
-export const concrete = (color = "#E2DED6") =>
+export const concrete = (color = "#DFE2E7") =>
   memo(`concrete-${color}`, () => {
     const r = grain("concrete", 225, 40).clone();
     r.needsUpdate = true;
@@ -203,12 +203,11 @@ const asphaltMap = () =>
     }
     // Tyre tracks: two darker, smoother bands along the lane
     for (const y of [0.3, 0.68]) {
-      const g = c.createLinearGradient(0, y * 256 - 22, 0, y * 256 + 22);
-      g.addColorStop(0, "rgba(20,20,22,0)");
-      g.addColorStop(0.5, "rgba(20,20,22,0.22)");
-      g.addColorStop(1, "rgba(20,20,22,0)");
-      c.fillStyle = g;
-      c.fillRect(0, y * 256 - 22, 1024, 44);
+      // Stepped flat bands (no gradient): denser toward the wheel line
+      for (const [h, a] of [[44, 0.06], [30, 0.07], [16, 0.09]] as const) {
+        c.fillStyle = `rgba(20,20,22,${a})`;
+        c.fillRect(0, y * 256 - h / 2, 1024, h);
+      }
     }
     // Sealed cracks: thin, dark, wandering lines
     c.strokeStyle = "rgba(18,18,20,0.55)";
@@ -285,12 +284,13 @@ export const shipLabel = () =>
     return new THREE.MeshStandardMaterial({ map, roughness: 0.55 });
   });
 
+/** Weathered, cool grey timber (pallets): the grain stays, the colour is the neutral world's. */
 export const wood = () => memo("wood", () => {
-  const texture = canvasTex("wood-grain", 256, 256, (c) => {
-    c.fillStyle = "#C9A274";
+  const texture = canvasTex("wood-grain-grey", 256, 256, (c) => {
+    c.fillStyle = "#AEB4BD";
     c.fillRect(0, 0, 256, 256);
     for (let i = 0; i < 160; i++) {
-      c.strokeStyle = `rgba(90, 54, 25, ${0.04 + (i % 5) * 0.018})`;
+      c.strokeStyle = `rgba(38, 46, 58, ${0.04 + (i % 5) * 0.018})`;
       c.lineWidth = 0.5 + (i % 3) * 0.4;
       c.beginPath();
       for (let y = 0; y <= 256; y += 8) {
@@ -303,11 +303,71 @@ export const wood = () => memo("wood", () => {
   return new THREE.MeshStandardMaterial({ map: texture, roughness: 0.78, bumpMap: texture, bumpScale: 0.003 });
 });
 
-/** Brass for the globe stand. */
-export const brass = () => memo("brass", () => new THREE.MeshStandardMaterial({ color: "#D9B36A", roughness: 0.25, metalness: 1 }));
+/** Brushed steel for fittings: the globe stand, the bearing cage. */
+export const brushed = () => memo("brushed", () => new THREE.MeshStandardMaterial({ color: "#B8BEC7", roughness: 0.3, metalness: 1 }));
 
 /** Shrink wrap over a loaded pallet. */
 export const wrap = () =>
   memo("wrap", () =>
     new THREE.MeshPhysicalMaterial({ color: "#FFFFFF", roughness: 0.18, transmission: 0, transparent: true, opacity: 0.16, clearcoat: 1, depthWrite: false }),
   );
+
+/* ---------------- Two-colour printed surfaces: signs and the globe ---------------- */
+
+/**
+ * A sign: the panel is the material's colour and the lettering a second colour (`fg`), read from a
+ * coverage mask (red channel = ink). Both colours are uniforms, so the story can ease a sign from its
+ * system colour to ink on white without redrawing it.
+ */
+export class SignMaterial extends THREE.MeshStandardMaterial {
+  fg = new THREE.Color("#FFFFFF");
+  constructor(params?: THREE.MeshStandardMaterialParameters & { fg?: string }) {
+    const { fg, ...rest } = params ?? {};
+    super(rest);
+    if (fg) this.fg.set(fg);
+    this.userData.bakeSafe = true;
+    this.onBeforeCompile = (s) => {
+      s.uniforms.signFg = { value: this.fg };
+      s.fragmentShader = s.fragmentShader
+        .replace("#include <common>", "#include <common>\nuniform vec3 signFg;")
+        .replace("#include <map_fragment>", "#ifdef USE_MAP\n  diffuseColor.rgb = mix( diffuseColor.rgb, signFg, texture2D( map, vMapUv ).r );\n#endif");
+    };
+  }
+  customProgramCacheKey() {
+    return "sign-mask";
+  }
+  copy(source: SignMaterial) {
+    super.copy(source);
+    if (source.fg) this.fg.copy(source.fg);
+    return this;
+  }
+}
+
+/**
+ * The desk globe: ocean in printed white with a faint graticule, land in the material's colour.
+ * The mask's red channel is land coverage, green the graticule.
+ */
+export class GlobeMaterial extends THREE.MeshPhysicalMaterial {
+  ocean = new THREE.Color("#FAFBFC");
+  constructor(params?: THREE.MeshPhysicalMaterialParameters) {
+    super(params);
+    this.userData.bakeSafe = true;
+    this.onBeforeCompile = (s) => {
+      s.uniforms.globeOcean = { value: this.ocean };
+      s.fragmentShader = s.fragmentShader
+        .replace("#include <common>", "#include <common>\nuniform vec3 globeOcean;")
+        .replace(
+          "#include <map_fragment>",
+          "#ifdef USE_MAP\n  vec4 globeMask = texture2D( map, vMapUv );\n  diffuseColor.rgb = mix( globeOcean * ( 1.0 - 0.07 * globeMask.g ), diffuseColor.rgb, globeMask.r );\n#endif",
+        );
+    };
+  }
+  customProgramCacheKey() {
+    return "globe-mask";
+  }
+  copy(source: GlobeMaterial) {
+    super.copy(source);
+    if (source.ocean) this.ocean.copy(source.ocean);
+    return this;
+  }
+}

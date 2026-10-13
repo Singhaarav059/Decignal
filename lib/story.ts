@@ -9,16 +9,18 @@ export type Chapter = {
   ts: number; // fraction of the chapter where the transition to the next one begins
 };
 
+// Story length budget (viewport heights): 16.15 in all. Scale holds one function per step (S69-04);
+// the final chapter is short and ends in an exit (S69-07).
 export const CHAPTERS: Chapter[] = [
-  { id: "fragments", label: "Fragmented", len: 1.3, ts: 0.45 },
+  { id: "fragments", label: "Systems", len: 1.3, ts: 0.5 },
   { id: "signal", label: "Signal", len: 1.3, ts: 0.5 },
   { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
   { id: "context", label: "Context", len: 1.5, ts: 0.55 },
   { id: "decision", label: "Decision", len: 2.3, ts: 0.8 },
   { id: "control", label: "Control", len: 1.7, ts: 0.62 },
-  { id: "scale", label: "Scale", len: 1.5, ts: 0.55 },
-  { id: "industries", label: "Industries", len: 3.2, ts: 0.9 },
-  { id: "final", label: "Decide", len: 1.6, ts: 1 },
+  { id: "scale", label: "Scale", len: 2.2, ts: 0.75 },
+  { id: "industries", label: "Industries", len: 3.2, ts: 0.85 },
+  { id: "final", label: "Decide", len: 1.15, ts: 1 },
 ];
 
 export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<string, number>;
@@ -43,12 +45,43 @@ export const store = {
   islandHint: -1,
   /** Screen position (px) of the opened island's top, for the panel's leader line. */
   anchor: { x: 0, y: 0 },
+  /** The one 3D pin open at this scroll position, from the timeline (pinAt), or null. Written by setG. */
+  pin: null as string | null,
+  /** A pin the page points at (hover or focus on a card row), which wins over the timeline's pin. */
+  pinHint: null as string | null,
+  /** The StoryCard's viewport rect in CSS px (written by StoryCard), or null when no card shows. */
+  cardRect: null as CardRect | null,
+  /** The story canvas has drawn its first frames (shaders compiled). */
+  sceneReady: false,
+  /** The reader's choice in the Control panel (written by DecisionControls), drawn on the 3D decision card. */
+  decision: { mode: "idle", qty: 240 } as StoryDecision,
   selectListeners: new Set<(i: number) => void>(),
   listeners: new Set<(g: number) => void>(),
 };
 
+export type CardRect = { x: number; y: number; w: number; h: number };
+export type StoryDecision = { mode: "idle" | "approved" | "rejected"; qty: number };
+
+/** StoryCard reports its viewport rect (ResizeObserver plus resize); null when it is gone. */
+export function setCardRect(r: CardRect | null) {
+  store.cardRect = r;
+}
+
+/** Points at a pin from the page (null clears it). The open pin is activePin(). */
+export function setPinHint(id: string | null) {
+  store.pinHint = id;
+}
+
+/** The pin that is open now: the page's hint, else the timeline's. */
+export const activePin = () => store.pinHint ?? store.pin;
+
+export function setSceneReady(ready = true) {
+  store.sceneReady = ready;
+}
+
 export function setG(g: number) {
   store.g = g;
+  store.pin = pinAt(g);
   store.listeners.forEach((l) => l(g));
 }
 
@@ -125,34 +158,102 @@ export function localIn(c: number, g: number) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Beats: what each chapter points at as it plays                       */
+/* ------------------------------------------------------------------ */
+
+/** Decision chapter beats, as local progress through the chapter. */
+export const BEATS = {
+  load: [0.06, 0.5] as const, // three forklift trips
+  drive: [0.53, 0.78] as const,
+};
+
+/** Context steps through the evidence one system at a time, in the card's order: WMS, Suppliers, External. */
+export const CONTEXT_PINS = [3, 4, 5] as const;
+/** Which evidence step (0..2) Context shows at local t: its hold (0.05 to 0.55) in three equal beats. */
+export const contextBeat = (t: number) => Math.min(2, Math.max(0, Math.floor((t - 0.05) / (0.5 / 3))));
+
+/**
+ * Steps through `count` items over local progress a..a+u: equal holds, each followed by a turn that
+ * takes `turn` of a hold's length. Returns the item in front, fractional while turning.
+ */
+export function stepped(t: number, a: number, u: number, count: number, turn: number) {
+  const h = u / (count + (count - 1) * turn);
+  const p = h * (1 + turn);
+  const n = count - 1;
+  const x = Math.min(Math.max(t - a, 0), u);
+  const k = Math.min(Math.floor(x / p), n);
+  const r = x - k * p;
+  return k < n && r > h ? k + smootherstep(h, p, r) : k;
+}
+/** Local progress in the middle of item k's hold, for `stepped` with the same arguments. */
+export const steppedAt = (k: number, a: number, u: number, count: number, turn: number) => {
+  const h = u / (count + (count - 1) * turn);
+  return a + k * h * (1 + turn) + h / 2;
+};
+
+/** Scale brings one function forward at a time: which one faces the front at local t (fractional while changing). */
+export const scaleF = (t: number) => stepped(t, 0.03, CHAPTERS[CH.scale].ts - 0.06, 5, 0.6);
+export const scaleBeat = (t: number) => Math.round(scaleF(t));
+/** Local progress where function k holds the front (for jumps from the card's function tabs). */
+export const scaleSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.scale].ts - 0.06, 5, 0.6);
+
+/** Where the final chapter leaves: over its last 30% the copy goes and the world sinks for the page below. */
+export const FINAL_EXIT = 0.7;
+export const finalExit = (g: number) => smootherstep(FINAL_EXIT, 1, localIn(CH.final, g));
+
+/**
+ * The one 3D pin open at g, by chapter and beat. Ids: "island:<system>" (Context), "plant02",
+ * "truck", "plant01" (Decision), "fn:<k>" (Scale), "industry:<k>" (Industries). Hero, Signal,
+ * Problem, Control and Final pin nothing by default; between chapters nothing is pinned.
+ */
+export function pinAt(g: number): string | null {
+  const { i, local, e } = blendAt(g);
+  if (e > 0.4) return null;
+  switch (i) {
+    case CH.context:
+      return `island:${CONTEXT_PINS[contextBeat(local)]}`;
+    case CH.decision:
+      return local < BEATS.drive[0] ? "plant02" : local < BEATS.drive[1] - 0.05 ? "truck" : "plant01";
+    case CH.scale:
+      return `fn:${scaleBeat(local)}`;
+    case CH.industries:
+      return `industry:${Math.round(industryF(local))}`;
+    default:
+      return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Product truth: one running example, used everywhere.                 */
 /* ------------------------------------------------------------------ */
 
 export const SYSTEMS = ["ERP", "CRM", "MES", "WMS", "SUPPLIERS", "EXTERNAL"] as const;
 
+// Figures follow the fact sheet in lib/example.ts; section and chapter strings live in lib/copy.ts.
+
 export const CONTEXT = [
-  { system: "ERP", title: "Transfer policy & cost" },
+  { system: "ERP", title: "410 on hand, safety stock 175" },
   { system: "CRM", title: "Open orders up 18%" },
-  { system: "MES", title: "Production plan" },
-  { system: "WMS", title: "Stock at every plant" },
-  { system: "SUPPLIERS", title: "Inbound in 21 days" },
-  { system: "EXTERNAL", title: "Freight & weather" },
+  { system: "MES", title: "45 X90 used a day" },
+  { system: "WMS", title: "Plant 02 holds 620" },
+  { system: "SUPPLIERS", title: "Next delivery in 21 days" },
+  { system: "EXTERNAL", title: "Lane clear, 2 days" },
 ];
 
 export const LAYERS = [
-  { name: "Signal", text: "Plant 01 short in 6 days" },
+  { name: "Signal", text: "Plant 01 below safety stock on day 6" },
   { name: "Evidence", text: "Orders up 18% in 3 weeks" },
-  { name: "Context", text: "Plant 02 holds 620 units; 240 above its plan" },
-  { name: "Policy", text: "Inter-plant transfer, planner approval" },
+  { name: "Context", text: "Plant 02 holds 620 units, 240 above its plan" },
+  { name: "Policy", text: "Max 300 units, planner approves" },
   { name: "Decision", text: "Transfer 240 units, Plant 02 to Plant 01" },
 ];
 
 export const FUNCTIONS = [
-  { name: "Supply Chain", decision: "Transfer 240 units to Plant 01" },
+  { name: "Supply Chain", decision: "Transfer 240 units, Plant 02 to Plant 01" },
   { name: "Operations", decision: "Service Line 04 bearing by Friday" },
-  { name: "Commercial", decision: "Shift 12% of allocation to West" },
-  { name: "Customer", decision: "Escalate 14 cases, one root cause" },
-  { name: "Finance & Risk", decision: "Hold 3 invoices pending GRN" },
+  { name: "Commercial", decision: "Shift 12% of allocation to the West" },
+  { name: "Customer", decision: "Escalate 14 service cases, one root cause" },
+  { name: "Finance & Risk", decision: "Hold 3 invoices until goods arrive" },
 ];
 
 export const INDUSTRIES = [
@@ -161,7 +262,7 @@ export const INDUSTRIES = [
     decision: "Reserve Friday’s service window for Line 04",
     system: "MES · CMMS · IoT",
     challenge: "Downtime, quality drift and schedule risk move faster than the morning review.",
-    decisions: ["Reserve Friday’s service window for Line 04", "Resequence Line 03 before the 14:00 shift", "Hold Batch 2207 for a seal inspection"],
+    decisions: ["Reserve Friday’s service window for Line 04", "Resequence Line 03 before the 14:00 shift", "Hold Batch 2214 for a seal inspection"],
     start: "Predictive Maintenance",
     weeks: "6 to 10",
   },
@@ -188,7 +289,7 @@ export const INDUSTRIES = [
     decision: "Reroute 6 containers through Mombasa",
     system: "TMS · Port feeds · ERP",
     challenge: "Disruption at one port ripples through every lane, booking and promise date.",
-    decisions: ["Reroute 6 containers through Mombasa", "Rebook 14 shipments onto Tuesday's sailing", "Warn 3 customers of a 2 day delay"],
+    decisions: ["Reroute 6 containers through Mombasa", "Rebook 14 shipments onto Tuesday’s sailing", "Warn 3 customers of a 2-day delay"],
     start: "Supply Chain Risk",
     weeks: "5 to 8",
   },
@@ -197,7 +298,7 @@ export const INDUSTRIES = [
     decision: "Review 18 payments before settlement",
     system: "Core banking · Risk · Docs",
     challenge: "High-volume exceptions need fast review without loosening control.",
-    decisions: ["Review 18 payments before settlement", "Hold 3 invoices pending goods receipt", "Escalate 2 accounts for a KYC refresh"],
+    decisions: ["Review 18 payments before settlement", "Hold 3 invoices until goods arrive", "Escalate 2 accounts for a KYC refresh"],
     start: "Finance & Risk Operations",
     weeks: "6 to 8",
   },
@@ -215,13 +316,15 @@ export const INDUSTRIES = [
 /** Each industry's accent, matching its 3D card badge (components/three/faces.ts INDUSTRY_TONE). */
 export const INDUSTRY_TONE = ["emerald", "cobalt", "pink", "tangerine", "violet", "saffron"] as const;
 
-/** Height of the turning block the industries stand on (world units). */
-export const PLINTH_H = 0.07;
+/** The industries stand on the ground: no turning block any more (kept for old importers). */
+export const PLINTH_H = 0;
+
+/* Industries: six equal holds with a half turn between each, over local 0.02..0.83; the last hold
+   ends where the chapter starts its exit (ts 0.85). */
+const IND = [0.02, 0.81, 0.55] as const;
 
 /** Which industry faces the front (fractional while turning), from local progress in the Industries chapter. */
-export function industryF(t: number) {
-  const n = INDUSTRIES.length - 1;
-  const raw = clamp01((t - 0.04) / 0.86) * n;
-  const k = Math.min(Math.floor(raw), n - 1);
-  return k + smootherstep(0.35, 0.85, raw - k);
-}
+export const industryF = (t: number) => stepped(t, IND[0], IND[1], INDUSTRIES.length, IND[2]);
+
+/** Local progress in the middle of industry k's hold (the inverse of industryF, for jumps). */
+export const industrySettle = (k: number) => steppedAt(k, IND[0], IND[1], INDUSTRIES.length, IND[2]);
