@@ -10,6 +10,7 @@ import {
   activePin,
   blendAt,
   clamp01,
+  smoothstep,
   finalExit,
   localIn,
   select,
@@ -34,9 +35,9 @@ import { Arrow } from "../ui/Arrow";
 /**
  * The story's one info card, bottom-left on the shared edge, from the hero to the final chapter.
  * The frame never fades between chapters: each chapter's content sits in the same grid cell (all of
- * it server-rendered). Halfway through a hand-off the content swaps on a short timer (story.css):
- * the old chapter leaves first, then the new one rises in while the frame eases to its height, so a
- * scroll stopped anywhere shows one whole chapter, never two titles or an empty card.
+ * it server-rendered). A hand-off scrolls the content inside the card with the page: the old chapter
+ * slides up out of the card as the next one follows from below, one stack tied to the scroll, while
+ * the frame eases from one height to the other. Nothing waits on a timer, so nothing blinks.
  * Inactive panes are hidden and inert. The card reports its rect so the 3D framing stays clear of it.
  */
 export function StoryCard() {
@@ -94,22 +95,41 @@ export function StoryCard() {
     // Each chapter's closed card height, for the 3D framing and the phone layouts that stack a deck above the card.
     const writeHeights = () => panes.forEach((p, k) => put(overlay, `--story-card-h-${k}`, `${heights[k] - openExtra(p) + pad + chrome}px`));
 
-    // The chapter whose content the card shows: the swap point is the middle of each hand-off.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /** Space between two chapters' content while they scroll through the card together. */
+    const GAP = 32;
+    // Wide screens show no card in the hero or the ending (their copy stands in the corners and on the bar).
+    const awayAt = (k: number) => wideMq.matches && (k === CH.fragments || k === CH.final);
+    // The chapter whose content the card holds: the swap point is the middle of each hand-off.
     const onAt = (g: number) => {
       const { i, j, e } = blendAt(g);
+      if (awayAt(i) !== awayAt(j)) return awayAt(i) ? j : i;
       return e < 0.5 ? i : j;
     };
+    /** The hand-off under way inside the card, or null while a chapter holds (or the card comes and goes). */
+    const rollAt = (g: number) => {
+      const { i, j, e } = blendAt(g);
+      return !still && j !== i && e > 0.0005 && e < 0.9995 && !awayAt(i) && !awayAt(j) ? { i, j, e } : null;
+    };
     // The frame's ResizeObserver reports the new rect after layout, so this write forces no reflow.
-    const layout = (g: number) => put(inner, "height", `${(heights[onAt(g)] + pad).toFixed(1)}px`);
+    const layout = (g: number) => {
+      const r = rollAt(g);
+      const h = r ? heights[r.i] + (heights[r.j] - heights[r.i]) * r.e : heights[onAt(g)];
+      put(inner, "height", `${(h + pad).toFixed(1)}px`);
+    };
 
     const off = subscribe((g) => {
       const on = onAt(g);
-      // Target states only; story.css times the swap. Earlier chapters wait above, later ones below,
-      // so the old content always leaves the way the scroll is going and the new one comes from the other side.
+      const r = rollAt(g);
+      frame.toggleAttribute("data-rolling", !!r);
+      // Held: one chapter in place. Rolling: the old chapter and the next one as one stack, the next
+      // a gap below the old, both moving up with the scroll inside the card's clip.
       panes.forEach((p, k) => {
-        put(p, "opacity", k === on ? "1" : "0");
-        put(p, "transform", `translate3d(0, ${k === on ? 0 : k < on ? -10 : 14}px, 0)`);
-        put(p, "visibility", k === on ? "visible" : "hidden");
+        const shown = r ? k === r.i || k === r.j : k === on;
+        const y = !r ? 0 : (k === r.i ? -r.e : 1 - r.e) * (heights[r.i] + GAP);
+        put(p, "opacity", shown ? "1" : "0");
+        put(p, "transform", shown && y ? `translate3d(0, ${y.toFixed(1)}px, 0)` : "none");
+        put(p, "visibility", shown ? "visible" : "hidden");
         p.toggleAttribute("data-on", k === on);
         if (p.inert !== (k !== on)) p.inert = k !== on;
       });
@@ -118,8 +138,20 @@ export function StoryCard() {
       // The ending turns the card to the night of the closing bands.
       frame.toggleAttribute("data-night", on === CH.final);
 
-      // The ending too: its results and call to action sit on the centred bar (FinalBar).
-      const isAway = wideMq.matches && (on === CH.fragments || on === CH.final);
+      // Wide screens: the card rises in after the hero and leaves before the ending with the scroll.
+      const { i, j, e } = blendAt(g);
+      const presence = awayAt(i) === awayAt(j) ? (awayAt(i) ? 0 : 1) : awayAt(i) ? smoothstep(0.3, 0.8, e) : 1 - smoothstep(0.2, 0.7, e);
+      const shownCard = still ? (presence > 0.5 ? 1 : 0) : presence;
+      if (wideMq.matches) {
+        put(frame, "opacity", shownCard.toFixed(3));
+        put(frame, "transform", shownCard < 1 ? `translate3d(0, ${((1 - shownCard) * 28).toFixed(1)}px, 0)` : "none");
+        put(frame, "visibility", shownCard < 0.002 ? "hidden" : "visible");
+      } else if (written.get(frame)?.opacity !== undefined) {
+        put(frame, "opacity", "1");
+        put(frame, "transform", "none");
+        put(frame, "visibility", "visible");
+      }
+      const isAway = shownCard < 0.5;
       if (isAway !== away) {
         away = isAway;
         outer.toggleAttribute("data-away", away);

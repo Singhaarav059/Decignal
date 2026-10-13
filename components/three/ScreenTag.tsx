@@ -49,6 +49,8 @@ type Entry = {
 };
 
 const entries = new Set<Entry>();
+/** Per camera (one per canvas): the two most open labels, rewritten each tick. */
+const most = new Map<THREE.Camera, { first: number; second: number; top: Entry | null }>();
 const v = new THREE.Vector3();
 let stop: (() => void) | null = null;
 let prevT = 0;
@@ -177,16 +179,22 @@ function tick(t: number) {
   // Refresh the copy's footprint a few times a second, only while a label wants to open.
   if (frame++ % 12 === 0 && [...entries].some((e) => e.props.current.open())) readBlocks();
 
-  // The most open label other than each tag: a tag opens only once the previous one has closed.
-  let first = 0;
-  let second = 0;
-  let top: Entry | null = null;
+  // The most open label other than each tag, per world: a tag opens only once the previous one in its
+  // own canvas has closed (the explorer's labels below the story never hold the story's shut).
+  most.forEach((m) => {
+    m.first = 0;
+    m.second = 0;
+    m.top = null;
+  });
   for (const e of entries) {
-    if (e.k > first) {
-      second = first;
-      first = e.k;
-      top = e;
-    } else if (e.k > second) second = e.k;
+    const cam = e.get().camera;
+    let m = most.get(cam);
+    if (!m) most.set(cam, (m = { first: 0, second: 0, top: null }));
+    if (e.k > m.first) {
+      m.second = m.first;
+      m.first = e.k;
+      m.top = e;
+    } else if (e.k > m.second) m.second = e.k;
   }
 
   for (const e of entries) {
@@ -219,7 +227,8 @@ function tick(t: number) {
     const left = at[0] - x;
     const top_ = at[1] - y;
 
-    const others = e === top ? second : first;
+    const near = most.get(camera);
+    const others = !near ? 0 : e === near.top ? near.second : near.first;
     const want = P.open() && show > 0.5 && !behind && !e.blocked;
     e.k = damp(e.k, want && (others < 0.08 || e.k > 0.02) ? 1 : 0, want ? 14 : 18, dt);
     if (e.k < 0.002) e.k = 0;
@@ -288,6 +297,7 @@ export function ScreenTag(props: ScreenTagProps) {
       entries.delete(e);
       built.root.remove();
       entry.current = null;
+      if (!entries.size) most.clear();
       if (!entries.size && stop) {
         stop();
         stop = null;

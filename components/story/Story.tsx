@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
-import { CH, EXIT_DRIFT, TOTAL_LEN, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
+import { CH, EXIT_DRIFT, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
 import { CTA, FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
 import { SceneBoundary } from "../three/SceneBoundary";
@@ -26,6 +26,24 @@ const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
 // A statement leaves before the next chapter arrives: the gap between them belongs to the object moving.
 const shown = (w: number) => smoothstep(0.7, 1, w);
+
+/** A chapter head's hand-off, as shares of it: each piece (kicker, two lines, three figures) takes ROLL to
+ *  move, the pieces start STAGGER apart top to bottom, the old head is gone by OUT_END and the new one
+ *  starts at IN_START, so a piece's mask never holds two heads at once. */
+const ROLL = 0.3;
+const STAGGER = 0.2;
+const IN_START = 0.4;
+
+/**
+ * One piece of a chapter head in its mask: 0 in place, 1 rolled fully out. `p` is the head's place
+ * against the story (-1 gone up, 0 here, 1 waiting below). The old head peels away from the top while
+ * the new one fills in from the top, a relay rather than a swap: one of them is always in the corner.
+ */
+function rollOf(p: number, k: number, n: number) {
+  const lag = n > 1 ? (STAGGER * k) / (n - 1) : 0;
+  if (p <= 0) return clamp01((-p - lag) / ROLL);
+  return 1 - clamp01((1 - p - IN_START - lag) / ROLL);
+}
 
 /**
  * The story: one 3D world and one info card. Behind the world, the two statement headlines (the hero's,
@@ -60,12 +78,30 @@ export function Story() {
       el.style.setProperty(prop, value);
     };
 
+    // Chapter heads roll rather than fade: each piece in its own mask, tied to the scroll.
+    const rolls = new Map(els.filter((el) => el.classList.contains("chapter-head")).map((el) => [el, Array.from(el.querySelectorAll<HTMLElement>("[data-roll]"))]));
+
     const off = subscribe((g) => {
+      const { i, e } = blendAt(g);
       els.forEach((el) => {
         const ch = Number(el.dataset.ch);
-        // A chapter head swaps with the card's content (at the middle of the hand-off), so the card's
-        // title never goes missing; the statements keep their longer gap.
-        let w = el.classList.contains("chapter-head") ? smoothstep(0.5, 0.85, weight(ch, g)) : shown(weight(ch, g));
+        const pieces = rolls.get(el);
+        if (pieces) {
+          // The head's place against the story: the outgoing one rises from 0 to -1 as the incoming
+          // one comes up from 1 to 0, both with the hand-off, so one of them always fills the corner.
+          let p = Math.min(Math.max(ch - (i + e), -1), 1);
+          if (still) p = Math.abs(p) < 0.5 ? 0 : Math.sign(p);
+          pieces.forEach((piece, k) => {
+            const r = rollOf(p, k, pieces.length);
+            const by = Number(piece.dataset.roll) || 1.1;
+            put(piece, "transform", r > 0 ? `translate3d(0, ${(Math.sign(p) * r * by * 100).toFixed(2)}%, 0)` : "none");
+            put(piece, "opacity", (1 - 0.5 * r).toFixed(3));
+          });
+          put(el, "opacity", "1");
+          put(el, "visibility", Math.abs(p) > 0.999 ? "hidden" : "visible");
+          return;
+        }
+        let w = shown(weight(ch, g));
         if (still) w = w > 0.5 ? 1 : 0;
         // The closing layer drifts up with the page below as its sheet slides over (the world drifts
         // by the same amount, Scene frameShot), so the two leave as one.

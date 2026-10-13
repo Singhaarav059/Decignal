@@ -29,9 +29,6 @@
 .application-stepper button:disabled { color: var(--color-ink-muted); box-shadow: none; background: transparent; cursor: default; }
 .application-stepper button:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
 .application-count { min-width: 52px; text-align: center; font: 600 var(--fs-label) / 1 var(--font-label); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; color: var(--color-ink-2); }
-@media (min-width: 1024px) and (min-height: 560px) {
-  body:has(.chapter-rail) .application-stepper { display: none; }
-}
 
 /* ---- Card: stage control, then one number and one sentence, or the evidence in their place ---- */
 .application-card {

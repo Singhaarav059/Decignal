@@ -86,6 +86,16 @@ html.ready .intro-stage { opacity: 1; transform: none; }
   padding: 6px;
 }
 .story-card[data-ready] .story-card-body { transition: height var(--dur-3) var(--ease); }
+/* A hand-off scrolls the content through the card (StoryCard): the height follows the scroll directly,
+   and the content softens where it passes under the card's top and bottom edges. */
+.story-card[data-rolling] .story-card-body {
+  transition: none;
+  /* An alpha mask, not a painted gradient: nothing coloured, only the edge where text leaves. */
+  /* rules-check: allow gradient */
+  -webkit-mask-image: linear-gradient(transparent, #000 22px, #000 calc(100% - 22px), transparent);
+  /* rules-check: allow gradient */
+  mask-image: linear-gradient(transparent, #000 22px, #000 calc(100% - 22px), transparent);
+}
 /* Before the first measure (and without JS), only the first chapter takes room. */
 .story-card-body:not([style*="height"]) > [data-ch]:not([data-ch="0"]) { display: none; }
 .story-pane {
@@ -93,17 +103,6 @@ html.ready .intro-stage { opacity: 1; transform: none; }
   align-self: start;
   min-width: 0;
 }
-/* The chapter swap (StoryCard writes the target opacity, offset and visibility): the old chapter fades
-   out quickly toward the scroll, then the new one rises in, its title a beat before the rest. */
-.story-card[data-ready] .story-pane {
-  transition: opacity var(--dur-1) linear, transform var(--dur-2) var(--ease), visibility 0s linear var(--dur-1);
-}
-.story-card[data-ready] .story-pane[data-on] {
-  transition: opacity var(--dur-2) var(--ease) var(--dur-1), transform var(--dur-3) var(--ease) var(--dur-1), visibility 0s;
-}
-.story-card[data-ready] .story-pane-rest { transition: opacity var(--dur-1) linear; }
-.story-card[data-ready] .story-pane:not([data-on]) > .story-pane-rest { opacity: 0; }
-.story-card[data-ready] .story-pane[data-on] > .story-pane-rest { transition: opacity var(--dur-3) var(--ease) var(--dur-2); }
 /* The whole card is an obstacle for the 3D labels (ScreenTag reads [data-obstacle] rects). */
 .story-card-hit {
   position: absolute;
@@ -838,10 +837,9 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
   /* An opened system's panel stands at the right edge: the corners step back with the h1. */
   .story-back[data-dim] :is(.hero-aside, .hero-meta) { opacity: 0.12; pointer-events: none; }
 
-  /* The card waits for chapter 02 (StoryCard sets data-away while the hero holds), so the hero has no
-     second CTA; its line and the systems live in the corners and the tag. */
-  .story-card-wrap .story-card { transition: opacity var(--dur-4) var(--ease), transform var(--dur-5) var(--ease-out-expo), visibility 0s; }
-  .story-card-wrap[data-away] .story-card { opacity: 0; transform: translate3d(0, 28px, 0); visibility: hidden; pointer-events: none; transition: opacity var(--dur-3) var(--ease), transform var(--dur-4) var(--ease), visibility 0s var(--dur-4); }
+  /* The card waits for chapter 02 and leaves before the ending, with the scroll (StoryCard writes its
+     opacity and offset), so the hero has no second CTA; its line and the systems live in the corners. */
+  .story-card-wrap[data-away] .story-card { pointer-events: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

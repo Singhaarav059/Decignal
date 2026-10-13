@@ -171,13 +171,15 @@ export function SystemsRing({ children }: { children: ReactNode }) {
       kick();
     };
     wide.addEventListener("change", onWide);
-    window.addEventListener("scroll", kick, { passive: true });
+    // Off screen the ring holds still: scrolling the story above it costs nothing.
+    const onScroll = () => visible && kick();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
       io.disconnect();
       ro.disconnect();
       wide.removeEventListener("change", onWide);
-      window.removeEventListener("scroll", kick);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 

@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { ArrowLeftRight, Building2, Layers, Network, ShieldCheck, TrendingDown, TriangleAlert, type LucideIcon } from "lucide-react";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE } from "@/lib/story";
 import { CHAPTER_COPY, CHAPTER_FACTS, EXAMPLE_LABEL, INDUSTRY } from "@/lib/copy";
@@ -21,18 +20,16 @@ const ICON: Partial<Record<number, LucideIcon>> = {
   [CH.industries]: Building2,
 };
 
-/** Heads that stand top-right: Problem's chart falls from top-left to bottom-right, so its empty corners
- *  are top-right (the head) and bottom-left (the card). */
-const END = [CH.problem];
-
 /** The chapters between the hero and the ending: each gets a head on wide screens. */
 const HEADS = CHAPTERS.map((_, i) => i).filter((i) => CHAPTER_FACTS[i]);
 
 /**
  * Wide screens: each chapter's headline at display size top-left, over three figures from the systems it
- * reads. They sit behind the world on the story's back layer and come and go with the chapter's weight
- * (Story.tsx); the 3D framing keeps the world clear of them ([data-head], Scene measurePage) and the
- * card below drops its own title. Phones keep the title in the card.
+ * reads. They sit behind the world on the story's back layer. Every head stands in the same place, and a
+ * hand-off rolls the old one up out of its masks as the new one rolls in from below, piece by piece and
+ * tied to the scroll (Story.tsx, [data-roll]), so the corner is never empty. The 3D framing keeps the
+ * world clear of them ([data-head], Scene measurePage) and the card below drops its own title. Phones
+ * keep the title in the card.
  */
 export function ChapterHeads() {
   return (
@@ -51,44 +48,45 @@ function ChapterHead({ c }: { c: number }) {
   if (!copy) return null;
   const n = String(c + 1).padStart(2, "0");
   return (
-    <div data-ch={c} className="story-statement chapter-head statement-rise" data-align={END.includes(c) ? "end" : undefined} aria-hidden>
+    <div data-ch={c} className="story-statement chapter-head" aria-hidden>
       <div className="chapter-head-in" data-head style={toneVars(TONE[c])}>
         <p className="chapter-kicker t-label">
-          <span className="chapter-kicker-n tabular">{n}</span>
-          {Icon && (
-            <span className="chapter-kicker-icon">
-              <Icon size={12} strokeWidth={2.4} />
-            </span>
-          )}
-          <span>{CHAPTERS[c].label}</span>
-          <span className="chapter-kicker-note">{EXAMPLE_LABEL}</span>
+          <span className="chapter-kicker-in" data-roll="1.4">
+            <span className="chapter-kicker-n tabular">{n}</span>
+            {Icon && (
+              <span className="chapter-kicker-icon">
+                <Icon size={12} strokeWidth={2.4} />
+              </span>
+            )}
+            <span>{CHAPTERS[c].label}</span>
+            <span className="chapter-kicker-note">{EXAMPLE_LABEL}</span>
+          </span>
         </p>
         <p className="t-display chapter-h" style={accentVars(TONE[c])}>
           <span className="line-mask">
-            <span><Words>{copy.title[0]}</Words></span>
+            <span data-roll="1.2"><Words>{copy.title[0]}</Words></span>
           </span>{" "}
-          {c === CH.industries ? (
-            <IndustryLine />
-          ) : (
-            <span className="line-mask accent">
-              <span><Words from={wordCount(copy.title[0])}>{copy.title[1]}</Words></span>
+          <span className="line-mask accent">
+            <span data-roll="1.2">
+              {c === CH.industries ? <IndustryLine /> : <Words from={wordCount(copy.title[0])}>{copy.title[1]}</Words>}
             </span>
-          )}
+          </span>
         </p>
-        <dl className="chapter-facts">
-          {facts.map((f, k) => (
-            <div key={f.label} className="chapter-fact" data-risk={f.risk || undefined} style={{ ...toneVars(f.tone), ["--k" as string]: k } as CSSProperties}>
-              <dt className="chapter-fact-label">
+        {/* The whole head is aria-hidden (the card holds the same words), so the figures are plain spans. */}
+        <div className="chapter-facts">
+          {facts.map((f) => (
+            <div key={f.label} className="chapter-fact" data-risk={f.risk || undefined} style={toneVars(f.tone)}>
+              <div className="chapter-fact-in" data-roll="1.05">
                 <Source name={f.source} />
+                <span className="chapter-fact-value tabular">
+                  {f.value}
+                  {f.unit && <small>{f.unit}</small>}
+                </span>
                 <span className="chapter-fact-label">{f.label}</span>
-              </dt>
-              <dd className="chapter-fact-value tabular">
-                {f.value}
-                {f.unit && <small>{f.unit}</small>}
-              </dd>
+              </div>
             </div>
           ))}
-        </dl>
+        </div>
       </div>
     </div>
   );
@@ -121,7 +119,7 @@ function Source({ name }: { name: string }) {
 function IndustryLine() {
   const at = useIndustryAt();
   return (
-    <span className="accent ind-roll chapter-roll">
+    <span className="ind-roll chapter-roll">
       {INDUSTRIES.map((ind, k) => (
         <span key={ind.name} data-at={k < at ? "past" : k > at ? "next" : "on"} style={accentVars(INDUSTRY_TONE[k])}>
           {INDUSTRY.title(ind.name)[1]}

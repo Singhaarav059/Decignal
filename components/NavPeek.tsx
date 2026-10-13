@@ -307,14 +307,23 @@ function StoryPeek({ act }: { act: Act }) {
   useLayoutEffect(() => {
     const items = Array.from(root.current?.querySelectorAll<HTMLElement>("[data-chapter]") ?? []);
     const total = root.current?.querySelector<HTMLElement>(".peek-story-bar");
+    // Written only when they change: this runs on every scroll frame, mostly with the glance closed.
+    let lastHere = -1;
+    let lastPct = -1;
     return subscribe((g) => {
       const here = Math.min(Math.floor(g + 0.5), CHAPTERS.length - 1);
-      items.forEach((el, i) => {
-        el.toggleAttribute("data-here", here === i);
-        el.toggleAttribute("data-read", i < here);
-      });
+      if (here !== lastHere) {
+        lastHere = here;
+        items.forEach((el, i) => {
+          el.toggleAttribute("data-here", here === i);
+          el.toggleAttribute("data-read", i < here);
+        });
+      }
       const p = Math.min(Math.max(g / (CHAPTERS.length - 1), 0), 1);
-      total?.style.setProperty("--fill", String(p));
+      const n = Math.round(p * 1000);
+      if (n === lastPct) return;
+      lastPct = n;
+      total?.style.setProperty("--fill", (n / 1000).toFixed(3));
       if (pct.current) pct.current.textContent = `${Math.round(p * 100)}%`;
     });
   }, []);

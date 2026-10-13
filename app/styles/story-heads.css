@@ -1,7 +1,11 @@
-/* Chapter heads (components/story/ChapterHeads.tsx), wide screens only: each chapter's headline at
-   display size top-left, aligned with the card's edge, over three figures from the systems it reads.
-   The words rise with the chapter (statement-rise); the figures follow one by one. The card below
-   drops its own title and chapter label while a head is on screen. */
+/* Chapter heads (components/story/ChapterHeads.tsx), wide screens only: one band across the top of
+   every chapter, the headline at display size on the left (aligned with the card's edge) and three
+   figures from the systems it reads on the right, sitting on the headline's last line. The card stands
+   bottom-left under it and the world takes the space below the band (Scene: a head across the screen
+   starts the stage under it), so no chapter leaves a corner empty and nothing shares the card's column.
+   Each piece ([data-roll]) sits in its own mask; Story.tsx rolls the old head up and the new one in
+   from below with the scroll. The card below drops its own title and chapter label while a head is on
+   screen. */
 .chapter-head { display: none; }
 @media (min-width: 1024px) {
   .chapter-head {
@@ -10,10 +14,21 @@
     padding-inline: var(--edge);
     text-align: left;
   }
-  .chapter-head-in { width: min(44vw, 620px); transition: opacity var(--dur-4) var(--ease); }
+  .chapter-head-in {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "kicker kicker" "title facts";
+    align-items: end;
+    column-gap: clamp(32px, 4vw, 64px);
+    transition: opacity var(--dur-4) var(--ease);
+  }
+  .chapter-kicker { grid-area: kicker; }
+  .chapter-h { grid-area: title; }
+  .chapter-facts { grid-area: facts; }
   .story-back[data-dim] .chapter-head-in { opacity: 0.12; }
 
-  .chapter-kicker { display: flex; align-items: center; gap: 8px; color: var(--color-ink-soft); }
+  .chapter-kicker { overflow: clip; color: var(--color-ink-soft); }
+  .chapter-kicker-in { display: flex; align-items: center; gap: 8px; }
   .chapter-kicker-n { color: var(--color-ink); }
   .chapter-kicker-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--tone-on, #fff); background: var(--tone, var(--color-ink)); }
   .chapter-kicker-note { padding-left: 10px; margin-left: 2px; box-shadow: inset 1px 0 0 var(--color-line-strong, var(--color-line)); color: var(--color-ink-soft); }
@@ -22,30 +37,16 @@
   .chapter-h .accent { font-weight: 300; }
   .chapter-roll { display: grid; justify-items: start; height: 1.1em; margin-bottom: -0.1em; }
   .chapter-roll > span { height: 1.1em; line-height: 1.04; }
-  .chapter-head[data-align="end"] .chapter-head-in { margin-left: auto; width: min(40vw, 560px); }
 
-  .chapter-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(22px, 3.6vh, 40px); }
+  .chapter-facts { display: grid; grid-template-columns: repeat(3, minmax(132px, max-content)); padding-bottom: 0.3em; }
   .chapter-fact {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
     min-width: 0;
     padding: 2px 16px 2px 18px;
+    overflow: clip;
     box-shadow: inset 1px 0 0 var(--color-line);
-    opacity: 0;
-    translate: 0 12px;
-    transition: opacity var(--dur-2) var(--ease), translate var(--dur-3) var(--ease);
   }
   .chapter-fact:first-child { padding-left: 0; box-shadow: none; }
-  .chapter-head[data-on] .chapter-fact {
-    opacity: 1;
-    translate: 0 0;
-    transition: opacity var(--dur-4) var(--ease) calc(380ms + var(--k) * 110ms), translate var(--dur-5) var(--ease-out-expo) calc(380ms + var(--k) * 110ms);
-  }
-  .chapter-fact dt { display: contents; }
-  .chapter-src { order: 0; }
-  .chapter-fact-value { order: 1; }
-  .chapter-fact-label { order: 2; }
+  .chapter-fact-in { display: flex; flex-direction: column; gap: 8px; }
   .chapter-fact-value {
     display: flex;
     align-items: baseline;
@@ -92,12 +93,6 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-}
-@media (min-width: 1024px) and (max-height: 760px) {
-  .chapter-facts { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .chapter-fact { opacity: 1 !important; translate: none !important; transition: none !important; }
 }
 
 /* ---- 09 Decide: the hero's centre line closed by a bar (Story.tsx, FinalBar). Phones keep the

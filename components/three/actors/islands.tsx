@@ -214,8 +214,39 @@ function Hover({ i, children }: { i: number; children: React.ReactNode }) {
 const pinShown = (s: number) =>
   smoothstep(0.8, 1, Math.max(weight(CH.fragments, store.g), weight(CH.context, store.g))) * smoothstep(0.6, 1, islandRisen[s]);
 
+/**
+ * An island's pin: in Context it carries the evidence row it stands for, elsewhere what the system knows.
+ * It follows the story on its own, so the swap re-renders one label rather than the island's models.
+ */
+function IslandTag({ s, tone }: { s: number; tone: string }) {
+  const sys = SYSTEMS[s];
+  const [ring, setRing] = useState(false);
+  useEffect(() => {
+    let last = false;
+    return subscribe((g) => {
+      const on = weight(CH.context, g) > 0.5;
+      if (on === last) return;
+      last = on;
+      setRing(on);
+    });
+  }, []);
+  return (
+    <ScreenTag
+      title={sys.name}
+      value={ring && CONTEXT_VALUE[s] ? CONTEXT_VALUE[s] : `${sys.knows} · ${sys.value}`}
+      tone={tone}
+      show={() => pinShown(s)}
+      open={() => islandPin() === s}
+      onHover={(on) => {
+        if (on) tagHover = s;
+        else if (tagHover === s) tagHover = -1;
+      }}
+    />
+  );
+}
+
 /** One system: its pad, its model (lifted on hover) and its pin. The model's colour follows the chapter. */
-function SystemIsland({ s, value }: { s: number; value: string }) {
+function SystemIsland({ s }: { s: number }) {
   const sys = SYSTEMS[s];
   const Model = SYSTEM_MODELS[s];
   const tone = TINTS[sys.tone as keyof typeof TINTS];
@@ -235,17 +266,7 @@ function SystemIsland({ s, value }: { s: number; value: string }) {
             <Model />
           </Bake>
           <group position-y={TAG_Y[s]}>
-            <ScreenTag
-              title={sys.name}
-              value={value}
-              tone={tone}
-              show={() => pinShown(s)}
-              open={() => islandPin() === s}
-              onHover={(on) => {
-                if (on) tagHover = s;
-                else if (tagHover === s) tagHover = -1;
-              }}
-            />
+            <IslandTag s={s} tone={tone} />
           </group>
         </Hover>
       </Island>
@@ -274,17 +295,6 @@ const ENTERS = RING_ENTER.map((w) => (c: number) => (c === CH.context ? w : null
 
 export function Islands() {
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
-  // Context labels carry the evidence row they stand for; the hero's carry what each system knows.
-  const [ring, setRing] = useState(false);
-  useEffect(() => {
-    let last = false;
-    return subscribe((g) => {
-      const on = weight(CH.context, g) > 0.5;
-      if (on === last) return;
-      last = on;
-      setRing(on);
-    });
-  }, []);
   return (
     <>
       <IslandFocus />
@@ -292,7 +302,7 @@ export function Islands() {
         <Actor key={sys.id} track={(c) => islandPose(s, c, portrait)} delay={s * 0.06} enter={ENTERS[s]} exit={(c) => (c === CH.fragments ? signalCratePose(CH.signal, 0, portrait)?.p ?? null : null)}>
           {/* Pads stand on the ground: they rise in once after the loader and never float. */}
           <Rise delay={0.25 + s * 0.09} float={() => 0} onRise={(k) => (islandRisen[s] = k)}>
-            <SystemIsland s={s} value={ring && CONTEXT_VALUE[s] ? CONTEXT_VALUE[s] : `${sys.knows} · ${sys.value}`} />
+            <SystemIsland s={s} />
           </Rise>
         </Actor>
       ))}

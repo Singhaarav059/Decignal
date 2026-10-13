@@ -111,12 +111,25 @@ export function ReadWheel() {
       kick();
     });
     ro.observe(document.body);
-    window.addEventListener("scroll", kick, { passive: true });
+    // Only near its own stretch of the page: the story's scroll above it costs nothing. Crossing the
+    // edge settles the dial on its first or last item.
+    let near = false;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        near = e.isIntersecting;
+        kick();
+      },
+      { rootMargin: "50% 0px" },
+    );
+    io.observe(el);
+    const onScroll = () => near && kick();
+    window.addEventListener("scroll", onScroll, { passive: true });
     wide.addEventListener("change", kick);
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      window.removeEventListener("scroll", kick);
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
       wide.removeEventListener("change", kick);
     };
   }, []);

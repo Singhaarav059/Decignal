@@ -87,8 +87,24 @@ export function LiquidLens() {
     document.body.appendChild(host);
 
     let n = 0;
-    const seen = new Map<HTMLElement, { id: string; key: string }>();
-    const ro = new ResizeObserver((entries) => entries.forEach((e) => apply(e.target as HTMLElement)));
+    const seen = new Map<HTMLElement, { id: string; key: string; image?: SVGFEImageElement; map?: SVGFEDisplacementMapElement }>();
+    // While an element is resizing (the story card easing between chapters), its map stretches to the new
+    // size and is redrawn once the size settles: drawing it every frame stalled the scroll.
+    const settle = new Map<HTMLElement, number>();
+    const ro = new ResizeObserver((entries) =>
+      entries.forEach((e) => {
+        const el = e.target as HTMLElement;
+        const rec = seen.get(el);
+        if (!rec?.image || !rec.map) return apply(el);
+        const w = Math.round(el.offsetWidth);
+        const h = Math.round(el.offsetHeight);
+        rec.image.setAttribute("width", String(w));
+        rec.image.setAttribute("height", String(h));
+        rec.map.setAttribute("scale", String(Math.min(BEND * 2, h * 0.9)));
+        window.clearTimeout(settle.get(el));
+        settle.set(el, window.setTimeout(() => (settle.delete(el), apply(el)), 180));
+      }),
+    );
 
     function apply(el: HTMLElement) {
       const w = Math.round(el.offsetWidth);
@@ -101,7 +117,10 @@ export function LiquidLens() {
           el.style.backdropFilter = "";
           el.removeAttribute("data-lens-on");
           const rec = seen.get(el);
-          if (rec) rec.key = "";
+          if (rec) {
+            rec.key = "";
+            rec.image = rec.map = undefined;
+          }
         }
         return;
       }
@@ -130,13 +149,19 @@ export function LiquidLens() {
         `<feDisplacementMap in="soft" in2="map" scale="${Math.min(BEND * 2, h * 0.9)}" xChannelSelector="R" yChannelSelector="G" result="bent"/>` +
         `<feColorMatrix in="bent" type="saturate" values="1.7"/>`;
       defs.appendChild(f);
+      rec.image = f.querySelector("feImage") as SVGFEImageElement;
+      rec.map = f.querySelector("feDisplacementMap") as SVGFEDisplacementMapElement;
       el.style.backdropFilter = `url(#${rec.id})`;
       el.setAttribute("data-lens-on", "");
     }
 
+    // Every element is applied once and then followed by the ResizeObserver (a bare one too: it turns to
+    // glass at another width, which is a resize).
+    const watched = new WeakSet<HTMLElement>();
     const scan = () => {
       document.querySelectorAll<HTMLElement>("[data-lens]").forEach((el) => {
-        if (seen.has(el)) return;
+        if (watched.has(el)) return;
+        watched.add(el);
         apply(el);
         ro.observe(el);
       });
@@ -144,15 +169,19 @@ export function LiquidLens() {
     scan();
     // Chrome that mounts later (the floating CTA, a menu) is picked up on the next scans.
     const ids = [600, 2000, 5000].map((ms) => window.setTimeout(scan, ms));
-    // At most one scan per frame, however busy the page's DOM is.
+    // Only when something with a lens arrives, at most once per frame: text the story rewrites every
+    // frame (counters, step labels) must not cost a scan.
     let queued = 0;
-    const mo = new MutationObserver(() => {
-      if (!queued) queued = requestAnimationFrame(() => ((queued = 0), scan()));
+    const lensIn = (n: Node) => n instanceof Element && (n.matches("[data-lens]") || !!n.querySelector("[data-lens]"));
+    const mo = new MutationObserver((records) => {
+      if (queued) return;
+      if (records.some((r) => Array.from(r.addedNodes).some(lensIn))) queued = requestAnimationFrame(() => ((queued = 0), scan()));
     });
     mo.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       ids.forEach(clearTimeout);
+      settle.forEach(clearTimeout);
       cancelAnimationFrame(queued);
       mo.disconnect();
       ro.disconnect();

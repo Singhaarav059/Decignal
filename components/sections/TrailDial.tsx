@@ -83,12 +83,25 @@ export function TrailDial({ index }: { index: string }) {
       if (!raf) raf = requestAnimationFrame(frame);
     };
     kick();
-    window.addEventListener("scroll", kick, { passive: true });
+    // Only near its own stretch of the page: the story's scroll above it costs nothing. Crossing the
+    // edge settles the hand on its first or last step.
+    let near = false;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        near = e.isIntersecting;
+        kick();
+      },
+      { rootMargin: "50% 0px" },
+    );
+    io.observe(el);
+    const onScroll = () => near && kick();
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", kick);
     wide.addEventListener("change", kick);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", kick);
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", kick);
       wide.removeEventListener("change", kick);
     };

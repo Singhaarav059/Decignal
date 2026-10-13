@@ -358,7 +358,9 @@ export function startChrome(list?: ChromeSection[]) {
       chapter = e >= 0.5 ? j : i;
     }
     const sec = inStory ? { id: null, label: "" } : detectSection(sections);
-    const pinned = isPinned();
+    // The pinned stages all sit below the story, so while it holds the screen none can be pinned: skip
+    // the query on the story's every frame.
+    const pinned = !inStory && isPinned();
     const audit = document.getElementById("audit");
     const auditTop = audit ? viewTop(audit) : Infinity;
     const auditNear = !!audit && auditTop < vh * 0.9 && auditTop + pageBox(audit).height > 0;
