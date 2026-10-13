@@ -8,7 +8,6 @@ import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { APPLICATIONS, CATEGORY_TONE } from "@/lib/content";
 import { APPLICATION_DEMOS, DEMO_PINS } from "@/lib/application-demos";
 import { APPLICATIONS_COPY } from "@/lib/copy";
-import { setExplorer } from "@/lib/explorer";
 import { jumpTo, onApplication } from "@/lib/jump";
 import { accentVars, toneVars } from "@/lib/tone";
 import type { Frame } from "../three/ApplicationScene";
@@ -63,7 +62,7 @@ type Props = {
   apps?: number[];
   /** Older name for `apps`. */
   indices?: number[];
-  /** Service pages: no chapter stepper for a single application, and the chapter rail is not told. */
+  /** Service pages: no chapter stepper for a single application. */
   compact?: boolean;
   /** Scroll length per application, times CHAPTER_LENGTHS. Default 1, and 1.6 for one application. */
   pace?: number;
@@ -124,7 +123,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     pin.current = id ?? (sheet.current ? "" : null);
   }, []);
 
-  // The area panels and the chapter rail ask for an application by its APPLICATIONS index.
+  // The area panels ask for an application by its APPLICATIONS index.
   useEffect(() => onApplication((i) => {
     const n = list.indexOf(i);
     if (n >= 0) jump(n);
@@ -234,7 +233,6 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       motion.current.progress = Math.max(0, Math.min(1, (local - 0.12) / 0.74));
       const step = local < 0.32 ? 0 : local < 0.62 ? 1 : 2;
       setFrame((p) => (p.chapter === chapter && p.step === step ? p : { chapter, step }));
-      if (!compact) setExplorer({ index: chapter, step });
       // The hand-off lasts a fixed distance (about an eighth of a screen) whatever the chapter's length:
       // the outgoing world slides left and dims to 35%, the incoming one arrives from the right. One
       // transform on the world; its tags close below 60% so no ghost text crosses the copy.
@@ -257,16 +255,13 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       end: "bottom bottom",
       onUpdate: (self) => apply(self.progress),
       onRefresh: (self) => apply(self.progress),
-      onToggle: (self) => !compact && setExplorer({ on: self.isActive }),
     });
-    if (!compact) setExplorer({ apps: list });
     return () => {
       trigger.kill();
       observer.disconnect();
       media.removeEventListener("change", sync);
-      if (!compact) setExplorer({ on: false });
     };
-  }, [lens, list, compact]);
+  }, [lens, list]);
 
   const stages = useMemo(
     () => APPLICATIONS_COPY.stages.map((label, i) => ({ value: String(i), label, controls: `${sentenceId} ${drawerId}` })),

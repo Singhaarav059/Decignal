@@ -21,8 +21,7 @@
 .application-dot { flex: none; width: 7px; height: 7px; border-radius: var(--radius-pill); background: var(--tone); }
 .application-title { margin-top: 12px; }
 
-/* Chapter stepper: the narrow-screen way between applications. With the chapter rail on screen it
-   steps aside (the rail opens into one dot per application). */
+/* Chapter stepper: the way between applications. */
 .application-stepper { display: flex; flex: none; align-items: center; gap: 4px; }
 .application-stepper button { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line); color: var(--color-ink-2); transition: box-shadow var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
 .application-stepper button:not(:disabled):hover { box-shadow: var(--edge-strong); color: var(--color-ink); }

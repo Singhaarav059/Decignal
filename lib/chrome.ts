@@ -1,4 +1,4 @@
-// One store for the page chrome (nav, CTA pill, phone dock, chapter rail, menu) and one driver that
+// One store for the page chrome (nav, CTA pill, phone dock, menu) and one driver that
 // works out where the reader is. Consumers read it with useChrome(selector); only the driver listens
 // to scroll, so adding a control never adds a scroll listener.
 
@@ -166,7 +166,7 @@ function isPinned() {
 }
 
 /** A sticky stack ([data-stick], the area panels) holds the screen like a pin while its first panel
- *  rests on its sticky line. Kept apart from `pinned`, which also opens the rail's application dots. */
+ *  rests on its sticky line. Kept apart from `pinned`. */
 function isStuck() {
   const first = document.querySelector<HTMLElement>("[data-stick] > :first-child");
   if (!first) return false;

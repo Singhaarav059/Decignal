@@ -232,7 +232,7 @@ function glide(l: Lenis, y: number, seconds: number) {
  * Takes the reader to a target. Within 2.5 viewports (or 2 story chapters) the page glides,
  * 0.6-1.2s by distance (0.5s per chapter in the story, up to 1.4s). Further than that, a solid
  * background veil closes, the page moves at once, the scene draws the new spot, and the veil
- * opens. Reduced motion, or no smooth scroll, lands at once. The nav, pill, dock and rail hold
+ * opens. Reduced motion, or no smooth scroll, lands at once. The nav, pill and dock hold
  * still meanwhile (chrome.jumping, html[data-jump]); focus moves to the target on landing.
  */
 export async function jumpTo(target: JumpTarget, opts: JumpOptions = {}) {

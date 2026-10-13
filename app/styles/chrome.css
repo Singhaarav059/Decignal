@@ -1,6 +1,5 @@
-/* Chrome: the nav bar, its readout, the section glances, the phone menu, the CTA pill, the phone dock,
-   the chapter rail and the chapter pictures (components/Nav, NavPeek, CtaPill, PhoneDock, ChapterRail,
-   ChapterArt, ui/Logo). Every fixed layer takes its z from the token scale. */
+/* Chrome: the nav bar, its readout, the section glances, the phone menu, the CTA pill, the phone dock
+   and the chapter pictures (components/Nav, NavPeek, CtaPill, PhoneDock, ChapterArt, ui/Logo). Every fixed layer takes its z from the token scale. */
 
 /* ---------------- Logo ---------------- */
 .logo .logo-mark {
@@ -422,60 +421,10 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .phone-dock-cta { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 44px; padding: 0 14px 0 16px; border-radius: var(--radius-pill); font-size: var(--fs-small); font-weight: 600; color: var(--color-on-ink); background: var(--color-ink); }
 .phone-dock .seg-item:active, .phone-dock-cta:active { scale: .97; }
 
-/* ---------------- Chapter rail (1024px and up, 560px tall and up) ---------------- */
-.chapter-rail {
-  --rail-p: 24px;
-  --rail-s: 24px;
-  --rail-g: 12px;
-  --rail-h: calc((9 + var(--n, 5)) * var(--rail-p) + var(--rail-g));
-  --rail-x: calc(8 * var(--rail-s));
-  position: fixed;
-  z-index: var(--z-rail);
-  left: max(4px, calc(var(--edge) / 2 - 12px));
-  /* Centred, but high enough that the application dots can open below without leaving the screen. */
-  top: clamp(72px, calc(50% - var(--rail-h) / 2), calc(100% - var(--rail-h) - var(--rail-x) - 16px));
-  display: none;
-  width: 24px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--dur-2) var(--ease), visibility 0s var(--dur-2);
-}
-@media (min-width: 1024px) and (min-height: 560px) {
-  .chapter-rail { display: block; }
-}
-@media (max-height: 679px) {
-  .chapter-rail { --rail-s: 20px; }
-}
-.chapter-rail[data-show] { opacity: 1; visibility: visible; transition: opacity var(--dur-3) var(--ease) var(--dur-4), visibility 0s; }
-.chapter-rail-list { position: relative; }
-/* A white capsule behind the dots, so the rail reads over the colour bands as well as the light page. */
-.chapter-rail-list { isolation: isolate; }
-.chapter-rail-list::before { content: ""; position: absolute; z-index: -1; inset: -8px -2px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line); }
-.chapter-rail-gap { height: var(--rail-g); }
-.chapter-rail-item { display: grid; place-items: center; width: 24px; height: var(--rail-p); border-radius: var(--radius-pill); cursor: pointer; }
-.chapter-rail-item i { width: 6px; height: 6px; border-radius: var(--radius-pill); background: rgb(15 18 23 / 0.22); transition: background-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
-.chapter-rail-item[data-passed] i, .chapter-rail-item[data-parent] i { background: rgb(15 18 23 / 0.5); }
-.chapter-rail-item:hover i, .chapter-rail-item:focus-visible i { background: var(--color-ink); transform: scale(1.34); }
-.chapter-rail-item:focus-visible { outline-offset: 0; border-radius: var(--radius-pill); }
-.chapter-rail-sub { height: 0; overflow: hidden; transition: height var(--dur-3) var(--ease); }
-.chapter-rail[data-open] .chapter-rail-sub { height: var(--rail-x); }
-.chapter-rail-sub .chapter-rail-item { height: var(--rail-s); }
-.chapter-rail-sub .chapter-rail-item i { width: 4px; height: 4px; }
-/* The one marker: a solid pill in the chapter's colour (no text on it, D5), ink for sections. */
-.chapter-rail-pill { position: absolute; z-index: 1; top: 0; left: 9px; width: 6px; height: 16px; border-radius: var(--radius-pill); background: var(--tone, var(--color-ink)); transform: translateY(calc(var(--y, 12px) - 8px)); pointer-events: none; transition: background-color var(--dur-3) var(--ease); }
-.chapter-rail-pill[data-glide] { transition: transform var(--dur-3) var(--ease), height var(--dur-2) var(--ease), width var(--dur-2) var(--ease), left var(--dur-2) var(--ease), background-color var(--dur-3) var(--ease); }
-.chapter-rail-pill[data-sub] { left: 10px; width: 4px; height: 12px; transform: translateY(calc(var(--y, 12px) - 6px)); }
-/* Hover or focus names the dot: number, name and one line, on a plain white pill. */
-.chapter-rail-label { position: absolute; top: 0; left: 30px; display: flex; align-items: center; gap: 8px; height: 30px; max-width: 420px; padding: 0 14px 0 12px; border-radius: var(--radius-pill); white-space: nowrap; background: var(--color-surface); box-shadow: var(--edge-strong); pointer-events: none; opacity: 0; transform: translate(-4px, calc(var(--y, 0px) - 15px)); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
-.chapter-rail-label[data-show] { opacity: 1; transform: translate(0, calc(var(--y, 0px) - 15px)); }
-.chapter-rail-n { font-family: var(--font-heading); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--tone-ink, var(--color-ink)); }
-.chapter-rail-label b { font-size: var(--fs-small); font-weight: 600; color: var(--color-ink); }
-.chapter-rail-blurb { overflow: hidden; font-size: 12.5px; text-overflow: ellipsis; color: var(--color-ink-soft); }
-
 @media (prefers-reduced-motion: reduce) {
   html.ready .nav-pill, html.ready .nav-links a, html.ready .nav-pill > .nav-cta, .nav-roll, .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: none; }
   .nav-shell, .nav-pill, .nav-readout, .nav-peek, .nav-peek-body, .nav-peek-pane, .nav-peek-caret, .nav-links-hl[data-glide], .logo-word,
-  .nav-menu, .nav-menu[data-open], .nav-menu-group, .nav-menu[data-open] .nav-menu-group, .chapter-rail-pill[data-glide], .chapter-rail-sub, .chapter-rail-label { transition-duration: 0ms; transition-delay: 0ms; }
+  .nav-menu, .nav-menu[data-open], .nav-menu-group, .nav-menu[data-open] .nav-menu-group { transition-duration: 0ms; transition-delay: 0ms; }
   .cta-pill, .cta-pill[data-show] { translate: -50% 0; transition: opacity var(--dur-1) linear, visibility 0s; }
   .phone-dock, .phone-dock[data-show] { translate: 0 0; transition: opacity var(--dur-1) linear, visibility 0s; }
   .phone-dock:not([data-show]) { opacity: 0; }
