@@ -70,7 +70,12 @@ export const HERO = {
   headline: ["Your operation.", "Seen as a whole."] as Headline,
   /** The same words as one sentence, wherever the h1 needs plain text. */
   h1: "Your operation, seen as a whole.",
-  /** The hero StoryCard: label row, one body line, the chips, the CTA. No second headline (D14). */
+  /** The hero's right column on wide screens, beside the h1: what Decignal does, in one sentence. */
+  lede: "Decignal reads the systems you already run, finds the decision that matters and sends it to the right person to approve.",
+  /** The quiet second action beside the CTA: the How it works section. */
+  secondary: "How it works",
+  /** The hero StoryCard: label row, one body line, the chips, the CTA (narrow screens; wide ones carry it
+   *  beside the h1). No second headline (D14). */
   card: "Six systems, one shortage. Watch it become one approved decision.",
   scrollCue: "Scroll",
 } as const;
@@ -256,6 +261,8 @@ export const FINAL = {
     { value: "Day 6", label: "Safety-stock breach avoided", tone: "cobalt" },
   ],
   chipsAria: "The six systems behind this decision",
+  /** Before the row of system discs on the card. */
+  readFrom: "Read from six systems",
 } as const;
 
 /** The nav's story glance (NavPeek CHAPTER_INFO and its groups), index-aligned with CHAPTERS. */
@@ -286,8 +293,12 @@ export const STORY_PEEK = {
 
 export const NAV = {
   /** Nav.tsx section links: [id, label]. */
+  /** One link per home section, in page order; the audit is the CTA. */
   sections: [
+    ["systems", "Systems"],
+    ["platform", "Platform"],
     ["applications", "Applications"],
+    ["trail", "Trail"],
     ["outcomes", "Outcomes"],
     ["how", "How it works"],
     ["faq", "FAQ"],
@@ -298,6 +309,9 @@ export const NAV = {
   menuClose: "Close menu",
   /** NavPeek PEEKS blurbs: the glance side card and the phone menu. */
   blurbs: {
+    systems: "Reads the ERP, CRM, MES and WMS you already run.",
+    platform: "What Decignal does, in one sentence and five facts.",
+    trail: "Seven steps from one signal to a result.",
     apps: "Eight applications across five business areas.",
     outcomes: "Three example decisions and what they change.",
     how: "One decision first, live in weeks.",
@@ -329,8 +343,14 @@ export const SYSTEMS_STRIP = {
   headline: ["Keep your systems.", "We read across them."] as Headline,
   /** The three promises, folded into one line (COPY-10). */
   sub: "Read-only to start. No migration, no new data lake.",
+  /** The three promises as chips in the glass panel (SystemsRing). */
+  promises: ["Read-only to start", "No migration", "No new data lake"],
   /** One quiet line after the six coloured types; the neutral list is CONNECTS_MORE. */
   more: "Also reads TMS, CMMS, SCADA, QMS, POS, DMS, service desks, data warehouses and spreadsheets.",
+  /** The label over the drifting strip of those types (SystemsMarquee). */
+  moreLabel: "Also reads",
+  /** The wall's heading, after the label; the count of types follows it. */
+  moreTitle: "Plus the rest of your stack.",
   footnote: "The audit confirms how we connect to the systems you run.",
   /** The example feed card on the ribbon (COPY-01 3): no live counter. */
   card: {
@@ -362,6 +382,11 @@ export const APPLICATIONS_COPY = {
 /** The static trail after the explorer (E04, COPY-02 8): every application runs the same seven steps. */
 export const TRAIL = {
   label: "Every application runs the same trail",
+  /** The dial's head (TrailDial.tsx, Orvan's process dial). */
+  headline: ["One shortage.", "Seven steps to a result."] as Headline,
+  lede: "Scroll to turn the dial. Each step draws its fact from the running example.",
+  /** The dial's last turn, from Result back to Signal: the loop closes. */
+  loop: { k: "Loop", name: "Next signal", ex: "The result is measured against the plan, and the next signal starts the trail again." },
   aria: "How one decision moves: signal, evidence, context, policy, decision, approval, result",
   groups: ["Signal", "Evidence", "Action"],
   steps: [
@@ -386,6 +411,14 @@ export const OUTCOMES_COPY = {
   note: "Illustrative decisions from the scenes above. Your results are measured against your own baseline.",
 } as const;
 
+/** The statement after the systems ring (Statement.tsx, Orvan's "About"): one sentence that sharpens
+ *  word by word as it scrolls in, then the five facts as cards. */
+export const STATEMENT = {
+  eyebrow: "What Decignal does",
+  text: "Decignal reads the ERP, CRM, MES and WMS you already run, finds the one decision that matters, and sends it with its evidence to the person who approves it.",
+  approverAlt: "A planner reviewing a decision at a laptop",
+} as const;
+
 /** The facts band under the outcome card (E05 GlanceList). No "0" figure (NAV-15), no readiness claim (COPY-09). */
 export const GLANCE = [
   { n: "Read-only", label: "to start", text: "Decignal reads the ERP, MES, CRM and WMS you already run. Nothing is replaced.", tone: "cobalt" },
@@ -400,7 +433,9 @@ export const HOW = {
   eyebrow: "How it works",
   headline: ["One decision first.", "Then build from there."] as Headline,
   intro: "Two routes to production: build around your operation, or start from the catalogue.",
-  routeAria: "Route",
+  routeAria: "Two routes to production",
+  /** Each colour sheet's label (HowSteps.tsx): "Step 01". */
+  stepWord: "Step",
   youGet: "You get",
   /** "Days 14 to 30 · 6 to 12 weeks in total" (E07). Takes PATHS[route].total as is and keeps its "N to M weeks". */
   stepLabel: (when: string, total: string) => `${when} · ${total.match(/^\d+ to \d+ weeks/)?.[0] ?? total} in total`,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type PointerEvent } from "react";
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChartNoAxesCombined, ChevronRight, Database, Layers, LayoutGrid, MessageCircleQuestion, Route, Waypoints, type LucideIcon } from "lucide-react";
 import { Logo } from "./ui/Logo";
 import { Arrow } from "./ui/Arrow";
 import { SectionLink } from "./ui/SectionLink";
@@ -14,12 +14,18 @@ import { getLenis, jumpTo, token } from "@/lib/jump";
 import { AREAS } from "@/lib/areas";
 import { CTA, FOOTER, NAV, STORY_PEEK } from "@/lib/copy";
 import { toneVars } from "@/lib/tone";
+import { darkAt } from "@/lib/on-dark";
 import { TONE, goToChapter } from "./story/chapters";
-import { NavPeek, PEEKS, type PeekId, type SectionPeek } from "./NavPeek";
+import { NavPeek, type PeekId, type SectionPeek } from "./NavPeek";
 
 const PEEK_OF: Record<string, SectionPeek> = { applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
+/** The dock's icon over each link's label. */
+const ICON_OF: Record<string, LucideIcon> = { systems: Database, platform: Layers, applications: LayoutGrid, trail: Waypoints, outcomes: ChartNoAxesCombined, how: Route, faq: MessageCircleQuestion };
 /** The four section links (the audit is the CTA). */
-const LINKS = NAV.sections.filter(([id]) => id !== "audit").map(([id, label]) => ({ id, label, peek: PEEK_OF[id] }));
+/** Each link's colour from the palette: its hover tile and current icon take it. */
+const TONE_OF: Record<string, string> = { systems: "cobalt", platform: "violet", applications: "emerald", trail: "saffron", outcomes: "tangerine", how: "pink", faq: "cobalt" };
+const LINKS = NAV.sections.filter(([id]) => id !== "audit").map(([id, label]) => ({ id, label, peek: PEEK_OF[id] as SectionPeek | undefined, tone: TONE_OF[id] ?? "cobalt" }));
+const blurbOf = (id: string, peek?: SectionPeek) => NAV.blurbs[(peek ?? id) as keyof typeof NAV.blurbs] ?? "";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const chapterTone = (i: number) => TONE[i] || "ink";
@@ -66,8 +72,9 @@ const ringX = (el: HTMLElement) => {
 const focusPeek = (id: PeekId) =>
   window.setTimeout(() => document.querySelector<HTMLElement>(`#peek-${id} :is(a[href], button)`)?.focus(), 140);
 
-/** Primary links sit straight on the bar. A sunken pill glides to the hovered link and rests on the
- *  section being read; hovering (or ArrowDown) opens a glance of that section below the bar. */
+/** Primary links as a dock (the nav-dock reference): an icon over each label on a sunken track. A raised
+ *  tile glides to the hovered link and rests on the section being read; the item under the pointer leans
+ *  toward it (magnetic). Hovering (or ArrowDown) opens a glance of that section below the bar. */
 function NavLinks({
   hrefFor,
   active,
@@ -104,6 +111,7 @@ function NavLinks({
     <nav
       ref={root}
       className="nav-links hidden lg:flex"
+      data-lens
       aria-label="Primary"
       onPointerLeave={() => {
         setHover(-1);
@@ -114,37 +122,55 @@ function NavLinks({
         className="nav-links-hl"
         data-show={lit >= 0 || undefined}
         data-glide={box.ready || undefined}
-        style={{ transform: `translateX(${box.x}px)`, width: box.w }}
+        style={{ transform: `translateX(${box.x}px)`, width: box.w, ...toneVars(LINKS[lit]?.tone) }}
         aria-hidden
       />
-      {LINKS.map(({ id, label, peek: pid }, i) => (
+      {LINKS.map(({ id, label, peek: pid, tone }, i) => (
         <SectionLink
           key={id}
           href={hrefFor(id)}
           data-peek-link={pid}
-          style={{ ["--i" as string]: i }}
+          style={{ ["--i" as string]: i, ...toneVars(tone) }}
           onDone={onDone}
           onPointerEnter={(e: PointerEvent) => {
             if (e.pointerType !== "mouse" || !fine()) return;
             setHover(i);
-            onPeek(pid);
+            // Sections without a glance close any glance that is open.
+            if (pid) onPeek(pid);
+            else onLeave();
           }}
           onFocus={() => setHover(i)}
           onBlur={() => setHover(-1)}
           onKeyDown={(e) => {
-            if (e.key !== "ArrowDown") return;
+            if (e.key !== "ArrowDown" || !pid) return;
             e.preventDefault();
             onPeek(pid);
             focusPeek(pid);
           }}
+          onPointerMove={(e: PointerEvent<HTMLAnchorElement>) => {
+            if (e.pointerType !== "mouse") return;
+            const r = e.currentTarget.getBoundingClientRect();
+            e.currentTarget.style.setProperty("--mx", `${(((e.clientX - r.left) / r.width - 0.5) * 6).toFixed(2)}px`);
+            e.currentTarget.style.setProperty("--my", `${(((e.clientY - r.top) / r.height - 0.5) * 4).toFixed(2)}px`);
+          }}
+          onPointerLeave={(e: PointerEvent<HTMLAnchorElement>) => {
+            e.currentTarget.style.removeProperty("--mx");
+            e.currentTarget.style.removeProperty("--my");
+          }}
           aria-current={i === current ? "location" : undefined}
-          aria-keyshortcuts="ArrowDown"
+          aria-keyshortcuts={pid ? "ArrowDown" : undefined}
         >
-          {label}
+          <DockIcon id={id} />
+          <span className="nav-dock-label">{label}</span>
         </SectionLink>
       ))}
     </nav>
   );
+}
+
+function DockIcon({ id }: { id: string }) {
+  const Icon = ICON_OF[id];
+  return <span className="nav-dock-icon" aria-hidden>{Icon ? <Icon size={18} strokeWidth={1.9} /> : null}</span>;
 }
 
 /** Where the reader is, beside the logo. In the story a ring fills with progress and the readout opens
@@ -239,6 +265,38 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
   const [caret, setCaret] = useState(0);
   const { peek, open: openPeek, close: closePeek, hold } = usePeek();
   const shell = useRef<HTMLElement>(null);
+
+  // Liquid glass over dark sections: the bar darkens and its type turns white (and back). Checked a few
+  // times a second while scrolling, at the bar's middle and at the floating CTA's.
+  useEffect(() => {
+    const el = shell.current;
+    if (!el) return;
+    let t = 0;
+    let last = 0;
+    const check = () => {
+      t = 0;
+      last = performance.now();
+      const bar = el.querySelector(".nav-pill")?.getBoundingClientRect();
+      if (bar) el.toggleAttribute("data-dark", darkAt(window.innerWidth / 2, bar.top + bar.height / 2, [el]));
+      const pill = document.querySelector<HTMLElement>(".cta-pill");
+      if (pill) {
+        const r = pill.getBoundingClientRect();
+        pill.toggleAttribute("data-dark", darkAt(r.left + r.width / 2, r.top + r.height / 2, [pill, el]));
+      }
+    };
+    const kick = () => {
+      if (t) return;
+      t = window.setTimeout(check, Math.max(0, 90 - (performance.now() - last)));
+    };
+    check();
+    window.addEventListener("scroll", kick, { passive: true });
+    window.addEventListener("resize", kick);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("scroll", kick);
+      window.removeEventListener("resize", kick);
+    };
+  }, []);
   const burger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const storyMode = home && inStory;
@@ -376,9 +434,9 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
           data-mini={compact && storyMode && !open ? "" : undefined}
           className="nav-pill relative flex items-center justify-between gap-3 rounded-full"
         >
-          <span className="nav-surface" aria-hidden />
+          <span className="nav-surface" aria-hidden data-lens />
 
-          <div className="relative flex min-w-0 items-center gap-1">
+          <div className="nav-brand relative flex min-w-0 items-center gap-1" data-lens>
             <button
               ref={burger}
               type="button"
@@ -518,7 +576,7 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
                   <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={!inStory && section === id ? "location" : undefined}>
                     <span>
                       <span className="t-title-card block">{label}</span>
-                      <span className="t-small mt-1 block text-ink-soft">{PEEKS[pid].blurb}</span>
+                      <span className="t-small mt-1 block text-ink-soft">{blurbOf(id, pid)}</span>
                     </span>
                     <span className="nav-menu-n tabular">{pad(i + 1)}</span>
                   </SectionLink>

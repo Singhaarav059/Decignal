@@ -8,12 +8,12 @@
   .t-title-card {
     font-family: var(--font-heading);
     font-optical-sizing: auto;
-    font-weight: 560;
+    font-weight: 500;
     text-wrap: balance;
   }
-  .t-display { font-size: var(--fs-display); line-height: 0.98; letter-spacing: -0.032em; }
-  .t-title { font-size: var(--fs-title); line-height: 1.04; letter-spacing: -0.026em; }
-  .t-title-card { font-size: var(--fs-title-card); line-height: 1.06; letter-spacing: -0.026em; }
+  .t-display { font-size: var(--fs-display); line-height: 0.98; letter-spacing: -0.045em; }
+  .t-title { font-size: var(--fs-title); line-height: 1.02; letter-spacing: -0.04em; }
+  .t-title-card { font-size: var(--fs-title-card); line-height: 1.06; letter-spacing: -0.03em; }
   .t-subtitle {
     font-family: var(--font-heading);
     font-optical-sizing: auto;
@@ -53,10 +53,13 @@
   .t-num-md { font-size: var(--fs-num-md); line-height: 1; letter-spacing: -0.02em; }
   /* Text in a tone: its text-safe ink (set with lib/tone.ts toneVars). */
   .t-tone { color: var(--tone-ink, var(--color-ink)); }
-  /* Two-line headline: the second line takes the section's text-safe ink. */
+  /* Two-line headline: the first line medium in ink, the second light in the section's text-safe ink
+     (Plinth, Koushik). Light weights run a touch looser so the two lines share one measure. */
   :is(.t-display, .t-title, .t-title-card) .accent {
     display: block;
     font-style: normal;
+    font-weight: 300;
+    letter-spacing: -0.035em;
     color: var(--accent-ink, var(--color-cobalt-ink));
   }
 
@@ -198,10 +201,16 @@
   }
 
   /* ---- Section title (components/ui/SectionTitle.tsx): label, two lines, optional lede ---- */
+  /* The label as a small white pill (the hero tag's family): index, tone dot, name. */
   .section-title-label {
     display: flex;
+    width: fit-content;
     align-items: center;
     gap: 8px;
+    padding: 7px 13px 7px 11px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    box-shadow: var(--edge-line);
   }
   .section-title-dot {
     flex: none;
@@ -210,9 +219,11 @@
     border-radius: var(--radius-pill);
     background: var(--tone, var(--color-ink));
   }
+  /* The section's index on the page, before the dot: the same label face, a step darker. */
+  .section-title-index { flex: none; color: var(--color-ink); }
   .section-title-label + :is(h1, h2, h3) { margin-top: var(--stack-label); }
   .section-title-lede { margin-top: var(--stack-lede); max-width: 40ch; }
   .section-title[data-align="center"] { text-align: center; }
-  .section-title[data-align="center"] .section-title-label { justify-content: center; }
+  .section-title[data-align="center"] .section-title-label { margin-inline: auto; }
   .section-title[data-align="center"] .section-title-lede { margin-inline: auto; }
 }

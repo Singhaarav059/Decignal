@@ -43,6 +43,7 @@ import { jumpTo } from "@/lib/jump";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { toneVars } from "@/lib/tone";
 import SectionTitle from "../ui/SectionTitle";
+import { CalendarCheck } from "lucide-react";
 import { Arrow } from "../ui/Arrow";
 
 // The free AI audit (E09, COPY-11/12, PROD-02 client): the lead magnet on the ink panel and a
@@ -291,7 +292,7 @@ export function Audit({ area, source }: { area?: AreaSlug; source?: string }) {
   const tz = step === 3 || sent ? (sent?.data.timeZone ?? localZone()) : "UTC";
 
   return (
-    <section id="audit" className="audit section" aria-labelledby={fid("title")}>
+    <section id="audit" className="audit section band" data-band={areaTone ?? "night"} aria-labelledby={fid("title")}>
       <div className="page-wrap">
         <div className="audit-panel">
           <div className="audit-grid">
@@ -299,7 +300,9 @@ export function Audit({ area, source }: { area?: AreaSlug; source?: string }) {
                 page marks both in its area's tone, as its other sections do. */}
             <div className="audit-copy" data-area={areaTone ? "" : undefined}>
               <SectionTitle
+                icon={<CalendarCheck size={13} strokeWidth={2.2} />}
                 id={fid("title")}
+                index={areaTone ? undefined : "08"}
                 label={AUDIT.eyebrow}
                 lines={[AUDIT.headline[0], AUDIT.headline[1]]}
                 tone={areaTone ?? "cobalt"}

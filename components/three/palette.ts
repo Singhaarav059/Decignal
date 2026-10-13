@@ -1,6 +1,6 @@
 // Mirrors the CSS tokens in app/globals.css. The world is cool neutral; colour lives on the objects.
 export const COLORS = {
-  bg: "#F6F7F9",
+  bg: "#EEF1F7",
   envBase: "#EEF1F5",
   shadow: "#1B2230",
   porcelain: "#FFFFFF",

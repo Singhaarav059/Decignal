@@ -1,6 +1,7 @@
 import { appsOf, areaEyebrow, type Area } from "@/lib/areas";
 import { APPLICATIONS_COPY, CTA, SCALE, SERVICE } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
+import { AreaPhoto } from "../sections/AreaPhoto";
 import { AreaArt } from "../sections/AreaArt";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
@@ -8,7 +9,8 @@ import { MoveLink } from "./MoveLink";
 
 /**
  * The first screen: where you are, the two-line value proposition, the audit CTA, and the area's
- * decision card (its drawing, the live signal and the decisions its applications recommend).
+ * decision card (the area's place as a duotone, its drawing, the live signal and the decisions its
+ * applications recommend).
  */
 export function ServiceHero({ area }: { area: Area }) {
   const apps = appsOf(area);
@@ -46,7 +48,10 @@ export function ServiceHero({ area }: { area: Area }) {
 
         {/* The area as it reads in the product: the drawing, today's signal and each recommended move. */}
         <div className="svc-hero-card card card--panel" style={toneVars(area.tone)}>
-          <AreaArt area={area.name} />
+          <AreaPhoto area={area} sizes="(min-width: 1024px) 520px, 100vw" eager />
+          <div className="svc-hero-art" aria-hidden>
+            <AreaArt area={area.category} />
+          </div>
           <p className="svc-signal">
             <span className="svc-signal-dot" aria-hidden />
             <span className="t-label">{APPLICATIONS_COPY.stages[0]}</span>

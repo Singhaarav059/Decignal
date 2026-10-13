@@ -23,7 +23,7 @@ export const HERO_LINES = HERO.headline;
 
 /** Mirrors the @theme colours in app/styles/tokens.css. Update both together. */
 export const BRAND = {
-  bg: "#F6F7F9",
+  bg: "#EEF1F7",
   surface: "#FFFFFF",
   sunken: "#EDEFF3",
   ink: "#0F1217",

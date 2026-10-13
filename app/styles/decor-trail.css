@@ -9,7 +9,8 @@
 .trail-band { min-height: 0; padding-block: var(--section-y); }
 
 .tr-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: var(--stack-lede); }
-.tr-head .trail-title { margin: 0; }
+.tr-head .trail-title { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+.tr-head .section-title-index { color: var(--band-fg); }
 .tr-example { margin: 0; font-variant-numeric: tabular-nums; }
 
 .tr-panel { position: relative; padding: 32px; }
@@ -147,5 +148,3 @@
   .tg-pulse { animation: none; }
 }
 
-/* The head row is one line of labels: lift the 24ch cap the section sheet sets on the old title. */
-.tr-head .trail-title { max-width: none; }

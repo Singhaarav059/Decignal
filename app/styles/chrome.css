@@ -120,17 +120,62 @@ a.skip-link { left: var(--edge); }
   .nav-readout[data-mode] { display: none; }
 }
 
-.nav-links { position: absolute; left: 50%; translate: -50% 0; align-items: center; gap: 2px; }
-.nav-links a { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--radius-pill); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; white-space: nowrap; color: var(--color-ink-2); transition: color var(--dur-2) var(--ease); }
+/* Links: the dock (nav-dock reference, the solid "magnetic" and "luxury" docks). A light track with an
+   icon over each label; a raised white tile glides to the hovered or current link; the item under the
+   pointer leans toward it (--mx, --my from Nav.tsx). Flat: one soft drop shadow under the tile only. */
+.nav-links { position: absolute; left: 50%; translate: -50% 0; align-items: center; gap: 2px; padding: 4px; border-radius: 22px; background: var(--color-surface); box-shadow: var(--edge-line), var(--shadow-float); }
+.nav-links a { position: relative; z-index: 1; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 76px; height: 50px; padding: 0 12px; border-radius: 18px; white-space: nowrap; color: var(--color-ink-soft); transition: color var(--dur-2) var(--ease), height var(--dur-3) var(--ease); }
+.nav-dock-icon, .nav-dock-label { translate: var(--mx, 0) var(--my, 0); transition: translate var(--dur-3) var(--ease), color var(--dur-2) var(--ease); }
+.nav-dock-icon { display: grid; place-items: center; height: 18px; }
+.nav-dock-label { font-size: 11.5px; font-weight: 600; letter-spacing: -0.005em; line-height: 1; }
 .nav-links a:hover, .nav-links a[aria-current] { color: var(--color-ink); }
-.nav-links-hl { position: absolute; left: 0; top: 50%; height: 36px; margin-top: -18px; border-radius: var(--radius-pill); background: var(--color-sunken); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
+.nav-links a[aria-current] .nav-dock-icon { color: var(--color-cobalt); }
+.nav-links-hl { position: absolute; left: 0; top: 4px; bottom: 4px; border-radius: 18px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-line), 0 1px 2px rgb(15 18 23 / 0.08), 0 8px 18px -8px rgb(15 18 23 / 0.28); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
 .nav-links-hl[data-glide] { transition: transform var(--dur-3) var(--ease), width var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease); }
 .nav-links-hl[data-show] { opacity: 1; }
+/* The track itself is a step darker than the tile, so the tile reads raised. */
+.nav-links::before { content: ""; position: absolute; inset: 4px; border-radius: 18px; background: var(--color-sunken); opacity: 0.6; }
+.nav-pill[data-compact] .nav-links a { height: 42px; }
+/* Compact bar (and narrower desktops, below): icons only; the name rises as a small label under the
+   icon on hover or focus, and stays in the accessibility tree. */
+.nav-pill[data-compact] .nav-links a { min-width: 52px; }
+.nav-pill[data-compact] .nav-dock-label {
+  position: absolute; left: 50%; top: calc(100% + 10px); translate: -50% -4px;
+  padding: 6px 10px; border-radius: var(--radius-pill); font-size: 12px; white-space: nowrap;
+  color: var(--color-ink); background: rgb(255 255 255 / 0.78); -webkit-backdrop-filter: blur(12px) saturate(1.8); backdrop-filter: blur(12px) saturate(1.8);
+  box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.95), 0 0 0 0.75px rgb(15 18 23 / 0.09), 0 8px 18px -10px rgb(15 18 23 / 0.3);
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease), translate var(--dur-3) var(--ease);
+}
+.nav-pill[data-compact] .nav-links a:is(:hover, :focus-visible) .nav-dock-label { opacity: 1; translate: -50% 0; }
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .nav-links a { min-width: 52px; height: 46px; }
+  .nav-dock-label {
+    position: absolute; left: 50%; top: calc(100% + 10px); translate: -50% -4px;
+    padding: 6px 10px; border-radius: var(--radius-pill); font-size: 12px; white-space: nowrap;
+    color: var(--color-ink); background: rgb(255 255 255 / 0.78); -webkit-backdrop-filter: blur(12px) saturate(1.8); backdrop-filter: blur(12px) saturate(1.8);
+    box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.95), 0 0 0 0.75px rgb(15 18 23 / 0.09), 0 8px 18px -10px rgb(15 18 23 / 0.3);
+    opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease), translate var(--dur-3) var(--ease);
+  }
+  .nav-links a:is(:hover, :focus-visible) .nav-dock-label { opacity: 1; translate: -50% 0; }
+}
+
+/* Desktop: three floating pieces on the grid (Plinth, Koushik): the logo pill, the dock, the CTA. */
+@media (min-width: 1024px) {
+  .nav-pill { height: 66px; padding: 0; }
+  .nav-pill[data-compact] { height: 54px; padding: 0; }
+  .nav-surface { display: none; }
+  .nav-brand { height: 52px; padding: 0 16px 0 14px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line), var(--shadow-float); transition: height var(--dur-3) var(--ease); }
+  .nav-pill[data-compact] .nav-brand { height: 46px; }
+  .nav-cta { height: 52px; padding-left: 22px; padding-right: 6px; box-shadow: var(--shadow-float); }
+  .nav-cta-icon { width: 40px; height: 40px; }
+  .nav-pill[data-compact] .nav-cta { height: 46px; }
+  .nav-pill[data-compact] .nav-cta-icon { width: 34px; height: 34px; }
+}
 
 /* The CTA: solid ink; quiet (white, hairline) in the hero, whose own card carries the solid one. */
 .nav-cta { display: inline-flex; flex: none; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 18px; border-radius: var(--radius-pill); overflow: hidden; font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.015em; white-space: nowrap; color: var(--color-on-ink); background: var(--color-ink); box-shadow: inset 0 0 0 1px transparent; transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), height var(--dur-3) var(--ease); }
 .nav-cta-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-pill); color: var(--color-ink); background: var(--color-surface); transition: transform var(--dur-4) var(--ease), background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), width var(--dur-3) var(--ease), height var(--dur-3) var(--ease); }
-.nav-cta[data-quiet] { color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-strong); }
+.nav-cta[data-quiet] { color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-strong), var(--shadow-float); }
 .nav-cta[data-quiet] .nav-cta-icon { color: var(--color-on-ink); background: var(--color-ink); }
 @media (hover: hover) {
   .nav-cta:hover { color: var(--color-on-ink); background: var(--color-cobalt); box-shadow: inset 0 0 0 1px transparent; }
@@ -150,7 +195,7 @@ a.skip-link { left: var(--edge); }
 /* Entrance once the loader lifts: the bar drops in, then its links follow one by one. */
 html:not(.ready) .nav-pill { opacity: 0; }
 html.ready .nav-pill { animation: navIn var(--dur-5) var(--ease) both; }
-html.ready .nav-links a { animation: navItem var(--dur-4) var(--ease) both; animation-delay: calc(var(--dur-2) + var(--i) * var(--stagger)); }
+/* The dock enters whole with the bar: a per-link animation left the icon and label layers unpainted. */
 html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) var(--dur-3) both; }
 @keyframes navIn { from { opacity: 0; transform: translateY(-18px) scale(.97); } }
 @keyframes navItem { from { opacity: 0; transform: translateY(8px); } }
@@ -427,6 +472,9 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 }
 .chapter-rail[data-show] { opacity: 1; visibility: visible; transition: opacity var(--dur-3) var(--ease) var(--dur-4), visibility 0s; }
 .chapter-rail-list { position: relative; }
+/* A white capsule behind the dots, so the rail reads over the colour bands as well as the light page. */
+.chapter-rail-list { isolation: isolate; }
+.chapter-rail-list::before { content: ""; position: absolute; z-index: -1; inset: -8px -2px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line); }
 .chapter-rail-gap { height: var(--rail-g); }
 .chapter-rail-item { display: grid; place-items: center; width: 24px; height: var(--rail-p); border-radius: var(--radius-pill); cursor: pointer; }
 .chapter-rail-item i { width: 6px; height: 6px; border-radius: var(--radius-pill); background: rgb(15 18 23 / 0.22); transition: background-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }

@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
-import { Suspense, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { Studio } from "./Studio";
 import { COLORS } from "./palette";
@@ -72,9 +72,24 @@ const skipWhenHidden = (g: THREE.Group | null) => {
  * Every world on the list stays built; only the current one is shown. Switching chapters then costs
  * nothing, where rebuilding a world (geometry, textures, shaders) stalled the scroll for a fifth of a
  * second. A hidden world rests at its opening pose and follows the scroll again once it is shown.
+ * The world on screen is built first and shows at once; the others follow one per idle moment, each
+ * sent to the GPU as it arrives, so the first picture never waits for all eight.
  */
 function Stages(props: Props) {
   const list = props.kinds ?? KINDS;
+  const [order] = useState(() => [props.kind, ...list.filter((k) => k !== props.kind)]);
+  const [count, setCount] = useState(1);
+  useEffect(() => {
+    if (count >= order.length) return;
+    const next = () => setCount((c) => c + 1);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(next, { timeout: 800 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(next, 200);
+    return () => window.clearTimeout(id);
+  }, [count, order.length]);
+  const built = new Set([...order.slice(0, count), props.kind]);
   const current = useRef(props.kind);
   useLayoutEffect(() => {
     current.current = props.kind;
@@ -85,7 +100,7 @@ function Stages(props: Props) {
   );
   return (
     <>
-      {list.map((k) => {
+      {list.filter((k) => built.has(k)).map((k) => {
         const Model = MODELS[k];
         const on = k === props.kind;
         return (
@@ -94,6 +109,7 @@ function Stages(props: Props) {
           </group>
         );
       })}
+      <Warm key={built.size} />
     </>
   );
 }
@@ -136,7 +152,6 @@ export default function ApplicationScene(props: Props) {
         <directionalLight position={[4, 9, 6]} intensity={1.5} castShadow shadow-mapSize={q.phone ? [1024, 1024] : [2048, 2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7} />
         <Stages {...props} />
         <mesh rotation-x={-Math.PI / 2} position-y={-0.065} receiveShadow><planeGeometry args={[30, 30]} /><shadowMaterial color={COLORS.shadow} opacity={0.12} /></mesh>
-        <Warm />
         <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} />
       </Suspense>
     </Canvas>

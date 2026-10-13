@@ -24,7 +24,10 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     if (!reduce) {
       lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
-      lenis.on("scroll", (l: Lenis) => (store.velocity = l.velocity));
+      lenis.on("scroll", (l: Lenis) => {
+        store.velocity = l.velocity;
+        store.scrollAt = performance.now();
+      });
       gsap.ticker.add(animate);
       gsap.ticker.lagSmoothing(0);
     }

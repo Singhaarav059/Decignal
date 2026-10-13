@@ -1,0 +1,383 @@
+/* The 2026-10-13 redesign's refinements over the older section sheets (loaded last). The new
+   sections carry their own blocks in editorial.css; this file restyles shared pieces in place. */
+
+/* ---- FAQ: Orvan's numbered rows. White bars with a gap, the number large and light in the row's
+   colour, the question beside it; the open row's answer sits under the question. ---- */
+.faq-list { gap: 8px; border-top: 0; }
+.faq-item { border-bottom: 0; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--edge-line); transition: box-shadow var(--dur-3) var(--ease), transform var(--dur-3) var(--ease); }
+.faq-item[data-open] { box-shadow: var(--edge-line), 0 24px 48px -32px rgb(15 18 23 / 0.35); }
+.faq-q { gap: 20px; padding: 14px 16px 14px 20px; }
+.faq-n { width: auto; min-width: 2.2ch; font-size: clamp(28px, 2.6vw, 40px); font-weight: 300; line-height: 1; letter-spacing: -0.04em; color: var(--tone-ink, var(--color-ink)); }
+.faq-q-title { font-size: clamp(16px, 1.25vw, 19px); font-weight: 500; letter-spacing: -0.015em; }
+.faq-a p { padding: 0 64px 22px calc(2.2ch * 1.6 + 40px); }
+@media (max-width: 640px) { .faq-a p { padding: 0 16px 18px 20px; } }
+@media (hover: hover) {
+  .faq-item:hover { transform: translateY(-2px); }
+  .faq-item:hover :is(.faq-n, .faq-q-text) { transform: none; }
+}
+
+/* ---- Night band (the areas' deep navy) for the home audit: the ink panel dissolves into it, so the
+   pitch sits straight on the band beside the white request card. ---- */
+.band[data-band="night"] {
+  --band-bg: var(--color-night);
+  --band-fg: var(--color-on-ink);
+  --band-fg-2: rgb(255 255 255 / 0.86);
+  --band-soft: var(--color-on-night-2);
+  --band-line: var(--color-night-line);
+  --band-line-strong: rgb(255 255 255 / 0.3);
+  --band-dot: var(--color-on-ink);
+  --band-accent: #9fb3ff;
+}
+.band[data-band="night"] .audit-panel { background: transparent; padding-inline: 0; }
+.audit-copy .section-title-label { color: var(--color-on-ink); background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px var(--on-ink-line, rgb(255 255 255 / 0.16)); }
+.audit-copy .section-title-index { color: var(--color-on-ink); }
+.band[data-band="night"] .audit-copy .t-title .accent { color: #9fb3ff; }
+
+/* Section label pills on colour bands: a quiet glass-free tint of the band's own text colour. */
+.band .section-title-label { background: color-mix(in srgb, var(--band-fg) 10%, transparent); box-shadow: inset 0 0 0 1px var(--band-line); }
+.band[data-band="mist"] .section-title-label { background: var(--color-surface); box-shadow: var(--edge-line); }
+
+/* ---- Footer: Orvan's closing colour band. A cobalt slab with white type, white link rows and area
+   pills, and the giant wordmark in white across the foot. The six-colour strip steps aside: the colour
+   is the band itself. ---- */
+.site-footer {
+  --on: #fff;
+  --on-2: rgb(255 255 255 / 0.82);
+  --on-line: rgb(255 255 255 / 0.22);
+  margin-inline: 12px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  color: var(--on);
+  background: var(--color-cobalt);
+}
+@media (max-width: 599px) { .site-footer { margin-inline: 6px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; } }
+.footer-strata { display: none; }
+.footer-grid { padding-top: clamp(56px, 8vw, 112px); }
+.site-footer .t-label { color: var(--on-2); }
+.site-footer .t-title { color: var(--on); }
+.site-footer .ed-title .accent { --accent-ink: rgb(255 255 255 / 0.72); }
+.site-footer .footer-cta { color: var(--color-ink); background: var(--color-surface); }
+.site-footer .footer-cta::before { background: var(--color-ink); }
+@media (hover: hover) { .site-footer .footer-cta:hover { color: var(--color-on-ink); } }
+.footer-cards { border-top-color: var(--on-line); }
+.footer-card { border-bottom-color: var(--on-line); }
+.footer-card-n, .footer-card small { color: var(--on-2); }
+.footer-card strong { color: var(--on); }
+.footer-card-go { color: var(--on); box-shadow: inset 0 0 0 1px var(--on-line); }
+.footer-card:hover .footer-card-go, .footer-card:focus-visible .footer-card-go { color: var(--color-cobalt); background: #fff; }
+.footer-area { color: var(--color-ink); box-shadow: none; }
+.footer-area:hover, .footer-area:focus-visible { color: var(--color-on-ink); background: var(--color-night); }
+.footer-legal { color: var(--on-2); border-top-color: var(--on-line); }
+.footer-legal-links a { color: var(--on); text-decoration-color: var(--on-line); }
+.footer-top { color: var(--on); }
+.footer-top > span { box-shadow: inset 0 0 0 1px var(--on-line); }
+.footer-top:hover > span { color: var(--color-cobalt); background: #fff; }
+.footer-wordmark-word { color: #fff; font-weight: 500; letter-spacing: -0.05em; }
+.footer-motif .footer-thread { stroke: rgb(255 255 255 / 0.85); }
+
+/* ---- "Also reads": a wall of white tiles in two rows drifting opposite ways (SystemsRibbon.tsx) ---- */
+.marquee { padding-bottom: calc(var(--section-y) * 0.5); }
+.marquee-label { margin-bottom: 18px; text-align: center; }
+.wall { display: grid; gap: 12px; overflow: hidden; }
+.wall-row { display: flex; width: max-content; }
+.wall-track { display: flex; gap: 12px; padding-right: 12px; animation: wall-left 60s linear infinite; }
+.wall-row[data-dir="right"] .wall-track { animation-name: wall-right; }
+@keyframes wall-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@keyframes wall-right { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.wall-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; align-items: center; width: 300px; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--edge-line); transition: transform var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease); }
+.wall-icon { grid-row: 1 / span 2; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; color: var(--color-ink); background: var(--color-sunken); transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease); }
+.wall-name { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+.wall-reads { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) {
+  .wall:hover .wall-track { animation-play-state: paused; }
+  .wall-tile:hover { transform: translateY(-3px); box-shadow: var(--edge-line), 0 18px 32px -20px rgb(15 18 23 / 0.35); }
+  .wall-tile:hover .wall-icon { color: #fff; background: var(--color-cobalt); }
+}
+@media (max-width: 599px) { .wall-tile { width: 240px; } }
+@media (prefers-reduced-motion: reduce) {
+  .wall-row { width: auto; flex-wrap: wrap; justify-content: center; padding-inline: var(--gutter); }
+  .wall-track { animation: none; flex-wrap: wrap; justify-content: center; padding: 0; }
+  .wall-track[aria-hidden] { display: none; }
+}
+
+/* ---- Statement graphics (Statement.tsx): the sentence drawn as a flow, and a motion drawing per fact ---- */
+.stmt-head { display: grid; gap: 40px; margin-top: 28px; align-items: center; }
+.stmt-head .stmt-text { margin-top: 0; }
+@media (min-width: 1024px) { .stmt-head { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; } }
+.flow-art { width: 100%; height: auto; overflow: visible; font-family: var(--font-heading); }
+.flow-thread { fill: none; stroke: var(--tone, var(--color-ink)); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1100ms var(--ease) calc(200ms + var(--i, 0) * 140ms); }
+.flow-out { stroke: var(--color-emerald); transition-delay: 900ms; }
+.stmt[data-on] .flow-thread { stroke-dashoffset: 0; }
+.flow-pulse { fill: var(--tone); opacity: 0; transition: opacity 400ms var(--ease) 1400ms; }
+.stmt[data-on] .flow-pulse { opacity: 1; }
+.flow-chip { fill: var(--color-surface); stroke: var(--color-line); }
+.flow-dot { fill: var(--tone); }
+.flow-chip-t { font-size: 15px; font-weight: 600; fill: var(--color-ink); }
+.flow-hub rect { fill: var(--color-surface); stroke: var(--color-line-strong); }
+.flow-hub { transform-box: fill-box; transform-origin: center; transform: scale(0.6); opacity: 0; transition: transform 700ms var(--ease-out-expo) 700ms, opacity 400ms var(--ease) 700ms; }
+.stmt[data-on] .flow-hub { transform: none; opacity: 1; }
+.flow-approve rect { fill: var(--color-ink); }
+.flow-approve circle { fill: var(--color-emerald); }
+.flow-approve path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.flow-approve text { font-size: 15px; font-weight: 600; fill: #fff; }
+.flow-approve .flow-sub { font-size: 11px; font-weight: 500; fill: rgb(255 255 255 / 0.7); }
+.flow-approve { opacity: 0; transform: translateX(-10px); transition: opacity 500ms var(--ease) 1200ms, transform 700ms var(--ease) 1200ms; }
+.stmt[data-on] .flow-approve { opacity: 1; transform: none; }
+
+.bento-art { display: block; width: min(100%, 260px); height: auto; margin-top: 18px; overflow: visible; font-family: var(--font-heading); }
+.ba-plate { fill: var(--color-sunken); }
+.ba-fill { fill: var(--tone); }
+.ba-read { fill: none; stroke: var(--tone); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0.18 0.12; animation: ba-up 1.6s linear infinite; animation-delay: calc(var(--i) * 200ms); }
+@keyframes ba-up { to { stroke-dashoffset: 0.6; } }
+.ba-bar { fill: var(--color-ink); }
+.ba-axis { stroke: var(--color-line-strong); }
+.ba-week { fill: var(--color-sunken); }
+.ba-week.on { fill: var(--tone); opacity: 0.25; animation: ba-week 3.2s var(--ease) infinite; animation-delay: calc((var(--i) - 3) * 220ms); }
+@keyframes ba-week { 0%, 15% { opacity: 0.25; } 35%, 70% { opacity: 1; } 100% { opacity: 0.25; } }
+.ba-k { font-size: 10px; font-weight: 600; text-anchor: middle; fill: var(--color-ink-soft); }
+.ba-span { stroke: var(--tone); stroke-width: 2; }
+.ba-dot { fill: var(--tone); }
+.ba-app { fill: var(--color-sunken); animation: ba-app 4s var(--ease) infinite; animation-delay: calc(var(--i) * 250ms); }
+@keyframes ba-app { 0%, 100% { fill: var(--color-sunken); } 12%, 30% { fill: var(--tone); } }
+@media (prefers-reduced-motion: reduce) {
+  .ba-read, .ba-week.on, .ba-app { animation: none; }
+  .ba-week.on { opacity: 1; }
+  .flow-pulse { display: none; }
+}
+.ba-approve { width: min(100%, 300px); }
+.ba-card { fill: var(--color-bg); stroke: var(--color-line); }
+.ba-t { font-size: 14px; font-weight: 600; fill: var(--color-ink); }
+.ba-s { font-size: 11px; font-weight: 500; fill: var(--color-ink-soft); }
+.ba-face { fill: var(--tone); }
+.ba-btn rect { fill: var(--color-ink); }
+.ba-btn text, .ba-done text { font-size: 12px; font-weight: 600; fill: #fff; text-anchor: middle; }
+.ba-done rect { fill: var(--color-emerald); }
+.ba-done path { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.ba-done { opacity: 0; animation: ba-done 4s var(--ease) infinite; }
+.ba-btn { transform-box: fill-box; transform-origin: center; animation: ba-press 4s var(--ease) infinite; }
+@keyframes ba-done { 0%, 40% { opacity: 0; } 48%, 88% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ba-press { 0%, 34% { transform: none; } 40% { transform: scale(0.92); } 46%, 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ba-done, .ba-btn { animation: none; } }
+
+/* ---- Area rows (AreaRows.tsx): rows draw in, a tone wash rises under the hovered row, a preview of the
+   place follows the pointer, and an opening row wipes its photo in. ---- */
+.area-rows-wrap { position: relative; }
+.area-row { position: relative; isolation: isolate; }
+.area-row::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--tone); transform: scaleY(0); transform-origin: 50% 100%; transition: transform var(--dur-4) var(--ease-out-expo); }
+@media (hover: hover) {
+  .area-row:not([data-open]):hover::before { transform: scaleY(1); }
+  .area-row:not([data-open]):hover .area-row-head { color: var(--tone-on, #fff); }
+  .area-row:not([data-open]):hover :is(.area-row-n, .area-row-lead, .area-row-count) { color: var(--tone-on, #fff); }
+  .area-row:not([data-open]):hover .area-row-thumb { opacity: 0; }
+}
+.area-row-head { padding-inline: 12px; }
+.area-row-n, .area-row-lead, .area-row-count { transition: color var(--dur-3) var(--ease); }
+/* Rows draw in: each slides up out of a mask, its rule drawing from the left. */
+.area-rows:not([data-in]) .area-row-head > * { opacity: 0; translate: 0 26px; }
+.area-row-head > * { transition: opacity 700ms var(--ease), translate 900ms var(--ease-out-expo), color var(--dur-3) var(--ease); transition-delay: calc(var(--i, 0) * 90ms); }
+.area-row { border-bottom-color: transparent; }
+.area-row::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--color-night-line); transform-origin: 0 50%; transition: transform 1100ms var(--ease-out-expo) calc(var(--i, 0) * 90ms); }
+.area-rows:not([data-in]) .area-row::after { transform: scaleX(0); }
+/* The preview card that follows the pointer. */
+.area-preview { position: absolute; left: 0; top: 0; z-index: 4; width: 280px; margin: -105px 0 0 24px; pointer-events: none; opacity: 0; scale: 0.85; transition: opacity var(--dur-3) var(--ease), scale var(--dur-4) var(--ease-out-expo); will-change: transform; }
+.area-preview[data-show] { opacity: 1; scale: 1; }
+.area-preview { display: grid; }
+.area-preview-item { grid-area: 1 / 1; opacity: 0; transition: opacity var(--dur-3) var(--ease); }
+.area-preview-item[data-on] { opacity: 1; }
+.area-preview .area-photo-frame { aspect-ratio: 4 / 3; border-radius: 18px; box-shadow: 0 24px 48px -20px rgb(0 0 0 / 0.55); }
+.area-preview-name { position: absolute; left: 12px; bottom: 12px; padding: 6px 12px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; color: var(--color-ink); background: #fff; }
+@media (max-width: 899px), (hover: none) { .area-preview { display: none; } }
+/* An opening row: the place wipes in from the left, the detail rises after it. */
+.area-row-grid > .area-photo { clip-path: inset(0 100% 0 0 round var(--radius-lg)); transition: clip-path 1100ms var(--ease-out-expo) 120ms; }
+.area-row[data-open] .area-row-grid > .area-photo { clip-path: inset(0 0 0 0 round var(--radius-lg)); }
+.area-row-detail > * { opacity: 0; translate: 0 14px; transition: opacity 500ms var(--ease), translate 700ms var(--ease-out-expo); }
+.area-row[data-open] .area-row-detail > * { opacity: 1; translate: 0 0; }
+.area-row[data-open] .area-row-detail > :nth-child(1) { transition-delay: 260ms; }
+.area-row[data-open] .area-row-detail > :nth-child(2) { transition-delay: 360ms; }
+.area-row[data-open] .area-row-detail > :nth-child(3) { transition-delay: 460ms; }
+@media (prefers-reduced-motion: reduce) {
+  .area-rows:not([data-in]) .area-row-head > * { opacity: 1; translate: none; }
+  .area-row-grid > .area-photo { clip-path: none; }
+}
+
+/* ---- Application explorer: one stage, not two tones. The tinted floor runs the full width behind the
+   head, the card and the world; the applications index runs along its foot. ---- */
+@media (min-width: 1024px) {
+  .application-floor { left: 12px; right: 12px; top: 80px; bottom: 12px; background: color-mix(in srgb, var(--tone) 9%, var(--color-bg)); }
+  .application-head { top: 112px; }
+  .application-card { box-shadow: var(--edge-line), 0 24px 48px -32px rgb(15 18 23 / 0.35); }
+  .application-stepper { display: none; }
+}
+.application-index { display: none; }
+@media (min-width: 1024px) and (min-height: 640px) {
+  .application-index {
+    position: absolute; z-index: 3; right: calc(var(--edge) - 8px); bottom: 32px; left: calc(var(--edge) + var(--card-w) + 48px);
+    display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px;
+  }
+  .application-index button { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 6px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; color: var(--color-ink-2); background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), transform var(--dur-3) var(--ease); }
+  .application-index button .tabular { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; color: var(--color-ink-soft); background: var(--color-sunken); transition: inherit; }
+  .application-index button:hover { transform: translateY(-2px); color: var(--color-ink); }
+  .application-index button[aria-current] { color: #fff; background: var(--tone); box-shadow: none; }
+  .application-index button[aria-current] .tabular { color: var(--tone); background: #fff; }
+  .application-index button:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
+}
+
+/* ---- Trail dial decoration (TrailDial.tsx): a tick ring, an arc that fills behind the hand, the
+   step's phase in the face, and a seven-colour strip under the step's text. ---- */
+.dial-ticks, .dial-strip { display: none; }
+@media (min-width: 1024px) {
+  .dial-ticks { display: block; position: absolute; inset: -6%; width: 112%; height: 112%; overflow: visible; }
+  .dial-ticks line { stroke: var(--color-line-strong); stroke-width: 0.5; }
+  .dial-ticks line.major { stroke: var(--color-ink-soft); stroke-width: 0.9; }
+  .dial-arc { fill: none; stroke: var(--dial-tone, var(--color-ink)); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--dial-p, 0)); transition: stroke var(--dur-3) var(--ease); }
+  .dial-hand > span::after { background: var(--dial-tone, var(--color-ink)); }
+  .dial-ring { box-shadow: none; }
+  .dial-ring::before { inset: 11%; border-color: var(--color-line); }
+  .dial-face-art { display: grid; justify-items: center; gap: 10px; }
+  .dial-face-k { color: var(--tone-ink, var(--color-ink)); }
+  .dial-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; width: min(100%, 360px); margin-top: 28px; }
+  .dial-strip li { height: 6px; border-radius: 3px; background: var(--color-sunken); transition: background-color var(--dur-4) var(--ease); }
+  .dial-strip li[data-on] { background: var(--tone); }
+  /* The face: a pale ring of the step's colour inside the white disc. */
+  .dial-face { box-shadow: var(--edge-line), inset 0 0 0 10px color-mix(in srgb, var(--dial-tone, #fff) 10%, #fff), 0 30px 60px -36px rgb(15 18 23 / 0.35); transition: box-shadow var(--dur-4) var(--ease); }
+}
+
+/* ---- FAQ, aligned: the head and the help line share the top row; the figure and the questions share
+   the second, starting on one line and ending on one line (the figure card stretches to the list). ---- */
+@media (min-width: 1024px) {
+  .faq-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-areas: "head help" "fig list"; column-gap: 48px; row-gap: 40px; align-items: stretch; }
+  .faq-side { display: contents; }
+  .faq-side > .ed-title { grid-area: head; }
+  .faq-side > .faq-help { grid-area: help; align-self: end; justify-self: end; margin: 0; padding: 14px 18px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line); }
+  .faq-side > .faq-fig { grid-area: fig; margin: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .faq-grid > .faq-list { grid-area: list; align-self: stretch; align-content: space-between; }
+}
+@media (min-width: 1024px) {
+  .faq-side > .faq-fig .faq-fig-stage { flex: 1; align-content: center; padding: 16px; border-radius: var(--radius-md); background: var(--color-bg); }
+  .faq-side > .faq-fig .faq-fig-cap { margin-top: 20px; }
+}
+
+/* Section label icons: a small solid disc in ink holding the section's line icon. */
+.section-title-icon { display: grid; place-items: center; flex: none; width: 20px; height: 20px; margin-left: -5px; border-radius: 50%; color: #fff; background: var(--color-ink); }
+.night-panel .section-title-icon, .band:is([data-band="night"], [data-band="cobalt"], [data-band="violet"]) .section-title-icon { color: var(--color-night); background: #fff; }
+.section-title-icon .stmt-mark { width: 14px; height: 14px; transform: translateY(1px); }
+.section-title-icon:has(.stmt-mark) { background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-line); }
+
+/* ---- The story card, every chapter: a softer, lifted surface; the head is a nine-segment progress
+   strip in the chapters' colours, then "02 / 09  Signal" and the example label as a pill. ---- */
+.story-card { border-radius: 26px; box-shadow: var(--edge-line), 0 1px 2px rgb(15 18 23 / 0.05), 0 30px 60px -36px rgb(15 18 23 / 0.38); transition: background-color var(--dur-4) var(--ease), color var(--dur-4) var(--ease), box-shadow var(--dur-4) var(--ease); }
+.story-head { display: grid; gap: 14px; }
+.story-progress { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
+.story-progress li { height: 4px; border-radius: 2px; background: var(--color-sunken); }
+.story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 45%, var(--color-surface)); }
+.story-progress li[data-on] { background: var(--tone); }
+.story-label { gap: 10px; color: var(--color-ink); }
+.story-label-n { color: var(--tone-ink, var(--color-ink)); font-weight: 700; }
+.story-label-of { color: var(--color-ink-muted); font-weight: 600; }
+.story-label-name { color: var(--color-ink); }
+.story-label-note { padding: 4px 10px; border-radius: var(--radius-pill); font-size: 10px; color: var(--color-ink-soft); background: var(--color-sunken); }
+.story-title { margin-top: 14px; }
+/* The readout sits in its own tile, the figure in the chapter's ink. */
+.story-readout { padding: 12px 14px; border-radius: 16px; background: var(--color-bg); box-shadow: none; }
+.story-readout-figure strong:not([data-risk]) { color: var(--color-ink); }
+.story-details-btn { background: var(--color-surface); }
+
+/* ---- 09 Decide: the card turns night, like the audit band it leads to ---- */
+.story-card[data-night] { color: #fff; background: var(--color-night); box-shadow: 0 30px 70px -30px rgb(12 18 34 / 0.6); }
+.story-card[data-night] .story-progress li { background: rgb(255 255 255 / 0.12); }
+.story-card[data-night] .story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 70%, var(--color-night)); }
+.story-card[data-night] .story-progress li[data-on] { background: #fff; }
+.story-card[data-night] :is(.story-label-name, .story-label) { color: #fff; }
+.story-card[data-night] .story-label-n { color: #9fb3ff; }
+.story-card[data-night] .story-label-of { color: rgb(255 255 255 / 0.45); }
+.final-lead { margin-top: 14px; font-size: clamp(19px, 1.6vw, 23px); font-weight: 500; line-height: 1.25; letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
+.final-card-title { margin-top: 18px; color: rgb(255 255 255 / 0.6); }
+.final-outcomes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.final-outcomes li { position: relative; display: grid; align-content: start; gap: 6px; padding: 12px; border-radius: 14px; background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); transition: background-color var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
+.final-outcomes li:hover { background: rgb(255 255 255 / 0.12); transform: translateY(-2px); }
+.final-outcomes i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+.final-outcomes strong { font-size: clamp(20px, 1.8vw, 26px); font-weight: 500; line-height: 1; letter-spacing: -0.03em; color: #fff; white-space: nowrap; }
+.final-outcomes span { font-size: 12px; line-height: 1.35; color: rgb(255 255 255 / 0.7); }
+.final-systems { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); }
+.final-systems .t-label { color: rgb(255 255 255 / 0.6); }
+.final-systems ul { display: flex; }
+.final-systems li { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--tone-on); background: var(--tone); box-shadow: 0 0 0 2px var(--color-night); transition: translate var(--dur-2) var(--ease); }
+.final-systems li + li { margin-left: -5px; }
+.final-systems li:hover { z-index: 1; translate: 0 -3px; }
+.final-actions { margin-top: 18px; }
+.final-cta { color: var(--color-ink); background: #fff; }
+.final-cta::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--color-cobalt); transform: translateY(101%); transition: transform var(--dur-4) var(--ease-out-expo); }
+@media (hover: hover) { .final-cta:hover { color: #fff; } .final-cta:hover::before { transform: none; } }
+.story-card[data-night] .story-link { color: #fff; text-decoration-color: rgb(255 255 255 / 0.4); }
+.story-card[data-night] .final-note { color: rgb(255 255 255 / 0.6); }
+@media (max-width: 767px) {
+  .final-outcomes { grid-template-columns: 1fr; gap: 6px; }
+  .final-outcomes li { grid-template-columns: auto 6.5em 1fr; align-items: center; gap: 10px; padding: 9px 12px; }
+  .final-lead { display: none; }
+}
+
+/* ---- Works with what you run: the copy on a glass panel the six photographs orbit behind, each
+   joined to the middle by a thread in its colour; the three promises as chips. ---- */
+.orbit-threads { display: none; }
+.orbit-promises { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
+.orbit-promises li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 12px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; color: var(--color-ink); }
+.orbit-promises svg { color: var(--color-cobalt); }
+@media (min-width: 768px) {
+  .orbit-threads { display: block; position: absolute; left: 50%; top: 50%; width: 1px; height: 1px; overflow: visible; z-index: 1; pointer-events: none; }
+  .orbit-thread { fill: none; stroke: var(--tone); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 0.006 0.018; opacity: 0.7; animation: orbit-flow 3.6s linear infinite; }
+  @keyframes orbit-flow { to { stroke-dashoffset: -0.24; } }
+  .orbit-copy { z-index: 20; width: min(720px, 56vw); padding: clamp(32px, 4vw, 52px) clamp(28px, 4vw, 56px) clamp(28px, 3.4vw, 44px); border-radius: 40px; }
+  .orbit-copy .works-with-note { margin-top: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .orbit-thread { animation: none; } }
+
+/* Bento 04 and 05 drawings: applications per area, and the approval ladder. */
+.ba-areas { width: min(100%, 240px); }
+.ba-bar-area { fill: var(--tone); transform-box: fill-box; transform-origin: 50% 100%; animation: ba-grow 4.8s var(--ease) infinite; animation-delay: calc(var(--i) * 160ms); }
+@keyframes ba-grow { 0% { transform: scaleY(0.15); } 18%, 82% { transform: scaleY(1); } 100% { transform: scaleY(0.15); } }
+.ba-ladder { width: min(100%, 320px); margin-top: 10px; }
+.ba-rung rect { fill: var(--color-bg); stroke: var(--color-line); }
+.ba-rung[data-on] rect { fill: color-mix(in srgb, var(--color-emerald) 10%, var(--color-surface)); stroke: color-mix(in srgb, var(--color-emerald) 45%, transparent); }
+.ba-rung-k { font-size: 12px; font-weight: 600; fill: var(--color-ink); }
+.ba-rung-who { font-size: 12px; font-weight: 600; fill: var(--color-ink-2); }
+.ba-rung-arrow { fill: none; stroke: var(--color-ink-muted); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ba-rung-face { fill: var(--color-tangerine); }
+.ba-rung + .ba-rung .ba-rung-face { fill: var(--color-violet); }
+.ba-rung { animation: ba-rung 5s var(--ease) infinite; animation-delay: calc(var(--i) * 2.5s); }
+@keyframes ba-rung { 0%, 45% { opacity: 1; } 50%, 95% { opacity: 0.55; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ba-bar-area, .ba-rung { animation: none; } }
+/* The dial's loop state: the arc whole, every node passed, Signal lit again. */
+@media (min-width: 1024px) {
+  .dial-band[data-loop] .dial-arc { stroke: var(--color-emerald); }
+  .dial-band[data-loop] .dial-face { box-shadow: var(--lg-rim), inset 0 0 0 10px color-mix(in srgb, var(--color-emerald) 14%, #fff), 0 30px 60px -36px rgb(15 18 23 / 0.35); }
+}
+
+/* Also reads: a heading with the count, and tiles whose icons sit on discs of the palette. */
+.wall-head { display: grid; justify-items: center; gap: 10px; margin-bottom: 28px; text-align: center; }
+.wall-head .marquee-label { margin: 0; }
+.wall-title { display: inline-flex; align-items: center; gap: 12px; font-size: clamp(26px, 2.8vw, 40px); font-weight: 500; letter-spacing: -0.04em; line-height: 1.05; }
+.wall-count { display: inline-grid; place-items: center; height: 36px; padding: 0 12px; border-radius: var(--radius-pill); font-size: 15px; font-weight: 600; letter-spacing: 0; color: #fff; background: var(--color-ink); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.28); }
+.wall-icon { color: var(--tone-on, #fff); background: var(--tone); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.45), 0 6px 12px -8px var(--tone); transition: transform var(--dur-3) var(--ease); }
+.wall-tile { background: rgb(255 255 255 / 0.9); }
+@media (hover: hover) {
+  .wall-tile:hover .wall-icon { color: var(--tone-on, #fff); background: var(--tone); transform: scale(1.08) rotate(-4deg); }
+  .wall-tile:hover { box-shadow: var(--lg-rim), 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent), 0 18px 32px -20px var(--tone); }
+}
+
+/* ---- One left edge for everything: inside the inset panels (the navy band, the footer, the colour
+   sheets) the grid is measured against the page, not the narrower panel, so their text lands on the
+   same --edge as every other section at every width. --panel-inset is how far the panel is inset. ---- */
+.night-panel, .site-footer, .how-sheets { --panel-inset: 12px; }
+@media (max-width: 599px) { .night-panel, .site-footer { --panel-inset: 6px; } }
+:is(.night-panel, .site-footer) .page-wrap { width: min(100% + 2 * var(--panel-inset) - 2 * var(--gutter), var(--grid-max)); }
+.how-sheet-inner { padding-inline: calc(max(var(--gutter), (100% + 2 * var(--panel-inset) - var(--grid-max)) / 2) - var(--panel-inset)); }
+
+/* The navy band and the first colour sheet open as they arrive, like the colour bands (bands.css). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .night-panel, .how-sheet:first-child {
+      animation: band-open linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}

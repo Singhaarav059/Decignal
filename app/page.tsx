@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/Nav";
-import { ChapterRail } from "@/components/ChapterRail";
 import { CtaPill } from "@/components/CtaPill";
 import { PhoneDock } from "@/components/PhoneDock";
 import { SmoothScroll } from "@/components/SmoothScroll";
@@ -21,7 +20,6 @@ export default function Home() {
       <Loader />
       <Backdrop />
       <Nav />
-      <ChapterRail />
       <CtaPill />
       <PhoneDock />
       <main id="main">

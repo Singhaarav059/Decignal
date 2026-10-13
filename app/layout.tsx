@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Inter_Tight } from "next/font/google";
 import {
   BRAND,
   OG_BASE,
@@ -11,18 +11,13 @@ import {
   SITE_URL,
   TWITTER_BASE,
 } from "@/lib/site";
+import { LiquidLens } from "@/components/LiquidLens";
 import "./globals.css";
 
-// Bricolage Grotesque carries headlines and labels (optical size tightens it at display sizes,
-// width lets labels run a touch condensed); Figtree carries everything people read.
-const display = Bricolage_Grotesque({
+// One family for everything (the 2026-10-13 redesign): Inter Tight, variable weight. Headlines run
+// medium with a light second line; labels and numbers use the same face.
+const display = Inter_Tight({
   variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["opsz", "wdth"],
-});
-
-const body = Figtree({
-  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -79,7 +74,7 @@ const JSON_LD = {
 // scripts run.
 const NOSCRIPT_CSS =
   ".loader{display:none!important}.nav-pill{opacity:1!important}" +
-  ".intro-line>span,.intro-fade,.intro-stage{opacity:1!important;transform:none!important}" +
+  ".intro-line .word>span,.statement-rise .word>span,.intro-fade,.intro-stage{opacity:1!important;transform:none!important}" +
   '[data-ch]:not([data-ch="0"]),[data-ind]{visibility:hidden!important}#story{height:100svh!important}';
 
 // Repeat visits in the session skip the intro: mark <html> before the first paint so the server-rendered
@@ -90,7 +85,7 @@ const INTRO_SEEN_JS =
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_JS }} />
         <noscript dangerouslySetInnerHTML={{ __html: `<style>${NOSCRIPT_CSS}</style>` }} />
@@ -101,6 +96,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }}
         />
         {children}
+        <LiquidLens />
       </body>
     </html>
   );

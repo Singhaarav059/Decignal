@@ -10,7 +10,7 @@ import { TINTS } from "../palette";
 import { Plant } from "../buildings";
 import { Forklift, SemiTruck, TRUCK } from "../vehicles";
 import { LoadedPallet } from "../parts";
-import { PALLETS, SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "../transfer-motion";
+import { DROP_X, PALLETS, SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, unloadAt, type Lift } from "../transfer-motion";
 import { asphalt, concrete, enamel, plastic } from "../materials";
 import { useDisposeOnUnmount } from "../kit";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -38,7 +38,7 @@ function roadLines(roadLength: number) {
 function YardPads() {
   const bays = useMemo(() => {
     const parts: THREE.BufferGeometry[] = [];
-    for (const x of SLOT_X) {
+    for (const x of [...SLOT_X, ...DROP_X]) {
       for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(0.008, 0.002, 0.15).translate(x + s * 0.092, 0.0135, STAGE_Z));
       for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(0.19, 0.002, 0.008).translate(x, 0.0135, STAGE_Z + s * 0.072));
     }
@@ -138,7 +138,10 @@ const YARD_POSE: Pose = { p: [0, 0, 0] };
 export function Transfer() {
   const truck = useRef<THREE.Group>(null);
   const fork = useRef<THREE.Group>(null);
+  const fork2 = useRef<THREE.Group>(null);
   const lift = useMemo<Lift>(() => ({ x: 0, z: 0, yaw: 0, h: 0, trip: -1, carry: false, pitch: 0, roll: 0 }), []);
+  const lift2 = useMemo<Lift>(() => ({ x: 0, z: 0, yaw: 0, h: 0, trip: -1, carry: false, pitch: 0, roll: 0 }), []);
+  const height2 = useRef(0.06);
   const [states, setStates] = useState<number[]>([0, 0, 0]);
   const statesRef = useRef(states);
   const [arrived, setArrived] = useState(false);
@@ -162,7 +165,9 @@ export function Transfer() {
     const exit = i === CH.decision ? e : 0;
 
     liftAt(t, lift);
+    unloadAt(t, lift2);
     height.current = lift.h;
+    height2.current = lift2.h;
     const units = Math.round(transferredUnits(store.g >= CH.decision + 1 ? 1 : localIn(CH.decision, store.g)));
     if (units !== last.current.sent) setSent((last.current.sent = units));
     if (truck.current) {
@@ -180,21 +185,34 @@ export function Transfer() {
       fork.current.rotation.z = lift.roll;
       fork.current.scale.setScalar(M * s);
     }
-    const next = palletStates(t, lift, scratch);
+    if (fork2.current) {
+      // Plant 01's forklift waits in its yard from the start and leaves with the yard.
+      const s = smootherstep(0, 1, j === CH.decision && i !== CH.decision ? arriveK(e, 0.16) : here ? 1 : 0) * (1 - smoothstep(0, 0.6, exit));
+      fork2.current.visible = here && s > 0.002;
+      fork2.current.position.set(lift2.x, 0, lift2.z);
+      fork2.current.rotation.y = lift2.yaw;
+      fork2.current.rotation.x = lift2.pitch;
+      fork2.current.rotation.z = lift2.roll;
+      fork2.current.scale.setScalar(M * s);
+    }
+    const next = palletStates(t, lift, scratch, lift2);
     let moved = false;
     for (let n = 0; n < PALLETS; n++) if (next[n] !== statesRef.current[n]) moved = true;
     if (moved) {
       statesRef.current = next.slice();
       setStates(statesRef.current);
     }
-    const done = t > BEATS.drive[1] - 0.02;
+    const done = t > BEATS.unload[1] - 0.02;
+    const atPlant = t > BEATS.drive[1] - 0.02;
     if (done !== last.current.arrived) setArrived((last.current.arrived = done));
     // The truck's own status, in step with the transfer order panel on the page.
     let onDeck = 0;
     for (const v of next) if (v === 2) onDeck++;
     const status = done
       ? "Received at Plant 01"
-      : t >= BEATS.drive[0]
+      : atPlant
+        ? `Unloading at Plant 01 · ${PALLETS - onDeck} of ${PALLETS}`
+        : t >= BEATS.drive[0]
         ? "In transit · 2 days"
         : t >= BEATS.load[0]
           ? `Loading · ${onDeck} of ${PALLETS} pallets`
@@ -235,6 +253,14 @@ export function Transfer() {
             </group>
           ) : null,
         )}
+        {/* Pallets received in Plant 01's bays */}
+        {DROP_X.map((x, n) =>
+          states[n] === 3 ? (
+            <group key={`r${n}`} position={[x, 0, STAGE_Z]} scale={M}>
+              <LoadedPallet tote={tote} />
+            </group>
+          ) : null,
+        )}
       </Actor>
       <group ref={truck} visible={false}>
         <group position={[6.2, 4.6, 0]}>
@@ -249,6 +275,15 @@ export function Transfer() {
             ) : null,
           )}
         </SemiTruck>
+      </group>
+      <group ref={fork2} visible={false}>
+        <Forklift color={TINTS.cobalt} lift={() => height2.current}>
+          {states.some((v) => v === 4) && (
+            <group rotation-y={Math.PI / 2}>
+              <LoadedPallet tote={tote} />
+            </group>
+          )}
+        </Forklift>
       </group>
       <group ref={fork} visible={false}>
         <Forklift color={TINTS.saffron} lift={() => height.current}>

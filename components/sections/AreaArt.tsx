@@ -22,7 +22,8 @@ const at = (t: number, i = 0) => ({ ["--t" as string]: t, ["--i" as string]: i }
 
 /**
  * Sets data-on on the drawing once it is on screen, so its CSS build plays. A drawing that is hidden
- * (a closed nav glance, an inactive tab) resets, so it builds again when it next shows.
+ * (a closed nav glance, an inactive tab) resets, so it builds again when it next shows. A drawing
+ * marked data-driven is built by its owner instead (the pinned AreaStack, as each panel lands).
  */
 export function useDrawOn(ref: RefObject<SVGSVGElement | null>) {
   useEffect(() => {
@@ -34,6 +35,7 @@ export function useDrawOn(ref: RefObject<SVGSVGElement | null>) {
     }
     const io = new IntersectionObserver(
       ([e]) => {
+        if (el.dataset.driven !== undefined) return;
         if (e.isIntersecting) el.dataset.on = "";
         else if (e.boundingClientRect.width === 0) delete el.dataset.on;
       },

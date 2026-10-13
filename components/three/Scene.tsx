@@ -6,7 +6,7 @@ import { ContactShadows } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
 import { CHAPTERS, CH, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
-import { ISLAND_TOP, ISO_DIR, ISO_R, ISO_U, makeShot, shotAt, type Shot } from "@/lib/scene";
+import { ISLAND_TOP, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
 import { ChartMarks, SignalPing, Threads } from "./Marks";
@@ -18,6 +18,7 @@ import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
 import { prewarm } from "./Warm";
 import { SceneBoundary } from "./SceneBoundary";
+import { FinalMark } from "./actors/mark";
 
 /* ------------------------------------------------------------------ */
 /* Stage framing: fit each chapter's subject into the screen area the  */
@@ -34,8 +35,9 @@ const [UX, UY, UZ] = ISO_U;
 const FX = Math.sin(Math.atan2(DX, DZ));
 const FZ = Math.cos(Math.atan2(DX, DZ));
 
-/** What the page measured: the nav's bottom edge and the giant headlines (hero and final). */
-const page = { navB: 72, head: [] as (Box | null)[], at: 0 };
+/** What the page measured: the nav's bottom edge, the giant headlines (hero and final), and the blocks
+ *  around them the world keeps clear of one by one ([data-frame]: the hero's corners). */
+const page = { navB: 72, head: [] as (Box | null)[], frames: [] as Box[][], at: 0 };
 /** The card's rect as last seen while each chapter held (the card's content changes height per chapter). */
 const cardSeen: (Box | null)[] = CHAPTERS.map(() => null);
 
@@ -47,11 +49,16 @@ function measurePage() {
     if (r.height > 0 && r.bottom > 0) page.navB = Math.min(r.bottom, 120);
   }
   page.head = CHAPTERS.map(() => null);
-  document.querySelectorAll<HTMLElement>("[data-ch] .t-display, [data-ch] .display, [data-ch] h1").forEach((el) => {
+  page.frames = CHAPTERS.map(() => []);
+  document.querySelectorAll<HTMLElement>("[data-ch] .t-display, [data-ch] .display, [data-ch] h1, [data-ch] [data-frame]").forEach((el) => {
     const c = Number(el.closest<HTMLElement>("[data-ch]")?.dataset.ch);
     if (!(c === CH.fragments || c === CH.final)) return;
     const r = el.getBoundingClientRect();
     if (!r.width) return;
+    if (el.dataset.frame !== undefined) {
+      page.frames[c].push({ x0: r.left, y0: r.top, x1: r.right, y1: r.bottom });
+      return;
+    }
     const h = page.head[c];
     if (h) {
       h.x0 = Math.min(h.x0, r.left);
@@ -160,7 +167,7 @@ function project(s: Shot, from: number, to: number, tx: number, ty: number, tz: 
   }
 }
 
-const EX = [box(), box()];
+const EX = [box(), box(), box(), box(), box()];
 let nEx = 0;
 const stage = box();
 /** Each pillar's screen rect relative to the subject's centre (x0, y0, x1, y1 per pillar). */
@@ -172,6 +179,8 @@ const SIDE = 1.5;
 const SIDE_CARD = 0.8;
 /** Whether EX[0] is the card (phones drop it and end the stage above the card instead). */
 let cardEx = false;
+/** The wide hero keeps its centre line: the subject lifts or drops to clear a corner, never slides. */
+let centreLock = false;
 /** Dev only: the last framing, for the review scripts (window.__frame). */
 const debug: Record<string, unknown> | null = process.env.NODE_ENV !== "production" && typeof window !== "undefined" ? ((window as unknown as { __frame: Record<string, unknown> }).__frame = {}) : null;
 
@@ -216,12 +225,12 @@ function place(n: number, f: number, hw: number, hh: number, ix: number, iy: num
       let by = qy;
       const side = k === 0 && cardEx ? SIDE_CARD : SIDE;
       // Plain assignments (no array destructuring): this runs many times per frame.
-      if (qx + sR <= maxX + 0.5 && sR * side < best) {
+      if (!centreLock && qx + sR <= maxX + 0.5 && sR * side < best) {
         best = sR * side;
         bx = qx + sR;
         by = qy;
       }
-      if (qx - sL >= minX - 0.5 && sL * side < best) {
+      if (!centreLock && qx - sL >= minX - 0.5 && sL * side < best) {
         best = sL * side;
         bx = qx - sL;
         by = qy;
@@ -275,6 +284,11 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
     nEx = 0;
     cardEx = false;
   }
+  // Wide screens show no card in the hero (StoryCard data-away): its corners are frames instead.
+  if (c === CH.fragments && vw >= 1024) {
+    nEx = 0;
+    cardEx = false;
+  }
   const head = page.head[c];
   if (head) {
     const hEx = EX[nEx++];
@@ -282,11 +296,19 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
     hEx.y0 = 0;
     hEx.x1 = head.x1 + 16;
     hEx.y1 = head.y1 + (phone ? 12 : 20);
-    // A centred headline across the screen: the stage starts under it.
-    if (hEx.x0 < vw * 0.25 && hEx.x1 > vw * 0.75) {
+    // A centred headline across the screen, or the hero's centred head: the stage starts under it.
+    if ((hEx.x0 < vw * 0.25 && hEx.x1 > vw * 0.75) || c === CH.fragments) {
       stage.y0 = Math.max(stage.y0, hEx.y1);
       nEx--;
     }
+  }
+  for (const f of page.frames[c] ?? []) {
+    if (nEx >= EX.length) break;
+    const fEx = EX[nEx++];
+    fEx.x0 = f.x0 - 16;
+    fEx.y0 = f.y0 - gap;
+    fEx.x1 = f.x1 + 16;
+    fEx.y1 = f.y1 + gap;
   }
   if (panel) {
     // An open system panel (app/styles/story.css .island-panel): 360 wide at the right edge, or a
@@ -351,7 +373,10 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
   // Ideal centre: the stage's middle, drawn halfway toward the open space right of the card.
   let ix = (stage.x0 + stage.x1) / 2;
   const iy = (stage.y0 + stage.y1) / 2;
-  if (nEx > 0 && EX[0].x1 < vw * 0.6) ix = ix * 0.5 + ((EX[0].x1 + stage.x1) / 2) * 0.5;
+  if (nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) ix = ix * 0.5 + ((EX[0].x1 + stage.x1) / 2) * 0.5;
+  // The wide hero is one centre line: the world sits under the headline's middle.
+  if (c === CH.fragments && vw >= 1024) ix = vw / 2;
+  centreLock = c === CH.fragments && vw >= 1024;
   // As large as fits, never larger than the shot's own size.
   let f = 1;
   if (!place(n, 1, hw, hh, ix, iy)) {
@@ -519,17 +544,25 @@ function mix(a: Framed, b: Framed, k: number, out: Framed) {
   return out;
 }
 
-/** Fog in the page's neutral background colour, so distant objects melt into the page. */
+/** Fog in the page's sky colour, so distant objects melt into the page. */
 function Atmosphere() {
   const { scene } = useThree();
   const fog = useMemo(() => new THREE.Fog(COLORS.bg, 18, 42), []);
   useEffect(() => {
     scene.fog = fog;
   }, [scene, fog]);
+  const sky = useRef("");
   useFrame(() => {
     // The fog travels with the camera: the subject is always clear, the far ground melts away.
     fog.near = camDist + 3;
     fog.far = camDist * 2.3 + 10;
+    // ...and takes the chapter's sky colour (components/Backdrop.tsx paints the page the same).
+    const [r, g, b] = bgAt(store.g);
+    const key = `${r},${g},${b}`;
+    if (key !== sky.current) {
+      sky.current = key;
+      fog.color.setRGB(r / 255, g / 255, b / 255, THREE.SRGBColorSpace);
+    }
   });
   return null;
 }
@@ -547,6 +580,7 @@ function World() {
         <Transfer />
         <Cards />
         <IndustriesRoad />
+        <FinalMark />
         <ChartMarks />
         <Warmup />
       </Suspense>
@@ -701,6 +735,9 @@ function World3D() {
       // and a measured rect would keep that size after the intro (the framing then ran 4% off).
       resize={{ offsetSize: true }}
       camera={{ fov: FOV, near: 0.1, far: 120, position: [0, 7, 15] }}
+      // The world reads the pointer from the window (store.pointer, manual raycasts), so the canvas
+      // never takes a hit: the hero's tag and buttons behind it stay clickable (R3F defaults to auto).
+      style={{ pointerEvents: "none" }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl, scene, camera }) => {
         if (process.env.NODE_ENV !== "production") Object.assign(window, { __three: { gl, scene, camera }, __story: store });

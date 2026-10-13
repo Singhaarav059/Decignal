@@ -18,23 +18,36 @@
   [data-ch] { transform: none !important; }
 }
 
-/* Hero entrance after the loader lifts. */
-.intro-line > span {
-  transform: translateY(105%);
-  transition: transform var(--dur-5) var(--ease-out-expo);
+/* Hero entrance after the loader lifts: the headline rises word by word, a wave across both lines. */
+.intro-line .word > span {
+  transform: translateY(110%);
+  transition: transform 1100ms var(--ease-out-expo);
 }
 .intro-fade {
   opacity: 0;
   transform: translateY(14px);
   transition: opacity var(--dur-5) var(--ease), transform var(--dur-5) var(--ease);
 }
-html.ready .intro-line > span,
+html.ready .intro-line .word > span,
 html.ready .intro-fade {
   opacity: 1;
   transform: none;
 }
-html.ready .intro-line:nth-child(2) > span { transition-delay: 90ms; }
-html.ready .intro-fade { transition-delay: 450ms; }
+html.ready .intro-line .word > span { transition-delay: calc(var(--w, 0) * 70ms); }
+html.ready .intro-fade { transition-delay: var(--d, 450ms); }
+/* The closing statement rises the same way each time the story reaches it (Story.tsx sets data-on). */
+.statement-rise .word > span {
+  transform: translateY(110%);
+  transition: transform 1100ms var(--ease-out-expo);
+}
+.statement-rise[data-on] .word > span {
+  transform: none;
+  transition-delay: calc(var(--w, 0) * 70ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-line .word > span,
+  .statement-rise .word > span { transform: none !important; transition: none !important; }
+}
 .intro-stage {
   opacity: 0;
   transform: scale(1.04);
@@ -744,4 +757,93 @@ html.ready .intro-stage { opacity: 1; transform: none; }
   .story-card-body, .story-pane, .story-pane-rest, .story-details-btn svg, .ind-roll > span, .story-stack-item { transition: none !important; }
   .story-cue-wheel, .signal-days span, .story-details,
   .decision-plan-chip, .decision-plan-track > span, .decision-plan-check, .decision-commit-result, .decision-result { animation: none; }
+}
+
+/* ---- The hero, on one centre line (Orvan, Koushik): the systems tag and the h1 centred at the top,
+   the world centred under them. Wide screens anchor what Decignal does and the two actions bottom-left
+   and the scroll cue bottom-right, on the grid edge, where the story card stands from chapter 02; the
+   camera keeps clear of each (Scene measurePage). Narrow screens: the tag and h1, the card below. ---- */
+.story-statement[data-hero] { inset: 0; top: 0; padding: 0; text-align: center; }
+.hero-head {
+  position: absolute;
+  inset-inline: var(--gutter);
+  top: 13vh;
+  display: grid;
+  justify-items: center;
+}
+.hero-h1 { margin-top: 20px; font-size: clamp(42px, min(6.6vw, 10.5vh), 104px); }
+
+/* The tag: the six systems as an overlapping stack of solid tone discs, each with its line icon, then
+   the eyebrow. The discs pop in one after another after the loader; pointing at one lifts its island. */
+.hero-tag {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 14px 4px 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line), var(--shadow-float);
+  pointer-events: auto;
+  text-align: left;
+  --d: 250ms;
+}
+.hero-tag-stack { display: flex; }
+.hero-tag-sys {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--tone);
+  color: var(--tone-on);
+  box-shadow: 0 0 0 2px var(--color-surface);
+  opacity: 0;
+  scale: 0.4;
+  transition: translate var(--dur-2) var(--ease);
+}
+.hero-tag-sys + .hero-tag-sys { margin-left: -6px; }
+html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(380ms + var(--i) * 70ms) both; }
+@keyframes hero-pop {
+  from { opacity: 0; scale: 0.4; }
+  to { opacity: 1; scale: 1; }
+}
+/* The disc pointed at rises over its neighbours; the stack itself never moves under the pointer. */
+@media (hover: hover) {
+  .hero-tag-sys:hover { z-index: 1; translate: 0 -3px; }
+}
+.hero-tag-text { color: var(--color-ink-2); }
+@media (max-width: 767px) {
+  /* Two short lines beside the discs, so the tag holds the whole eyebrow on a phone. */
+  .hero-tag { padding: 5px 16px 5px 5px; }
+  .hero-tag-text { display: grid; gap: 3px; }
+  .hero-tag-sep { display: none; }
+}
+
+/* The corners: hidden below 1024px, where the card carries the line and the CTA. */
+.hero-aside, .hero-meta { display: none; }
+@media (min-width: 1024px) {
+  .hero-head { top: calc(96px + 3vh); }
+  .hero-aside, .hero-meta { position: absolute; bottom: var(--card-b); display: grid; pointer-events: auto; text-align: left; transition: opacity var(--dur-4) var(--ease); }
+  /* Narrow corners leave the middle third to the world, so it can sit large on the centre line. */
+  .hero-aside { left: var(--edge); width: min(310px, 24vw); user-select: text; }
+  .hero-meta { right: var(--edge); width: min(210px, 16vw); justify-items: end; text-align: right; }
+  .hero-lede { --d: 520ms; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
+  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 20px; --d: 620ms; }
+  .hero-link { margin-top: 0; font-size: var(--fs-body); }
+  .hero-meta { --d: 700ms; }
+  .hero-meta-text { color: var(--color-ink-soft); text-wrap: balance; }
+  .hero-cue { display: inline-flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--color-ink-2); }
+  /* An opened system's panel stands at the right edge: the corners step back with the h1. */
+  .story-back[data-dim] :is(.hero-aside, .hero-meta) { opacity: 0.12; pointer-events: none; }
+
+  /* The card waits for chapter 02 (StoryCard sets data-away while the hero holds), so the hero has no
+     second CTA; its line and the systems live in the corners and the tag. */
+  .story-card-wrap .story-card { transition: opacity var(--dur-4) var(--ease), transform var(--dur-5) var(--ease-out-expo), visibility 0s; }
+  .story-card-wrap[data-away] .story-card { opacity: 0; transform: translate3d(0, 28px, 0); visibility: hidden; pointer-events: none; transition: opacity var(--dur-3) var(--ease), transform var(--dur-4) var(--ease), visibility 0s var(--dur-4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-tag-sys { opacity: 1; scale: 1; animation: none !important; }
 }

@@ -37,7 +37,7 @@ body {
   color: var(--color-on-ink);
 }
 
-/* Headings: Bricolage Grotesque, optical size on so large sizes draw tight and small ones open.
+/* Headings: Inter Tight, like everything else.
    The role classes (.t-*) carry their own family; this list covers classes not yet moved to a role. */
 h1, h2, h3, h4, .display, .font-serif,
 .glance-num, .faq-q-title,
@@ -52,8 +52,8 @@ h1, h2, h3, h4, .display, .font-serif,
 
 /* Display type: the headline role's weight and tracking (sizes come from the call site). */
 .display {
-  font-weight: 560;
-  letter-spacing: -0.032em;
+  font-weight: 500;
+  letter-spacing: -0.04em;
   line-height: 0.98;
   text-wrap: balance;
 }
@@ -190,6 +190,17 @@ h1, h2, h3, h4, .display, .font-serif,
 .line-mask > span {
   display: block;
 }
+/* Word reveal (components/ui/Words.tsx): each word rises out of its own mask, so a wrapped line never
+   shows a word in the row above while it travels. The side and foot padding give overhangs and
+   descenders room; the negative margins keep the word's place in the line. */
+.word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0 0.08em 0.18em;
+  margin: 0 -0.08em -0.18em;
+}
+.word > span { display: inline-block; }
 
 /* In the base layer, so a component's or utility's own radius and outline still win. */
 @layer base {

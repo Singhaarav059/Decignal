@@ -17,7 +17,7 @@ export function PhoneDock({ sections = HOME_SECTIONS }: { sections?: ChromeSecti
   const show = useChrome((s) => s.dock) && ready;
   const current = useChrome((s) => s.section);
   const items = sections
-    .filter((s) => s.id !== "audit")
+    .filter((s) => s.id !== "audit" && s.dock !== false)
     .slice(0, 4)
     .map((s) => ({ value: s.id, label: s.short ?? s.label, href: `#${s.id}` }));
 
@@ -32,7 +32,7 @@ export function PhoneDock({ sections = HOME_SECTIONS }: { sections?: ChromeSecti
   };
 
   return (
-    <nav className="phone-dock" aria-label="Sections" data-dock data-show={show || undefined} inert={!show} onClick={onClick}>
+    <nav className="phone-dock" data-lens aria-label="Sections" data-dock data-show={show || undefined} inert={!show} onClick={onClick}>
       <SegmentedControl
         variant="location"
         label="Sections"

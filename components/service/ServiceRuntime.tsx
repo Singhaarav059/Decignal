@@ -33,14 +33,15 @@ export function ServiceRuntime() {
         );
       });
       gsap.utils.toArray<HTMLElement>("[data-lines]").forEach((el) => {
+        const words = el.querySelectorAll(".word > span");
         gsap.fromTo(
-          el.querySelectorAll(".line-mask > span"),
-          { yPercent: 110 },
+          words.length ? words : el.querySelectorAll(".line-mask > span"),
+          { yPercent: 115 },
           {
             yPercent: 0,
-            duration: 1.3,
+            duration: 1.2,
             ease: "expo.out",
-            stagger: 0.09,
+            stagger: words.length ? 0.055 : 0.09,
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },
         );

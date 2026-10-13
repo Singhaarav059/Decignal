@@ -234,12 +234,13 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
       if (k !== DECISION_CARD) return null;
       const s = portrait ? IND.boardSP : IND.boardS;
       const [bx, bz] = portrait ? IND.boardP : IND.board;
-      return { p: [indX(industryTrack(t)) + bx, standY(s, LEAN) + IND.lift, bz], rx: UP - LEAN, ry: industryF(t) * Math.PI + ISO.az - 0.12, s };
+      return { p: [indX(industryTrack(t)) + bx, standY(s, LEAN) + IND.lift, bz], rx: UP - LEAN, ry: industryF(t) * Math.PI + ISO.az, s };
     }
     case CH.final: {
       // Keeps the last industry's half turn (5π) and tips over its top edge to show the other face:
       // the free AI audit, standing at the hub the six systems feed. Its face is drawn rotated to match.
-      if (k !== DECISION_CARD) return null;
+      // Wide screens end on the Decignal mark at the hub instead (actors/mark.tsx); the board leaves.
+      if (k !== DECISION_CARD || !portrait) return null;
       const lean = 0.5;
       const s = portrait ? FINAL_SP : 2.1;
       return { p: [HUB[0], standY(s, lean), HUB[1]], rx: -UP + lean, ry: Math.PI * 5 + ISO.az, s };
@@ -262,13 +263,17 @@ export const IND = {
   siteZ: -2.3,
   siteS: 2.3,
   siteR: 1.6,
-  siteH: 1.9,
-  /** The board's offset from the stop and its scale; portrait screens stand it in front, larger. */
-  board: [-1.25, 0.75] as [number, number],
+  /** Tall enough for the pylon, the chimney's smoke and the globe's satellite. */
+  siteH: 3.0,
+  /** The board's offset from the stop and its scale; portrait screens stand it in front, larger.
+   *  Wide screens stand it on the near verge, left of the place's yard (which reaches about 1.6 to
+   *  the left of the stop), so the place is never behind it. */
+  board: [-2.1, 1.1] as [number, number],
   boardP: [-0.2, 0.75] as [number, number],
-  boardS: 1.75,
+  boardS: 1.7,
   boardSP: 1.6,
-  lift: 0.3,
+  /** Raised on its stand so the board reads at eye level beside the place, not down at the road. */
+  lift: 0.6,
   dist: 9.5,
   distP: 7.5,
 };
@@ -439,11 +444,30 @@ export { finalExit };
 
 export { clamp01 };
 
-/* ---------------- Background: one cool neutral for every chapter, no gradients ---------------- */
+/* ---------------- Background: one pale solid per chapter, no gradients ---------------- */
 
-// #F6F7F9, the page's --color-bg. The chapter's colour lives on its object, never on the backdrop.
-const BG_NEUTRAL: [number, number, number] = [246, 247, 249];
-const BG: [number, number, number][] = Array.from({ length: 9 }, () => BG_NEUTRAL);
+// Each chapter's sky is a pale solid of its colour (components/story/chapters.ts TONE); scrolling
+// eases from one solid to the next, and the fog takes the same colour so the far ground still melts
+// into the page. Warm chapters lean pink, never peach or cream (shadows on peach read brown).
+const SKY = {
+  cobalt: [233, 238, 255],
+  signal: [255, 236, 241],
+  violet: [240, 236, 255],
+  emerald: [229, 246, 239],
+  rose: [252, 237, 248],
+  sky: [236, 242, 250],
+} as const satisfies Record<string, readonly [number, number, number]>;
+const BG: (readonly [number, number, number])[] = [
+  SKY.cobalt, // systems
+  SKY.signal, // signal
+  SKY.signal, // problem
+  SKY.violet, // context
+  SKY.emerald, // decision
+  SKY.emerald, // control
+  SKY.rose, // scale
+  SKY.sky, // industries: each industry brings its own colour on its board and place
+  SKY.cobalt, // final
+];
 
 /** Background colour at story position g, as [r, g, b]. */
 export function bgAt(g: number): [number, number, number] {

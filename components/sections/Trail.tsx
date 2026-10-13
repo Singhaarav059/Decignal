@@ -128,10 +128,13 @@ export function Trail() {
   }, []);
 
   return (
-    <section className="trail-band" aria-labelledby="trail-title">
+    <section className="trail-band band" data-band="violet" aria-labelledby="trail-title">
       <div className="page-wrap">
         <div className="tr-head">
-          <h3 id="trail-title" className="t-label trail-title">{TRAIL.label}</h3>
+          <h3 id="trail-title" className="t-label trail-title">
+            <span className="section-title-index tabular" aria-hidden>03</span>
+            {TRAIL.label}
+          </h3>
           <p className="t-label tr-example">
             {EXAMPLE_LABEL} <span aria-hidden>·</span> {EXAMPLE.part}
           </p>
@@ -140,6 +143,16 @@ export function Trail() {
           {Array.from({ length: TRACKS }, (_, i) => (
             <span key={i} className="tr-rule" aria-hidden>
               <span />
+              {/* The transfer truck rides the head of the fill and parks at 07, the result. */}
+              {i === 0 && (
+                <svg className="tr-truck" viewBox="0 0 34 16" width="34" height="16">
+                  <rect x="0.5" y="1" width="21" height="10" rx="1.5" />
+                  <path className="tr-truck-cab" d="M23 3.5h5.2l4.3 4.3V11H23z" />
+                  <circle cx="6" cy="13" r="2.4" />
+                  <circle cx="15.5" cy="13" r="2.4" />
+                  <circle cx="28.5" cy="13" r="2.4" />
+                </svg>
+              )}
             </span>
           ))}
           <ol className="tr" aria-label={TRAIL.aria}>

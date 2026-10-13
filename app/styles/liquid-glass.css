@@ -1,0 +1,184 @@
+/* Liquid glass (2026-10-13): Apple's material, kept clear rather than frosted. A light tint, a small
+   blur with lifted saturation, a specular rim (bright on top, a thinner light at the foot, a thick-glass
+   glow just inside the edge) and one soft lift. Floating chrome (nav, CTA pill, dock, story card, hero
+   tag, the systems panel) also bends what passes behind its rim where the browser can render it
+   (components/LiquidLens.tsx, [data-lens]). Loaded last: it restyles surfaces defined in the sheets
+   above without changing their layout. */
+
+:root {
+  --lg-blur: blur(14px) saturate(1.8) brightness(1.03);
+  --lg-blur-soft: blur(8px) saturate(1.6);
+  --lg-rim:
+    inset 0 1px 0.5px rgb(255 255 255 / 0.95),
+    inset 0 -1px 0.5px rgb(255 255 255 / 0.4),
+    inset 0 0 0 0.75px rgb(255 255 255 / 0.55),
+    inset 0 0 22px -6px rgb(255 255 255 / 0.7);
+  --lg-edge: 0 0 0 0.75px rgb(15 18 23 / 0.09);
+  --lg-lift: 0 1px 2px rgb(15 18 23 / 0.05), 0 14px 34px -16px rgb(15 18 23 / 0.32);
+  --lg-lift-sm: 0 1px 1px rgb(15 18 23 / 0.04), 0 8px 18px -10px rgb(15 18 23 / 0.28);
+  /* Night glass: the navy surfaces. */
+  --lg-night-rim:
+    inset 0 1px 0.5px rgb(255 255 255 / 0.28),
+    inset 0 0 0 0.75px rgb(255 255 255 / 0.12),
+    inset 0 0 22px -8px rgb(255 255 255 / 0.18);
+}
+
+/* ---- The floating chrome: the strongest glass ---- */
+/* Every group below lists single classes only, so a later rule for one element can still override it. */
+:is(.nav-brand, .nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel) {
+  background: rgb(255 255 255 / 0.5);
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift);
+}
+.nav-cta[data-quiet] {
+  background: rgb(255 255 255 / 0.5);
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift);
+}
+@media (min-width: 1024px) {
+  .nav-brand { background: rgb(255 255 255 / 0.5); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+  .nav-pill[data-solid] .nav-surface { box-shadow: none; }
+}
+.nav-pill[data-solid] .nav-surface { box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+/* The solid CTA: ink, with the same light on its rim. */
+.nav-cta:not([data-quiet]), .btn-primary {
+  box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.28), inset 0 -1px 0.5px rgb(255 255 255 / 0.08), 0 8px 18px -10px rgb(15 18 23 / 0.5);
+}
+.nav-cta-icon { box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.9), 0 1px 2px rgb(15 18 23 / 0.2); }
+
+/* The dock: no track inside the glass; the hovered or current link sits on a droplet of its colour. */
+.nav-links::before { display: none; }
+.nav-links-hl {
+  background: color-mix(in srgb, var(--tone, var(--color-cobalt)) 16%, rgb(255 255 255 / 0.62));
+  box-shadow:
+    inset 0 1px 0.5px rgb(255 255 255 / 0.95),
+    inset 0 -1px 0.5px rgb(255 255 255 / 0.5),
+    inset 0 0 0 0.75px color-mix(in srgb, var(--tone, var(--color-cobalt)) 35%, transparent),
+    0 6px 14px -8px color-mix(in srgb, var(--tone, var(--color-cobalt)) 60%, transparent);
+  transition: transform var(--dur-3) var(--ease), width var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease), background-color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
+}
+.nav-links a { color: var(--color-ink-2); }
+.nav-links a .nav-dock-icon { transition: color var(--dur-2) var(--ease), translate var(--dur-3) var(--ease); }
+.nav-links a:hover .nav-dock-icon, .nav-links a[aria-current] .nav-dock-icon { color: var(--tone-ink, var(--color-cobalt)); }
+.nav-links a:hover, .nav-links a[aria-current] { color: var(--color-ink); }
+
+/* ---- Glass over content: cards and controls that float over the world, photos or colour ---- */
+:is(.story-card, .application-card, .hero-tag, .section-title-label, .sys-chip, .btn-ghost, .story-details-btn, .dial-face,
+  .dial-node-chip, .faq-item, .faq-fig, .faq-help, .bento-card, .outcome-figure, .how-legend, .area-preview-name, .faq-plus) {
+  background-color: rgb(255 255 255 / 0.56);
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
+}
+.seg[data-variant="selector"], .application-reads li, .application-index button:not([aria-current]), .orbit-promises li, .application-stepper button {
+  background-color: rgb(255 255 255 / 0.56);
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
+}
+/* Reading surfaces carry more white so long text keeps its contrast over anything. */
+:is(.story-card, .application-card) { background-color: rgb(255 255 255 / 0.7); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+:is(.faq-item, .bento-card, .faq-fig) { background-color: rgb(255 255 255 / 0.62); }
+/* Cards that stack over each other keep an opaque face, or the covered card's figures would ghost through. */
+.outcome-figure { background-color: rgb(255 255 255 / 0.96); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.faq-item[data-open] { background-color: rgb(255 255 255 / 0.8); }
+/* The face hides the hand's pivot: solid white glass, the rim light only. */
+.dial-face { background-color: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.dial-node[data-on] .dial-node-chip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.5), 0 12px 24px -12px rgb(15 18 23 / 0.45); }
+.sys-chip[aria-pressed="true"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* The systems panel: the clearest glass, the photographs pass behind it. */
+.orbit-copy { background: rgb(255 255 255 / 0.36); -webkit-backdrop-filter: blur(18px) saturate(1.9); backdrop-filter: blur(18px) saturate(1.9); box-shadow: var(--lg-rim), var(--lg-edge), 0 30px 60px -30px rgb(15 18 23 / 0.35); }
+@media (max-width: 767px) { .orbit-copy { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; } }
+
+/* Plates on the colour sheets: glass tinted by the sheet behind it, the drawing still on white. */
+.how-plate { background: rgb(255 255 255 / 0.78); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), 0 18px 36px -22px rgb(15 18 23 / 0.4); }
+
+/* Tiles that drift (the Also reads wall) keep a solid white face: a moving blur costs every frame. */
+.wall-tile { box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm); }
+
+/* ---- Night glass: on the navy surfaces ---- */
+:is(.final-systems, .area-row-plus, .footer-card-go), .final-outcomes li, .night-panel .section-title-label, .audit-copy .section-title-label, .footer-top > span {
+  background-color: rgb(255 255 255 / 0.07);
+  -webkit-backdrop-filter: var(--lg-blur-soft);
+  backdrop-filter: var(--lg-blur-soft);
+  box-shadow: var(--lg-night-rim);
+}
+.story-card[data-night] { background-color: rgb(12 18 34 / 0.82); box-shadow: var(--lg-night-rim), 0 30px 70px -30px rgb(12 18 34 / 0.6); }
+.area-row[data-open] .area-row-plus { background: #fff; }
+/* The footer's area pills and the audit's request card stay white glass on colour. */
+.footer-area { background: rgb(255 255 255 / 0.86); box-shadow: var(--lg-rim), 0 6px 14px -8px rgb(12 18 34 / 0.35); }
+
+/* Readers who ask for less transparency get solid surfaces. */
+@media (prefers-reduced-transparency: reduce) {
+  :is(.nav-brand, .nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
+    .hero-tag, .section-title-label, .sys-chip, .faq-item, .faq-fig, .bento-card, .outcome-figure, .orbit-copy, .how-plate, .dial-face) {
+    background-color: var(--color-surface) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .story-card[data-night] { background-color: var(--color-night) !important; }
+}
+
+/* ---- The palette wallpaper behind glass groups (components/ui/LiquidShapes.tsx) ---- */
+.liquid { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.liquid-shape {
+  position: absolute;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  border-radius: 46% 54% 58% 42% / 44% 46% 54% 56%;
+  background: var(--tone);
+  opacity: 0.62;
+  animation: liquid-drift 22s ease-in-out var(--d) infinite alternate, liquid-morph 14s ease-in-out var(--d) infinite alternate;
+}
+@keyframes liquid-drift {
+  0% { translate: 0 0; rotate: 0deg; }
+  50% { translate: 26px -18px; rotate: 30deg; }
+  100% { translate: -20px 22px; rotate: -24deg; }
+}
+@keyframes liquid-morph {
+  0% { border-radius: 46% 54% 58% 42% / 44% 46% 54% 56%; }
+  50% { border-radius: 58% 42% 40% 60% / 56% 38% 62% 44%; }
+  100% { border-radius: 40% 60% 52% 48% / 62% 52% 48% 38%; }
+}
+@media (prefers-reduced-motion: reduce) { .liquid-shape { animation: none; } }
+/* The groups sit over their wallpaper. */
+.bento-wrap { position: relative; isolation: isolate; margin-top: clamp(48px, 7vw, 96px); }
+/* The wallpaper only shows under the cards and through the seams between them. */
+.bento-wrap > .liquid { inset: 16px; border-radius: 26px; }
+.bento-wrap > .bento { position: relative; z-index: 1; margin-top: 0; padding: 16px; }
+.faq-grid { position: relative; isolation: isolate; }
+.faq-grid > .liquid { inset: 0; border-radius: 26px; opacity: 0.8; }
+@media (min-width: 1024px) { .faq-grid > .liquid { grid-row: 2; grid-column: 1 / -1; } }
+.faq-grid > :not(.liquid) { position: relative; z-index: 1; }
+.outcome-wrap { position: relative; isolation: isolate; margin-top: var(--ed-gap); }
+.outcome-wrap > .liquid { inset: 0; border-radius: var(--radius-lg); }
+.outcome-wrap > .outcome-stack { position: relative; z-index: 1; margin-top: 0; }
+
+/* ---- Glass over dark sections (Nav.tsx sets [data-dark] from lib/on-dark.ts): the tint darkens, the
+   rim dims, the type and icons turn white; the solid CTA turns white so it still leads. ---- */
+.nav-shell :is(.nav-brand, .nav-links, .nav-surface, .nav-cta) { transition: background-color var(--dur-4) var(--ease), color var(--dur-4) var(--ease), box-shadow var(--dur-4) var(--ease); }
+.nav-shell[data-dark] :is(.nav-brand, .nav-links, .nav-surface, .nav-cta[data-quiet]) {
+  background-color: rgb(16 22 40 / 0.46);
+  box-shadow: var(--lg-night-rim), 0 0 0 0.75px rgb(255 255 255 / 0.06), 0 14px 34px -16px rgb(0 0 0 / 0.55);
+}
+.nav-shell[data-dark] :is(.logo-word, .nav-links a, .nav-readout, .nav-readout-label, .nav-cta[data-quiet]) { color: #fff; }
+.nav-shell[data-dark] .nav-burger-bar { background: #fff; }
+.nav-shell[data-dark] .nav-links a:is(:hover, [aria-current]) .nav-dock-icon { color: color-mix(in srgb, var(--tone) 55%, #fff); }
+.nav-shell[data-dark] .nav-links-hl { background: color-mix(in srgb, var(--tone, var(--color-cobalt)) 34%, rgb(255 255 255 / 0.1)); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.35), inset 0 0 0 0.75px rgb(255 255 255 / 0.16); }
+.nav-shell[data-dark] .nav-cta:not([data-quiet]) { color: var(--color-ink); background: #fff; }
+.nav-shell[data-dark] .nav-cta:not([data-quiet]) .nav-cta-icon { color: #fff; background: var(--color-ink); }
+.cta-pill { transition: translate var(--dur-4) var(--ease), opacity var(--dur-2) var(--ease), visibility 0s var(--dur-4), background-color var(--dur-4) var(--ease); }
+.cta-pill[data-dark] { background-color: rgb(16 22 40 / 0.5); box-shadow: var(--lg-night-rim), 0 14px 34px -16px rgb(0 0 0 / 0.55); }
+.cta-pill[data-dark] p { color: rgb(255 255 255 / 0.86); }
+.cta-pill[data-dark] .nav-cta { color: var(--color-ink); background: #fff; }
+.cta-pill[data-dark] .nav-cta .nav-cta-icon { color: #fff; background: var(--color-ink); }
+/* The FAQ side is display: contents on wide screens: its children sit over the wallpaper themselves. */
+.faq-side > * { position: relative; z-index: 1; }
+/* Phones: the FAQ reads as one column, its wallpaper would sit behind the heading. */
+@media (max-width: 1023px) { .faq-grid > .liquid { display: none; } }
+
+/* Panels people read (the nav glances, an opened system) carry more white than the bar they hang from. */
+.nav-peek-body, .island-panel { background-color: rgb(255 255 255 / 0.86); }

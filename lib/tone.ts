@@ -48,8 +48,12 @@ export function toneOf(value: string | null | undefined): Tone | undefined {
 export function toneVars(tone: Tone | string | null | undefined): CSSProperties {
   const t = toneOf(tone);
   if (!t) return (tone ? { "--tone": tone, "--tone-ink": "var(--color-ink)" } : {}) as CSSProperties;
-  return { "--tone": toneColor(t), "--tone-ink": toneInk(t) } as CSSProperties;
+  return { "--tone": toneColor(t), "--tone-ink": toneInk(t), "--tone-on": toneOn(t) } as CSSProperties;
 }
+
+/** Text on a solid fill of the tone: white on the deep tones, ink on the bright ones (never ink at an alpha). */
+const DEEP: readonly Tone[] = ["cobalt", "violet", "signal", "demand", "ink"];
+export const toneOn = (t: Tone) => (DEEP.includes(t) ? "var(--color-on-ink)" : "var(--color-ink)");
 
 /** Inline style for a headline's accent line (SectionTitle, .accent): `--accent-ink` only. */
 export function accentVars(tone: Tone | string | null | undefined): CSSProperties {

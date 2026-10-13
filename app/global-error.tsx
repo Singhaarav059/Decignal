@@ -5,7 +5,7 @@ import { useEffect } from "react";
 // Replaces the root layout when it fails, so globals.css and the fonts are not loaded here:
 // plain inline styles in the cool neutrals (lib/site.ts BRAND).
 const INK = "#0F1217";
-const BG = "#F6F7F9";
+const BG = "#EEF1F7";
 // The text-safe cobalt (--color-cobalt-ink), as on the accent line of every two-line headline.
 const COBALT_INK = "#2A52F0";
 

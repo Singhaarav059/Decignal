@@ -14,6 +14,7 @@ import { accentVars, toneVars } from "@/lib/tone";
 import type { Frame } from "../three/ApplicationScene";
 import SegmentedControl from "../ui/SegmentedControl";
 import { SceneBoundary } from "../three/SceneBoundary";
+import { SystemIcon, sourceIcon } from "../ui/SystemIcon";
 import { AreaArt } from "./AreaArt";
 import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
@@ -140,8 +141,8 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     if (!pin.current) pin.current = sheet.current ? "" : null;
   }, [open]);
 
-  // The 3D world mounts on approach, never at load, and stays built once mounted. Home looks two screens
-  // ahead; service pages (compact) one, since their explorer starts only about 2.5 screens down.
+  // The 3D world mounts on approach, never at load, and stays built once mounted. Home looks three screens
+  // ahead; service pages (compact) one and a half, since their explorer starts about 2.5 screens down.
   useEffect(() => {
     const el = root.current;
     if (!el) return;
@@ -149,7 +150,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       if (!e.isIntersecting) return;
       setNear(true);
       io.disconnect();
-    }, { rootMargin: compact ? "100% 0px" : "200% 0px" });
+    }, { rootMargin: compact ? "150% 0px" : "300% 0px" });
     io.observe(el);
     // Fetch the scene's code once the loader has lifted and the page is idle, so the mount is quick.
     const html = document.documentElement;
@@ -183,6 +184,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     const h = head.current;
     const c = card.current;
     if (!st || !h || !c) return;
+    const idx = st.querySelector<HTMLElement>(".application-index");
     const measure = () => {
       const s = st.getBoundingClientRect();
       const hb = h.getBoundingClientRect();
@@ -190,7 +192,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       if (opened.current) return;
       const cb = c.getBoundingClientRect();
       frameBox.current = s.width >= 1024
-        ? { left: Math.max(hb.right, cb.right) - s.left + 40, top: 96, right: 32, bottom: 40 }
+        ? { left: Math.max(hb.right, cb.right) - s.left + 40, top: 96, right: 32, bottom: idx && idx.offsetHeight ? s.bottom - idx.getBoundingClientRect().top + 24 : 40 }
         : { left: 12, right: 12, top: hb.bottom - s.top + 16, bottom: s.bottom - cb.top + 16 };
     };
     measure();
@@ -269,6 +271,8 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       style={{ height: `${lens.reduce((total, l) => total + l * 100, 100)}svh`, ...toneVars(tone) }}
     >
       <div ref={stage} className="application-stage" data-step={frame.step} data-count={count} data-compact={compact || undefined} data-open={open || undefined}>
+        {/* The stage the world stands on: a pale solid of the application's colour, easing as --tone moves. */}
+        <div className="application-floor" aria-hidden />
         <div ref={world} className="application-world" role="img" aria-label={`${app.name}. ${demo.line}`}>
           {near && (
             <SceneBoundary label={`${app.name}. ${demo.line}`} fallback={<AreaArt area={app.category} />}>
@@ -301,7 +305,31 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
             <h3 className="t-title-card application-title">
               <Swap text={demo.headline} render={headline} />
             </h3>
+            {/* What this application reads, one chip per source; they rise in turn as the application changes. */}
+            <ul key={selected} className="application-reads" aria-label={APPLICATIONS_COPY.sources}>
+              {app.connects.map((c, i) => (
+                <li key={c} style={{ ["--i" as string]: i }}>
+                  <SystemIcon id={sourceIcon(c)} size={16} />
+                  {c}
+                </li>
+              ))}
+            </ul>
           </div>
+
+          {/* Every application in this section, as an index along the stage's foot (wide screens): the one
+              showing is filled in its colour, and any other is one click away. */}
+          {count > 1 && (
+            <ol className="application-index" aria-label={APPLICATIONS_COPY.chaptersAria} data-obstacle>
+              {list.map((k, n) => (
+                <li key={k}>
+                  <button type="button" aria-current={n === frame.chapter ? "step" : undefined} onClick={() => jump(n)}>
+                    <span className="tabular">{pad(n + 1)}</span>
+                    {APPLICATIONS[k].name}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
 
           <div ref={card} className="card card--story application-card" data-obstacle>
             <SegmentedControl

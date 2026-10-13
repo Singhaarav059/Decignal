@@ -4,7 +4,13 @@
 
 @theme static {
   /* Neutrals. bg-2 and paper are kept as aliases so existing utilities keep working. */
-  --color-bg: #f6f7f9;
+  /* A cool, faintly blue white (Koushik), so white cards lift off it; night is the deep navy of the
+     contrast bands (Orvan's dark sections, never black). */
+  --color-bg: #eef1f7;
+  --color-night: #0c1222;
+  --color-night-2: #151d33;
+  --color-on-night-2: #a9b2c7;
+  --color-night-line: rgb(255 255 255 / 0.12);
   --color-surface: #ffffff;
   --color-paper: #ffffff;
   --color-sunken: #edeff3;
@@ -44,11 +50,10 @@
   --color-demand-ink: #2a52f0;
   --color-ok-ink: #087a54;
 
-  /* Bricolage Grotesque (next/font --font-display): headlines, numbers and labels.
-     Figtree (--font-body): everything people read. --font-serif and --font-mono are temporary
-     aliases of --font-heading until their call sites move to the role classes. */
+  /* Inter Tight (next/font --font-display) carries everything: headlines medium with a light second
+     line, text regular, labels semibold. --font-serif and --font-mono stay as aliases. */
   --font-heading: var(--font-display), "Helvetica Neue", Arial, sans-serif;
-  --font-sans: var(--font-body), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-display), "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font-heading);
   --font-mono: var(--font-heading);
 
@@ -93,8 +98,8 @@
 
   /* Type: three roles. Headline (display, title, subtitle, numerals), text (lede, body, small),
      label. Sizes scale with the viewport, so per-viewport font overrides are not needed. */
-  --fs-display: clamp(40px, min(6.2vw, 10.5vh), 96px);
-  --fs-title: clamp(32px, min(3.8vw, 6.4vh), 56px);
+  --fs-display: clamp(44px, min(7.4vw, 12vh), 120px);
+  --fs-title: clamp(34px, min(4.8vw, 8vh), 72px);
   /* A title inside the bottom-left StoryCard (chapters 02-08). */
   --fs-title-card: clamp(28px, min(2.8vw, 5.2vh), 40px);
   --fs-subtitle: clamp(17px, 1.35vw, 20px);

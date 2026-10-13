@@ -1,28 +1,28 @@
 "use client";
 
-import { CH, store } from "@/lib/story";
+import { store } from "@/lib/story";
 import { CTA, FINAL } from "@/lib/copy";
 import { toneVars } from "@/lib/tone";
 import { SYSTEMS } from "../ui/systems";
-import { SystemChips } from "./SystemChips";
+import { SystemIcon } from "../ui/SystemIcon";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
 
 /**
- * 09 Decide, inside the story card (D1 Option A): the example transfer's three results, the six systems
- * behind it (pointing lifts each island and brightens its thread to the decision), and the call to action.
+ * 09 Decide, inside the story card, on the night surface of the closing bands: one line on what
+ * Decignal does, the example transfer's three results as tiles (pointing at one lifts the island its
+ * figure came from), the six systems behind them as a row of discs, and the call to action.
  * The headline stands behind the 3D world (Story.tsx).
  */
 export function FinalCard() {
   return (
     <div className="final-card">
-      <p className="t-body story-body" data-optional>
+      <p className="final-lead" data-optional>
         {FINAL.sub}
       </p>
       <p className="t-label final-card-title">{FINAL.cardTitle}</p>
       <ul className="final-outcomes">
         {FINAL.outcomes.map((o) => {
-          // Each figure comes from one system: pointing at it lifts that island.
           const sys = SYSTEMS.findIndex((s) => s.tone === o.tone);
           return (
             <li
@@ -31,16 +31,32 @@ export function FinalCard() {
               onPointerEnter={() => (store.islandHint = sys)}
               onPointerLeave={() => (store.islandHint = -1)}
             >
-              <strong className="t-num-md t-tone">{o.value}</strong>
-              <span className="t-small">{o.label}</span>
+              <i aria-hidden />
+              <strong>{o.value}</strong>
+              <span>{o.label}</span>
             </li>
           );
         })}
       </ul>
-      <SystemChips className="story-chips" label={FINAL.chipsAria} pin={CH.final} />
-      {/* The CTA pair: the audit, and the applications for readers not ready to book. */}
-      <div className="story-actions">
-        <SectionLink href={CTA.href} className="btn btn-primary">
+      <div className="final-systems">
+        <span className="t-label">{FINAL.readFrom}</span>
+        <ul aria-label={FINAL.chipsAria}>
+          {SYSTEMS.map((s, i) => (
+            <li
+              key={s.id}
+              style={{ ...toneVars(s.tone), ["--i" as string]: i }}
+              title={`${s.full}: ${s.knows}, ${s.value}`}
+              onPointerEnter={() => (store.islandHint = i)}
+              onPointerLeave={() => (store.islandHint = -1)}
+            >
+              <SystemIcon id={s.id} size={13} />
+              <span className="sr-only">{s.name}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="story-actions final-actions">
+        <SectionLink href={CTA.href} className="btn final-cta">
           {CTA.primary}
           <Arrow />
         </SectionLink>
@@ -55,3 +71,4 @@ export function FinalCard() {
     </div>
   );
 }
+

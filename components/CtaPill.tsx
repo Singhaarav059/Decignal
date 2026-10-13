@@ -60,7 +60,7 @@ export function CtaPill() {
   const ready = useHtmlReady();
   const show = useChrome((s) => s.dock) && ready;
   return (
-    <aside className="cta-pill" aria-label={NAV.faqSide.label} data-dock data-show={show || undefined} inert={!show}>
+    <aside className="cta-pill" data-lens aria-label={NAV.faqSide.label} data-dock data-show={show || undefined} inert={!show}>
       <p>{NAV.faqSide.blurb}</p>
       <AuditLink className="nav-cta">
         {CTA.primary}

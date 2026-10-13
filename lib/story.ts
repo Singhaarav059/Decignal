@@ -12,11 +12,14 @@ export type Chapter = {
 // Story length budget (viewport heights): 16.15 in all. Scale holds one function per step (S69-04);
 // the final chapter is short and ends in an exit (S69-07).
 export const CHAPTERS: Chapter[] = [
-  { id: "fragments", label: "Systems", len: 1.3, ts: 0.5 },
+  // The hero hands off almost at once (ts 0.12): a long hold read as the page sticking, then the camera
+  // and the folding islands rushed through half the distance (a flash). Now the move starts with the
+  // first scroll and spreads over nearly the whole chapter.
+  { id: "fragments", label: "Systems", len: 1.3, ts: 0.12 },
   { id: "signal", label: "Signal", len: 1.3, ts: 0.5 },
   { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
   { id: "context", label: "Context", len: 1.5, ts: 0.55 },
-  { id: "decision", label: "Decision", len: 2.3, ts: 0.8 },
+  { id: "decision", label: "Decision", len: 2.7, ts: 0.9 },
   { id: "control", label: "Control", len: 1.7, ts: 0.62 },
   { id: "scale", label: "Scale", len: 2.2, ts: 0.75 },
   { id: "industries", label: "Industries", len: 3.2, ts: 0.85 },
@@ -29,6 +32,8 @@ export const TOTAL_LEN = CHAPTERS.reduce((s, c) => s + c.len, 0);
 export const store = {
   g: 0,
   velocity: 0, // scroll velocity from Lenis, px per frame
+  /** performance.now() of the last scroll frame (Lenis), so hover effects can wait for the scroll to settle. */
+  scrollAt: -1e9,
   pointer: { x: 0, y: 0 },
   camK: 1, // how far narrow screens step the camera back (1 on desktop)
   /** Pointer is over the page (false once it leaves the window). */
@@ -163,8 +168,10 @@ export function localIn(c: number, g: number) {
 
 /** Decision chapter beats, as local progress through the chapter. */
 export const BEATS = {
-  load: [0.06, 0.5] as const, // three forklift trips
-  drive: [0.53, 0.78] as const,
+  load: [0.05, 0.4] as const, // three forklift trips at Plant 02
+  drive: [0.43, 0.6] as const,
+  // Plant 01's forklift takes the three pallets off the trailer into its bays; then the empty truck leaves.
+  unload: [0.63, 0.88] as const,
 };
 
 /** Context steps through the evidence one system at a time, in the card's order: WMS, Suppliers, External. */

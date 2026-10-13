@@ -13,6 +13,8 @@ export type ChromeSection = {
   short?: string;
   /** Selector where the section starts reading, when that is above the element with `id`. */
   start?: string;
+  /** False keeps it off the phone dock, which holds four sections. */
+  dock?: boolean;
 };
 
 export type ChromeState = {
@@ -45,7 +47,10 @@ export type ChromeState = {
 };
 
 export const HOME_SECTIONS: ChromeSection[] = [
-  { id: "applications", label: "Applications", short: "Apps", start: ".works-with-section" },
+  { id: "systems", label: "Systems", dock: false },
+  { id: "platform", label: "Platform", dock: false },
+  { id: "applications", label: "Applications", short: "Apps" },
+  { id: "trail", label: "Trail", dock: false },
   { id: "outcomes", label: "Outcomes" },
   { id: "how", label: "How it works", short: "How" },
   { id: "faq", label: "FAQ" },
@@ -185,7 +190,8 @@ export function token(name: string, fallback: number) {
 
 /** Reading: every element holding text, plus these. */
 const GRAPHIC = "svg, canvas, img, video";
-const SOLID = `a, button, input, select, textarea, .card, [data-obstacle], ${GRAPHIC}`;
+// The redesign's surfaces count as reading too: the pill never floats over a card, a sheet or a row.
+const SOLID = `a, button, input, select, textarea, .card, [data-obstacle], figure, .bento-card, .outcome-figure, .how-sheet, .faq-item, .wall-tile, .orbit-tile, .area-row, .dial, ${GRAPHIC}`;
 /** Clear space kept around the pill or dock. */
 const AIR = 16;
 

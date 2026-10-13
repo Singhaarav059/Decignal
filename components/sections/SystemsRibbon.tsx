@@ -5,6 +5,8 @@ import { usePhone } from "@/lib/device";
 import { CONNECTS } from "@/lib/content";
 import { SYSTEMS_STRIP } from "@/lib/copy";
 import { toneVars } from "@/lib/tone";
+import { CONNECTS_MORE } from "@/lib/content";
+import { MORE_ICON, SystemIcon } from "../ui/SystemIcon";
 
 /** The six system types in their system colours (D8: types, never vendors or logos). */
 const SYSTEMS = CONNECTS.map((c) => ({ ...c, mono: c.id.toUpperCase() }));
@@ -160,7 +162,7 @@ export function SystemsRibbon() {
               style={toneVars(s.tone)}
               title={`${s.full}: ${s.reads}`}
             >
-              <span className="ribbon-mark" aria-hidden><i />{s.mono}</span>
+              <span className="ribbon-mark" aria-hidden><SystemIcon id={s.id} size={22} /><b>{s.mono}</b></span>
               <span className="ribbon-done" aria-hidden>
                 <svg viewBox="0 0 16 16"><path d="M4 8.4l2.6 2.6L12 5.4" /></svg>
               </span>
@@ -181,7 +183,7 @@ export function SystemsRibbon() {
             return (
               // Older reads recede, but the oldest still reads at about 4.5:1.
               <li key={s.id} style={{ ...toneVars(s.tone), opacity: 1 - j * 0.2 }}>
-                <span className="ribbon-feed-mark" aria-hidden>{s.mono}</span>
+                <span className="ribbon-feed-mark" aria-hidden><SystemIcon id={s.id} size={18} /></span>
                 <span>
                   <span className="ribbon-feed-src">{s.name}</span>
                   <span className="ribbon-feed-read">{s.read}</span>
@@ -195,6 +197,50 @@ export function SystemsRibbon() {
           <p>{SYSTEMS_STRIP.card.decision}</p>
           <span className="ribbon-await">{SYSTEMS_STRIP.card.status}</span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The other system types, as a strip of chips that drifts sideways under the ribbon. Two copies of the
+ * list sit side by side and both slide one list-width, so the loop never shows a seam. Hover holds it;
+ * reduced motion shows one wrapped list.
+ */
+const WALL_TONES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"] as const;
+
+export function SystemsMarquee({ label }: { label: string }) {
+  // The other types as a wall of tiles (Orvan's logo wall): two rows drifting in opposite directions,
+  // each tile the type's line icon on a disc in the palette, its name and what Decignal reads from it.
+  const half = Math.ceil(CONNECTS_MORE.length / 2);
+  const rows = [CONNECTS_MORE.slice(0, half), CONNECTS_MORE.slice(half)];
+  return (
+    <div className="marquee">
+      <div className="page-wrap wall-head">
+        <p className="t-label marquee-label">{label}</p>
+        <p className="wall-title">
+          {SYSTEMS_STRIP.moreTitle}
+          <span className="wall-count tabular">+{CONNECTS_MORE.length}</span>
+        </p>
+      </div>
+      <div className="wall">
+        {rows.map((items, r) => (
+          <div key={r} className="wall-row" data-dir={r ? "right" : "left"}>
+            {[0, 1].map((copy) => (
+              <ul key={copy} className="wall-track" aria-hidden={copy === 1 || undefined} aria-label={copy === 0 && r === 0 ? label : undefined}>
+                {items.map((m, k) => (
+                  <li key={m.name} className="wall-tile" style={toneVars(WALL_TONES[(k + r * 3) % WALL_TONES.length])}>
+                    <span className="wall-icon" aria-hidden>
+                      <SystemIcon id={MORE_ICON[m.name]} size={22} />
+                    </span>
+                    <span className="wall-name">{m.name}</span>
+                    <span className="wall-reads">{m.reads}</span>
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

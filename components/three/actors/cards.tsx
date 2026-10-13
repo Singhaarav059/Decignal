@@ -98,11 +98,15 @@ function CardFocus() {
   const lost = useRef(0);
   useFrame(({ camera }, dt) => {
     let hit = -1;
+    // While the page scrolls, the scroll drives the deck: cards sliding under a still pointer must not
+    // take focus (it read as the page sticking, and focus flicked between cards). Hover reading
+    // returns a beat after the scroll settles.
+    const scrolling = performance.now() - store.scrollAt < 380;
     // Pointing at the page's own controls (the approval panel, a Scale column) reads the card they
     // name. Those controls sit over the canvas, so the cards behind them are not under the pointer:
     // skip the ray, or a card peeking out behind a column steals focus back and forth every frame.
     const hint = readable() && store.focusHint >= 0 ? store.focusHint : -1;
-    if (hint < 0 && readable() && store.pointerIn) {
+    if (hint < 0 && readable() && store.pointerIn && !scrolling) {
       ndc.set(store.pointer.x, store.pointer.y);
       ray.setFromCamera(ndc, camera);
       const live = bodies.filter((b): b is THREE.Mesh => !!b && b.parent?.parent?.visible !== false);
@@ -112,7 +116,7 @@ function CardFocus() {
     // Hold focus briefly when the pointer slips into a gap, so a moving card never flickers.
     if (hit >= 0) lost.current = 0;
     else lost.current += dt;
-    const next = hint >= 0 ? hint : hit >= 0 ? hit : lost.current > 0.18 || !readable() ? -1 : store.focus;
+    const next = hint >= 0 ? hint : hit >= 0 ? hit : scrolling || lost.current > 0.18 || !readable() ? -1 : store.focus;
     if (next !== store.focus) {
       store.focus = next;
       document.body.style.cursor = next >= 0 ? "pointer" : "";
@@ -256,8 +260,8 @@ function Stand({ card, drive }: { card: React.RefObject<THREE.Group | null>; dri
 const axX = new THREE.Vector3();
 const axY = new THREE.Vector3();
 const toCam = new THREE.Vector3();
-// Face colour: #F7F7F7 in linear light, dimmed when another card is being read.
-const FACE_BASE = new THREE.Color("#F7F7F7").r;
+// Face colour: white (an #F7F7F7 multiply read as a grey tint on the boards), dimmed when another card is being read.
+const FACE_BASE = new THREE.Color("#FFFFFF").r;
 
 function Card({ k }: { k: number }) {
   const ref = useRef<THREE.Group>(null);
@@ -393,11 +397,11 @@ function Card({ k }: { k: number }) {
         <RoundedBox ref={rimRef} args={[CARD.w, CARD.t * 0.7, CARD.h]} radius={0.014} smoothness={4} material={rim} visible={false} />
         <mesh position-y={CARD.t / 2 + 0.0012} rotation-x={-Math.PI / 2}>
           <planeGeometry args={[CARD.w - inset, CARD.h - inset]} />
-          <meshBasicMaterial ref={topMat} map={top} toneMapped={false} color="#F7F7F7" />
+          <meshBasicMaterial ref={topMat} map={top} toneMapped={false} color="#FFFFFF" />
         </mesh>
         <mesh position-y={-CARD.t / 2 - 0.0012} rotation-x={Math.PI / 2}>
           <planeGeometry args={[CARD.w - inset, CARD.h - inset]} />
-          <meshBasicMaterial ref={bottomMat} map={bottom} toneMapped={false} color="#F7F7F7" />
+          <meshBasicMaterial ref={bottomMat} map={bottom} toneMapped={false} color="#FFFFFF" />
         </mesh>
       </group>
     </group>

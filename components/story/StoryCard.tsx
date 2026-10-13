@@ -58,6 +58,9 @@ export function StoryCard() {
     let lastStock = "";
     let lastRect = "";
     let left = false;
+    // Wide screens: the hero carries its own line and CTA in its corners, so the card waits for 02.
+    const wideMq = window.matchMedia("(min-width: 1024px)");
+    let away = false;
 
     // Write a style only when its value moves: most frames change nothing.
     const written = new WeakMap<HTMLElement, Record<string, string>>();
@@ -71,7 +74,7 @@ export function StoryCard() {
     };
 
     const report = () => {
-      const gone = finalExit(store.g) > 0.98;
+      const gone = finalExit(store.g) > 0.98 || away;
       const r = frame.getBoundingClientRect();
       const key = gone ? "" : `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`;
       if (key === lastRect) return;
@@ -102,6 +105,17 @@ export function StoryCard() {
         if (p.inert !== (k !== on)) p.inert = k !== on;
       });
       layout(g);
+
+      // The ending turns the card to the night of the closing bands.
+      frame.toggleAttribute("data-night", on === CH.final);
+
+      const isAway = wideMq.matches && on === CH.fragments;
+      if (isAway !== away) {
+        away = isAway;
+        outer.toggleAttribute("data-away", away);
+        frame.inert = away;
+        report();
+      }
 
       // The final card stays while the world leaves; the page below slides over it (the wrapper keeps
       // the intro fade). Once the world has gone, the 3D framing stops keeping clear of it (and back).
@@ -166,16 +180,17 @@ export function StoryCard() {
 
   return (
     <div ref={wrap} className="story-card-wrap intro-fade">
-      <section ref={card} className="card card--story story-card" aria-label={STORY_UI.cardAria}>
+      <section ref={card} className="card card--story story-card" data-lens aria-label={STORY_UI.cardAria}>
         <div ref={body} className="story-card-body">
-          {/* 01 Systems: one line, the six systems, the call to action. The headline sits behind the 3D. */}
+          {/* 01 Systems: one line, the six systems, the call to action (narrow screens). The headline sits behind the 3D. */}
           <Pane ch={CH.fragments}>
             <Label ch={CH.fragments} />
             <Rest>
               <p className="t-body story-body">{HERO.card}</p>
               <SystemChips className="story-chips" />
               <div className="story-actions">
-                <SectionLink href={CTA.href} className="btn btn-primary">
+                {/* Phones and tablets only: wide screens hide the card in the hero (Story.tsx .hero-actions). */}
+                <SectionLink href={CTA.href} className="btn btn-primary story-hero-cta">
                   {CTA.primary}
                   <Arrow />
                 </SectionLink>
@@ -280,16 +295,27 @@ function Pane({ ch, hint, children }: { ch: number; hint?: "signal"; children: R
 /** Everything under the title, so it can arrive a beat after the title. */
 const Rest = ({ children }: { children: ReactNode }) => <div className="story-pane-rest">{children}</div>;
 
-/** Label row: a tone dot, "02 · Signal", and the honesty label for the running example. */
+/**
+ * The card's head, on every chapter: a strip of nine segments (one per chapter, each in its own
+ * colour, filled up to this one), then "02 / 09 Signal" and the honesty label for the running example.
+ */
 export function Label({ ch, example = true }: { ch: number; example?: boolean }) {
   return (
-    <p className="story-label t-label" style={toneVars(TONE[ch])}>
-      <span className="story-label-dot" aria-hidden />
-      <span className="tabular">{String(ch + 1).padStart(2, "0")}</span>
-      <span aria-hidden>·</span>
-      {CHAPTERS[ch].label}
-      {example && <span className="story-label-note">{EXAMPLE_LABEL}</span>}
-    </p>
+    <div className="story-head" style={toneVars(TONE[ch])}>
+      <ol className="story-progress" aria-hidden>
+        {CHAPTERS.map((c, k) => (
+          <li key={c.id} data-past={k < ch || undefined} data-on={k === ch || undefined} style={toneVars(TONE[k])} />
+        ))}
+      </ol>
+      <p className="story-label t-label">
+        <span className="story-label-n tabular">
+          {String(ch + 1).padStart(2, "0")}
+          <span className="story-label-of"> / {String(CHAPTERS.length).padStart(2, "0")}</span>
+        </span>
+        <span className="story-label-name">{CHAPTERS[ch].label}</span>
+        {example && <span className="story-label-note">{EXAMPLE_LABEL}</span>}
+      </p>
+    </div>
   );
 }
 
@@ -498,7 +524,8 @@ if (process.env.NODE_ENV !== "production" && EVIDENCE_CHECKS.rows.some((r, i) =>
 }
 
 /** 05: the transfer order's progress, driven by the same beats as the forklift and the truck. */
-const STEP_AT = [0, BEATS.load[0], BEATS.load[1], BEATS.drive[0], BEATS.drive[1] - 0.02];
+// Received once Plant 01 has the pallets off the trailer, not when the truck pulls up.
+const STEP_AT = [0, BEATS.load[0], BEATS.load[1], BEATS.drive[0], BEATS.unload[1] - 0.02];
 
 function Stepper() {
   const root = useRef<HTMLOListElement>(null);

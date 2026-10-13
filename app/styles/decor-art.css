@@ -57,12 +57,9 @@
 
 /* Signal focus: pointing at the area's signal row singles out the part of the drawing it describes. */
 .area-art > * { transition: fill-opacity var(--dur-3) var(--ease), stroke-opacity var(--dur-3) var(--ease); }
-:is(.area-panel:has(.area-ui-signal:hover), .svc-hero-card:has(.svc-signal:hover)) .area-art > :not(.aa-sig) { fill-opacity: 0.22; stroke-opacity: 0.22; }
+:is(.area-panel:has(.area-ui-signal-card:hover), .svc-hero-card:has(.svc-signal:hover)) .area-art > :not(.aa-sig) { fill-opacity: 0.22; stroke-opacity: 0.22; }
 
-/* The panels on the home page: the drawing gets the height the copy column leaves it. */
-@media (min-width: 900px) {
-  .area-copy .area-art { height: clamp(96px, calc(var(--panel-h) - 268px), 196px); }
-}
+/* The home panels carry the drawing at the top of the signal card, under the area's duotone photograph; the service hero card sets it between the photograph and the signal (editorial.css, service.css). */
 
 /* ---- The build: plays once the drawing is in view (data-on), in story order, then settles ----
    Hidden states apply only with scripting and full motion, so a drawing is never left blank. */
