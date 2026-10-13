@@ -8,7 +8,7 @@ import { goToFunction } from "./ScaleApps";
 
 /**
  * Phones only, in the band above the story card: the function cards as a deck at reading size, in
- * place of the 3D arc. It shows the function the story card has selected, which follows the scroll;
+ * place of the 3D line. It shows the function the story card has selected, which follows the scroll;
  * tapping the deck scrolls on to the next function.
  */
 export function ScalePhone() {

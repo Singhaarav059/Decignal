@@ -4,13 +4,14 @@
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CH, INDUSTRIES, localIn, store, weight } from "@/lib/story";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { CH, INDUSTRIES, localIn, scaleF, smoothstep, store, weight } from "@/lib/story";
 import { CARD, CARDS, DECISION_CARD, cardPose, industryF } from "@/lib/scene";
 import { WHITE, clay, useDisposeOnUnmount } from "../kit";
 import { aluminium } from "../materials";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, faceKey, readFonts, type DecisionMode, type FaceSpec } from "../faces";
 import { useActor } from "./core";
+import { goToFunction } from "@/components/story/ScaleApps";
 
 /* ------------------------------------------------------------------ */
 /* Cards: the decision, its layers, functions and industries           */
@@ -91,11 +92,20 @@ const decisionNow = (): { mode: DecisionMode; qty: number } | undefined => store
 const readable = () => Math.max(weight(CH.control, store.g), weight(CH.scale, store.g)) > 0.9;
 const toneOf = (k: number) => (store.g < CH.scale - 0.5 ? LAYER_TONE[k] : FUNCTION_TONE[k]);
 
-/** Finds the card under the pointer once per frame. */
+/** Finds the card under the pointer once per frame. In Scale a click on a card scrolls to its function. */
 function CardFocus() {
   const ray = useMemo(() => new THREE.Raycaster(), []);
   const ndc = useMemo(() => new THREE.Vector2(), []);
   const lost = useRef(0);
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.button !== 0 || !(e.target instanceof Element) || e.target.closest("a, button, input, select, textarea, label, [role=dialog]")) return;
+      const k = store.focus;
+      if (k >= 0 && weight(CH.scale, store.g) > 0.9 && k !== Math.round(scaleF(localIn(CH.scale, store.g)))) goToFunction(k);
+    };
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, []);
   useFrame(({ camera }, dt) => {
     let hit = -1;
     // While the page scrolls, the scroll drives the deck: cards sliding under a still pointer must not
@@ -357,13 +367,23 @@ function Card({ k }: { k: number }) {
     // card's turn about the vertical. Read from axes, not Euler angles: cards stand at exactly 90°.
     axX.set(1, 0, 0).applyQuaternion(g.quaternion);
     const ry = Math.atan2(-axX.z, axX.x);
-    // Lift toward the viewer along the card's normal, square up to the camera, grow to reading size.
-    // Edge cards also drift toward the middle of the stack, clear of the copy and the screen edge.
-    // Cards to the left only shift a little: the copy column sits on that side.
+    // Control's fan: lift toward the viewer along the card's normal, square up to the camera, grow to
+    // reading size. Edge cards also drift toward the middle of the stack, clear of the copy and the
+    // screen edge. Cards to the left only shift a little: the copy column sits on that side.
     const aside = a.side > 0 ? 0.4 : 0.26;
-    n.position.set(a.side * a.other * aside + (2 - k) * 0.3 * a.me, s * (Math.max(a.me, bump) * 1.05 - a.other * 0.1), 0);
-    n.rotation.set(0, 0, s * ry * a.me);
-    n.scale.setScalar(1 + Math.max(a.me, bump * 0.5) * 0.2 - a.other * 0.03);
+    const fx = a.side * a.other * aside + (2 - k) * 0.3 * a.me;
+    const fy = s * (Math.max(a.me, bump) * 1.05 - a.other * 0.1);
+    const fs = 1 + Math.max(a.me, bump * 0.5) * 0.2 - a.other * 0.03;
+    // Scale's line: the cards are already square and nothing may pass through its neighbours, so a
+    // card stays in its own plane. One waiting behind rises along its face until its title clears the
+    // card in front; the front one only lifts a little toward the viewer.
+    const lw = weight(CH.scale, store.g);
+    const q = (((k - scaleF(localIn(CH.scale, store.g))) % CARDS) + CARDS) % CARDS;
+    const behind = q > CARDS - 1 ? 1 : smoothstep(0.2, 0.6, q);
+    const L = THREE.MathUtils.lerp;
+    n.position.set(L(fx, 0, lw), L(fy, s * a.me * 0.12 * (1 - behind), lw), L(0, -s * a.me * 0.3 * behind, lw));
+    n.rotation.set(0, 0, s * ry * a.me * (1 - lw));
+    n.scale.setScalar(L(fs, 1 + a.me * 0.03 * (1 - behind), lw));
     rim.color.set(toneOf(k));
     // The rim grows out from behind the card's edge rather than fading: no transparency to sort.
     if (rimRef.current) {

@@ -374,10 +374,11 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
   }
   const hw = (bb.x1 - bb.x0) / 2;
   const hh = (bb.y1 - bb.y0) / 2;
-  // Ideal centre: the stage's middle, drawn halfway toward the open space right of the card.
+  // Ideal centre: the stage's middle, drawn toward the open space right of the card (halfway, unless
+  // the shot asks for more).
   let ix = (stage.x0 + stage.x1) / 2;
   const iy = (stage.y0 + stage.y1) / 2;
-  if (nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) ix = ix * 0.5 + ((EX[0].x1 + stage.x1) / 2) * 0.5;
+  if (nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) ix += ((EX[0].x1 + stage.x1) / 2 - ix) * s.open;
   // The wide hero and the ending are one centre line: the world sits under the headline's middle.
   const centred = (c === CH.fragments || c === CH.final) && vw >= 1024;
   if (centred) ix = vw / 2;

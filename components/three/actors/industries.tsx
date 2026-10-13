@@ -21,7 +21,9 @@ import { reducedMotion } from "./core";
 
 const ROAD_L = IND_ROAD.x1 - IND_ROAD.x0;
 const ROAD_CX = (IND_ROAD.x0 + IND_ROAD.x1) / 2;
-const VERGE = { z0: IND.roadZ + IND.roadW / 2, w: 0.85 };
+/** The near verge reaches past the board's feet: it stands on it, nearer the viewer than the road. */
+const VERGE_Z0 = IND.roadZ + IND.roadW / 2;
+const VERGE = { z0: VERGE_Z0, w: Math.max(0.85, IND.board[1] + 0.55 - VERGE_Z0) };
 
 /** A concrete apron under each place, with a drive-in crossing to the road: part of the road, so the
  *  ground runs on unbroken while the places themselves go up and down. */

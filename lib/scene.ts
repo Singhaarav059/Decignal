@@ -197,11 +197,28 @@ const FAN: [number, number] = [2.8, -0.45];
 const FAN_S = 1.65;
 /** The audit board's size on portrait screens, where it is framed on its own: the Industries board's. */
 const FINAL_SP = 1.6;
-/** Scale's arc of functions; its front card becomes the Industries board at the origin. */
+/** Scale's line of functions; its front card becomes the Industries board at the origin. */
 const SCALE_AT: [number, number] = [0, 0.2];
-/** The arc: the neighbours of the front card step out by n; the rest stack straight behind them by f,
- *  so only their top edges show and the front card keeps the room to read (400px wide at 1440). */
-const ARC = { nx: 1.25, nz: 1.1, fx: 0, fz: 0.32 };
+/**
+ * The line: every card square to the viewer, one behind another on the ground. Each place back is dz
+ * further away, which the elevated camera shows as a step up, so the cards behind show only their top
+ * strip (the function's name) above the one in front. `sw` is the step aside a card takes as it walks
+ * round to the back: its width and a little more, so it never passes through the line.
+ */
+const LINE = { s: 1.45, sP: 1.15, dz: 0.5, sw: 1.6 * 1.45 + 0.18 };
+
+/** Card k's place in Scale's line at function f: x right and z toward the viewer, square to the viewer. */
+function linePlace(k: number, f: number, s: number): [number, number] {
+  const n = CARDS;
+  // 0 is the front, n - 1 the back; between n - 1 and n the card is walking round from front to back.
+  const q = (((k - f) % n) + n) % n;
+  if (q <= n - 1) return [0, -q * LINE.dz];
+  const u = n - q;
+  // Out to the right first, back past the end of the line, then in behind it.
+  const side = smoothstep(0, 0.35, u) * (1 - smoothstep(0.7, 1, u));
+  const back = smoothstep(0.2, 0.7, u) * (n - 0.5) - smoothstep(0.7, 1, u) * 0.5;
+  return [side * LINE.sw * (s / LINE.s), -back * LINE.dz];
+}
 
 export function cardPose(k: number, c: number, t: number, portrait = false, phone = false): Pose | null {
   // Phones read the layers and functions as a flat deck at full width (components/story/PhoneDeck.tsx);
@@ -215,18 +232,13 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
       return { p: [x, standY(s, LEAN), z], rx: UP - LEAN, ry: -0.4 - t * 0.04 + ISO.az, s };
     }
     case CH.scale: {
-      // Flip: the back of each card is a different business function. A shallow arc that turns with
-      // the scroll, one function at a time at the front, square to the viewer; the rest step back.
-      const s = portrait ? 1.1 : 1.25;
-      const d = k - scaleF(t);
-      const ad = Math.abs(d);
-      const near = Math.min(ad, 1);
-      const far = Math.max(ad - 1, 0);
-      // The step aside leads the step back: halfway through a turn the two cards trading places are
-      // already clear of each other, so the card coming in never passes over the one being read.
-      const side = smoothstep(0, 0.62, near);
-      const [x, z] = isoXZ(Math.sign(d) * (side * ARC.nx + far * ARC.fx) * (s / 1.25), -near * ARC.nz - far * ARC.fz, SCALE_AT[0], SCALE_AT[1]);
-      return { p: [x, standY(s, LEAN), z], rx: FLIP - LEAN, ry: -Math.sign(d) * near * 0.85 + ISO.az, s };
+      // Flip: the back of each card is a different business function. They stand in one line, the
+      // function being read at the front; reading on, it steps aside and walks round to the back
+      // while the rest move up one place, so every hold shows the same tidy line.
+      const s = portrait ? LINE.sP : LINE.s;
+      const [lx, lz] = linePlace(k, scaleF(t), s);
+      const [x, z] = isoXZ(lx, lz, SCALE_AT[0], SCALE_AT[1]);
+      return { p: [x, standY(s, LEAN), z], rx: FLIP - LEAN, ry: ISO.az, s };
     }
     case CH.industries: {
       // The board stands on the road's near verge in front of each industry's place and travels with
@@ -268,7 +280,7 @@ export const IND = {
   /** The board's offset from the stop and its scale; portrait screens stand it in front, larger.
    *  Wide screens stand it on the near verge, left of the place's yard (which reaches about 1.6 to
    *  the left of the stop), so the place is never behind it. */
-  board: [-2.1, 1.1] as [number, number],
+  board: [-2.4, 1.75] as [number, number],
   boardP: [-0.2, 0.75] as [number, number],
   boardS: 1.7,
   boardSP: 1.6,
@@ -303,8 +315,8 @@ export function industryTrack(t: number) {
  * after framing (the truck follow). Scene.tsx fits the pillars into the screen area the copy leaves
  * free, at the one ISO angle, so only the distance and target ever change between chapters.
  */
-export type Shot = { n: number; pil: Float32Array; dist: number; pan: Vec3; exit: number; steady: boolean };
-export const makeShot = (): Shot => ({ n: 0, pil: new Float32Array(5 * 12), dist: 10, pan: [0, 0, 0], exit: 0, steady: false });
+export type Shot = { n: number; pil: Float32Array; dist: number; pan: Vec3; exit: number; steady: boolean; open: number };
+export const makeShot = (): Shot => ({ n: 0, pil: new Float32Array(5 * 12), dist: 10, pan: [0, 0, 0], exit: 0, steady: false, open: 0.5 });
 
 function pillar(o: Shot, x: number, z: number, r: number, y0: number, y1: number) {
   const i = o.n * 5;
@@ -328,6 +340,7 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
   o.pan[0] = o.pan[1] = o.pan[2] = 0;
   o.exit = 0;
   o.steady = false;
+  o.open = 0.5;
   // A slow dolly through every hold: the world is alive, never parked.
   const drift = 1 - 0.035 * t;
   switch (c) {
@@ -383,17 +396,20 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
       o.dist = 13.3 * drift;
       break;
     case CH.scale: {
-      // Framed on the arc as a whole, both sides at their widest (the neighbours and the last card of
-      // the stack), so the front card holds still while the arc turns.
-      const k = portrait ? 1.1 / 1.25 : 1;
-      pillar(o, SCALE_AT[0], SCALE_AT[1], 1.02 * k, 0, 1.3 * k);
-      for (const side of [-1, 1]) {
-        for (const far of [0, CARDS - 2]) {
-          const [x, z] = isoXZ(side * (ARC.nx + far * ARC.fx) * k, -ARC.nz - far * ARC.fz, SCALE_AT[0], SCALE_AT[1]);
-          // A turned neighbour, leaned back and nearer at its outer edge, reads about 0.9 wide on screen.
-          pillar(o, x, z, 0.9 * k, 0, 1.3 * k);
-        }
+      // Framed on the line at rest: the front card by its two side edges (a thin plane square to the
+      // viewer) and the last card's top. The card walking round leaves the frame for a moment on the
+      // right; the camera holds still for it.
+      const s = portrait ? LINE.sP : LINE.s;
+      const hw = (CARD.w / 2) * s;
+      const top = standY(s, LEAN) + (CARD.h / 2) * s;
+      for (const e of [-1, 1]) {
+        const [x, z] = isoXZ(e * hw, 0, SCALE_AT[0], SCALE_AT[1]);
+        pillar(o, x, z, 0.08, 0, top);
       }
+      const [bx, bz] = isoXZ(0, -(CARDS - 1) * LINE.dz, SCALE_AT[0], SCALE_AT[1]);
+      pillar(o, bx, bz, 0.08, 0, top);
+      // Centred in the open space right of the card, under the head's figures.
+      o.open = 1;
       o.dist = 9.6 * drift;
       break;
     }

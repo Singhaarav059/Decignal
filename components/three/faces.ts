@@ -76,8 +76,8 @@ const dot = (c: C, x: number, y: number, r: number, color: string) => {
   c.fill();
 };
 
-function label(c: C, text: string, x: number, y: number, color = SOFT) {
-  font(c, 46, 600, true);
+function label(c: C, text: string, x: number, y: number, color = SOFT, size = 46) {
+  font(c, size, 600, true);
   c.fillStyle = color;
   c.letterSpacing = "4px";
   c.fillText(text.toUpperCase(), x, y);
@@ -85,16 +85,17 @@ function label(c: C, text: string, x: number, y: number, color = SOFT) {
 }
 
 /** Status pill, right-aligned: a tone dot and the status in the tone's ink, on the sunken grey. */
-function pill(c: C, text: string, xRight: number, y: number, tone: string) {
-  font(c, 42, 600);
-  const w = c.measureText(text).width + 104;
+function pill(c: C, text: string, xRight: number, y: number, tone: string, size = 42) {
+  const k = size / 42;
+  font(c, size, 600);
+  const w = c.measureText(text).width + 104 * k;
   const x = xRight - w;
-  rr(c, x, y - 58, w, 84, 42);
+  rr(c, x, y - 58 * k, w, 84 * k, 42 * k);
   c.fillStyle = BG2;
   c.fill();
-  dot(c, x + 42, y - 16, 11, tone);
+  dot(c, x + 42 * k, y - 16 * k, 11 * k, tone);
   c.fillStyle = ink(tone);
-  c.fillText(text, x + 68, y);
+  c.fillText(text, x + 68 * k, y);
 }
 
 /** Name chip, left-aligned: a tone dot and the name in ink, on the sunken grey. */
@@ -538,12 +539,13 @@ const FN_VISUAL = [fnLane, fnSchedule, fnAllocation, fnCases, fnLedger];
 function fn(c: C, k: number) {
   const tone = FUNCTION_TONE[k];
   const f = FUNCTIONS[k];
+  // The header carries the name alone: in Scale's line it is all that shows of the cards behind.
   chip(c, f.name, 90, 140, tone);
-  pill(c, "Ready for approval", FACE_W - 90, 140, TINTS.emerald);
   title(c, f.decision, 310, 104, INK, FACE_W - 180);
   FN_VISUAL[k](c, tone);
-  // Footer: the systems this function's decision drew on
+  // Footer: the systems this function's decision drew on, and where the decision stands
   label(c, FN_SOURCES[k], 90, 958);
+  pill(c, "Ready for approval", FACE_W - 90, 958, TINTS.emerald);
 }
 
 const FN_SOURCES = [
@@ -554,8 +556,9 @@ const FN_SOURCES = [
   "ERP · AP · Receiving",
 ];
 
-/** Industries: one board, one decision. Three things on it, set to read from across the room: the
- *  industry, what kind of thing this is, and the decision. Its systems are on the page beside it. */
+/** Industries: one board, one decision, set to read from across the room: the industry, what kind of
+ *  thing this is and the decision, over the same footer as Scale's cards (the systems it reads and where
+ *  the decision stands), so the board is one of that family and its lower half is never blank. */
 function industry(c: C, k: number) {
   const ind = INDUSTRIES[k];
   const tone = INDUSTRY_TONE[k];
@@ -567,12 +570,15 @@ function industry(c: C, k: number) {
   dot(c, 146, 132, 16, tone);
   c.fillStyle = INK;
   c.fillText(ind.name, 182, 155);
-  font(c, 58, 600, true);
+  font(c, 54, 600, true);
   c.fillStyle = SOFT;
   c.letterSpacing = "5px";
-  c.fillText("RECOMMENDED ACTION", 90, 404);
+  c.fillText("RECOMMENDED ACTION", 90, 364);
   c.letterSpacing = "0px";
-  title(c, ind.decision, 560, 132, INK, FACE_W - 180);
+  title(c, ind.decision, 530, 132, INK, FACE_W - 180);
+  // Set larger than Scale's footer: the board stands further off, about 300px wide at 1440.
+  label(c, ind.system, 90, 940, SOFT, 62);
+  pill(c, "Ready for approval", FACE_W - 90, 940, TINTS.emerald, 58);
 }
 
 /** The ending: the lead magnet, standing where the six systems meet. */
