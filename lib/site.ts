@@ -4,8 +4,20 @@
 
 import { HERO, META } from "./copy";
 
-/** Absolute origin. Set NEXT_PUBLIC_SITE_URL at build time when the domain changes. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://decignal.up.railway.app").replace(/\/+$/, "");
+const DEFAULT_SITE_URL = "https://decignal.up.railway.app";
+
+/** Absolute origin. Set NEXT_PUBLIC_SITE_URL at build time when the domain changes. A bare host
+ *  ("decignal.com") gets https, a path or trailing slash is dropped, and a value that is not a URL at all
+ *  falls back to the default instead of failing the build in metadataBase. */
+export const SITE_URL = (() => {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!raw) return DEFAULT_SITE_URL;
+  try {
+    return new URL(/^[a-z][a-z\d+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`).origin;
+  } catch {
+    return DEFAULT_SITE_URL;
+  }
+})();
 export const SITE_NAME = "Decignal";
 export const SITE_TITLE = META.title;
 export const SITE_DESCRIPTION = META.description;
@@ -46,9 +58,15 @@ export const LOGO_PLATES = [
 /** viewBox that centres the mark in a square with a little air. */
 export const LOGO_ICON_VIEWBOX = "3 -2.1 26 26";
 
-/** Restate these in a page's openGraph/twitter, because Next merges metadata objects shallowly. */
-export const OG_BASE = { type: "website" as const, siteName: SITE_NAME };
-export const TWITTER_BASE = { card: "summary_large_image" as const };
+/** The site's share card, drawn by app/opengraph-image.tsx. */
+export const SHARE_IMAGE_ALT = `${SITE_NAME}: ${HERO_LINES.join(" ")} ${OG_FOOTER}`;
+const SHARE_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt: SHARE_IMAGE_ALT, type: "image/png" };
+
+/** Restate these in a page's openGraph/twitter, because Next merges metadata objects shallowly: a page that
+ *  sets openGraph drops the layout's, the card from app/opengraph-image.tsx included, so the bases carry it.
+ *  A route with its own opengraph-image file (app/solutions/[slug]) still shows its own. */
+export const OG_BASE = { type: "website" as const, siteName: SITE_NAME, images: [SHARE_IMAGE] };
+export const TWITTER_BASE = { card: "summary_large_image" as const, images: [SHARE_IMAGE] };
 
 /** Date the public copy last changed; the sitemap uses it so its output stays deterministic. */
 export const CONTENT_UPDATED = "2026-10-12";

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { auditBrief, formatSlot, isLikelyBot, validateAudit, type AuditData, type AuditResponse } from "@/lib/audit";
 import { clientIp, createLimiter } from "@/lib/rate-limit";
+import { SITE_URL } from "@/lib/site";
 
 // Audit requests (PROD-02). Delivery is configured by env, any channel may be set:
 //   AUDIT_WEBHOOK_URL                                  POST JSON (Slack, Make, Zapier, n8n, CRM hook)
@@ -65,12 +66,7 @@ function originAllowed(request: NextRequest) {
   } catch {
     return false;
   }
-  const allowed = [request.headers.get("x-forwarded-host"), request.headers.get("host")];
-  try {
-    if (process.env.NEXT_PUBLIC_SITE_URL) allowed.push(new URL(process.env.NEXT_PUBLIC_SITE_URL).host);
-  } catch {
-    // Malformed site URL: ignore it here.
-  }
+  const allowed = [request.headers.get("x-forwarded-host"), request.headers.get("host"), new URL(SITE_URL).host];
   return allowed.some((h) => h?.split(",")[0].trim() === host);
 }
 

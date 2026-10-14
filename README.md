@@ -22,7 +22,7 @@ npm ci
 npm run dev        # http://localhost:3000
 ```
 
-In development, `window.__goto(g)` jumps the story to a position.
+In development only (none of these exist in a production build): `window.__goto(g)` jumps the story to a position, `window.__storyY(g)` gives the scroll offset of a position, `window.__jump(target, opts)` jumps as the nav does (`lib/jump.ts`), and `window.__story` is the live story store.
 
 ## Scripts
 
@@ -32,7 +32,7 @@ In development, `window.__goto(g)` jumps the story to a position.
 | `npm run build` | Production build |
 | `npm start` | Serve the build (reads `PORT`) |
 | `npm run lint` | ESLint over the repo (`.claude/` and `references/` are ignored) |
-| `npm run typecheck` | `tsc --noEmit` |
+| `npm run typecheck` | `next typegen`, then `tsc --noEmit` (the route types such as `PageProps` are generated, so a fresh checkout needs typegen first) |
 | `npm run rules` | Design-rule gate in warn mode (`scripts/rules-check.mjs`): em dashes, warm colours, gradients, blur, backdrop filters, ink colour-mix, `100vw` in `calc`, soft shadows |
 | `npm run check` | typecheck, lint, rules, then build. Run before pushing |
 
@@ -45,7 +45,7 @@ Copy `.env.example` to `.env.local`. Every variable is optional.
 | Variable | Purpose |
 |---|---|
 | `NEXT_PUBLIC_SITE_URL` | Public origin for canonical URLs, sitemap, robots and social images. Read at build time. Defaults to `https://decignal.up.railway.app`. Set it when the custom domain goes live |
-| `AUDIT_WEBHOOK_URL` | Audit requests are POSTed here as JSON |
+| `AUDIT_WEBHOOK_URL` | Audit requests are POSTed here as JSON. For the Google Sheet, deploy `scripts/audit-sheet.gs` as a web app and set `<exec URL>?key=<its SECRET>`. Server only, never sent to the browser |
 | `RESEND_API_KEY`, `AUDIT_TO_EMAIL`, `AUDIT_FROM_EMAIL` | Audit requests are emailed through Resend (all three needed) |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Shows a contact mailto in the footer, privacy notice and the audit form fallback |
 
@@ -53,13 +53,19 @@ With no delivery channel configured, `/api/audit` answers 503 and the form offer
 
 ## Deploy (Railway)
 
-`main` deploys to Railway. `railway.json` sets the build (`npm run build`), the start command (`npm start`), a health check on `/api/health` and restart on failure. Railway's Railpack builder takes the Node version from `engines` in `package.json` (24.x).
+`main` deploys to Railway. `railway.json` sets the build (`npm run build`), the start command (`npm start`, which listens on Railway's `PORT`), a health check on `/api/health` (answers `{"ok":true}`, never cached; 60s timeout) and restart on failure. Railway's Railpack builder takes the Node version from `engines` in `package.json` (24.x).
 
+- Set the service variables from [Environment](#environment) before the first deploy: `AUDIT_WEBHOOK_URL` (or the three Resend ones) and `NEXT_PUBLIC_CONTACT_EMAIL`. `NEXT_PUBLIC_*` values are baked in at build time, so changing one needs a redeploy, not a restart.
+- The audit rate limits (`lib/rate-limit.ts`) live in memory: keep the service at one replica, or move them to a shared store first.
 - Turn on "Wait for CI" in the Railway service so a red CI run does not deploy.
 - Railway marks config as code (`railway.json`) as deprecated in favour of Infrastructure as Code (`.railway/railway.ts`, applied with the Railway CLI). Existing files keep working until 2026-12-01; migrate before then or move these settings into the service dashboard.
 - When the custom domain is ready, set `NEXT_PUBLIC_SITE_URL` and redeploy.
 
 Production responses carry a Content Security Policy, HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and COOP (see `next.config.ts`). The CSP applies only to production builds so `next dev` keeps working. Verify any change to it against a production build with a full scroll: a wrong directive blanks the 3D silently.
+
+### Phone performance probe
+
+Open the live home page on the phone with `?perf` (for example `https://decignal.up.railway.app/?perf`). A small panel shows the frame rate; "Run test" plays the same places of the page several ways (as is, the 3D at 1.5x, without the CSS effects, the blurs, the fields or the shadows, without the 3D, without all) and reports the frame rate, main-thread time and any 3D errors or lost contexts as text to copy or screenshot. Without `?perf` the probe is never downloaded (`components/PerfProbe.tsx` imports `lib/perf-probe.ts` only then).
 
 ## CI
 

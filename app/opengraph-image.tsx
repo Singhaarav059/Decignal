@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { BRAND, HERO_LINES, LOGO_ICON_VIEWBOX, LOGO_PLATES, OG_FOOTER, SITE_NAME } from "@/lib/site";
+import { BRAND, HERO_LINES, LOGO_ICON_VIEWBOX, LOGO_PLATES, OG_FOOTER, SHARE_IMAGE_ALT } from "@/lib/site";
 
-export const alt = `${SITE_NAME}: ${HERO_LINES.join(" ")} ${OG_FOOTER}`;
+export const alt = SHARE_IMAGE_ALT;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

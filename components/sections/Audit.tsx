@@ -245,6 +245,9 @@ export function Audit({ area, source }: { area?: AreaSlug; source?: string }) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...data, website: honeypot, ...(elapsedMs > 0 ? { elapsedMs } : {}), source: from() }),
+        // The route answers within about 15s (its slowest channel, the webhook); past 30s the request is
+        // stuck somewhere on the way, so the form offers the retry and the brief instead of spinning.
+        signal: typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(30_000) : undefined,
       });
       const json = (await res.json().catch(() => null)) as AuditResponse | null;
       if (res.ok && json?.ok) {
