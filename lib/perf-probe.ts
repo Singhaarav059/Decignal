@@ -5,7 +5,8 @@
 // measuring the frame rate the phone itself reaches and how much of each second went to script and
 // to style and layout on the main thread. It also says whether the 3D runs at all, and why not: the
 // errors and lost contexts since the page loaded. The result is text to copy or screenshot.
-import { pacing, probe } from "./pace";
+import { probe } from "./pace";
+import { gToProgress } from "./story";
 import { canvasQuality } from "./device";
 import type { ProbeLog } from "@/components/PerfProbe";
 
@@ -110,12 +111,7 @@ function device(log: ProbeLog) {
 function places() {
   const story = document.getElementById("story");
   const top = story ? story.getBoundingClientRect().top + window.scrollY : 0;
-  const stops = [...document.querySelectorAll<HTMLElement>(".story-stop")];
-  const at = (g: number) => {
-    if (!stops.length) return 0;
-    const s = stops.reduce((b, e) => (Math.abs(Number(e.dataset.g) - g) < Math.abs(Number(b.dataset.g) - g) ? e : b));
-    return top + s.offsetTop;
-  };
+  const at = (g: number) => (story ? top + gToProgress(g) * (story.offsetHeight - window.innerHeight) : 0);
   const apps = document.querySelector(".application-journey");
   const list: [string, number][] = [
     ["hero", 0],
@@ -197,10 +193,8 @@ export function startProbe(log: ProbeLog) {
         for (const [name, y] of places()) {
           line.textContent = `testing ${c + 1}/${CONFIGS.length} ${cfg.name}: ${name}… keep the phone still`;
           window.scrollTo({ top: y, behavior: "instant" });
-          // The story eases to the new place (lib/pace.ts): rest is measured once it is there.
-          await wait(300);
-          for (let k = 0; k < 40 && pacing(); k++) await wait(100);
-          await wait(600);
+          // Rest is measured once the page and the scene have settled.
+          await wait(900);
           const rest = await frames(1200);
           const move = await frames(1500, y);
           cells.push(`${name} ${fps(rest)}/${fps(move)}`);

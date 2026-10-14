@@ -18,7 +18,6 @@ import { AreaArt } from "./AreaArt";
 import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
 import { whenStill } from "@/lib/idle";
-import { ExplorerStills } from "./ExplorerStills";
 import { usePhone } from "@/lib/device";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -30,12 +29,6 @@ const STAGE_AT = [0.18, 0.48, 0.84];
 const ALL = APPLICATIONS.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 const pad = (n: number) => String(n).padStart(2, "0");
-
-/** Live 3D across all screen sizes. */
-function useStills(compact?: boolean) {
-  void compact;
-  return false;
-}
 
 /**
  * Text that changes in place: the old words fade up and out while the new ones rise in (opacity and
@@ -104,11 +97,6 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
   const [open, setOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const opened = useRef(open);
-  const stillsMode = useStills(compact);
-  // Stills that cannot load hand the explorer to its live 3D.
-  const [stillsFailed, setStillsFailed] = useState(false);
-  const failStills = useCallback(() => setStillsFailed(true), []);
-  const stills = stillsMode === true && !stillsFailed;
   const ids = useId();
   const drawerId = `${ids}-evidence`;
   const sentenceId = `${ids}-stage`;
@@ -326,8 +314,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
         {/* The stage the world stands on: a pale solid of the application's colour, easing as --tone moves. */}
         <div className="application-floor" aria-hidden />
         <div ref={world} className="application-world" role="img" aria-label={`${app.name}. ${demo.line}`}>
-          {near && stills && <ExplorerStills app={selected} step={frame.step} frame={frameBox} onFail={failStills} />}
-          {near && stillsMode !== null && !stills && (
+          {near && (
             <SceneBoundary label={`${app.name}. ${demo.line}`} fallback={<AreaArt area={app.category} />}>
               <ApplicationScene kind={demo.kind} kinds={kinds} step={frame.step} active={active} still={still} motion={motion} pin={pin} frame={frameBox} />
             </SceneBoundary>

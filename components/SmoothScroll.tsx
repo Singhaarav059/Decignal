@@ -5,24 +5,13 @@ import type Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HOVER_REST, gToProgress, progressToG, setAfter, store } from "@/lib/story";
-import { startPace, storyCut, storyTo } from "@/lib/pace";
+import { storyCut, storyTo } from "@/lib/pace";
 import { jumpTo, onJumpCut, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
-import { rearmSnap, startSnap } from "@/lib/snap";
 import { dropEmptyRafLoops } from "@/lib/idle-raf";
 
 gsap.registerPlugin(ScrollTrigger);
-
-
-/** Puts each touch snap stop (Story.tsx) at the scroll y where the story reaches its g, read from the
- *  trigger's own range so a stop lands on the exact frame the story maps there. */
-function placeStops(storyEl: HTMLElement, start: number, end: number) {
-  const top = storyEl.getBoundingClientRect().top + window.scrollY;
-  storyEl.querySelectorAll<HTMLElement>(".story-stop").forEach((el) => {
-    el.style.top = `${Math.round(start + gToProgress(Number(el.dataset.g)) * (end - start) - top)}px`;
-  });
-}
 
 /** What Lenis reports on other screens, from the native scroll: its speed in px per frame (the story
  *  camera eases faster while the page moves fast) and the times hover effects wait on. */
@@ -86,9 +75,7 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     }
     setLenis(null);
 
-    // Before the story trigger: its first reading goes through the pace.
-    const offPace = startPace();
-    // The story scroll track and ScrollTrigger drive timeline progress g across all devices
+    // The story's track: its scroll position drives the story (g) on every screen.
     const storyEl = document.getElementById("story");
     // A jump that moves the page at once lands the story there too, without easing in.
     const offCut = storyEl ? onJumpCut(() => storyCut()) : () => {};
@@ -100,8 +87,6 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
           onUpdate: (self) => storyTo(progressToG(self.progress)),
           onRefresh: (self) => {
             storyCut(progressToG(self.progress));
-            placeStops(storyEl, self.start, self.end);
-            rearmSnap();
           },
         })
       : null;
@@ -116,7 +101,6 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
         })
       : null;
 
-    const offSnap = storyEl ? startSnap(storyEl) : null;
 
     let px = NaN;
     let py = NaN;
@@ -158,9 +142,7 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
 
     return () => {
       gone = true;
-      offSnap?.();
       offCut();
-      offPace();
       st?.kill();
       after?.kill();
       window.removeEventListener("pointermove", onPointer);

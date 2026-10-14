@@ -230,7 +230,7 @@ export default function ApplicationScene(props: Props) {
             re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
         <ShadowGate />
       </Suspense>
-      {playing && paced && <Pacer paused={paused} still={false} />}
+      {playing && paced && <Pacer paused={paused} />}
     </Canvas>
   );
 }

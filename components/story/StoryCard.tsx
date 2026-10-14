@@ -271,8 +271,7 @@ export function StoryCard() {
   );
 }
 
-/** One chapter's content, as the card shows it: in the pinned card here, and stacked down the page on
- *  phones (PhoneFlow). */
+/** One chapter's content, as the card shows it. */
 export function ChapterBody({ ch }: { ch: number }) {
   switch (ch) {
     case CH.fragments:

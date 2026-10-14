@@ -3,23 +3,10 @@
 
 /* The scroll track the story is mapped onto: each chapter's length in viewport heights (lib/story.ts).
    Phones and touch tablets travel 70% of it: the same moves, the same order, in fewer flicks of the
-   thumb (a whole chapter took two to four swipes). At full length a tablet's holds stood 1.5 screens
-   apart, so a slow drag under three quarters of the screen snapped back to the hold it left. */
-#story { height: calc(var(--story-len) * 100svh); }
+   thumb. */
+#story { position: relative; height: calc(var(--story-len) * 100svh); }
 @media (max-width: 767px), (pointer: coarse) and (hover: none) {
   #story { height: calc(var(--story-len) * 70svh); }
-}
-
-/* Touch screens rest only on the story's holds (lib/story.ts STOPS): a swipe carries the move through
-   and lands on the next settled picture, one per swipe. The page after the story is one tall snap area,
-   so it scrolls freely and only its top edge is a stop. lib/snap.ts keeps only the stops near the reader
-   live, so a hard fling cannot skip a chapter. Jumps glide with snapping off, or each step of
-   the glide would be pulled to a stop. */
-#story { position: relative; }
-.story-stop { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
-@media (pointer: coarse) and (hover: none) {
-  /* Fluid, uninterrupted smooth scrolling on touch screens matching laptop fluidity */
-  html { scroll-snap-type: none; }
 }
 
 /* ---- Layers ---- */
@@ -75,30 +62,6 @@ html.ready .intro-fade { transition-delay: var(--d, 450ms); }
   transition: opacity 1400ms var(--ease) 150ms, transform 1800ms var(--ease-out-expo) 150ms;
 }
 html.ready .intro-stage { opacity: 1; transform: none; }
-
-/* Phones: the world as pre-rendered stills (components/story/PhoneStory.tsx). Each still is laid on
-   whole, the old one dissolving off it; its labels open once it has landed. The hero's world rises in
-   with the headline after the loader, as the islands did in the 3D. */
-.phone-stills { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transform-origin: 50% 40%; }
-.phone-still { position: absolute; inset: 0; }
-.phone-still[data-out] { opacity: 0; }
-.phone-still-img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; }
-.phone-still-tags { position: absolute; inset: 0; opacity: 0; transform: translateY(4px); }
-.phone-still[data-in] .phone-still-tags {
-  opacity: 1;
-  transform: none;
-  transition: opacity 260ms var(--ease) 120ms, transform 320ms var(--ease) 120ms;
-}
-.phone-still[data-hero] .phone-still-img {
-  opacity: 0;
-  transform: translateY(22px) scale(0.985);
-  transform-origin: 50% 100%;
-  transition: opacity 1100ms var(--ease) 350ms, transform 1500ms var(--ease-out-expo) 350ms;
-}
-html.ready .phone-still[data-hero] .phone-still-img { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  .phone-still-tags, .phone-still[data-hero] .phone-still-img { transition: none !important; transform: none; }
-}
 
 /* ---- Statements: the hero's h1 and the final headline, centred above the world (D14) ---- */
 .story-statement {
@@ -979,34 +942,3 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 @media (prefers-reduced-motion: reduce) {
   .hero-tag-sys { opacity: 1; scale: 1; animation: none !important; }
 }
-
-/* ---- Upright phones: the story as a page that scrolls with the thumb (components/story/PhoneFlow.tsx).
-   Decided before the first paint (app/layout.tsx FLOW_JS), so the pinned layers never show there. ---- */
-
-.pf { position: relative; }
-/* Each chapter on its own sky, eased in from the one before over its first lines. */
-.pf-ch {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 28px var(--gutter) 36px;
-  /* rules-check: allow gradient */
-  background: linear-gradient(var(--pf-from), var(--pf-sky) 160px);
-}
-.pf-hero { padding-top: 92px; }
-.pf-head { display: flex; flex-direction: column; gap: 14px; }
-.pf-hero .hero-tag { align-self: flex-start; }
-/* A hold's picture: the band the 3D framed, edge to edge at the screen's width. */
-.pf-shot { position: relative; margin-inline: calc(-1 * var(--gutter)); overflow: hidden; contain: layout paint; }
-.pf-shot img { position: absolute; left: 0; width: 100%; max-width: none; user-select: none; -webkit-user-drag: none; }
-.pf-shot > div, .pf-tags { position: absolute; inset: 0; }
-.pf-card { position: relative; }
-.pf-card .story-pane { display: block; }
-.ind-callout.pf-note { position: relative; left: auto; top: auto; width: auto; }
-.pf-place { display: flex; flex-direction: column; gap: 8px; }
-/* Control: the layer deck at reading size. */
-.pf-stage { display: flex; flex-direction: column; height: min(58svh, 480px); }
-/* Scale: the hand stays in view while the reader scrolls through its deal. */
-.pf-scale { height: calc(5 * 34svh + 60svh); }
-.pf-scale-hand { position: sticky; top: 76px; height: min(60svh, 500px); display: flex; flex-direction: column; }

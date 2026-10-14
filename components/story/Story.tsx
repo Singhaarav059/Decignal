@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
-import { CH, EXIT_DRIFT, STOPS, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
+import { CH, EXIT_DRIFT, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
 import { CTA, FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
 import { SceneBoundary } from "../three/SceneBoundary";
@@ -19,8 +19,6 @@ import { LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { TONE } from "./chapters";
-import { liveForced } from "@/lib/stills";
-import { exposeLive3d } from "@/lib/live3d";
 
 /** The eyebrow's two halves: one line on wide screens, two beside the systems on phones. */
 const [EYEBROW_A, EYEBROW_B] = HERO.eyebrow.split(" · ");
@@ -58,10 +56,6 @@ export function Story() {
   const front = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLDivElement>(null);
   const actions = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (liveForced()) exposeLive3d();
-  }, []);
 
   useEffect(() => {
     // The card handles its own panes; these are the statements and the phone decks.
@@ -246,12 +240,7 @@ export function Story() {
       <IslandPanel />
 
       {/* The scroll track the story is mapped onto */}
-      <div id="story" style={{ ["--story-len" as string]: TOTAL_LEN }} aria-hidden>
-        {/* Where a swipe rests on touch screens; SmoothScroll places them on the story's scroll map. */}
-        {STOPS.map((g) => (
-          <i key={g} className="story-stop" data-g={g} />
-        ))}
-      </div>
+      <div id="story" style={{ ["--story-len" as string]: TOTAL_LEN }} aria-hidden />
     </>
   );
 }

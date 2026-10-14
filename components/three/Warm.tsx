@@ -42,7 +42,7 @@ export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
   gl.setScissorTest(true);
   gl.setScissor(0, 0, 1, 1);
   gl.render(scene, camera);
-  // The renderer goes back as it was: the phone's still story copies whole frames from this canvas.
+  // The renderer goes back as it was.
   gl.setScissor(SCISSOR);
   gl.setScissorTest(scissorTest);
   hidden.forEach((o) => (o.visible = false));
