@@ -984,3 +984,35 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 @media (prefers-reduced-motion: reduce) {
   .hero-tag-sys { opacity: 1; scale: 1; animation: none !important; }
 }
+
+/* ---- Upright phones: the story as a page that scrolls with the thumb (components/story/PhoneFlow.tsx).
+   Decided before the first paint (app/layout.tsx FLOW_JS), so the pinned layers never show there. ---- */
+html[data-flow="phone"] { scroll-snap-type: none !important; }
+html[data-flow="phone"] :is(.story-back, .story-canvas, .story-overlay, #story) { display: none !important; }
+.pf { position: relative; }
+/* Each chapter on its own sky, eased in from the one before over its first lines. */
+.pf-ch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px var(--gutter) 36px;
+  /* rules-check: allow gradient */
+  background: linear-gradient(var(--pf-from), var(--pf-sky) 160px);
+}
+.pf-hero { padding-top: 92px; }
+.pf-head { display: flex; flex-direction: column; gap: 14px; }
+.pf-hero .hero-tag { align-self: flex-start; }
+/* A hold's picture: the band the 3D framed, edge to edge at the screen's width. */
+.pf-shot { position: relative; margin-inline: calc(-1 * var(--gutter)); overflow: hidden; contain: layout paint; }
+.pf-shot img { position: absolute; left: 0; width: 100%; max-width: none; user-select: none; -webkit-user-drag: none; }
+.pf-shot > div, .pf-tags { position: absolute; inset: 0; }
+.pf-card { position: relative; }
+.pf-card .story-pane { display: block; }
+.ind-callout.pf-note { position: relative; left: auto; top: auto; width: auto; }
+.pf-place { display: flex; flex-direction: column; gap: 8px; }
+/* Control: the layer deck at reading size. */
+.pf-stage { display: flex; flex-direction: column; height: min(58svh, 480px); }
+/* Scale: the hand stays in view while the reader scrolls through its deal. */
+.pf-scale { height: calc(5 * 34svh + 60svh); }
+.pf-scale-hand { position: sticky; top: 76px; height: min(60svh, 500px); display: flex; flex-direction: column; }

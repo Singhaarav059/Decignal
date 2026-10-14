@@ -20,7 +20,8 @@ import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { TONE } from "./chapters";
 import { PhoneStory } from "./PhoneStory";
-import { liveForced, onStillsChange, phoneStills } from "@/lib/stills";
+import { PhoneFlow } from "./PhoneFlow";
+import { liveForced, onStillsChange, phoneFlow, phoneStills } from "@/lib/stills";
 import { exposeLive3d } from "@/lib/live3d";
 
 /** The eyebrow's two halves: one line on wide screens, two beside the systems on phones. */
@@ -30,8 +31,8 @@ const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
 /** How the story's world is drawn here: from stills on an upright phone (lib/stills.ts), the live 3D
  *  elsewhere. Undecided while hydrating, so a phone never starts fetching the 3D's code. */
-function useEngine(): "pending" | "stills" | "live" {
-  return useSyncExternalStore(onStillsChange, () => (phoneStills() ? "stills" : "live"), () => "pending");
+function useEngine(): "pending" | "flow" | "stills" | "live" {
+  return useSyncExternalStore(onStillsChange, () => (phoneFlow() ? "flow" : phoneStills() ? "stills" : "live"), () => "pending");
 }
 
 // A statement leaves before the next chapter arrives: the gap between them belongs to the object moving.
@@ -68,8 +69,18 @@ export function Story() {
   const engine = useEngine();
   // Stills that cannot load (a missing or stale manifest) hand the phone to the live 3D.
   const [stillsFailed, setStillsFailed] = useState(false);
-  const failStills = useCallback(() => setStillsFailed(true), []);
-  const world = engine === "pending" ? null : engine === "stills" && !stillsFailed ? "stills" : "live";
+  const failStills = useCallback(() => {
+    // The scrolling page has no stills to show: load again as the pinned story with the live 3D (once).
+    if (document.documentElement.dataset.flow === "phone") {
+      try {
+        sessionStorage.setItem("decignal:noflow", "1");
+      } catch {}
+      window.location.reload();
+      return;
+    }
+    setStillsFailed(true);
+  }, []);
+  const world = engine === "pending" ? null : engine === "flow" && !stillsFailed ? "flow" : engine === "stills" && !stillsFailed ? "stills" : "live";
   useEffect(() => {
     if (liveForced()) exposeLive3d();
   }, []);
@@ -146,6 +157,16 @@ export function Story() {
       offSelect();
     };
   }, []);
+
+  // An upright phone reads the story as a page that scrolls with the thumb (PhoneFlow); without its
+  // stills it falls back to the pinned story with the live 3D.
+  if (world === "flow")
+    return (
+      <>
+        <PhoneFlow onFail={failStills} />
+        <IslandPanel />
+      </>
+    );
 
   return (
     <>

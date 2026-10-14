@@ -88,9 +88,10 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
 
     // Before the story trigger: its first reading goes through the pace.
     const offPace = startPace();
+    // An upright phone reads the story as a plain page (PhoneFlow): no story track, pace or snap.
+    const storyEl = document.documentElement.dataset.flow === "phone" ? null : document.getElementById("story");
     // A jump that moves the page at once lands the story there too, without easing in.
-    const offCut = onJumpCut(() => storyCut());
-    const storyEl = document.getElementById("story");
+    const offCut = storyEl ? onJumpCut(() => storyCut()) : () => {};
     const st = storyEl
       ? ScrollTrigger.create({
           trigger: storyEl,

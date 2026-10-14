@@ -231,100 +231,155 @@ export function StoryCard() {
         <div ref={body} className="story-card-body">
           {/* 01 Systems: one line, the six systems, the call to action (narrow screens). The headline sits behind the 3D. */}
           <Pane ch={CH.fragments}>
-            <Label ch={CH.fragments} />
-            <Rest>
-              <p className="t-body story-body">{HERO.card}</p>
-              <SystemChips className="story-chips" />
-              <div className="story-actions">
-                {/* Phones and tablets only: wide screens hide the card in the hero (Story.tsx .hero-actions). */}
-                <SectionLink href={CTA.href} className="btn btn-primary story-hero-cta">
-                  {CTA.primary}
-                  <Arrow />
-                </SectionLink>
-                <span className="story-cue t-label" aria-hidden>
-                  <ScrollCue />
-                  {HERO.scrollCue}
-                </span>
-              </div>
-            </Rest>
+            <ChapterBody ch={CH.fragments} />
           </Pane>
-
           {/* 02 Signal: pointing at the card lifts the crate */}
           <Pane ch={CH.signal} hint="signal">
-            <Head ch={CH.signal} />
-            <Rest>
-              <Body ch={CH.signal} />
-              <Readout ch={CH.signal} details={<SignalDetails />} />
-            </Rest>
+            <ChapterBody ch={CH.signal} />
           </Pane>
-
           {/* 03 Problem */}
           <Pane ch={CH.problem}>
-            <Head ch={CH.problem} />
-            <Rest>
-              <Body ch={CH.problem} />
-              <Readout ch={CH.problem} details={<DetailRows ch={CH.problem} />} />
-            </Rest>
+            <ChapterBody ch={CH.problem} />
           </Pane>
-
           {/* 04 Context: each check opens the island it came from */}
           <Pane ch={CH.context}>
-            <Head ch={CH.context} />
-            <Rest>
-              <Body ch={CH.context} />
-              <EvidenceChecks />
-            </Rest>
+            <ChapterBody ch={CH.context} />
           </Pane>
-
           {/* 05 Decision: the transfer order, step by step with the forklift and the truck */}
           <Pane ch={CH.decision}>
-            <Head ch={CH.decision} />
-            <Rest>
-              <Body ch={CH.decision} />
-              <Stepper />
-              <Readout ch={CH.decision} details={<DecisionDetails />} />
-            </Rest>
+            <ChapterBody ch={CH.decision} />
           </Pane>
-
           {/* 06 Control: the approval panel, linked to the 3D decision card */}
           <Pane ch={CH.control}>
-            <Head ch={CH.control} />
-            <Rest>
-              <Body ch={CH.control} optional />
-              <DecisionControls />
-            </Rest>
+            <ChapterBody ch={CH.control} />
           </Pane>
-
           {/* 07 Scale: the five functions, linked both ways to the 3D cards */}
           <Pane ch={CH.scale}>
-            <Head ch={CH.scale} example={false} />
-            <Rest>
-              <Body ch={CH.scale} optional />
-              <ScaleCard />
-            </Rest>
+            <ChapterBody ch={CH.scale} />
           </Pane>
-
           {/* 08 Industries: the name rolls with the board's half-turn */}
           <Pane ch={CH.industries}>
-            <Label ch={CH.industries} />
-            <IndustryTitle />
-            <Rest>
-              <Body ch={CH.industries} optional />
-              <IndustryCard />
-            </Rest>
+            <ChapterBody ch={CH.industries} />
           </Pane>
-
           {/* 09 Decide: the example's results, the six systems behind it, the call to action */}
           <Pane ch={CH.final}>
-            <Label ch={CH.final} example={false} />
-            <Rest>
-              <FinalCard />
-            </Rest>
+            <ChapterBody ch={CH.final} />
           </Pane>
         </div>
       </section>
     </div>
   );
+}
+
+/** One chapter's content, as the card shows it: in the pinned card here, and stacked down the page on
+ *  phones (PhoneFlow). */
+export function ChapterBody({ ch }: { ch: number }) {
+  switch (ch) {
+    case CH.fragments:
+      return (
+        <>
+      <Label ch={CH.fragments} />
+      <Rest>
+        <p className="t-body story-body">{HERO.card}</p>
+        <SystemChips className="story-chips" />
+        <div className="story-actions">
+          {/* Phones and tablets only: wide screens hide the card in the hero (Story.tsx .hero-actions). */}
+          <SectionLink href={CTA.href} className="btn btn-primary story-hero-cta">
+            {CTA.primary}
+            <Arrow />
+          </SectionLink>
+          <span className="story-cue t-label" aria-hidden>
+            <ScrollCue />
+            {HERO.scrollCue}
+          </span>
+        </div>
+      </Rest>
+        </>
+      );
+    case CH.signal:
+      return (
+        <>
+      <Head ch={CH.signal} />
+      <Rest>
+        <Body ch={CH.signal} />
+        <Readout ch={CH.signal} details={<SignalDetails />} />
+      </Rest>
+        </>
+      );
+    case CH.problem:
+      return (
+        <>
+      <Head ch={CH.problem} />
+      <Rest>
+        <Body ch={CH.problem} />
+        <Readout ch={CH.problem} details={<DetailRows ch={CH.problem} />} />
+      </Rest>
+        </>
+      );
+    case CH.context:
+      return (
+        <>
+      <Head ch={CH.context} />
+      <Rest>
+        <Body ch={CH.context} />
+        <EvidenceChecks />
+      </Rest>
+        </>
+      );
+    case CH.decision:
+      return (
+        <>
+      <Head ch={CH.decision} />
+      <Rest>
+        <Body ch={CH.decision} />
+        <Stepper />
+        <Readout ch={CH.decision} details={<DecisionDetails />} />
+      </Rest>
+        </>
+      );
+    case CH.control:
+      return (
+        <>
+      <Head ch={CH.control} />
+      <Rest>
+        <Body ch={CH.control} optional />
+        <DecisionControls />
+      </Rest>
+        </>
+      );
+    case CH.scale:
+      return (
+        <>
+      <Head ch={CH.scale} example={false} />
+      <Rest>
+        <Body ch={CH.scale} optional />
+        <ScaleCard />
+      </Rest>
+        </>
+      );
+    case CH.industries:
+      return (
+        <>
+      <Label ch={CH.industries} />
+      <IndustryTitle />
+      <Rest>
+        <Body ch={CH.industries} optional />
+        <IndustryCard />
+      </Rest>
+        </>
+      );
+    case CH.final:
+      return (
+        <>
+      <Label ch={CH.final} example={false} />
+      <Rest>
+        <FinalCard />
+      </Rest>
+        </>
+      );
+    default:
+      return null;
+  }
 }
 
 /** One chapter's content. `hint="signal"` makes pointing at it lift the signal crate. */
