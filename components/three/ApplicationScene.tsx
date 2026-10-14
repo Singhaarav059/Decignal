@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import { isTouch } from "@/lib/pace";
 import { Pacer } from "./Pacer";
-import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { Studio } from "./Studio";
 import { COLORS } from "./palette";
@@ -13,6 +13,7 @@ import { Logistics, Maintenance, Production, SupplyRisk, Distribution, DealerNet
 import { FLOORS, phase, type Motion } from "./SceneKit";
 import { Warm } from "./Warm";
 import { ShadowGate } from "./Shadows";
+import { FrameGate } from "./FrameGate";
 import { canvasQuality } from "@/lib/device";
 import { whenStill } from "@/lib/idle";
 
@@ -109,7 +110,9 @@ function Camera({ kind, motion, still, frame }: { kind: DemoKind; motion: Motion
 }
 
 const KINDS: DemoKind[] = ["inventory", "demand", "production", "maintenance", "risk", "sales", "customer", "finance"];
-const MODELS: Record<DemoKind, (p: SceneProps) => React.ReactNode> = { inventory: Logistics, demand: Distribution, production: Production, maintenance: Maintenance, risk: SupplyRisk, sales: DealerNetwork, customer: Customer, finance: Finance };
+// Memoised: a chapter or stage change re-renders the world it touches, not all eight (a hidden world's
+// props never change).
+const MODELS: Record<DemoKind, React.ComponentType<SceneProps>> = { inventory: memo(Logistics), demand: memo(Distribution), production: memo(Production), maintenance: memo(Maintenance), risk: memo(SupplyRisk), sales: memo(DealerNetwork), customer: memo(Customer), finance: memo(Finance) };
 const REST = { progress: 0, edge: 0 };
 /** A hidden world keeps its matrices as they were: three would otherwise walk all eight every frame. */
 function updateIfShown(this: THREE.Object3D, force?: boolean) {
@@ -193,7 +196,9 @@ function Ground({ kind, step, motion, active, phone }: { kind: DemoKind; step: n
   const last = useRef({ sig: "", at: 0 });
   useFrame(({ clock }) => {
     const m = motion.current;
-    const sig = `${kind}:${step}:${m.progress.toFixed(4)}:${(m.edge ?? 1).toFixed(3)}`;
+    // The hand-off's edge only fades the page's copy of the world (its tags and the canvas wrapper), not
+    // what stands in it: it leaves the shadows as they are.
+    const sig = `${kind}:${step}:${m.progress.toFixed(4)}`;
     const now = clock.elapsedTime;
     if (sig !== last.current.sig) {
       last.current = { sig, at: now };
@@ -212,6 +217,10 @@ export default function ApplicationScene(props: Props) {
   const paced = useMemo(() => isTouch(), []);
   const playing = props.active && !props.still;
   const paused = useCallback(() => !props.active || props.still, [props.active, props.still]);
+  // When the explorer's view last drew (FrameGate): its Pacer slows once the world rests.
+  const drawn = useRef(0);
+  const mark = useCallback((t: number) => void (drawn.current = t), []);
+  const drawnAt = useCallback(() => drawn.current, []);
   return (
     <Canvas dpr={q.dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
@@ -229,8 +238,11 @@ export default function ApplicationScene(props: Props) {
         {/* The light's map is drawn by the view alone, and only after a caster moved: the contact pass
             re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
         <ShadowGate />
+        {/* Drawn only when the picture changed: the hand-off at a chapter's edge only fades the wrapper,
+            and a world at the end of its stage stands still while the page sways. */}
+        <FrameGate drawn={mark} />
       </Suspense>
-      {playing && paced && <Pacer paused={paused} />}
+      {playing && paced && <Pacer paused={paused} drawnAt={drawnAt} />}
     </Canvas>
   );
 }

@@ -219,7 +219,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     const observer = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting));
     if (el) observer.observe(el);
     const total = lens.reduce((a, b) => a + b, 0);
-    const last = { op: "", tf: "" };
+    const last = { op: "", tf: "", at: -1 };
     const apply = (progress: number) => {
       let distance = progress * total;
       let chapter = 0;
@@ -230,7 +230,12 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       const local = Math.min(0.9999, distance / lens[chapter]);
       motion.current.progress = Math.max(0, Math.min(1, (local - 0.12) / 0.74));
       const step = local < 0.32 ? 0 : local < 0.62 ? 1 : 2;
-      setFrame((p) => (p.chapter === chapter && p.step === step ? p : { chapter, step }));
+      // Only a new chapter or stage reaches React: a scroll frame inside one queues no update at all.
+      const at = chapter * 3 + step;
+      if (at !== last.at) {
+        last.at = at;
+        setFrame((p) => (p.chapter === chapter && p.step === step ? p : { chapter, step }));
+      }
       // The hand-off lasts a fixed distance (about an eighth of a screen) whatever the chapter's length:
       // the outgoing world slides left and dims to 35%, the incoming one arrives from the right. One
       // transform on the world; its tags close below 60% so no ghost text crosses the copy.

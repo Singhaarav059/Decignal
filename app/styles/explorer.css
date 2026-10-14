@@ -6,6 +6,13 @@
 /* One accent re-tints the explorer's chrome; registering --tone lets it interpolate. */
 @property --tone { syntax: '<color>'; inherits: true; initial-value: #2e5bff; }
 .application-journey { position: relative; margin-top: 8px; transition: --tone var(--dur-3) var(--ease); }
+/* Narrow screens ease the tone on the few marks that show it, not on the whole stage: an inherited
+   property easing at the root restyled every element under it (the copy, the card, the scene's tags)
+   on each frame of the hand-off, and a phone's swipe crosses a hand-off every few frames. */
+@media (max-width: 1023px) {
+  .application-journey { transition: none; }
+  .application-dot, .application-reads li svg, .operation-evidence { transition: --tone var(--dur-3) var(--ease); }
+}
 .application-stage { position: sticky; top: 0; height: 100svh; min-height: 560px; overflow: hidden; }
 
 /* The world: one transform carries the hand-off between applications (set from script). */
@@ -153,7 +160,8 @@
 @media (prefers-reduced-motion: reduce) {
   .swap-out { display: none; }
   .swap-out + .swap-in, .evidence-draw { animation: none; }
-  .application-fold, .application-head, .application-toggle svg, .evidence-bar, .application-journey { transition: none; }
+  .application-fold, .application-head, .application-toggle svg, .evidence-bar, .application-journey,
+  .application-dot, .application-reads li svg, .operation-evidence { transition: none; }
 }
 
 /* ---- Wide screens: one stage, not two tones. The tinted floor (bands.css) runs the full width behind
