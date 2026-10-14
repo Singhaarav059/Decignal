@@ -59,10 +59,6 @@ const upright = () => window.innerHeight >= window.innerWidth * 1.4;
 /** Whether the story is drawn from stills on this screen now. */
 export const phoneStills = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches && upright() && !liveForced();
 
-/** The story is read as a scrolling page on this screen (an upright phone at load, app/layout.tsx FLOW_JS):
- *  fixed for the page's life, so a rotation never swaps the story's whole structure mid-read. */
-export const phoneFlow = () => typeof document !== "undefined" && document.documentElement.dataset.flow === "phone";
-
 /** Re-checks phoneStills on resize and on crossing the phone width. */
 export function onStillsChange(fn: () => void) {
   const m = window.matchMedia(PHONE);
