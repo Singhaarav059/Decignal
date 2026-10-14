@@ -746,11 +746,13 @@
 }
 :is(.night-panel, .site-footer) .page-wrap { width: min(100% + 2 * var(--panel-inset) - 2 * var(--gutter), var(--grid-max)); }
 
-/* The navy band and the first colour sheet open as they arrive, like the colour bands (bands.css). */
+/* The navy band and the first colour sheet open as they arrive, like the colour bands (bands.css: the
+   open state is their own clip, the animation fills neither way). */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .night-panel, .how-sheet:first-child {
-      animation: band-open linear both;
+      clip-path: inset(0 0 round var(--radius-xl));
+      animation: band-open linear;
       animation-timeline: view();
       animation-range: entry 0% entry 60%;
     }

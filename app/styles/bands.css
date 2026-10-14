@@ -161,11 +161,16 @@
 
 /* ---- Bands open as they arrive: the slab widens from a narrower card to its full inset while its
    top crosses the lower part of the screen (scroll-driven, where supported; elsewhere it is simply
-   there). The application stage does the same. ---- */
+   there). The application stage does the same.
+   The open state is the element's own clip, and the animation fills neither way: Chrome re-samples a
+   filled scroll-driven clip-path on every frame the page draws, long after the band has opened, and
+   repainted the band's whole field and grain each time (at rest too, while any rAF loop ran). Outside
+   its range the slab is either fully open (the same clip) or still below the screen. ---- */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .band::before, .application-floor {
-      animation: band-open linear both;
+      clip-path: inset(0 0 round var(--radius-xl));
+      animation: band-open linear;
       animation-timeline: view();
       animation-range: entry 0% entry 70%;
     }
