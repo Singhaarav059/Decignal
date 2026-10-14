@@ -290,8 +290,9 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
       last = performance.now();
       const bar = el.querySelector(".nav-pill")?.getBoundingClientRect();
       if (bar) el.toggleAttribute("data-dark", darkAt(window.innerWidth / 2, bar.top + bar.height / 2, [el]));
+      // The floating CTA is not drawn below 1024px (the dock carries it): no hit test for it there.
       const pill = document.querySelector<HTMLElement>(".cta-pill");
-      if (pill) {
+      if (pill?.offsetWidth) {
         const r = pill.getBoundingClientRect();
         pill.toggleAttribute("data-dark", darkAt(r.left + r.width / 2, r.top + r.height / 2, [pill, el]));
       }
