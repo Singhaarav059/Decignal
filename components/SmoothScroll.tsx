@@ -10,6 +10,7 @@ import { jumpTo, onJumpCut, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
 import { rearmSnap, startSnap } from "@/lib/snap";
+import { dropEmptyRafLoops } from "@/lib/idle-raf";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -52,6 +53,7 @@ function trackNative() {
  *  layout, so every route starts with a fresh Lenis and its own triggers. Touch screens skip Lenis. */
 export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
   useEffect(() => {
+    dropEmptyRafLoops();
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // Touch screens scroll natively. Lenis only smooths the wheel, yet it still listens to touchmove
     // with passive: false, so the phone waited on the main thread (busy with the 3D) before moving the
