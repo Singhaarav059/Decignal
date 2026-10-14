@@ -6,8 +6,8 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { easing } from "maath";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CH, HOVER_REST, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
-import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, ISO_DIR, bgAt, cardPose, handPose, handRoll, handShift } from "@/lib/scene";
+import { CH, HOVER_REST, blendAt, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
+import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, ISO_DIR, bgAt, cardPose, handAxis, handPose, handRoll, handShift, setDeckEdge } from "@/lib/scene";
 import { WHITE, clay, useDisposeOnUnmount } from "../kit";
 import { aluminium } from "../materials";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type DecisionMode, type FaceSpec } from "../faces";
@@ -748,9 +748,29 @@ function useFacesState(k: number) {
   return useState<FaceState>(() => baseFaces(k));
 }
 
+const edgeA = new THREE.Vector3();
+const edgeB = new THREE.Vector3();
+/** While Scale holds the screen, reads where the screen's right edge crosses the hand, so the cards
+ *  still to be dealt wait beyond it (lib/scene.ts handPlace). The hand's axis lies square to the
+ *  viewer, so the edge is a straight read along it. */
+function DeckEdge() {
+  useFrame(({ camera }) => {
+    if (blendAt(store.g).i !== CH.scale) return setDeckEdge(-Infinity);
+    edgeA.set(...handAxis(0)).applyMatrix4(camera.matrixWorldInverse);
+    edgeB.set(...handAxis(1)).applyMatrix4(camera.matrixWorldInverse);
+    if (edgeA.z >= 0 || edgeB.z >= 0) return setDeckEdge(-Infinity);
+    edgeA.applyMatrix4(camera.projectionMatrix);
+    edgeB.applyMatrix4(camera.projectionMatrix);
+    const per = edgeB.x - edgeA.x;
+    setDeckEdge(per > 1e-4 ? (1 - edgeA.x) / per : -Infinity);
+  });
+  return null;
+}
+
 export function Cards() {
   return (
     <>
+      <DeckEdge />
       <CardFocus />
       {Array.from({ length: CARDS }, (_, k) => (
         <Card key={k} k={k} />

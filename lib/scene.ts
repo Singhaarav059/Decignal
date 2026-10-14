@@ -231,6 +231,12 @@ function handSlots(s: number): Slot[] {
   slotCache.set(s, out);
   return out;
 }
+/** Where the screen's right edge crosses the hand (u), read from the camera while Scale is on screen
+ *  (actors/cards.tsx DeckEdge); -Infinity otherwise. */
+let deckEdge = -Infinity;
+export const setDeckEdge = (u: number) => void (deckEdge = u);
+/** A point of the hand's plane at u along it (its middle height, front row): for DeckEdge. */
+export const handAxis = (u: number) => handWorld(u, 0, 0);
 /** Card i's place in the hand when `deal` cards are dealt (fractional while one is on its way). A card
  *  on its way comes in from the right, rising over the hand and turning into its slot. */
 function handPlace(i: number, deal: number, s: number): Slot {
@@ -240,8 +246,11 @@ function handPlace(i: number, deal: number, s: number): Slot {
   const k = clamp01(deal - (i - 1));
   if (k >= 1) return at;
   const e = smootherstep(0, 1, k);
+  // The deck waits beyond the screen's right edge as well: a near-square screen (790x780) frames the
+  // hand small in a short band over the card, and the deck stood half in view.
+  const deck = Math.max(slots[slots.length - 1].u + HAND.deck * W, deckEdge + W);
   return {
-    u: slots[slots.length - 1].u + HAND.deck * W + (at.u - slots[slots.length - 1].u - HAND.deck * W) * e,
+    u: deck + (at.u - deck) * e,
     v: at.v + Math.sin(Math.PI * e) * 0.18 * W,
     d: at.d + (1 - e) * 0.06,
     roll: at.roll + (1 - e) * 0.45,
