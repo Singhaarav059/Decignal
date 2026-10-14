@@ -1,11 +1,12 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows } from "@react-three/drei";
 import { isTouch } from "@/lib/pace";
 import { Pacer } from "./Pacer";
 import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
+import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader.js";
+import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader.js";
 import { Studio } from "./Studio";
 import { COLORS } from "./palette";
 import type { DemoKind } from "@/lib/application-demos";
@@ -186,28 +187,129 @@ function Stages(props: Props) {
   );
 }
 
+/** The contact shadow's footprint (world units), softness, strength and reach under the models. */
+const CONTACT = { scale: 14, blur: 1.8, opacity: 0.4, far: 1.5 };
+/** The shadow plane's opacity alternates by this much on each refresh: far under one 8-bit step, yet
+ *  enough for FrameGate to see that the picture changed and draw the new shadow. */
+const NUDGE = 2e-5;
+/** A world whose scroll position changed this recently (s) is being scrolled. */
+const SCROLLING = 0.2;
+/** A world still this long (s) has come to rest: its shadow stops following it. */
+const SETTLED = 0.8;
+
 /**
- * Contact shadows follow the world while it moves (scroll, a chapter or stage change) and rest once it
- * has been still for a moment. Re-rendering ContactShadows resets its frame count, so frames={1} bakes
- * once more on the stop and then the depth and blur passes stop until the next move.
+ * Contact shadows under the world (drei's ContactShadows, its passes run here so they can be paced): a
+ * depth view from below, blurred twice, on a plane under the models. They follow the world while it
+ * moves (scroll, a chapter or stage change) and rest once it has been still for a moment, with one
+ * refresh on the stop. On a touch screen, while the page is being scrolled, they refresh on every
+ * other update: the depth pass draws the whole scene a second time, and a phone's swipe moves the
+ * world on every frame. They follow at full rate again as the scroll stops, so no stale shadow stays.
  */
-function Ground({ kind, step, motion, active, phone }: { kind: DemoKind; step: number; motion: Motion; active: boolean; phone: boolean }) {
-  const [moving, setMoving] = useState(true);
-  const last = useRef({ sig: "", at: 0 });
+function Ground({ kind, step, motion, active, phone, touch }: { kind: DemoKind; step: number; motion: Motion; active: boolean; phone: boolean; touch: boolean }) {
+  const scene = useThree((s) => s.scene);
+  const gl = useThree((s) => s.gl);
+  const group = useRef<THREE.Group>(null);
+  const plane = useRef<THREE.MeshBasicMaterial>(null);
+  const cam = useRef<THREE.OrthographicCamera>(null);
+  const resolution = phone ? 128 : 512;
+  const { scale, blur, far, opacity } = CONTACT;
+  const parts = useMemo(() => {
+    const target = new THREE.WebGLRenderTarget(resolution, resolution);
+    const targetBlur = new THREE.WebGLRenderTarget(resolution, resolution);
+    target.texture.generateMipmaps = targetBlur.texture.generateMipmaps = false;
+    const geometry = new THREE.PlaneGeometry(scale, scale).rotateX(Math.PI / 2);
+    const blurPlane = new THREE.Mesh(geometry);
+    const depth = new THREE.MeshDepthMaterial();
+    depth.depthTest = depth.depthWrite = false;
+    depth.onBeforeCompile = (shader) => {
+      shader.uniforms = { ...shader.uniforms, ucolor: { value: new THREE.Color(COLORS.shadow) } };
+      shader.fragmentShader = shader.fragmentShader.replace("void main() {", "uniform vec3 ucolor;\n           void main() {\n          ");
+      // Colours the shadow and multiplies by the falloff, so the centre can stay darker.
+      shader.fragmentShader = shader.fragmentShader.replace("vec4( vec3( 1.0 - fragCoordZ ), opacity );", "vec4( ucolor * fragCoordZ * 2.0, ( 1.0 - fragCoordZ ) * 1.0 );");
+    };
+    const hBlur = new THREE.ShaderMaterial(HorizontalBlurShader);
+    const vBlur = new THREE.ShaderMaterial(VerticalBlurShader);
+    hBlur.depthTest = vBlur.depthTest = false;
+    return { target, targetBlur, geometry, blurPlane, depth, hBlur, vBlur };
+  }, [resolution, scale]);
+  useEffect(
+    () => () => {
+      for (const d of [parts.target, parts.targetBlur, parts.geometry, parts.depth, parts.hBlur, parts.vBlur]) d.dispose();
+    },
+    [parts],
+  );
+  const state = useRef({ sig: "", at: 0, want: true, pending: true, odd: false, nudge: false });
+  // A new stage, world or visibility asks for one refresh, as a re-render of drei's frames={1} did.
+  useLayoutEffect(() => {
+    state.current.pending = true;
+  }, [kind, step, active]);
+
   useFrame(({ clock }) => {
-    const m = motion.current;
+    const g = group.current;
+    const c = cam.current;
+    const mat = plane.current;
+    if (!g || !c || !mat) return;
+    const st = state.current;
     // The hand-off's edge only fades the page's copy of the world (its tags and the canvas wrapper), not
     // what stands in it: it leaves the shadows as they are.
-    const sig = `${kind}:${step}:${m.progress.toFixed(4)}`;
+    const sig = `${kind}:${step}:${motion.current.progress.toFixed(4)}`;
     const now = clock.elapsedTime;
-    if (sig !== last.current.sig) {
-      last.current = { sig, at: now };
-      if (!moving) setMoving(true);
-    } else if (moving && now - last.current.at > 0.8) setMoving(false);
+    if (sig !== st.sig) {
+      st.sig = sig;
+      st.at = now;
+    }
+    const still = now - st.at;
+    // People walk on the clock in the demand and risk worlds: their shadows follow them at rest too.
+    const want = active && (still <= SETTLED || kind === "demand" || kind === "risk");
+    // The stop: one more refresh where the world came to rest.
+    if (st.want && !want) st.pending = true;
+    st.want = want;
+    let due = st.pending;
+    if (want) {
+      st.odd = !st.odd;
+      due = !(touch && still < SCROLLING) || st.odd;
+    }
+    if (!due) return;
+    st.pending = false;
+    const { target, targetBlur, blurPlane, depth, hBlur, vBlur } = parts;
+    const blurPass = (amount: number) => {
+      blurPlane.visible = true;
+      blurPlane.material = hBlur;
+      hBlur.uniforms.tDiffuse.value = target.texture;
+      hBlur.uniforms.h.value = amount / 256;
+      gl.setRenderTarget(targetBlur);
+      gl.render(blurPlane, c);
+      blurPlane.material = vBlur;
+      vBlur.uniforms.tDiffuse.value = targetBlur.texture;
+      vBlur.uniforms.v.value = amount / 256;
+      gl.setRenderTarget(target);
+      gl.render(blurPlane, c);
+      blurPlane.visible = false;
+    };
+    const background = scene.background;
+    const override = scene.overrideMaterial;
+    g.visible = false;
+    scene.background = null;
+    scene.overrideMaterial = depth;
+    gl.setRenderTarget(target);
+    gl.render(scene, c);
+    blurPass(blur);
+    blurPass(blur * 0.4);
+    gl.setRenderTarget(null);
+    g.visible = true;
+    scene.overrideMaterial = override;
+    scene.background = background;
+    st.nudge = !st.nudge;
+    mat.opacity = opacity + (st.nudge ? NUDGE : 0);
   });
-  // People walk on the clock in the demand and risk worlds: their shadows follow them at rest too.
-  const live = kind === "demand" || kind === "risk";
-  return <ContactShadows position={[0, -0.05, 0]} scale={14} blur={1.8} opacity={0.4} far={1.5} resolution={phone ? 128 : 512} frames={active && (moving || live) ? Infinity : 1} color={COLORS.shadow} />;
+  return (
+    <group ref={group} position={[0, -0.05, 0]} rotation-x={Math.PI / 2}>
+      <mesh geometry={parts.geometry} scale={[1, -1, 1]} rotation={[-Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial ref={plane} transparent map={parts.target.texture} opacity={opacity} depthWrite={false} />
+      </mesh>
+      <orthographicCamera ref={cam} args={[-scale / 2, scale / 2, scale / 2, -scale / 2, 0, far]} />
+    </group>
+  );
 }
 
 export default function ApplicationScene(props: Props) {
@@ -234,7 +336,7 @@ export default function ApplicationScene(props: Props) {
         <directionalLight position={[4, 9, 6]} intensity={1.5} castShadow shadow-mapSize={q.phone ? [512, 512] : [2048, 2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7} />
         <Stages {...props} />
         <mesh rotation-x={-Math.PI / 2} position-y={-0.065} receiveShadow><planeGeometry args={[30, 30]} /><shadowMaterial color={COLORS.shadow} opacity={0.12} /></mesh>
-        <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} />
+        <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} touch={paced} />
         {/* The light's map is drawn by the view alone, and only after a caster moved: the contact pass
             re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
         <ShadowGate />
