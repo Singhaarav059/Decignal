@@ -40,20 +40,14 @@ function lensMap(w: number, h: number, r: number) {
   }
   const url = drawMap(w, h, r);
   drawn.set(key, url);
-  if (drawn.size > MAPS) {
-    const [old, gone] = drawn.entries().next().value!;
-    drawn.delete(old);
-    // Its blob goes too, unless a filter still shows it.
-    void gone.then((u) => {
-      if (u.startsWith("blob:") && !document.querySelector(`feImage[href="${u}"]`)) URL.revokeObjectURL(u);
-    });
-  }
+  if (drawn.size > MAPS) drawn.delete(drawn.keys().next().value!);
   return url;
 }
 
-/** The map as an image URL. Encoded with toBlob, off the main thread: toDataURL encoded the PNG in the
- *  frame, and the story card's map, redrawn as it settled after each chapter's hand-off, cost the scroll
- *  a third of a second over the story. */
+/** The map as a data URL. Encoded with toBlob and read with a FileReader, both off the main thread:
+ *  toDataURL encoded the PNG in the frame, and the story card's map, redrawn as it settled after each
+ *  chapter's hand-off, cost the scroll a third of a second over the story. (A blob URL would need
+ *  createObjectURL, a synchronous call to the browser process.) */
 function drawMap(w: number, h: number, r: number): Promise<string> {
   // A large map is drawn at half size and stretched by the filter: the field is smooth (and blurred
   // after), so it bends the same, for a quarter of the work on a phone's CPU.
@@ -107,11 +101,17 @@ function drawMap(w: number, h: number, r: number): Promise<string> {
   ctx.putImageData(img, 0, 0);
   return new Promise((done) =>
     c.toBlob((b) => {
-      const url = b ? URL.createObjectURL(b) : c.toDataURL("image/png");
       // Decoded before a filter takes it, so the swap never draws a frame with an empty map.
-      const im = new Image();
-      im.src = url;
-      im.decode().then(() => done(url), () => done(url));
+      const ready = (url: string) => {
+        const im = new Image();
+        im.src = url;
+        im.decode().then(() => done(url), () => done(url));
+      };
+      if (!b) return ready(c.toDataURL("image/png"));
+      const fr = new FileReader();
+      fr.onload = () => ready(String(fr.result));
+      fr.onerror = () => ready(c.toDataURL("image/png"));
+      fr.readAsDataURL(b);
     }, "image/png"),
   );
 }
