@@ -12,7 +12,8 @@
 // Bake unmounts first.
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { useLayoutEffect, useRef } from "react";
+import { useContext, useLayoutEffect, useRef } from "react";
+import { Sliced, slice } from "./slices";
 
 /** Marks a subtree as moving, so Bake leaves it alone. Spread onto a group: <group {...LIVE}>. */
 export const LIVE = { userData: { live: true } } as const;
@@ -74,67 +75,18 @@ type Bucket = { mat: THREE.Material; cast: boolean; receive: boolean; order: num
 
 export function Bake({ children, ...props }: React.ComponentProps<"group">) {
   const root = useRef<THREE.Group>(null);
+  const later = useContext(Sliced);
   useLayoutEffect(() => {
     const g = root.current;
     if (!g) return;
-    const buckets = new Map<string, Bucket>();
-    g.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (!m.isMesh || !bakeable(m) || isLive(m, g)) return;
-      for (let p: THREE.Object3D | null = m; p && p !== g; p = p.parent) if (!p.visible) return;
-      // The part's transform relative to the Bake root, from local matrices only: an ancestor above
-      // the root may still be at scale 0 when this runs, which a world-matrix inverse cannot undo.
-      rel.identity();
-      for (let p: THREE.Object3D | null = m; p && p !== g; p = p.parent) {
-        if (p.matrixAutoUpdate) p.updateMatrix();
-        rel.premultiply(p.matrix);
-      }
-      const mat = m.material as THREE.Material;
-      const key = `${mat.uuid}|${m.castShadow}|${m.receiveShadow}|${m.renderOrder}|${m.layers.mask}|${signature(m.geometry)}`;
-      let b = buckets.get(key);
-      if (!b) buckets.set(key, (b = { mat, cast: m.castShadow, receive: m.receiveShadow, order: m.renderOrder, layers: m.layers.mask, parts: [], meshes: [] }));
-      // A plain copy: clone() first builds a default instance of the geometry's class (a whole rounded
-      // box, a 32-sided cylinder) only to overwrite it.
-      const part = new THREE.BufferGeometry().copy(m.geometry);
-      part.clearGroups();
-      part.applyMatrix4(rel);
-      if (rel.determinant() < 0) flipWinding(part);
-      b.parts.push(part);
-      b.meshes.push(m);
-    });
     const baked: THREE.Mesh[] = [];
     const hidden: THREE.Mesh[] = [];
-    for (const b of buckets.values()) {
-      // A material used once gains nothing from merging: leave that mesh as it is.
-      if (b.meshes.length < 2) {
-        b.parts.forEach((p) => p.dispose());
-        continue;
-      }
-      const merged = mergeGeometries(b.parts, false);
-      b.parts.forEach((p) => p.dispose());
-      if (!merged) continue;
-      merged.computeBoundingSphere();
-      merged.computeBoundingBox();
-      const mesh = new THREE.Mesh(merged, b.mat);
-      mesh.castShadow = b.cast;
-      mesh.receiveShadow = b.receive;
-      mesh.renderOrder = b.order;
-      mesh.layers.mask = b.layers;
-      mesh.userData.baked = true;
-      // The hidden originals still answer rays (three does not skip invisible meshes), so the merged
-      // copy stays out of hit tests and nothing is hit twice.
-      mesh.raycast = noRaycast;
-      mesh.matrixAutoUpdate = false;
-      g.add(mesh);
-      baked.push(mesh);
-      b.meshes.forEach((m) => {
-        m.visible = false;
-        m.matrixAutoUpdate = false;
-        m.userData.bakedAway = true;
-        hidden.push(m);
-      });
-    }
+    let live = true;
+    // The story's world merges in a slice (nothing draws before its Warmup, which waits for them).
+    if (later) slice(() => live && merge(g, baked, hidden));
+    else merge(g, baked, hidden);
     return () => {
+      live = false;
       baked.forEach((m) => {
         g.remove(m);
         m.geometry.dispose();
@@ -145,10 +97,68 @@ export function Bake({ children, ...props }: React.ComponentProps<"group">) {
         m.userData.bakedAway = false;
       });
     };
-  }, []);
+  }, [later]);
   return (
     <group ref={root} {...props}>
       {children}
     </group>
   );
+}
+
+function merge(g: THREE.Group, baked: THREE.Mesh[], hidden: THREE.Mesh[]) {
+  const buckets = new Map<string, Bucket>();
+  g.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || !bakeable(m) || isLive(m, g)) return;
+    for (let p: THREE.Object3D | null = m; p && p !== g; p = p.parent) if (!p.visible) return;
+    // The part's transform relative to the Bake root, from local matrices only: an ancestor above
+    // the root may still be at scale 0 when this runs, which a world-matrix inverse cannot undo.
+    rel.identity();
+    for (let p: THREE.Object3D | null = m; p && p !== g; p = p.parent) {
+      if (p.matrixAutoUpdate) p.updateMatrix();
+      rel.premultiply(p.matrix);
+    }
+    const mat = m.material as THREE.Material;
+    const key = `${mat.uuid}|${m.castShadow}|${m.receiveShadow}|${m.renderOrder}|${m.layers.mask}|${signature(m.geometry)}`;
+    let b = buckets.get(key);
+    if (!b) buckets.set(key, (b = { mat, cast: m.castShadow, receive: m.receiveShadow, order: m.renderOrder, layers: m.layers.mask, parts: [], meshes: [] }));
+    // A plain copy: clone() first builds a default instance of the geometry's class (a whole rounded
+    // box, a 32-sided cylinder) only to overwrite it.
+    const part = new THREE.BufferGeometry().copy(m.geometry);
+    part.clearGroups();
+    part.applyMatrix4(rel);
+    if (rel.determinant() < 0) flipWinding(part);
+    b.parts.push(part);
+    b.meshes.push(m);
+  });
+  for (const b of buckets.values()) {
+    // A material used once gains nothing from merging: leave that mesh as it is.
+    if (b.meshes.length < 2) {
+      b.parts.forEach((p) => p.dispose());
+      continue;
+    }
+    const merged = mergeGeometries(b.parts, false);
+    b.parts.forEach((p) => p.dispose());
+    if (!merged) continue;
+    merged.computeBoundingSphere();
+    merged.computeBoundingBox();
+    const mesh = new THREE.Mesh(merged, b.mat);
+    mesh.castShadow = b.cast;
+    mesh.receiveShadow = b.receive;
+    mesh.renderOrder = b.order;
+    mesh.layers.mask = b.layers;
+    mesh.userData.baked = true;
+    // The hidden originals still answer rays (three does not skip invisible meshes), so the merged
+    // copy stays out of hit tests and nothing is hit twice.
+    mesh.raycast = noRaycast;
+    mesh.matrixAutoUpdate = false;
+    g.add(mesh);
+    baked.push(mesh);
+    b.meshes.forEach((m) => {
+      m.visible = false;
+      m.matrixAutoUpdate = false;
+      m.userData.bakedAway = true;
+      hidden.push(m);
+    });
+  }
 }

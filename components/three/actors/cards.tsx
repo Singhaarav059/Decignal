@@ -3,7 +3,7 @@
 // Cards: the decision, its layers and functions, read under the pointer, and the ending's audit board.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { RoundedBox } from "@react-three/drei";
+import { toCreasedNormals } from "three-stdlib";
 import { easing } from "maath";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CH, HOVER_REST, blendAt, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
@@ -26,6 +26,38 @@ const finalAt = (g: number) => g >= CH.industries + 0.5;
 /* Faces are drawn at about their size on screen in device pixels. A texture much larger than the
    face's footprint is shrunk through its mipmaps, which softens text; one much smaller is stretched.
    Each card measures its footprint every frame and redraws at the matching width when it settles. */
+/**
+ * drei's RoundedBox geometry (an extruded rounded square, centred, normals creased at 0.4 rad: its
+ * defaults with smoothness 4), built once per size and shared. Built per card it was the bulk of the
+ * deck's one long commit (every card's slab extruded and creased again).
+ */
+const slabs = new Map<string, THREE.BufferGeometry>();
+const EPS = 0.00001;
+function roundedSlab(width: number, height: number, depth: number, radius: number) {
+  const key = `${width},${height},${depth},${radius}`;
+  let g = slabs.get(key);
+  if (g) return g;
+  const shape = new THREE.Shape();
+  const r = radius - EPS;
+  shape.absarc(EPS, EPS, EPS, -Math.PI / 2, -Math.PI, true);
+  shape.absarc(EPS, height - r * 2, EPS, Math.PI, Math.PI / 2, true);
+  shape.absarc(width - r * 2, height - r * 2, EPS, Math.PI / 2, 0, true);
+  shape.absarc(width - r * 2, EPS, EPS, 0, -Math.PI / 2, true);
+  g = new THREE.ExtrudeGeometry(shape, {
+    depth: depth - radius * 2,
+    bevelEnabled: true,
+    bevelSegments: 8,
+    steps: 1,
+    bevelSize: radius - EPS,
+    bevelThickness: radius,
+    curveSegments: 4,
+  });
+  g.center();
+  g = toCreasedNormals(g, 0.4);
+  slabs.set(key, g);
+  return g;
+}
+
 const TIERS = [256, 320, 400, 480, 640, 800, 1024, 1280, 1600, 2048];
 const START_TIER = 5;
 
@@ -540,19 +572,17 @@ function Card({ k }: { k: number }) {
         material={REST_MAT}
       />
       <group ref={inner}>
-        <RoundedBox
+        <mesh
           ref={(m: THREE.Mesh | null) => {
             bodies[k] = m;
           }}
-          args={[CARD.w, CARD.t, CARD.h]}
-          radius={0.022}
-          smoothness={4}
+          geometry={roundedSlab(CARD.w, CARD.t, CARD.h, 0.022)}
           castShadow
           receiveShadow
           material={body}
         />
         {/* Coloured rim: a hairline of the card's tone, lit while it is being read */}
-        <RoundedBox ref={rimRef} args={[CARD.w, CARD.t * 0.7, CARD.h]} radius={0.014} smoothness={4} material={rim} visible={false} />
+        <mesh ref={rimRef} geometry={roundedSlab(CARD.w, CARD.t * 0.7, CARD.h, 0.014)} material={rim} visible={false} />
         <mesh position-y={CARD.t / 2 + 0.0012} rotation-x={-Math.PI / 2}>
           <planeGeometry args={[CARD.w - inset, CARD.h - inset]} />
           <meshBasicMaterial ref={topMat} map={top} toneMapped={false} color="#FFFFFF" />
@@ -708,13 +738,11 @@ function GlassCard() {
         material={REST_MAT}
       />
       <group ref={inner}>
-        <RoundedBox
+        <mesh
           ref={(m: THREE.Mesh | null) => {
             glassBody = m;
           }}
-          args={[CARD.w, CARD.t, CARD.h]}
-          radius={0.024}
-          smoothness={4}
+          geometry={roundedSlab(CARD.w, CARD.t, CARD.h, 0.024)}
           material={glass}
         />
         <group position-y={-CARD.t / 2 - 0.0016} rotation-x={Math.PI / 2}>

@@ -6,11 +6,12 @@
 // per-vertex colour and roughness, so skin, fabric, hard hats and reflective tape each read as what
 // they are while a person still costs about a dozen draw calls (one when far away).
 import * as THREE from "three";
-import { useEffect, useMemo, useRef } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { LIVE } from "./Bake";
 import { roundedBox } from "./parts";
+import { Sliced, slice } from "./slices";
 
 type Pose = "stand" | "walk" | "sit" | "tablet" | "point" | "wave";
 
@@ -298,6 +299,12 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
   const statueJ = useRef<THREE.Mesh>(null);
   const liteOn = useRef(false);
   useEffect(() => () => statueJ.current?.geometry.dispose(), []);
+  // The story's people build their far body in a slice before the world shows, not on the first frame
+  // that finds them small (every look at once, in one long task).
+  const later = useContext(Sliced);
+  useEffect(() => {
+    if (later) slice(() => bodyParts(l, true));
+  }, [later, l]);
 
   useFrame(({ clock, camera, size }) => {
     // Distance LOD: small on screen, the person is one merged mesh in their last pose (one draw call).
