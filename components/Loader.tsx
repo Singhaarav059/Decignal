@@ -64,6 +64,9 @@ export function Loader() {
     };
     const finish = () => {
       html.classList.add("ready");
+      // The world fades in once its scene is ready (lib/chrome.ts); never later than this, whatever
+      // happened to the 3D.
+      window.setTimeout(() => html.classList.add("scene-ready"), 4000);
       release();
       remember();
     };

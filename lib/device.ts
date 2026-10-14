@@ -33,13 +33,13 @@ const touchOnly = () => typeof window !== "undefined" && (touchMq ??= window.mat
 export const tallTouch = (w: number, h: number) => w >= 1024 && h > w * 1.15 && touchOnly();
 
 /**
- * Canvas settings for the screen in use: the 3D at up to 2x with MSAA, phones at up to 1.5x (the
- * user's choice, 2026-10-14, for a story drawn live at every move). MSAA keeps the edges smooth; a
- * phone's tiled GPU resolves it almost for free.
+ * Canvas settings for the screen in use: the 3D at up to 2x with MSAA on every screen. At 1.5x a phone's
+ * 2.6-3x screen upscaled the picture and it read soft; 2x with MSAA (which a phone's tiled GPU resolves
+ * almost for free) is crisp, and the story draws only when something changed (FrameGate) on a 60/30
+ * frame budget (Pacer).
  */
 export function canvasQuality() {
-  const phone = isPhone();
-  return { phone, dpr: [1, phone ? 1.5 : 2] as [number, number], antialias: true };
+  return { phone: isPhone(), dpr: [1, 2] as [number, number], antialias: true };
 }
 
 // A classic scrollbar (Windows, or macOS set to always show scrollbars) narrows the full-width story

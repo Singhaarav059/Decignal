@@ -41,7 +41,15 @@
 }
 .application-card > * { flex: none; }
 .application-stages { align-self: flex-start; }
-.application-card > .application-body { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+/* The body scrolls only while the evidence is open (it can outgrow the card). Closed, it is no scroller at
+   all: a swipe that started on it was caught by it, and overscroll containment kept it from the page,
+   so a thumb on the card could not scroll the page on. A finger that reaches the evidence's end goes on
+   to the page; a wheel stays in the card. */
+.application-card > .application-body { flex: 0 1 auto; min-height: 0; overflow-y: hidden; scrollbar-width: none; }
+.application-stage[data-open] .application-card > .application-body { overflow-y: auto; overscroll-behavior-y: contain; }
+@media (pointer: coarse) {
+  .application-stage[data-open] .application-card > .application-body { overscroll-behavior-y: auto; }
+}
 .application-body::-webkit-scrollbar { display: none; }
 
 /* Two folds share one place: opening the evidence shuts the summary (grid rows 1fr to 0fr, --dur-3). */

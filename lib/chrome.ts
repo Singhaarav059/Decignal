@@ -113,7 +113,12 @@ const SCENE_READY = "scene-ready";
 /** The story scene calls this after its first rendered frame (or dispatches 'scene-ready' itself). */
 export const markSceneReady = () => window.dispatchEvent(new Event(SCENE_READY));
 
-if (typeof window !== "undefined") window.addEventListener(SCENE_READY, () => setChrome({ sceneReady: true }));
+if (typeof window !== "undefined")
+  window.addEventListener(SCENE_READY, () => {
+    setChrome({ sceneReady: true });
+    // The world fades in only once it is built and its shaders are compiled (story.css .intro-stage).
+    document.documentElement.classList.add("scene-ready");
+  });
 
 /** Resolves once the scene has drawn, or at once if it already has. */
 export function whenSceneReady() {

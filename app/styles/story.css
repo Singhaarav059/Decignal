@@ -2,12 +2,9 @@
    decks, and the opened-island panel (components/story). Type comes from the role classes (.t-*). */
 
 /* The scroll track the story is mapped onto: each chapter's length in viewport heights (lib/story.ts).
-   Phones and touch tablets travel 70% of it: the same moves, the same order, in fewer flicks of the
-   thumb. */
+   The same on every screen: the story follows the thumb 1:1, and at 70% of a screen per unit a flick
+   carried the hero and the next chapters past before they could be read. */
 #story { position: relative; height: calc(var(--story-len) * 100svh); }
-@media (max-width: 767px), (pointer: coarse) and (hover: none) {
-  #story { height: calc(var(--story-len) * 70svh); }
-}
 
 /* ---- Layers ---- */
 .story-back { z-index: 0; }
@@ -61,7 +58,11 @@ html.ready .intro-fade { transition-delay: var(--d, 450ms); }
   transform: scale(1.04);
   transition: opacity 1400ms var(--ease) 150ms, transform 1800ms var(--ease-out-expo) 150ms;
 }
-html.ready .intro-stage { opacity: 1; transform: none; }
+/* The world waits for its scene to be ready as well as the page: on a repeat visit there is no loader,
+   and the fade ran while the 3D was still downloading, building and compiling, so a half-built world
+   stuttered in and then popped. Now the headline rises at once and the finished world fades in on the
+   compositor. */
+html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 
 /* ---- Statements: the hero's h1 and the final headline, centred above the world (D14) ---- */
 .story-statement {
