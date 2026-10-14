@@ -143,6 +143,10 @@ function changed(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Came
   return diff;
 }
 
+let drawnAt = 0;
+/** performance.now() of the story's last draw: the touch Pacer slows its updates once the world rests. */
+export const lastDraw = () => drawnAt;
+
 /**
  * Takes over the story's render loop (a positive priority): the scene updates every frame as before,
  * and is drawn only when the picture changed since the last draw.
@@ -166,6 +170,7 @@ export function FrameGate() {
     const diff = changed(gl, scene, camera);
     if (settle.current > 0) settle.current--;
     else if (!diff) return;
+    drawnAt = performance.now();
     gl.render(scene, camera);
   }, 1);
   return null;

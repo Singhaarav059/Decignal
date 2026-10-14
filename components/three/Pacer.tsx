@@ -33,8 +33,19 @@ const TAPPED = 1500;
 /** Still stories only on phone-sized touch screens; a tablet's GPU draws the moves. */
 const phone = () => Math.min(window.innerWidth, window.innerHeight) < 600;
 
-/** `paused`: the owner's own reasons to draw nothing (the story warming up, or out of sight). */
-export function Pacer({ paused, still }: { paused?: () => boolean; still?: boolean }) {
+/** A live story with nothing drawn this long (ms) while the page rests has come to rest itself. */
+const QUIET = 1000;
+/** Updates a second for a world at rest: each only looks for the next change. */
+const QUIET_FPS = 8;
+
+/**
+ * `paused`: the owner's own reasons to draw nothing (the story warming up, or out of sight).
+ * `drawnAt`: when the owner last drew (FrameGate). A tablet's live story at rest in a still chapter
+ * (Signal, Control, the ending) drew nothing, yet every update still ran each scene part and read the
+ * whole picture for a change, 30 times a second. Once nothing has drawn for a second and the page
+ * rests, it updates 8 times a second instead; a scroll or touch brings it back at once.
+ */
+export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; still?: boolean; drawnAt?: () => number }) {
   const get = useThree((s) => s.get);
   const advance = useThree((s) => s.advance);
   const setDpr = useThree((s) => s.setDpr);
@@ -48,6 +59,7 @@ export function Pacer({ paused, still }: { paused?: () => boolean; still?: boole
   useEffect(() => {
     let raf = 0;
     let last = -1e9;
+    let slept = false;
     // Still mode: whether the scene plays, until when, and the target it froze at.
     let live = true;
     let liveUntil = -1;
@@ -151,10 +163,15 @@ export function Pacer({ paused, still }: { paused?: () => boolean; still?: boole
         }
       }
       // A still story's waking frames sit under the dissolve, where the camera barely moves: 30 a second.
-      const gap = stills || resting(t) ? 1000 / 30 : 1000 / 60;
+      const rest = resting(t);
+      const quiet = !stills && rest && !!drawnAt && t - drawnAt() > QUIET;
+      const gap = quiet ? 1000 / QUIET_FPS : stills || rest ? 1000 / 30 : 1000 / 60;
       if (t - last < gap - SLACK) return;
-      // In "never" mode R3F takes the clock's next time, in seconds, and the delta from it.
-      const dt = Math.min(last < 0 ? gap : t - last, 100) / 1000;
+      // In "never" mode R3F takes the clock's next time, in seconds, and the delta from it. At rest, and
+      // on the first update after it, a step counts as one frame: motion that starts again picks up
+      // where it was instead of jumping by the gap.
+      const dt = Math.min(last < 0 ? gap : quiet || slept ? 1000 / 30 : t - last, 100) / 1000;
+      slept = quiet;
       last = t;
       advance(get().clock.elapsedTime + dt);
     };
@@ -167,6 +184,6 @@ export function Pacer({ paused, still }: { paused?: () => boolean; still?: boole
       window.removeEventListener("touchcancel", down);
       gl.domElement.removeEventListener("webglcontextrestored", restart);
     };
-  }, [advance, get, paused, still, size.width, size.height]);
+  }, [advance, get, paused, still, drawnAt, size.width, size.height]);
   return null;
 }

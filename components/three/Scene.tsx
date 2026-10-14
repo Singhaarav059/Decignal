@@ -21,7 +21,7 @@ import { prewarm } from "./Warm";
 import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
 import { ShadowFloor, ShadowGate } from "./Shadows";
-import { FrameGate } from "./FrameGate";
+import { FrameGate, lastDraw } from "./FrameGate";
 
 /* ------------------------------------------------------------------ */
 /* Stage framing: fit each chapter's subject into the screen area the  */
@@ -797,7 +797,7 @@ function World3D() {
       }}
     >
       <World />
-      {paced && <Pacer paused={storyPaused} still />}
+      {paced && <Pacer paused={storyPaused} still drawnAt={lastDraw} />}
     </Canvas>
   );
 }
