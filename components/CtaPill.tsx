@@ -38,7 +38,7 @@ function auditFocus(): HTMLElement | true {
 export function AuditLink({ onDone, onClick, ...rest }: Omit<ComponentProps<typeof SectionLink>, "href" | "focus">) {
   return (
     <SectionLink
-      href={CTA.href}
+      href={`/${CTA.href}`}
       onDone={onDone}
       onClick={(e) => {
         onClick?.(e);

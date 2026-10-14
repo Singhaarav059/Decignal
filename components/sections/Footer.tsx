@@ -97,7 +97,7 @@ export function Footer() {
             </g>
           </svg>
           <SectionTitle lines={[FOOTER.headline[0], FOOTER.headline[1]]} tone="ink" className="ed-title" id="footer-title" />
-          <SectionLink href={CTA.href} className="btn btn-primary footer-cta">
+          <SectionLink href={`/${CTA.href}`} className="btn btn-primary footer-cta">
             {CTA.primary}
             <Arrow />
           </SectionLink>

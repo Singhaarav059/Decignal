@@ -12,6 +12,9 @@ export const runtime = "nodejs";
 
 const MAX_BODY = 16 * 1024;
 const TIMEOUT = 5000;
+// Apps Script cold starts plus the sheet lock (scripts/audit-sheet.gs) can pass 5s; a timeout there
+// would report failure for a row that was written, and the visitor's retry would duplicate it.
+const WEBHOOK_TIMEOUT = 15000;
 
 // Per IP: a burst of 5, then one more every 2 minutes (5 per 10 minutes sustained).
 const perIp = createLimiter({ capacity: 5, refillMs: 2 * 60_000 });
@@ -97,14 +100,18 @@ async function sendWebhook(url: string, data: AuditData, ref: string, submittedA
       // escaped as Slack asks, so visitor text cannot post <!channel> pings or disguised links.
       text: brief.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
     }),
-    signal: AbortSignal.timeout(TIMEOUT),
+    signal: AbortSignal.timeout(WEBHOOK_TIMEOUT),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`webhook ${res.status}`);
-  // Apps Script (scripts/audit-sheet.gs) always answers 200, so it reports failures as {"ok":false}.
-  if (res.headers.get("content-type")?.includes("application/json")) {
+  // Apps Script (scripts/audit-sheet.gs) always answers 200, so it reports failures as {"ok":false}, and
+  // a script that throws (lock timeout, quota) answers with an HTML error page: only {"ok":true} counts.
+  const appsScript = new URL(url).hostname === "script.google.com";
+  const json = res.headers.get("content-type")?.includes("application/json");
+  if (!json && appsScript) throw new Error("webhook non_json");
+  if (json) {
     const body = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
-    if (body?.ok === false) throw new Error(`webhook ${body.error ?? "rejected"}`);
+    if (body?.ok === false || (appsScript && body?.ok !== true)) throw new Error(`webhook ${body?.error ?? "rejected"}`);
   }
 }
 
