@@ -19,7 +19,9 @@
 .story-stop { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
 @media (pointer: coarse) and (hover: none) {
   html { scroll-snap-type: y mandatory; }
-  html[data-jump] { scroll-snap-type: none; }
+  /* Off while a jump glides or the veil is shut; back on once it has landed (rest), so the first swipe
+     after a jump lands on a hold too. */
+  html[data-jump]:not([data-jump="rest"]) { scroll-snap-type: none; }
   .story-stop:not([data-off]) { scroll-snap-align: start; scroll-snap-stop: always; }
   .editorial:not([data-off]) { scroll-snap-align: start; }
   .page-foot:not([data-off]) { scroll-snap-align: end; }
@@ -78,6 +80,30 @@ html.ready .intro-fade { transition-delay: var(--d, 450ms); }
   transition: opacity 1400ms var(--ease) 150ms, transform 1800ms var(--ease-out-expo) 150ms;
 }
 html.ready .intro-stage { opacity: 1; transform: none; }
+
+/* Phones: the world as pre-rendered stills (components/story/PhoneStory.tsx). Each still is laid on
+   whole, the old one dissolving off it; its labels open once it has landed. The hero's world rises in
+   with the headline after the loader, as the islands did in the 3D. */
+.phone-stills { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transform-origin: 50% 40%; }
+.phone-still { position: absolute; inset: 0; }
+.phone-still[data-out] { opacity: 0; }
+.phone-still-img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; }
+.phone-still-tags { position: absolute; inset: 0; opacity: 0; transform: translateY(4px); }
+.phone-still[data-in] .phone-still-tags {
+  opacity: 1;
+  transform: none;
+  transition: opacity 260ms var(--ease) 120ms, transform 320ms var(--ease) 120ms;
+}
+.phone-still[data-hero] .phone-still-img {
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
+  transform-origin: 50% 100%;
+  transition: opacity 1100ms var(--ease) 350ms, transform 1500ms var(--ease-out-expo) 350ms;
+}
+html.ready .phone-still[data-hero] .phone-still-img { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .phone-still-tags, .phone-still[data-hero] .phone-still-img { transition: none !important; transform: none; }
+}
 
 /* ---- Statements: the hero's h1 and the final headline, centred above the world (D14) ---- */
 .story-statement {
