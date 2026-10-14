@@ -638,8 +638,9 @@
 .dial-node-art .tr-art, .dial-face-art .tr-art { margin: 0; }
 @media (max-width: 1023px) {
   /* The chip is a pill on the dial only; in the list it is the card's title line, so no glass of its own
-     (liquid-glass.css gives it one, which drew a square strip across the card). */
-  .dial-nodes .dial-node-chip { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+     (liquid-glass.css gives it one, which drew a square strip across the card, and a drop shadow under
+     the first step's title, as data-on; that file loads later, hence the longer selector). */
+  .dial-band .dial-nodes .dial-node .dial-node-chip { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
 }
 /* Tablets: the seven steps two to a row, the last one across both. */
 @media (min-width: 640px) and (max-width: 1023px) {
