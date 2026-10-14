@@ -1016,24 +1016,3 @@ html[data-flow="phone"] :is(.story-back, .story-canvas, .story-overlay, #story) 
 /* Scale: the hand stays in view while the reader scrolls through its deal. */
 .pf-scale { height: calc(5 * 34svh + 60svh); }
 .pf-scale-hand { position: sticky; top: 76px; height: min(60svh, 500px); display: flex; flex-direction: column; }
-/* Motion, played by the compositor so the page still moves 1:1 with the thumb: each picture, card and
-   note rises in as it comes into view (PhoneFlow sets data-in once), the labels land a beat after their
-   picture as the 3D's did, and each picture drifts a little against the page as it passes (a
-   scroll-driven animation, run off the main thread). The hero's headline rolls in as on the pinned
-   story (.intro-line). */
-@media (prefers-reduced-motion: no-preference) {
-  .pf :is(.pf-shot, .pf-card, .pf-note, .pf-stage, .pf-final .pf-head) {
-    opacity: 0;
-    transform: translate3d(0, 28px, 0);
-    transition: opacity 0.7s var(--ease), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-  .pf .pf-shot { transform: translate3d(0, 18px, 0) scale(0.985); }
-  .pf :is(.pf-shot, .pf-card, .pf-note, .pf-stage, .pf-final .pf-head)[data-in] { opacity: 1; transform: none; }
-  .pf .pf-shot .pf-tags { opacity: 0; transform: translate3d(0, 6px, 0); transition: opacity 0.45s var(--ease) 0.35s, transform 0.55s var(--ease) 0.35s; }
-  .pf .pf-shot[data-in] .pf-tags { opacity: 1; transform: none; }
-  .pf .pf-hero .pf-shot { transition-delay: 0.25s; }
-  @supports (animation-timeline: view()) {
-    .pf-shot img { animation: pf-drift linear both; animation-timeline: view(); }
-    @keyframes pf-drift { from { translate: 0 16px; } to { translate: 0 -16px; } }
-  }
-}
