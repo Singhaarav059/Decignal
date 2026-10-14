@@ -19,6 +19,19 @@ const subscribe = (fn: () => void) => {
 /** True on a phone-width screen; false while server rendering. */
 export const usePhone = () => useSyncExternalStore(subscribe, isPhone, () => false);
 
+let touchMq: MediaQueryList | null = null;
+/** A touch-only screen (no mouse): read every frame by the framing, so the query is made once. */
+const touchOnly = () => typeof window !== "undefined" && (touchMq ??= window.matchMedia("(pointer: coarse) and (hover: none)")).matches;
+
+/**
+ * A touch tablet held upright at desktop width (an iPad Pro, 1024x1366): the page lays out as on a
+ * laptop (the card bottom-left, the head across the top), but the screen is tall, so the band above the
+ * card is where the world fits. Framed beside the card, as on a wide screen, the hand and the places
+ * shrank into a strip at the right edge under a third of the screen of empty sky. Narrower upright
+ * screens are already framed as portrait; a desktop window keeps the wide framing.
+ */
+export const tallTouch = (w: number, h: number) => w >= 1024 && h > w * 1.15 && touchOnly();
+
 /**
  * Canvas settings for the screen in use. Desktop and phone both draw the 3D at up to 2x with MSAA. A
  * phone's own density (often 2.6-3x) without MSAA left stair-steps on edges and cost a mid-range

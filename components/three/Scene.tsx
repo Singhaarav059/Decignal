@@ -12,7 +12,7 @@ import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
-import { canvasQuality, mediaWidth, portraitWide } from "@/lib/device";
+import { canvasQuality, mediaWidth, portraitWide, tallTouch } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
 import { isTouch, stillCuts } from "@/lib/pace";
@@ -190,6 +190,8 @@ const SIDE_CARD = 0.8;
 let cardEx = false;
 /** The wide hero keeps its centre line: the subject lifts or drops to clear a corner, never slides. */
 let centreLock = false;
+/** An upright touch tablet at desktop width (lib/device.ts tallTouch), read once per frame by Rig. */
+let tall = false;
 /** Dev only: the last framing, for the review scripts (window.__frame). */
 const debug: Record<string, unknown> | null = process.env.NODE_ENV !== "production" && typeof window !== "undefined" ? ((window as unknown as { __frame: Record<string, unknown> }).__frame = {}) : null;
 
@@ -289,8 +291,9 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   e.y1 += gap;
   cardEx = true;
   // A card across most of the width (phones, tablets upright): the stage simply ends above it; the
-  // strip beside it is too narrow to hold a subject.
-  if (e.x1 - e.x0 > vw * 0.6) {
+  // strip beside it is too narrow to hold a subject. A tall tablet's card is half the width, but the
+  // band above it is far larger than the strip beside it.
+  if (e.x1 - e.x0 > vw * 0.6 || (tall && c !== CH.fragments && c !== CH.final)) {
     stage.y1 = Math.min(stage.y1, e.y0);
     nEx = 0;
     cardEx = false;
@@ -319,7 +322,9 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   // the stage it left two ways round it (move right, or shrink and lift), and the framing swapped
   // between them from one scroll step to the next: the place pumped in and out.
   if (c === CH.industries && page.callout) {
-    if (mediaWidth(vw) >= IND_BESIDE_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
+    // A tall tablet: the callout stands beside the card, and the place in the band above both.
+    if (tall) stage.y1 = Math.min(stage.y1, page.callout.y0 - gap);
+    else if (mediaWidth(vw) >= IND_BESIDE_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
     else stage.y0 = Math.max(stage.y0, page.callout.y1 + gap);
   }
   for (const f of page.frames[c] ?? []) {
@@ -507,6 +512,7 @@ function Rig() {
     const vw = size.width;
     const vh = size.height;
     const portrait = portraitWide(vw, vh);
+    tall = tallTouch(vw, vh);
     const now = performance.now();
     if (now - heightsAt > 300) readCardHeights(now);
     heldNow = e < 0.02 ? i : -1;
@@ -523,7 +529,8 @@ function Rig() {
     // Reduced motion: the camera cuts at the midpoint and settles.
     const k = still ? (e < 0.5 ? 0 : 1) : e;
     lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
-    const a = shotAt(i, local, portrait, shots[0]);
+    // A tall tablet reads the problem chart's labels in a legend too (Marks ChartMarks).
+    const a = shotAt(i, local, portrait || (tall && i === CH.problem), shots[0]);
     frameShot(a, i, vw, vh, false, fr[0]);
     let A = fr[0];
     if (lean.current > 0.001) {
@@ -533,7 +540,7 @@ function Rig() {
     }
     let F = A;
     if (k > 0 && j !== i) {
-      const b = shotAt(j, 0, portrait, shots[1]);
+      const b = shotAt(j, 0, portrait || (tall && j === CH.problem), shots[1]);
       frameShot(b, j, vw, vh, false, fr[1]);
       // Pulling back to a bigger subject, the camera leads, so the next scene assembles in its own
       // frame; pushing in on a smaller one, it holds back while the scene folds into it (partly, so

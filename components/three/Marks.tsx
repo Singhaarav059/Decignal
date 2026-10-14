@@ -11,7 +11,7 @@ import { SYSTEMS } from "@/components/ui/systems";
 import { concrete } from "./materials";
 import { padGeometry, useDisposeOnUnmount } from "./kit";
 import { islandAccent } from "./actors/islands";
-import { mediaWidth, phoneWide, portraitWide } from "@/lib/device";
+import { mediaWidth, phoneWide, portraitWide, tallTouch } from "@/lib/device";
 
 type TroikaText = THREE.Mesh & { fillOpacity: number };
 
@@ -54,7 +54,10 @@ const arrow = () =>
 export function ChartMarks() {
   // Phones fit seven columns into 390px, so labels grow and shorten to stay readable.
   const phone = useThree((st) => phoneWide(st.size.width));
-  const narrow = useThree((st) => mediaWidth(st.size.width) < 1024);
+  const narrow = useThree((st) => mediaWidth(st.size.width) < 1024 || tallTouch(st.size.width, st.size.height));
+  // Upright screens frame the chart on its columns alone (lib/scene.ts shotAt): the demand label stands
+  // over the line's end, as on phones, instead of past it where the frame cut it off.
+  const upright = useThree((st) => portraitWide(st.size.width, st.size.height) || tallTouch(st.size.width, st.size.height));
   // The chart's labels scale with it; on short screens the chart is framed smaller, so they grow back.
   const short = useThree((st) => THREE.MathUtils.clamp(900 / st.size.height, 1, 1.35));
   const k = phone ? 1.9 : short;
@@ -126,7 +129,7 @@ export function ChartMarks() {
       <Text {...text} rotation={FACE_CAMERA} color={COLORS.signal} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "top" : "middle"} material-depthTest={false} renderOrder={5} position={narrow ? [DAY_X(0) - 0.3, -0.3 * k, Z + 0.15] : [-3.8, SAFETY_Y, Z]}>
         {narrow ? `- - SAFETY ${SAFETY_UNITS}` : `SAFETY STOCK  ${SAFETY_UNITS}`}
       </Text>
-      <Text {...text} rotation={FACE_CAMERA} color={DEMAND} anchorX={phone ? "right" : "left"} anchorY={phone ? "bottom" : "middle"} position={phone ? [tube.end.x, tube.end.y + 0.12, tube.end.z] : [tube.end.x + 0.16, tube.end.y, tube.end.z]}>
+      <Text {...text} rotation={FACE_CAMERA} color={DEMAND} anchorX={upright ? "right" : "left"} anchorY={upright ? "bottom" : "middle"} position={upright ? [tube.end.x, tube.end.y + 0.12, tube.end.z] : [tube.end.x + 0.16, tube.end.y, tube.end.z]}>
         {phone ? "+18%" : "DEMAND +18%"}
       </Text>
       {/* Units on hand, read off the top of every column */}

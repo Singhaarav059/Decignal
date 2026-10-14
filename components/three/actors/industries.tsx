@@ -17,7 +17,7 @@ import { Person } from "../people";
 import { aluminium, asphalt, cladding, concrete, enamel, plastic, rubber, steel } from "../materials";
 import { box, cylY, geo, merge, rbox } from "../parts";
 import { reducedMotion } from "./core";
-import { mediaWidth } from "@/lib/device";
+import { mediaWidth, tallTouch } from "@/lib/device";
 
 /* ---------------- The road: asphalt, paint and a near verge ---------------- */
 
@@ -295,14 +295,16 @@ function placeLeader(camera: THREE.Camera, size: { width: number; height: number
   pin.set(...indPin(k)).project(camera);
   const px = ((pin.x + 1) / 2) * size.width;
   const py = ((1 - pin.y) / 2) * size.height;
-  const beside = mediaWidth(size.width) >= IND_BESIDE_MIN;
+  // A tall tablet frames the place above the callout (Scene setStage): the leader leaves its top edge.
+  const above = tallTouch(size.width, size.height);
+  const beside = !above && mediaWidth(size.width) >= IND_BESIDE_MIN;
   const ax = beside ? r.right : Math.min(Math.max(px, r.left + 28), r.right - 28);
-  const ay = beside ? r.top + 30 : r.bottom;
+  const ay = beside ? r.top + 30 : above ? r.top : r.bottom;
   const dx = px - ax;
   const dy = py - ay;
   // At a place (its pin clear of the callout), and only as the chapter is fully in.
   const at = 1 - smoothstep(0.04, 0.2, Math.abs(track - Math.round(track)));
-  const o = r.width > 0 && (beside ? dx : dy) > 28 ? at * smoothstep(0.85, 1, w) : 0;
+  const o = r.width > 0 && (beside ? dx : above ? -dy : dy) > 28 ? at * smoothstep(0.85, 1, w) : 0;
   const v = `${px.toFixed(1)}|${py.toFixed(1)}|${o.toFixed(3)}|${ax}|${ay}`;
   if (v === lead.last) return;
   lead.last = v;
