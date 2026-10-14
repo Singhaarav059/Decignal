@@ -174,7 +174,7 @@ function Stages(props: Props) {
         const on = k === props.kind;
         return (
           <group key={k} ref={refs[k]} visible={on} dispose={null}>
-            <Model motion={motions[k]} step={on ? props.step : 0} still={props.still} pin={props.pin} />
+            <Model motion={motions[k]} step={on ? props.step : 0} still={props.still} pin={props.pin} visible={on} />
           </group>
         );
       })}
@@ -202,7 +202,7 @@ function Ground({ kind, step, motion, active, phone }: { kind: DemoKind; step: n
   });
   // People walk on the clock in the demand and risk worlds: their shadows follow them at rest too.
   const live = kind === "demand" || kind === "risk";
-  return <ContactShadows position={[0, -0.05, 0]} scale={14} blur={1.8} opacity={0.4} far={1.5} resolution={phone ? 256 : 512} frames={active && (moving || live) ? Infinity : 1} color={COLORS.shadow} />;
+  return <ContactShadows position={[0, -0.05, 0]} scale={14} blur={1.8} opacity={0.4} far={1.5} resolution={phone ? 128 : 512} frames={active && (moving || live) ? Infinity : 1} color={COLORS.shadow} />;
 }
 
 export default function ApplicationScene(props: Props) {
@@ -211,6 +211,7 @@ export default function ApplicationScene(props: Props) {
   // While it plays, touch screens draw on the phone budget (Pacer, lib/pace.ts).
   const paced = useMemo(() => isTouch(), []);
   const playing = props.active && !props.still;
+  const paused = useCallback(() => !props.active || props.still, [props.active, props.still]);
   return (
     <Canvas dpr={q.dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
@@ -219,9 +220,9 @@ export default function ApplicationScene(props: Props) {
         gl.toneMappingExposure = 0.95;
       }}>
       <Suspense fallback={null}>
-        <Studio resolution={512} />
+        <Studio resolution={q.phone ? 256 : 512} />
         <Camera kind={props.kind} motion={props.motion} still={props.still} frame={props.frame} />
-        <directionalLight position={[4, 9, 6]} intensity={1.5} castShadow shadow-mapSize={q.phone ? [1024, 1024] : [2048, 2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7} />
+        <directionalLight position={[4, 9, 6]} intensity={1.5} castShadow shadow-mapSize={q.phone ? [512, 512] : [2048, 2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7} />
         <Stages {...props} />
         <mesh rotation-x={-Math.PI / 2} position-y={-0.065} receiveShadow><planeGeometry args={[30, 30]} /><shadowMaterial color={COLORS.shadow} opacity={0.12} /></mesh>
         <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} />
@@ -229,7 +230,7 @@ export default function ApplicationScene(props: Props) {
             re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
         <ShadowGate />
       </Suspense>
-      {playing && paced && <Pacer />}
+      {playing && paced && <Pacer paused={paused} still={false} />}
     </Canvas>
   );
 }

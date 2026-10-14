@@ -302,10 +302,15 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
   useFrame(({ clock, camera, size }) => {
     // Distance LOD: small on screen, the person is one merged mesh in their last pose (one draw call).
     const root = rootJ.current, statue = statueJ.current;
+    if (!root || !statue) return;
+    let cur: THREE.Object3D | null = root;
+    while (cur) {
+      if (!cur.visible) return;
+      cur = cur.parent;
+    }
     let far = false;
-    if (root && statue) {
-      root.getWorldPosition(P0);
-      root.getWorldScale(SC);
+    root.getWorldPosition(P0);
+    root.getWorldScale(SC);
       P1.copy(P0);
       P1.y += 1.76 * SC.y;
       P0.project(camera);
@@ -330,7 +335,6 @@ export function Person({ look = "crew", pose = "stand", seed = 0, speed = 1.3, s
       }
       statue.visible = false;
       if (pelvisJ.current) pelvisJ.current.visible = true;
-    }
     const j = { pelvis: pelvisJ.current, torso: torsoJ.current, head: headJ.current, thighL: thighLJ.current, thighR: thighRJ.current, shinL: shinLJ.current, shinR: shinRJ.current, upL: upLJ.current, upR: upRJ.current, foL: foLJ.current, foR: foRJ.current };
     if (!j.pelvis) return;
     const t = calm ? seed : clock.elapsedTime + seed;
@@ -473,10 +477,16 @@ export function Walker({ path, speed = 1.2, offset = 0, ...p }: Omit<PersonProps
   const len = useMemo(() => curve.getLength(), [curve]);
   const calm = useMemo(() => still(), []);
   const tan = useMemo(() => new THREE.Vector3(), []);
+  const at = useMemo(() => new THREE.Vector3(), []);
   useFrame(({ clock }) => {
     if (!root.current) return;
+    let cur: THREE.Object3D | null = root.current;
+    while (cur) {
+      if (!cur.visible) return;
+      cur = cur.parent;
+    }
     const u = (((calm ? 0 : clock.elapsedTime) * speed) / len + offset) % 1;
-    const at = curve.getPointAt(u);
+    curve.getPointAt(u, at);
     curve.getTangentAt(u, tan);
     root.current.position.set(at.x, 0, at.z);
     root.current.rotation.y = Math.atan2(-tan.z, tan.x);

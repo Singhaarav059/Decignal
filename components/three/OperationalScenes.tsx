@@ -19,7 +19,7 @@ import { APP_FACTS, EXAMPLE, inr } from "@/lib/example";
 import { EVIDENCE_LABELS } from "@/lib/copy";
 
 /** pin: the object the reader points at in the card (its tag opens instead of the stage's subject). */
-export type SceneProps = { motion: Motion; step: number; still: boolean; pin?: PinRef };
+export type SceneProps = { motion: Motion; step: number; still: boolean; pin?: PinRef; visible?: boolean };
 
 /*
  * One accent per scene (E14, D6). Models are white and grey; the system colour of the data the
@@ -38,7 +38,7 @@ const TRF = EXAMPLE.transfer;
 /* ------------------------------------------------------------------ */
 /* 01. LOGISTICS: Complete loading at source + deloading at dock      */
 /* ------------------------------------------------------------------ */
-export function Logistics({ motion, step, pin }: SceneProps) {
+export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
   const truck = useRef<THREE.Group>(null);
   const fork = useRef<THREE.Group>(null);
   const unloadFork = useRef<THREE.Group>(null);
@@ -56,6 +56,7 @@ export function Logistics({ motion, step, pin }: SceneProps) {
   const RECEIVE_SLOTS = [2.79, 2.43, 2.07];
 
   useFrame(() => {
+    if (!visible) return;
     const p = motion.current.progress;
     const t = phase(p, 0.25, 0.94);
     liftAt(t, lift);
@@ -355,11 +356,12 @@ function Machine({ at, color }: { at: Vec; color: string }) {
   );
 }
 
-export function Production({ motion, step, pin }: SceneProps) {
+export function Production({ motion, step, pin, visible = true }: SceneProps) {
   const carriers = useRef<(THREE.Group | null)[]>([]);
   const shuttle = useRef<THREE.Group>(null);
 
   useFrame(() => {
+    if (!visible) return;
     const p = motion.current.progress;
     const transfer = phase(p, 0.38, 0.72);
     const feed = phase(p, 0.75, 0.95);
@@ -411,8 +413,8 @@ export function Production({ motion, step, pin }: SceneProps) {
         <Box key={x} at={[x, 0.12, 0]} size={[0.05, 0.1, 2.3]} metal />
       ))}
 
-      <Conveyor x={-0.7} z={0.8} length={4.9} />
-      <Conveyor x={-0.7} z={-0.8} length={4.9} />
+      <Conveyor x={-0.7} z={0.8} length={4.9} active={visible} />
+      <Conveyor x={-0.7} z={-0.8} length={4.9} active={visible} />
       <Machine at={[2.05, 0, 0.8]} color={step === 2 ? TRIM : COLORS.signal} />
       <Machine at={[2.05, 0, -0.8]} color={TRIM} />
 
@@ -496,12 +498,14 @@ function CargoVessel() {
   );
 }
 
-export function SupplyRisk({ motion, step, pin }: SceneProps) {
+export function SupplyRisk({ motion, step, pin, visible = true }: SceneProps) {
   const rig = useRef<THREE.Group>(null);
   const trolley = useRef<THREE.Group>(null);
   const spreader = useRef<THREE.Group>(null);
   const hoistCables = useRef<(THREE.Mesh | null)[]>([]);
   const singleContainer = useRef<THREE.Group>(null);
+  const pVec = useMemo(() => new THREE.Vector3(), []);
+  const tanVec = useMemo(() => new THREE.Vector3(), []);
 
   const route = useMemo(
     () =>
@@ -515,13 +519,14 @@ export function SupplyRisk({ motion, step, pin }: SceneProps) {
   );
 
   useFrame(() => {
+    if (!visible) return;
     // 1. Quayside logistics highway transport
     if (rig.current) {
       const tTruck = phase(motion.current.progress, 0.48, 0.95);
-      const p = route.getPoint(tTruck);
-      const tangent = route.getTangent(tTruck);
-      rig.current.position.copy(p);
-      rig.current.rotation.y = Math.atan2(-tangent.z, tangent.x);
+      route.getPoint(tTruck, pVec);
+      route.getTangent(tTruck, tanVec);
+      rig.current.position.copy(pVec);
+      rig.current.rotation.y = Math.atan2(-tanVec.z, tanVec.x);
     }
 
     // 2. Quay Crane & Single Continuous Container Lifecycle
@@ -712,12 +717,13 @@ export function SupplyRisk({ motion, step, pin }: SceneProps) {
 /* ------------------------------------------------------------------ */
 /* 04. DISTRIBUTION: Central DC to Storefronts with Dock Deloading    */
 /* ------------------------------------------------------------------ */
-export function Distribution({ motion, step, pin, commercial = false }: SceneProps & { commercial?: boolean }) {
+export function Distribution({ motion, step, pin, commercial = false, visible = true }: SceneProps & { commercial?: boolean }) {
   const tone = TINTS.cobalt;
   const vehicle = useRef<THREE.Group>(null);
   const [unloadedAtStore, setUnloadedAtStore] = useState(false);
 
   useFrame(() => {
+    if (!visible) return;
     const p = motion.current.progress;
     const t = phase(p, 0.35, 0.92);
     if (vehicle.current) {
@@ -813,7 +819,7 @@ export function Distribution({ motion, step, pin, commercial = false }: ScenePro
 /* ------------------------------------------------------------------ */
 /* 05. DEALER NETWORK: Forklift Picks Surplus from East, Deloads West  */
 /* ------------------------------------------------------------------ */
-export function DealerNetwork({ motion, step, pin }: SceneProps) {
+export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps) {
   const tone = TINTS.violet;
   const forkliftGroup = useRef<THREE.Group>(null);
   const forkHeight = useRef(0.06);
@@ -821,6 +827,7 @@ export function DealerNetwork({ motion, step, pin }: SceneProps) {
   const [droppedAtWest, setDroppedAtWest] = useState(false);
 
   useFrame(() => {
+    if (!visible) return;
     const p = motion.current.progress;
     const t = phase(p, 0.25, 0.94);
 
@@ -993,7 +1000,7 @@ export function DealerNetwork({ motion, step, pin }: SceneProps) {
 /* ------------------------------------------------------------------ */
 /* 06. MAINTENANCE: Diagnostic Motor & Vibration Decoupling           */
 /* ------------------------------------------------------------------ */
-function Motor({ motion, still }: Pick<SceneProps, "motion" | "still">) {
+function Motor({ motion, still, visible = true }: Pick<SceneProps, "motion" | "still" | "visible">) {
   const rotor = useRef<THREE.Group>(null);
   const cover = useRef<THREE.Group>(null);
   const bearing = useRef<THREE.Group>(null);
@@ -1012,6 +1019,7 @@ function Motor({ motion, still }: Pick<SceneProps, "motion" | "still">) {
   );
 
   useFrame((state, dt) => {
+    if (!visible) return;
     const p = motion.current.progress;
     const open = phase(p, 0.2, 0.46) * (1 - phase(p, 0.73, 0.94));
     if (cover.current) cover.current.position.x = 1.04 + open * 1.25;
@@ -1136,11 +1144,12 @@ function CaseTicket({ step }: { id: number; step: number }) {
 /** Height of the service bench top the cases and the bearing lie on. */
 const BENCH = 0.36;
 
-export function Customer({ motion, step, pin }: SceneProps) {
+export function Customer({ motion, step, pin, visible = true }: SceneProps) {
   const tickets = useRef<(THREE.Group | null)[]>([]);
   const links = useRef<THREE.Group>(null);
 
   useFrame(() => {
+    if (!visible) return;
     const t = phase(motion.current.progress, 0.2, 0.76);
     // The links grow out from the bearing as the cases move into the ring, so none of them points at an empty spot.
     links.current?.scale.set(Math.max(t, 0.001), 1, Math.max(t, 0.001));
@@ -1241,7 +1250,7 @@ export function Customer({ motion, step, pin }: SceneProps) {
 /* ------------------------------------------------------------------ */
 /* 08. FINANCE: Three-way Match & Held Disbursement Ledger            */
 /* ------------------------------------------------------------------ */
-export function Finance({ step, motion, pin }: SceneProps) {
+export function Finance({ step, motion, pin, visible = true }: SceneProps) {
   const isHeld = step === 2;
 
   return (
@@ -1313,7 +1322,7 @@ export function Finance({ step, motion, pin }: SceneProps) {
       />
 
       {/* The match runs from the order to the invoices */}
-      <Route points={[[-2.05, 0.06, 0.7], [-2.05, 0.06, 1.35], [2.15, 0.06, 1.35], [2.15, 0.06, 0.7]]} color={TINTS.cobalt} radius={0.022} flow speed={0.32} pulseColor={TINTS.cobalt} />
+      <Route points={[[-2.05, 0.06, 0.7], [-2.05, 0.06, 1.35], [2.15, 0.06, 1.35], [2.15, 0.06, 0.7]]} color={TINTS.cobalt} radius={0.022} flow speed={0.32} pulseColor={TINTS.cobalt} active={visible} />
     </group>
   );
 }

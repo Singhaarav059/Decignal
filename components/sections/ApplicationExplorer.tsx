@@ -19,6 +19,7 @@ import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
 import { whenStill } from "@/lib/idle";
 import { ExplorerStills } from "./ExplorerStills";
+import { usePhone } from "@/lib/device";
 
 gsap.registerPlugin(ScrollTrigger);
 // Viewport heights per application, by APPLICATIONS index: every stop (signal, evidence, action) gets its
@@ -81,7 +82,8 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
   // A new array on every parent render must not rebuild the ScrollTrigger: key the list by its contents.
   const key = (apps ?? indices ?? ALL).join(",");
   const list = useMemo(() => key.split(",").map(Number), [key]);
-  const speed = pace ?? (list.length === 1 ? 1.6 : 1);
+  const isMobile = usePhone();
+  const speed = pace ?? (list.length === 1 ? (isMobile ? 0.8 : 1.6) : isMobile ? 0.28 : 1);
   const lens = useMemo(() => list.map((i) => CHAPTER_LENGTHS[i] * speed), [list, speed]);
   const kinds = useMemo(() => list.map((i) => APPLICATION_DEMOS[i].kind), [list]);
 
@@ -264,12 +266,47 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       onUpdate: (self) => apply(self.progress),
       onRefresh: (self) => apply(self.progress),
     });
+    ScrollTrigger.refresh();
     return () => {
       trigger.kill();
       observer.disconnect();
       media.removeEventListener("change", sync);
     };
   }, [lens, list]);
+
+  // Mobile horizontal swipe: fluidly step between applications without having to scroll
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1 || opened.current) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.changedTouches.length !== 1 || opened.current) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      const dt = Date.now() - startTime;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
+        if (dx < 0 && frame.chapter < count - 1) {
+          jump(frame.chapter + 1);
+        } else if (dx > 0 && frame.chapter > 0) {
+          jump(frame.chapter - 1);
+        }
+      }
+    };
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [frame.chapter, count, jump]);
 
   const stages = useMemo(
     () => APPLICATIONS_COPY.stages.map((label, i) => ({ value: String(i), label, controls: `${sentenceId} ${drawerId}` })),

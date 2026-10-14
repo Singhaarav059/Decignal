@@ -62,8 +62,8 @@ export function Pin({ id, at, title, value, tone, alert, motion, pin, subject }:
   );
 }
 
-export function Route({points,color="#C3C8D0",radius=0.018,dashed=false,flow=false,speed=0.28,pulseCount=2,pulseColor}:
-  {points:Vec[];color?:string;radius?:number;dashed?:boolean;flow?:boolean;speed?:number;pulseCount?:number;pulseColor?:string}){
+export function Route({points,color="#C3C8D0",radius=0.018,dashed=false,flow=false,speed=0.28,pulseCount=2,pulseColor,active=true}:
+  {points:Vec[];color?:string;radius?:number;dashed?:boolean;flow?:boolean;speed?:number;pulseCount?:number;pulseColor?:string;active?:boolean}){
   const curve=useMemo(()=>{
     const c=new THREE.CurvePath<THREE.Vector3>();
     points.slice(1).forEach((p,i)=>c.add(new THREE.LineCurve3(new THREE.Vector3(...points[i]),new THREE.Vector3(...p))));
@@ -90,7 +90,7 @@ export function Route({points,color="#C3C8D0",radius=0.018,dashed=false,flow=fal
   }, []);
 
   useFrame(({ clock }) => {
-    if (!flow || still.current) return;
+    if (!flow || still.current || active === false) return;
     const t = clock.elapsedTime * speed;
     for (let i = 0; i < pulseCount; i++) {
       const mesh = pulses.current[i];

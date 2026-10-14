@@ -665,7 +665,7 @@ function World() {
 /** Whether rendering is held: by the warm-up, or because the story is out of sight. */
 const loop = { warming: true, hidden: false };
 /** The story draws nothing while it warms up or is out of sight (the phone Pacer's hold). */
-const storyPaused = () => loop.hidden || loop.warming;
+const storyPaused = () => loop.hidden || loop.warming || store.after > 0.02 || store.g >= CHAPTERS.length - 0.01;
 
 /**
  * Mounted last inside the Suspense, once every model exists. Compiles every shader in the story
@@ -767,15 +767,15 @@ function Pause() {
       return !!wrap && wrap !== document.body && wrap.style.opacity !== "" && Number(wrap.style.opacity) < 0.01;
     };
     let elapsed = 0;
+    const paced = isTouch();
     return subscribe((g) => {
       // Resume as soon as anything shows (opacity above 0), never at the midpoint of a fade.
-      const off = g > CHAPTERS.length - 0.01 || faded();
+      const off = g >= CHAPTERS.length - 0.01 || store.after > 0.02 || faded();
       if (off === loop.hidden) return;
       loop.hidden = off;
       if (loop.warming) return;
       if (off) elapsed = clock.elapsedTime;
-      if (isTouch()) return;
-      setFrameloop(off ? "never" : "always");
+      setFrameloop(off ? "never" : (paced ? "never" : "always"));
       // Restarting the loop resets the clock to 0, which replayed every entrance (the islands
       // vanished and rose again on the way back up). Carry the time on from where it paused.
       if (!off) clock.elapsedTime = elapsed;
