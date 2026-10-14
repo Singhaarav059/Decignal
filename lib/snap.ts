@@ -52,7 +52,9 @@ export function startSnap(storyEl: HTMLElement) {
 
   const hold = () => {
     // Jumps move the page on purpose (html[data-jump]); so does the page after the story.
-    if (document.documentElement.dataset.jump) return;
+    // A landed jump ("rest") is the reader's page again: the guard holds from its first swipe.
+    const jump = document.documentElement.dataset.jump;
+    if (jump && jump !== "rest") return;
     const y = window.scrollY;
     if (y < lo - 1) window.scrollTo({ top: lo, behavior: "instant" });
     else if (y > hi + 1) window.scrollTo({ top: hi, behavior: "instant" });
@@ -72,7 +74,14 @@ export function startSnap(storyEl: HTMLElement) {
   };
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("touchstart", later, { passive: true });
-  window.addEventListener("resize", later);
+  // A rotation or resize moves every stop: the old range would hold the page against stale bounds
+  // until the re-arm, so it is lifted at once.
+  const resized = () => {
+    lo = -Infinity;
+    hi = Infinity;
+    later();
+  };
+  window.addEventListener("resize", resized);
   armed = arm;
   arm();
   return () => {
@@ -80,6 +89,6 @@ export function startSnap(storyEl: HTMLElement) {
     clearTimeout(t);
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("touchstart", later);
-    window.removeEventListener("resize", later);
+    window.removeEventListener("resize", resized);
   };
 }

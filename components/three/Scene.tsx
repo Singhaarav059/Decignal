@@ -688,8 +688,14 @@ function Warmup() {
       if (loop.hidden) ready();
     };
     const hidden: THREE.Object3D[] = [];
+    // A subtree never drawn on this screen (userData.noWarm, the Scale glass on a phone) stays hidden,
+    // as Warm.tsx leaves it: compiling it would link programs for nothing.
+    const skip = (o: THREE.Object3D | null) => {
+      for (let x = o; x; x = x.parent) if (x.userData.noWarm) return true;
+      return false;
+    };
     scene.traverse((o) => {
-      if (!o.visible) {
+      if (!o.visible && !skip(o)) {
         hidden.push(o);
         o.visible = true;
       }

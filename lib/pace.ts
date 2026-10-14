@@ -57,10 +57,12 @@ export function startPace() {
 
 /** The scroll's story position. On touch screens the story eases toward it. */
 export function storyTo(g: number) {
+  // A new target mid-ease (a second swipe) starts a new move from where the story is now, so
+  // paceLeft measures the move that is left, not one from a hold the story has already passed.
+  if (g !== target) from = store.g;
   target = g;
   if (!eased) return setG(g);
   if (!raf) {
-    from = store.g;
     last = performance.now();
     raf = requestAnimationFrame(step);
   }

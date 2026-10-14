@@ -11,7 +11,7 @@
 // the old picture dissolves away over the new one as it lands, and a moment later the scene freezes
 // again (ambient life included) until the next swipe or tap. The labels and callouts placed from the
 // 3D freeze with it, so they always match the picture.
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import { paceLeft, paceTarget, pacing, probe, resting, stillCut } from "@/lib/pace";
 import { store } from "@/lib/story";
@@ -29,6 +29,8 @@ const LIVE = 900;
 const BOOT = 1600;
 /** A tap that is not a scroll keeps the scene playing this long (an island lifting, a card opening). */
 const TAPPED = 1500;
+/** A resize (an address bar showing or hiding) clears the canvas: the scene redraws this long (ms). */
+const RESIZED = 400;
 
 /** Still stories only on phone-sized touch screens; a tablet's GPU draws the moves. */
 const phone = () => Math.min(window.innerWidth, window.innerHeight) < 600;
@@ -50,6 +52,12 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
   const advance = useThree((s) => s.advance);
   const setDpr = useThree((s) => s.setDpr);
   const size = useThree((s) => s.size);
+  // A resize is counted, not a reason to restart the loop: restarting killed a dissolve mid-fade and
+  // replayed the load's wake each time a phone's address bar moved.
+  const resized = useRef(0);
+  useEffect(() => {
+    resized.current++;
+  }, [size.width, size.height]);
   useEffect(() => {
     probe.dprSetters.add(setDpr);
     return () => {
@@ -68,6 +76,7 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
     let fingers = 0;
     // The first frames after mounting (or a resize, which clears the canvas) always play.
     let wake = true;
+    let sizeSeen = resized.current;
     const gl = get().gl;
     const shot = still ? document.createElement("canvas") : null;
     let hasShot = false;
@@ -97,9 +106,10 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
       shot.style.transition = "none";
       shot.style.opacity = "0";
     };
-    const freeze = () => {
+    /** `held`: frozen by a finger or a move, so the picture may be off the hold: any rest wakes it. */
+    const freeze = (held: boolean) => {
       live = false;
-      frozeAt = paceTarget();
+      frozeAt = held ? Infinity : paceTarget();
       keep();
     };
     const wakeUp = (t: number, ms: number, dissolve: boolean) => {
@@ -122,27 +132,59 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
       wake = true;
     };
     const down = (e: TouchEvent) => (fingers = e.touches.length);
+    // A touch whose element leaves the page mid-touch ends on that element only (it never reaches the
+    // window), which left a finger counted down for good: listen on the element too.
+    const start = (e: TouchEvent) => {
+      down(e);
+      const t = e.target;
+      if (t instanceof Node) {
+        const end = (ev: Event) => {
+          if (!(t as Node).isConnected) fingers = (ev as TouchEvent).touches.length;
+          t.removeEventListener("touchend", end);
+          t.removeEventListener("touchcancel", end);
+        };
+        t.addEventListener("touchend", end, { passive: true });
+        t.addEventListener("touchcancel", end, { passive: true });
+      }
+    };
     if (still) {
-      window.addEventListener("touchstart", down, { passive: true });
+      window.addEventListener("touchstart", start, { passive: true });
       window.addEventListener("touchend", down, { passive: true });
       window.addEventListener("touchcancel", down, { passive: true });
       gl.domElement.addEventListener("webglcontextrestored", restart);
     }
 
-    const tick = (t: number) => {
+    // Held (out of sight, warming up): no frame is asked for, so a page scrolled past the story can go
+    // idle; a scroll, or a check every few hundred ms (the warm-up ending), starts the loop again.
+    let held = 0;
+    const resume = () => {
+      if (!held) return;
+      clearTimeout(held);
+      held = 0;
       raf = requestAnimationFrame(tick);
+    };
+    const tick = (t: number) => {
       if (paused?.() || probe.off3d) {
         last = -1e9;
         // Back in sight (or warmed up): play a moment before the first still.
         wake = true;
+        raf = 0;
+        held = window.setTimeout(resume, 300);
         return;
       }
+      raf = requestAnimationFrame(tick);
       const stills = !!still && probe.still && phone();
       if (stills) {
         const moving = fingers > 0 || (pacing() && paceLeft() > NEAR);
         if (wake) {
           wake = false;
+          sizeSeen = resized.current;
           wakeUp(t, BOOT, false);
+        } else if (sizeSeen !== resized.current && !moving) {
+          // The canvas was cleared at its new size: draw the same hold again, no dissolve.
+          sizeSeen = resized.current;
+          if (live) liveUntil = Math.max(liveUntil, t + RESIZED);
+          else wakeUp(t, RESIZED, false);
         } else {
           // A tap, not a swipe: the pointer went down and the page did not scroll after it. Read once
           // the finger is up (a swipe also starts with a pointer down).
@@ -151,7 +193,7 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
           if (live) {
             if (tapped) liveUntil = Math.max(liveUntil, t + TAPPED);
             if (moving || t > liveUntil) {
-              freeze();
+              freeze(moving);
               return;
             }
           } else {
@@ -176,14 +218,18 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
       advance(get().clock.elapsedTime + dt);
     };
     raf = requestAnimationFrame(tick);
+    window.addEventListener("scroll", resume, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(held);
+      held = 0;
+      window.removeEventListener("scroll", resume);
       shot?.remove();
-      window.removeEventListener("touchstart", down);
+      window.removeEventListener("touchstart", start);
       window.removeEventListener("touchend", down);
       window.removeEventListener("touchcancel", down);
       gl.domElement.removeEventListener("webglcontextrestored", restart);
     };
-  }, [advance, get, paused, still, drawnAt, size.width, size.height]);
+  }, [advance, get, paused, still, drawnAt]);
   return null;
 }
