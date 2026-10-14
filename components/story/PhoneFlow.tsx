@@ -9,6 +9,7 @@
 // hand): it follows the block under the middle of the screen, and through the Scale chapter it runs with
 // the scroll so the hand deals as the reader moves. Pictures load lazily, a screen ahead.
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE, STOPS, setG, setSceneReady, store } from "@/lib/story";
 import { bgAt } from "@/lib/scene";
 import { markSceneReady } from "@/lib/chrome";
@@ -165,7 +166,17 @@ export function PhoneFlow({ onFail }: { onFail: () => void }) {
     // with the scroll. Offsets are measured once per layout, so a scroll frame reads only scrollY.
     type Span = { top: number; bottom: number; g: number; to?: number };
     let spans: Span[] = [];
+    // Everything below the story places its scroll animations from where it stands (the explorer, the
+    // bands, the reveals). The story's height settles after they measured (it mounts after hydration and
+    // grows as its pictures' sizes come in), so they are measured again whenever it changes.
+    let height = -1;
+    let refresh = 0;
     const measure = () => {
+      if (host.offsetHeight !== height) {
+        height = host.offsetHeight;
+        clearTimeout(refresh);
+        refresh = window.setTimeout(() => ScrollTrigger.refresh(), 120);
+      }
       const y = window.scrollY;
       spans = Array.from(host.querySelectorAll<HTMLElement>("[data-g]")).map((el) => {
         const r = el.getBoundingClientRect();
@@ -194,11 +205,25 @@ export function PhoneFlow({ onFail }: { onFail: () => void }) {
     const onScroll = () => {
       raf ||= requestAnimationFrame(update);
     };
+    // Each block rises in as it comes into view, once (story.css .pf [data-in]): opacity and transform
+    // only, so the compositor plays it and the scroll never waits on it.
+    const reveal = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.setAttribute("data-in", "");
+          reveal.unobserve(e.target);
+        }),
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+    host.querySelectorAll(".pf-shot, .pf-card, .pf-note, .pf-stage, .pf-final .pf-head").forEach((el) => reveal.observe(el));
     const ro = new ResizeObserver(measure);
     ro.observe(host);
     window.addEventListener("scroll", onScroll, { passive: true });
     measure();
     return () => {
+      clearTimeout(refresh);
+      reveal.disconnect();
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
@@ -214,7 +239,7 @@ export function PhoneFlow({ onFail }: { onFail: () => void }) {
       {/* 01 The hero: the systems tag and the h1, the world, then what Decignal does */}
       <section className="pf-ch pf-hero" style={style(CH.fragments, CH.fragments)}>
         <div className="pf-head" data-g={0}>
-          <p className="hero-tag">
+          <p className="hero-tag intro-fade">
             <span className="hero-tag-stack" aria-hidden>
               {SYSTEMS.map((s, i) => (
                 <span key={s.id} className="hero-tag-sys" style={{ ...toneVars(s.tone), ["--i" as string]: i }}>
@@ -229,10 +254,10 @@ export function PhoneFlow({ onFail }: { onFail: () => void }) {
             </span>
           </p>
           <h1 className="t-display hero-h1" style={accentVars(TONE[CH.fragments])}>
-            <span className="line-mask">
+            <span className="intro-line line-mask">
               <span><Words>{HERO.headline[0]}</Words></span>
             </span>{" "}
-            <span className="line-mask accent">
+            <span className="intro-line line-mask accent">
               <span><Words from={wordCount(HERO.headline[0])}>{HERO.headline[1]}</Words></span>
             </span>
           </h1>
