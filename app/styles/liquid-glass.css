@@ -335,7 +335,9 @@
 
 /* ---- Glass over dark sections (Nav.tsx sets [data-dark] from lib/on-dark.ts): smoke glass, the rim
    dims, the type and icons turn white; the solid CTA turns white so it still leads. ---- */
-.nav-shell :is(.nav-brand, .nav-links, .nav-surface, .nav-cta) { transition: background-color var(--dur-4) var(--ease), color var(--dur-4) var(--ease), box-shadow var(--dur-4) var(--ease); }
+/* Height too: on wide screens the brand and the CTA ease with the bar as it goes compact (chrome.css);
+   without it they jumped while the bar around them eased. Below 1024px their height never changes. */
+.nav-shell :is(.nav-brand, .nav-links, .nav-surface, .nav-cta) { transition: background-color var(--dur-4) var(--ease), color var(--dur-4) var(--ease), box-shadow var(--dur-4) var(--ease), height var(--dur-3) var(--ease); }
 .nav-shell[data-dark] :is(.nav-links, .nav-surface, .nav-cta[data-quiet]) {
   background-color: rgb(22 23 26 / 0.5);
   background-image: var(--lg-grain), var(--field-smoke);
