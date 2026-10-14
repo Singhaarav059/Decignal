@@ -728,8 +728,10 @@
 .how-n { font-size: clamp(56px, 8vw, 128px); font-weight: 300; line-height: 0.85; letter-spacing: -0.016em; }
 .how-sheet-body { display: grid; gap: 28px; padding-top: 24px; border-top: 1px solid color-mix(in srgb, var(--sheet-fg) 22%, transparent); }
 .how-route { display: grid; align-content: start; gap: 12px; }
-.how-route-label { display: flex; align-items: center; gap: 10px; color: inherit; opacity: 0.85; }
-.how-route-label .how-legend-mark { margin-top: 0; width: 10px; height: 10px; }
+/* The text is one item, so a narrow column wraps it as a line of text (as separate runs it broke into
+   side-by-side columns); the mark keeps to the first line. */
+.how-route-label { display: flex; align-items: flex-start; gap: 10px; color: inherit; opacity: 0.85; }
+.how-route-label .how-legend-mark { margin-top: calc((1lh - 10px) / 2); width: 10px; height: 10px; }
 .how-sheet-title { font-size: clamp(26px, 2.6vw, 40px); font-weight: 500; line-height: 1.02; letter-spacing: -0.011em; }
 .how-text { max-width: 34ch; font-size: clamp(16px, 1.25vw, 18px); line-height: 1.45; opacity: 0.92; }
 .how-deliver { display: grid; gap: 7px; margin-top: 6px; }
@@ -744,7 +746,9 @@
   .how-sheets { gap: 0; padding-bottom: 12px; }
   .how-sheet + .how-sheet { margin-top: 24px; }
 }
-@media (min-width: 1200px) {
+/* From 1024 the drawing takes a third column: below it, on a 1024x768 tablet the stuck sheet ran past
+   the screen's foot and cut the drawing's last rows. */
+@media (min-width: 1024px) {
   .how-sheet-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr); }
   .how-plate { grid-column: auto; align-self: stretch; }
 }

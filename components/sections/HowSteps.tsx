@@ -77,7 +77,10 @@ export function HowSteps({ head }: { head: ReactNode }) {
                       <div key={r} className="how-route">
                         <p className="how-route-label t-label">
                           <span className="how-legend-mark" data-k={k} aria-hidden />
-                          {PATHS[r].label} <span aria-hidden>·</span> {x.when}
+                          <span>
+                            {PATHS[r].label} <span aria-hidden>·</span>{" "}
+                            <span className="whitespace-nowrap">{x.when}</span>
+                          </span>
                         </p>
                         <h3 className="how-sheet-title">{x.title}.</h3>
                         <p className="how-text">{x.text}</p>
