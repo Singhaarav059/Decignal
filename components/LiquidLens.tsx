@@ -12,6 +12,11 @@ import { useEffect } from "react";
  *
  * Only Chromium renders an SVG filter as a backdrop-filter, so other browsers (and readers who ask for
  * reduced transparency) keep the plain glass from liquid-glass.css: a light blur and saturation, no bending.
+ *
+ * Touch screens keep the plain glass too (on phones a fixed frost, liquid-glass.css). A phone's GPU
+ * cannot run an SVG filter: Chrome works it out pixel by pixel on the CPU, again on every frame the
+ * page behind it changes. Over the story card (40% of a phone screen, with the 3D moving behind it)
+ * that held a Mali-G68 phone to 2 fps; with the lens off it ran at 50-60 (the ?perf probe, 2026-10-14).
  */
 
 /** Max bend at the rim, in px, and how far in from the rim the bend reaches. */
@@ -97,7 +102,7 @@ const NS = "http://www.w3.org/2000/svg";
 
 export function LiquidLens() {
   useEffect(() => {
-    if (!isChromium()) return;
+    if (!isChromium() || window.matchMedia("(pointer: coarse)").matches) return;
     const calm = window.matchMedia("(prefers-reduced-transparency: reduce)");
     if (calm.matches) return;
 

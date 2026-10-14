@@ -1,7 +1,7 @@
 // On-phone performance probe, for a phone that cannot be tethered to DevTools. Opened with ?perf
 // (components/PerfProbe.tsx loads it; no other visitor downloads it). A small panel shows the live
 // frame rate, and "Run test" plays the same places of the page several ways (as is, without the CSS
-// effects, without the grain alone, with CSS animations held, without the 3D, without all of them),
+// effects, without only the blurs, the background fields or the shadows, without the 3D, without all),
 // measuring the frame rate the phone itself reaches and how much of each second went to script and
 // to style and layout on the main thread. It also says whether the 3D runs at all, and why not: the
 // errors and lost contexts since the page loaded. The result is text to copy or screenshot.
@@ -14,16 +14,18 @@ type Config = { name: string; css?: string; off3d?: boolean };
 const HIDE_3D = ".story-canvas canvas, .application-world canvas { visibility: hidden !important; }";
 const NO_EFFECTS =
   "*, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background-image: none !important; box-shadow: none !important; filter: none !important; }";
-const NO_GRAIN = ":root, :root * { --lg-grain: none !important; --lg-grain-strong: none !important; --bg-grain-dark: none !important; }";
-const NO_ANIMATION = "*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }";
+const NO_BLUR = "*, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }";
+const NO_FIELDS = "*, *::before, *::after { background-image: none !important; }";
+const NO_SHADOWS = "*, *::before, *::after { box-shadow: none !important; filter: none !important; }";
 
 const CONFIGS: Config[] = [
   { name: "Normal" },
   { name: "Effects off", css: NO_EFFECTS },
-  { name: "Grain off", css: NO_GRAIN },
-  { name: "Anim off", css: NO_ANIMATION },
+  { name: "Blur off", css: NO_BLUR },
+  { name: "Fields off", css: NO_FIELDS },
+  { name: "Shadows off", css: NO_SHADOWS },
   { name: "3D off", off3d: true, css: HIDE_3D },
-  { name: "All off", off3d: true, css: HIDE_3D + NO_EFFECTS + NO_ANIMATION },
+  { name: "All off", off3d: true, css: HIDE_3D + NO_EFFECTS },
 ];
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -129,7 +131,7 @@ export function startProbe(log: ProbeLog) {
   box.setAttribute("style", "position:fixed;left:8px;right:8px;top:72px;z-index:2147483647;font:11px/1.35 ui-monospace,Menlo,monospace;color:#fff;background:rgb(0 0 0/.85);border-radius:12px;padding:10px;pointer-events:auto;max-height:72vh;overflow:auto;white-space:pre-wrap;word-break:break-word");
   const meterEl = document.createElement("div");
   const line = document.createElement("div");
-  line.textContent = "Wait for the page to settle, then Run test: about 1 minute, keep the phone still and the screen on";
+  line.textContent = "Wait for the page to settle, then Run test: about 70 seconds, keep the phone still and the screen on";
   const out = document.createElement("div");
   const bar = document.createElement("div");
   bar.setAttribute("style", "display:flex;gap:8px;margin-top:8px");
