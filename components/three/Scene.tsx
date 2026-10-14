@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
 import { CHAPTERS, CH, EXIT_DRIFT, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
-import { IND_BESIDE_MIN, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
+import { IND_BESIDE_MIN, ISO_DIR, ISO_R, ISO_U, bgAt, indLayout, makeShot, shotAt, type Shot } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
 import { ChartMarks, SignalPing, Threads } from "./Marks";
@@ -322,9 +322,28 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   // the stage it left two ways round it (move right, or shrink and lift), and the framing swapped
   // between them from one scroll step to the next: the place pumped in and out.
   if (c === CH.industries && page.callout) {
+    indLayout.under = false;
     // A tall tablet: the callout stands beside the card, and the place in the band above both.
     if (tall) stage.y1 = Math.min(stage.y1, page.callout.y0 - gap);
-    else if (mediaWidth(vw) >= IND_BESIDE_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
+    else if (mediaWidth(vw) >= IND_BESIDE_MIN) {
+      // Below 1440px the slot beside the callout narrows to a sliver (125px at 1024): the place shrank
+      // into it. There the stage is the space right of the card and under the callout instead, when a
+      // place (about 1.25 wide to 1 tall) comes out larger in it. Chosen by the layout alone, so it
+      // holds through the chapter; wide screens keep the slot beside.
+      const right = vw - m;
+      const sBeside = Math.min((right - page.callout.x1 - gap) / 1.25, stage.y1 - stage.y0);
+      const sUnder = Math.min((right - e.x1) / 1.25, stage.y1 - page.callout.y1 - gap);
+      indLayout.under = cardEx && mediaWidth(vw) < 1440 && sUnder > sBeside * 1.1;
+      if (indLayout.under) {
+        stage.x0 = Math.max(stage.x0, e.x1);
+        stage.y0 = Math.max(stage.y0, page.callout.y1 + gap);
+      } else {
+        stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
+        // In that narrower slot the place fills the width, and the factory's silo (just past its
+        // measured reach) touched the screen's edge: a little more room on the right.
+        if (mediaWidth(vw) < 1440) stage.x1 = Math.min(stage.x1, right - 20);
+      }
+    }
     else stage.y0 = Math.max(stage.y0, page.callout.y1 + gap);
   }
   for (const f of page.frames[c] ?? []) {

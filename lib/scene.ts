@@ -325,6 +325,9 @@ export const indX = (f: number) => (f - 2.5) * IND.step;
 /** Screens this wide stand each industry's callout (IndustryCallout) beside the card; narrower ones
  *  stand it above the place, under the nav. */
 export const IND_BESIDE_MIN = 1024;
+/** Where the place stands this frame on those screens (Scene setStage): `under` the callout, right of the
+ *  card, where the slot beside the callout is too narrow; the callout's leader then leaves its foot. */
+export const indLayout = { under: false };
 /** Each place's reach along the screen's right axis from its centre (world units, measured from its
  *  parts): the round footprint the shot used to frame cut the wider ones (the quay, the substation's
  *  pole, the truck's cab) at the stage's edge. */

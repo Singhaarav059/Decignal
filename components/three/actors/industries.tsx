@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { CH, blendAt, industryF, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
-import { IND, IND_BESIDE_MIN, IND_ROAD, indPin, indX, industryTrack } from "@/lib/scene";
+import { IND, IND_BESIDE_MIN, IND_ROAD, indLayout, indPin, indX, industryTrack } from "@/lib/scene";
 import { TINTS } from "../palette";
 import { Factory, ServerRacks, Storefront } from "../buildings";
 import { SemiTruck, TRUCK } from "../vehicles";
@@ -297,7 +297,7 @@ function placeLeader(camera: THREE.Camera, size: { width: number; height: number
   const py = ((1 - pin.y) / 2) * size.height;
   // A tall tablet frames the place above the callout (Scene setStage): the leader leaves its top edge.
   const above = tallTouch(size.width, size.height);
-  const beside = !above && mediaWidth(size.width) >= IND_BESIDE_MIN;
+  const beside = !above && !indLayout.under && mediaWidth(size.width) >= IND_BESIDE_MIN;
   const ax = beside ? r.right : Math.min(Math.max(px, r.left + 28), r.right - 28);
   const ay = beside ? r.top + 30 : above ? r.top : r.bottom;
   const dx = px - ax;
