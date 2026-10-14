@@ -115,7 +115,8 @@ export function fitOf(b: { w: number }, bakeBand: [number, number], vw: number, 
 }
 
 /** The bake closest to this screen for hold k: the one whose band has the nearest shape, then the
- *  nearest width. */
+ *  nearest width. A bake that would have to shrink to fit the band (fitOf) leaves the roads and ground
+ *  ending short of the screen's sides, a hard edge on each: it loses to any bake that fills the width. */
 export function pickShape(m: Manifest, k: number, vw: number, band: [number, number]): Shape {
   const want = (band[1] - band[0]) / vw;
   let best = m.shapes[0];
@@ -123,7 +124,9 @@ export function pickShape(m: Manifest, k: number, vw: number, band: [number, num
   for (const s of m.shapes) {
     const b = s.bands[k];
     if (!b) continue;
-    const c = Math.abs(Math.log((b[1] - b[0]) / s.w / want)) + 0.25 * Math.abs(Math.log(s.w / vw));
+    const fit = fitOf(s, b, vw, band);
+    const short = Math.max(0, Math.log(vw / (s.w * fit.s)));
+    const c = Math.abs(Math.log((b[1] - b[0]) / s.w / want)) + 0.25 * Math.abs(Math.log(s.w / vw)) + (short > 0.002 ? 10 + short : 0);
     if (c < cost) {
       cost = c;
       best = s;
