@@ -10,12 +10,13 @@ import { StepArt } from "./StepArt";
 
 type Route = keyof typeof PATHS;
 const ROUTES = Object.keys(PATHS) as Route[];
-/** Each sheet's solid: calm, distinct, never pink, ink or dark green (the earlier band feedback). */
+/** Each sheet's solid: calm, distinct, never pink, ink or dark green (the earlier band feedback). The
+ * field is the soft bloom and grain laid over it (fields.css). */
 const SHEETS = [
-  { bg: "var(--color-cobalt)", fg: "#fff", tone: "cobalt" },
-  { bg: "var(--color-violet)", fg: "#fff", tone: "violet" },
-  { bg: "var(--color-saffron)", fg: "var(--color-ink)", tone: "tangerine" },
-  { bg: "var(--color-night)", fg: "#fff", tone: "emerald" },
+  { bg: "var(--color-cobalt)", fg: "#fff", tone: "cobalt", field: "cobalt" },
+  { bg: "var(--color-violet)", fg: "#fff", tone: "violet", field: "violet" },
+  { bg: "var(--color-saffron)", fg: "var(--color-ink)", tone: "tangerine", field: "saffron" },
+  { bg: "var(--color-night)", fg: "#fff", tone: "emerald", field: "night" },
 ];
 const n2 = (i: number) => String(i + 1).padStart(2, "0");
 
@@ -63,7 +64,7 @@ export function HowSteps({ head }: { head: ReactNode }) {
         {steps[0].map((_, i) => {
           const sheet = SHEETS[i];
           return (
-            <li key={i} className="how-sheet" style={{ ["--sheet" as string]: sheet.bg, ["--sheet-fg" as string]: sheet.fg, ["--i" as string]: i }}>
+            <li key={i} className="how-sheet" data-field={sheet.field} style={{ ["--sheet" as string]: sheet.bg, ["--sheet-fg" as string]: sheet.fg, ["--i" as string]: i }}>
               <div className="how-sheet-inner">
                 <div className="how-sheet-head">
                   <p className="t-label how-when">{HOW.stepWord} {n2(i)}</p>

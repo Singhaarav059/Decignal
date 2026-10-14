@@ -5,14 +5,12 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HOVER_REST, gToProgress, progressToG, setAfter, setG, store } from "@/lib/story";
-import { getLenis, jumpTo, scrollToTarget, setLenis } from "@/lib/jump";
+import { jumpTo, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Existing callers import these from here; they live in lib/jump.
-export { getLenis, jumpTo, scrollToTarget };
 
 /** Lenis drives the scroll, GSAP's ticker drives Lenis, ScrollTrigger maps the story (on pages that
  *  have one), and the chrome driver works out where the reader is. Mounted by each page, never a

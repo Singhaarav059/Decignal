@@ -13,7 +13,7 @@ import { markSceneReady } from "@/lib/chrome";
 let probe: boolean | null = null;
 
 /** Whether this browser can create a WebGL context (cached; false on the server). */
-export function webglAvailable(): boolean {
+function webglAvailable(): boolean {
   if (typeof window === "undefined") return false;
   if (probe !== null) return probe;
   try {
@@ -69,7 +69,7 @@ const FALLBACK_CSS = `.scene-fallback{position:absolute;inset:0;display:grid;pla
 .scene-fallback>div{width:min(72vw,max(40vmin,320px))}
 .scene-fallback .chapter-art{height:auto;aspect-ratio:280/80;background:transparent}`;
 
-export type SceneBoundaryProps = {
+type SceneBoundaryProps = {
   children: ReactNode;
   /** What the 3D shows, read out in its place when it cannot run. */
   label: string;
@@ -155,4 +155,3 @@ function Boundary({ children, label, chapter, story = false, fallback }: SceneBo
   );
 }
 
-export default SceneBoundary;

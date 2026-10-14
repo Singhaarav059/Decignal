@@ -407,15 +407,6 @@ export const areaHref = (category: Category) => `/solutions/${areaOf(category).s
 /** The area's applications with their index in APPLICATIONS (for openApplication / the explorer). */
 export const appsOf = (area: Area) => APPLICATIONS.map((x, i) => ({ ...x, i })).filter((x) => x.category === area.category);
 
-/** Every system type the area's applications read, in first-seen order. */
-export const systemsOf = (area: Area) => [...new Set(appsOf(area).flatMap((x) => x.connects))];
-
-/** The area's delivery range across its applications, parsed from the "4 to 6" strings. */
-export const weeksOf = (area: Area) => {
-  const ranges = appsOf(area).map((x) => x.weeks.split(" to ").map(Number));
-  return { min: Math.min(...ranges.map((r) => r[0])), max: Math.max(...ranges.map((r) => r[1])) };
-};
-
 /** "Supply Chain · 3 applications": the service hero eyebrow. */
 export const areaEyebrow = (area: Area) => {
   const n = appsOf(area).length;

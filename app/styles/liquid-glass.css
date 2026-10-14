@@ -1,40 +1,84 @@
-/* Liquid glass (2026-10-13): Apple's material, kept clear rather than frosted. A light tint, a small
-   blur with lifted saturation, a specular rim (bright on top, a thinner light at the foot, a thick-glass
-   glow just inside the edge) and one soft lift. Floating chrome (nav, CTA pill, dock, story card, hero
-   tag, the systems panel) also bends what passes behind its rim where the browser can render it
-   (components/LiquidLens.tsx, [data-lens]). Loaded last: it restyles surfaces defined in the sheets
-   above without changing their layout. */
+/* Field glass (2026-10-14, after the CreditKarma references; the liquid glass of 2026-10-13 before it).
+   Every glass surface is a frosted pane with a soft field of colour inside it: a light bloom where the
+   light enters, a cooler shade where it leaves, a fine film grain over both, and a thick-glass rim.
+   Four materials: mist (chrome and controls), milk (cards people read), smoke (on graphite) and the
+   colour fields (slate, amber, olive) a few hero cards wear. Big cards take squircle corners where the
+   browser draws them. Floating chrome also bends what passes behind its rim where the browser can
+   render it (components/LiquidLens.tsx, [data-lens]). Loaded last: it restyles surfaces defined in the
+   sheets above without changing their layout.
+   Gradients live here only: the user lifted the flat rule for glass (2026-10-14); bands, text and
+   buttons stay flat. Warm tones never sit beside dark ones, so no field mixes to brown. */
 
 :root {
   --lg-blur: blur(14px) saturate(1.8) brightness(1.03);
   --lg-blur-soft: blur(8px) saturate(1.6);
+  /* The rim: a bright line on top, a thinner light at the foot, light just inside the edge, and the
+     glass's thickness as a faint shade along the bottom. */
   --lg-rim:
     inset 0 1px 0.5px rgb(255 255 255 / 0.95),
     inset 0 -1px 0.5px rgb(255 255 255 / 0.4),
     inset 0 0 0 0.75px rgb(255 255 255 / 0.55),
-    inset 0 0 22px -6px rgb(255 255 255 / 0.7);
+    inset 0 0 22px -6px rgb(255 255 255 / 0.7),
+    inset 0 -16px 24px -20px rgb(40 56 80 / 0.16);
   --lg-edge: 0 0 0 0.75px rgb(15 18 23 / 0.09);
   --lg-lift: 0 1px 2px rgb(15 18 23 / 0.05), 0 14px 34px -16px rgb(15 18 23 / 0.32);
   --lg-lift-sm: 0 1px 1px rgb(15 18 23 / 0.04), 0 8px 18px -10px rgb(15 18 23 / 0.28);
-  /* Night glass: the navy surfaces. */
+  /* Smoke glass: the graphite surfaces. */
   --lg-night-rim:
-    inset 0 1px 0.5px rgb(255 255 255 / 0.28),
-    inset 0 0 0 0.75px rgb(255 255 255 / 0.12),
-    inset 0 0 22px -8px rgb(255 255 255 / 0.18);
+    inset 0 1px 0.5px rgb(255 255 255 / 0.22),
+    inset 0 0 0 0.75px rgb(255 255 255 / 0.1),
+    inset 0 0 22px -8px rgb(255 255 255 / 0.14);
+
+  /* Glass tones (the references' palette). Only glass surfaces and their wallpaper use them. */
+  --gl-slate: #4d7894;
+  --gl-slate-deep: #213f53;
+  --gl-sky: #86b4d0;
+  --gl-lilac: #b9bfdb;
+  --gl-amber: #f5c95a;
+  --gl-butter: #f9ea94;
+  --gl-orange: #f39a45;
+  --gl-olive: #55681d;
+  --gl-lime: #c9e264;
+  --gl-mist: #dfe4ea;
+
+  /* Film grain: one noise, dark where it runs high and light where it runs low, so it reads on any
+     tint. Drawn as vector, it stays one device pixel fine at 2x. */
+  --lg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.4 0 0 0 -1.3'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -2.4 0 0 0 1.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)' opacity='0.16'/%3E%3Crect width='100%25' height='100%25' filter='url(%23l)' opacity='0.24'/%3E%3C/svg%3E");
+  --lg-grain-strong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.4 0 0 0 -1.3'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -2.4 0 0 0 1.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)' opacity='0.34'/%3E%3Crect width='100%25' height='100%25' filter='url(%23l)' opacity='0.4'/%3E%3C/svg%3E");
+
+  /* The fields, each a list of background layers under the grain. */
+  /* rules-check: allow gradient */
+  --field-mist: radial-gradient(120% 130% at 0% 0%, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0) 55%), radial-gradient(110% 140% at 100% 110%, rgb(170 186 208 / 0.34), rgb(170 186 208 / 0) 60%);
+  /* rules-check: allow gradient */
+  --field-milk: radial-gradient(120% 120% at 0% 0%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 60%), radial-gradient(100% 120% at 100% 100%, rgb(190 202 220 / 0.3), rgb(190 202 220 / 0) 60%);
+  /* rules-check: allow gradient */
+  --field-smoke: radial-gradient(110% 130% at 0% 0%, rgb(190 204 224 / 0.13), rgb(190 204 224 / 0) 55%), radial-gradient(100% 140% at 100% 110%, rgb(77 120 148 / 0.24), rgb(77 120 148 / 0) 60%);
+  /* Slate: the "Credit Card Use" card without its copper. Deep at the foot left, lilac and sky light
+     along the top right, so white type at the top left and the foot right keeps its contrast. */
+  /* rules-check: allow gradient */
+  --field-slate: radial-gradient(70% 90% at 0% 105%, var(--gl-slate-deep), rgb(33 63 83 / 0) 100%), radial-gradient(42% 70% at 82% -5%, var(--gl-lilac), rgb(185 191 219 / 0) 100%), radial-gradient(40% 80% at 104% 36%, var(--gl-sky), rgb(134 180 208 / 0) 100%), radial-gradient(55% 80% at 90% 110%, #26536b, rgb(38 83 107 / 0) 100%);
+  /* Amber: butter where the light enters, orange at the foot; ink type. */
+  /* rules-check: allow gradient */
+  --field-amber: radial-gradient(75% 95% at 0% 0%, var(--gl-butter), rgb(249 234 148 / 0) 100%), radial-gradient(70% 95% at 100% 105%, var(--gl-orange), rgb(243 154 69 / 0) 100%);
+  /* Olive: deep olive at the top left, lime at the foot right; white type at the top left. */
+  /* rules-check: allow gradient */
+  --field-olive: radial-gradient(70% 90% at 0% 0%, #28320b, rgb(40 50 11 / 0) 100%), radial-gradient(80% 100% at 100% 105%, var(--gl-lime), rgb(201 226 100 / 0) 100%);
 }
 
-/* ---- The floating chrome: the strongest glass ---- */
+/* ---- The floating chrome: mist glass, the strongest blur ---- */
 /* Every group below lists single classes only, so a later rule for one element can still override it. */
 /* The logo is its own pill only on wide screens (chrome.css); below 1024px it sits inside the bar's one
    surface, and glass of its own drew a square patch in the pill. */
 :is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel) {
-  background: rgb(255 255 255 / 0.5);
+  background-color: rgb(236 240 245 / 0.5);
+  background-image: var(--lg-grain), var(--field-mist);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift);
 }
 .nav-cta[data-quiet] {
-  background: rgb(255 255 255 / 0.5);
+  background-color: rgb(236 240 245 / 0.5);
+  background-image: var(--lg-grain), var(--field-mist);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift);
@@ -42,11 +86,11 @@
 /* The quiet CTA's hover keeps chrome.css's cobalt fill: the glass above would otherwise win the
    background and leave the hover's white label on white glass. */
 @media (hover: hover) {
-  .nav-cta[data-quiet]:hover, .nav-shell[data-dark] .nav-cta[data-quiet]:hover { color: var(--color-on-ink); background-color: var(--color-cobalt); }
+  .nav-cta[data-quiet]:hover, .nav-shell[data-dark] .nav-cta[data-quiet]:hover { color: var(--color-on-ink); background-color: var(--color-cobalt); background-image: none; }
   .nav-cta[data-quiet]:hover .nav-cta-icon { color: var(--color-cobalt); background: var(--color-surface); }
 }
 @media (min-width: 1024px) {
-  .nav-brand { background: rgb(255 255 255 / 0.5); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+  .nav-brand { background-color: rgb(236 240 245 / 0.5); background-image: var(--lg-grain), var(--field-mist); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
   .nav-pill[data-solid] .nav-surface { box-shadow: none; }
 }
 .nav-pill[data-solid] .nav-surface { box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
@@ -73,48 +117,90 @@
 /* ---- Glass over content: cards and controls that float over the world, photos or colour ---- */
 :is(.story-card, .application-card, .ind-callout, .hero-tag, .section-title-label, .sys-chip, .btn-ghost, .story-details-btn, .dial-face,
   .dial-node-chip, .faq-item, .faq-fig, .faq-help, .bento-card, .outcome-figure, .how-legend, .area-preview-name, .faq-plus) {
-  background-color: rgb(255 255 255 / 0.56);
+  background-color: rgb(238 242 247 / 0.56);
+  background-image: var(--lg-grain), var(--field-mist);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
 }
 .seg[data-variant="selector"], .application-reads li, .application-index button:not([aria-current]), .orbit-promises li, .application-stepper button {
-  background-color: rgb(255 255 255 / 0.56);
+  background-color: rgb(238 242 247 / 0.56);
+  background-image: var(--lg-grain), var(--field-mist);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
 }
-/* Reading surfaces carry more white so long text keeps its contrast over anything. */
-:is(.story-card, .application-card, .ind-callout) { background-color: rgb(255 255 255 / 0.7); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
-:is(.faq-item, .bento-card, .faq-fig) { background-color: rgb(255 255 255 / 0.62); }
+/* Reading surfaces are milk glass: more white, so long text keeps its contrast over anything. */
+:is(.story-card, .application-card, .ind-callout, .final-bar) { background-color: rgb(250 251 253 / 0.72); background-image: var(--lg-grain), var(--field-milk); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+:is(.faq-item, .bento-card, .faq-fig) { background-color: rgb(250 251 253 / 0.66); background-image: var(--lg-grain), var(--field-milk); }
 /* Cards that stack over each other keep an opaque face, or the covered card's figures would ghost through. */
-.outcome-figure { background-color: rgb(255 255 255 / 0.96); -webkit-backdrop-filter: none; backdrop-filter: none; }
-.faq-item[data-open] { background-color: rgb(255 255 255 / 0.8); }
+.outcome-figure { background-color: rgb(255 255 255 / 0.97); background-image: var(--lg-grain), var(--field-milk); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.faq-item[data-open] { background-color: rgb(252 253 254 / 0.84); }
 /* The face hides the hand's pivot: solid white glass, the rim light only. */
 .dial-face { background-color: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
-.dial-node[data-on] .dial-node-chip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.5), 0 12px 24px -12px rgb(15 18 23 / 0.45); }
-.sys-chip[aria-pressed="true"] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.dial-node[data-on] .dial-node-chip { -webkit-backdrop-filter: none; backdrop-filter: none; background-image: none; box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.5), 0 12px 24px -12px rgb(15 18 23 / 0.45); }
+.sys-chip[aria-pressed="true"] { -webkit-backdrop-filter: none; backdrop-filter: none; background-image: none; }
 /* The systems panel: the clearest glass, the photographs pass behind it. */
-.orbit-copy { background: rgb(255 255 255 / 0.36); -webkit-backdrop-filter: blur(18px) saturate(1.9); backdrop-filter: blur(18px) saturate(1.9); box-shadow: var(--lg-rim), var(--lg-edge), 0 30px 60px -30px rgb(15 18 23 / 0.35); }
+.orbit-copy { background-color: rgb(240 243 248 / 0.36); background-image: var(--lg-grain), var(--field-mist); -webkit-backdrop-filter: blur(18px) saturate(1.9); backdrop-filter: blur(18px) saturate(1.9); box-shadow: var(--lg-rim), var(--lg-edge), 0 30px 60px -30px rgb(15 18 23 / 0.35); }
 @media (max-width: 767px) { .orbit-copy { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; } }
 
 /* Plates on the colour sheets: glass tinted by the sheet behind it, the drawing still on white. */
-.how-plate { background: rgb(255 255 255 / 0.78); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), 0 18px 36px -22px rgb(15 18 23 / 0.4); }
+.how-plate { background-color: rgb(255 255 255 / 0.78); background-image: var(--lg-grain), var(--field-milk); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), 0 18px 36px -22px rgb(15 18 23 / 0.4); }
 
 /* Tiles that drift (the Also reads wall) keep a solid white face: a moving blur costs every frame. */
 .wall-tile { box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm); }
 
-/* ---- Night glass: on the navy surfaces ---- */
+/* ---- Colour-field cards: the bento's hero facts wear the references' fields ---- */
+/* Slate, white type: the read-only fact. The art's plates turn to white glass, the bar to white. */
+.bento-card[data-field="slate"] {
+  color: #fff;
+  background-color: var(--gl-slate);
+  background-image: var(--lg-grain-strong), var(--field-slate);
+  box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.55), inset 0 0 0 0.75px rgb(255 255 255 / 0.18), inset 0 0 26px -8px rgb(255 255 255 / 0.4), var(--lg-edge), 0 24px 48px -26px rgb(33 63 83 / 0.55);
+}
+.bento-card[data-field="slate"] :is(.bento-k, .bento-k .tabular, .bento-n) { color: #fff; }
+.bento-card[data-field="slate"] .bento-text { color: rgb(255 255 255 / 0.82); }
+.bento-card[data-field="slate"] .bento-n::after { color: rgb(255 255 255 / 0.55); }
+/* Its figure is a word: a size smaller and one line, or the hyphen breaks it in two. */
+.bento-card[data-field="slate"] .bento-n { font-size: clamp(40px, 4.3vw, 64px); white-space: nowrap; }
+.bento-card[data-field="slate"] .ba-plate { fill: rgb(255 255 255 / 0.2); stroke: rgb(255 255 255 / 0.4); stroke-width: 1; }
+.bento-card[data-field="slate"] .ba-bar { fill: #fff; }
+/* Amber, ink type: translucent like the references' "Credit Age" card. */
+.bento-card[data-field="amber"] {
+  background-color: rgb(245 201 90 / 0.86);
+  background-image: var(--lg-grain-strong), var(--field-amber);
+  box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.8), inset 0 0 0 0.75px rgb(255 255 255 / 0.3), inset 0 0 26px -8px rgb(255 255 255 / 0.55), var(--lg-edge), 0 24px 48px -26px rgb(243 154 69 / 0.6);
+}
+.bento-card[data-field="amber"] .bento-text { color: var(--color-ink-2); }
+.bento-card[data-field="amber"] .bento-n::after { color: var(--color-ink); }
+/* Its tiles light white, never ink: ink over amber reads brown. */
+.bento-card[data-field="amber"] .ba-app { fill: rgb(255 255 255 / 0.38); animation-name: ba-app-amber; }
+@keyframes ba-app-amber { 0%, 100% { fill: rgb(255 255 255 / 0.38); } 12%, 30% { fill: rgb(255 255 255 / 0.96); } }
+
+/* ---- Smoke glass: on the graphite surfaces ---- */
 :is(.final-systems, .area-row-plus, .footer-card-go), .final-outcomes li, .night-panel .section-title-label, .audit-copy .section-title-label, .footer-top > span {
-  background-color: rgb(255 255 255 / 0.07);
+  background-color: rgb(255 255 255 / 0.06);
+  background-image: var(--lg-grain), var(--field-smoke);
   -webkit-backdrop-filter: var(--lg-blur-soft);
   backdrop-filter: var(--lg-blur-soft);
   box-shadow: var(--lg-night-rim);
 }
-.story-card[data-night] { background-color: rgb(12 18 34 / 0.82); box-shadow: var(--lg-night-rim), 0 30px 70px -30px rgb(12 18 34 / 0.6); }
+.story-card[data-night] { background-color: rgb(20 21 24 / 0.84); background-image: var(--lg-grain), var(--field-smoke); box-shadow: var(--lg-night-rim), 0 30px 70px -30px rgb(0 0 0 / 0.6); }
 .area-row[data-open] .area-row-plus { background: #fff; }
 /* The footer's area pills and the audit's request card stay white glass on colour. */
-.footer-area { background: rgb(255 255 255 / 0.86); box-shadow: var(--lg-rim), 0 6px 14px -8px rgb(12 18 34 / 0.35); }
+.footer-area { background: rgb(255 255 255 / 0.86); box-shadow: var(--lg-rim), 0 6px 14px -8px rgb(15 16 18 / 0.35); }
+
+/* ---- Squircles: the references' continuous corners on the big glass cards. A squircle reads smaller
+   than a circle of the same radius, so the radius grows where the browser draws one. ---- */
+@supports (corner-shape: squircle) {
+  :is(.story-card, .application-card, .ind-callout, .bento-card, .faq-fig, .outcome-figure, .how-plate, .how-legend, .orbit-copy, .nav-peek-body, .island-panel, .audit-card) {
+    corner-shape: squircle;
+    border-radius: 40px;
+  }
+  :is(.faq-item, .final-bar) { corner-shape: squircle; border-radius: 30px; }
+  /* The photo inside the approver card follows its card's corners. */
+  .bento-figure { corner-shape: squircle; border-radius: 40px 40px 0 0; }
+}
 
 /* Glass inside glass draws nothing new: a control's backdrop is its card's own frosted face (the card
    is its backdrop root), so the second blur changed no pixel by more than 2/255 (measured on the hero
@@ -127,63 +213,76 @@
 /* Readers who ask for less transparency get solid surfaces. */
 @media (prefers-reduced-transparency: reduce) {
   :is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
-    .hero-tag, .section-title-label, .sys-chip, .faq-item, .faq-fig, .bento-card, .outcome-figure, .orbit-copy, .how-plate, .dial-face) {
+    .hero-tag, .section-title-label, .sys-chip, .faq-item, .faq-fig, .bento-card:not([data-field]), .outcome-figure, .orbit-copy, .how-plate, .dial-face) {
     background-color: var(--color-surface) !important;
+    background-image: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
   @media (min-width: 1024px) {
-    .nav-brand { background-color: var(--color-surface) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    .nav-brand { background-color: var(--color-surface) !important; background-image: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
   }
   .story-card[data-night] { background-color: var(--color-night) !important; }
 }
 
-/* ---- The palette wallpaper behind glass groups (components/ui/LiquidShapes.tsx) ---- */
-.liquid { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+/* ---- The wallpaper behind glass groups (components/ui/LiquidShapes.tsx): soft fields of the glass
+   tones, each a radial bloom fading to nothing, so the glass over them reads like the references'
+   blurred colour. They only drift (a compositor move); the edge of the group fades out. ---- */
+.liquid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* rules-check: allow gradient */
+  -webkit-mask-image: radial-gradient(closest-side, #000 80%, transparent);
+  /* rules-check: allow gradient */
+  mask-image: radial-gradient(closest-side, #000 80%, transparent);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
 .liquid-shape {
   position: absolute;
-  width: var(--s);
-  height: var(--s);
-  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
-  border-radius: 46% 54% 58% 42% / 44% 46% 54% 56%;
-  background: var(--tone);
-  opacity: 0.62;
-  animation: liquid-drift 22s ease-in-out var(--d) infinite alternate, liquid-morph 14s ease-in-out var(--d) infinite alternate;
+  width: calc(var(--s) * 1.7);
+  height: calc(var(--s) * 1.4);
+  margin: calc(var(--s) * -0.7) 0 0 calc(var(--s) * -0.85);
+  border-radius: 50%;
+  /* rules-check: allow gradient */
+  background: radial-gradient(closest-side, var(--c) 30%, transparent);
+  animation: liquid-drift 22s ease-in-out var(--d) infinite alternate;
 }
 @keyframes liquid-drift {
-  0% { translate: 0 0; rotate: 0deg; }
-  50% { translate: 26px -18px; rotate: 30deg; }
-  100% { translate: -20px 22px; rotate: -24deg; }
-}
-@keyframes liquid-morph {
-  0% { border-radius: 46% 54% 58% 42% / 44% 46% 54% 56%; }
-  50% { border-radius: 58% 42% 40% 60% / 56% 38% 62% 44%; }
-  100% { border-radius: 40% 60% 52% 48% / 62% 52% 48% 38%; }
+  0% { translate: 0 0; }
+  50% { translate: 26px -18px; }
+  100% { translate: -20px 22px; }
 }
 @media (prefers-reduced-motion: reduce) { .liquid-shape { animation: none; } }
 /* The groups sit over their wallpaper. */
 .bento-wrap { position: relative; isolation: isolate; margin-top: clamp(48px, 7vw, 96px); }
-/* The wallpaper only shows under the cards and through the seams between them. */
-.bento-wrap > .liquid { inset: 16px; border-radius: 26px; }
+/* The wallpaper spills a little past the cards and fades out at its own edge; sideways never past the
+   gutter, or phones scroll sideways. */
+.bento-wrap > .liquid { inset: -48px calc(-1 * min(32px, var(--gutter) - 4px)); }
 .bento-wrap > .bento { position: relative; z-index: 1; margin-top: 0; padding: 16px; }
 .faq-grid { position: relative; isolation: isolate; }
-.faq-grid > .liquid { inset: 0; border-radius: 26px; opacity: 0.8; }
+.faq-grid > .liquid { inset: -32px; }
 @media (min-width: 1024px) { .faq-grid > .liquid { grid-row: 2; grid-column: 1 / -1; } }
 .faq-grid > :not(.liquid) { position: relative; z-index: 1; }
 .outcome-wrap { position: relative; isolation: isolate; margin-top: var(--ed-gap); }
-.outcome-wrap > .liquid { inset: 0; border-radius: var(--radius-lg); }
+.outcome-wrap > .liquid { inset: -40px calc(-1 * min(40px, var(--gutter) - 4px)); }
 .outcome-wrap > .outcome-stack { position: relative; z-index: 1; margin-top: 0; }
 
-/* ---- Glass over dark sections (Nav.tsx sets [data-dark] from lib/on-dark.ts): the tint darkens, the
-   rim dims, the type and icons turn white; the solid CTA turns white so it still leads. ---- */
+/* ---- Glass over dark sections (Nav.tsx sets [data-dark] from lib/on-dark.ts): smoke glass, the rim
+   dims, the type and icons turn white; the solid CTA turns white so it still leads. ---- */
 .nav-shell :is(.nav-brand, .nav-links, .nav-surface, .nav-cta) { transition: background-color var(--dur-4) var(--ease), color var(--dur-4) var(--ease), box-shadow var(--dur-4) var(--ease); }
 .nav-shell[data-dark] :is(.nav-links, .nav-surface, .nav-cta[data-quiet]) {
-  background-color: rgb(16 22 40 / 0.46);
+  background-color: rgb(22 23 26 / 0.5);
+  background-image: var(--lg-grain), var(--field-smoke);
   box-shadow: var(--lg-night-rim), 0 0 0 0.75px rgb(255 255 255 / 0.06), 0 14px 34px -16px rgb(0 0 0 / 0.55);
 }
 @media (min-width: 1024px) {
   .nav-shell[data-dark] .nav-brand {
-    background-color: rgb(16 22 40 / 0.46);
+    background-color: rgb(22 23 26 / 0.5);
+    background-image: var(--lg-grain), var(--field-smoke);
     box-shadow: var(--lg-night-rim), 0 0 0 0.75px rgb(255 255 255 / 0.06), 0 14px 34px -16px rgb(0 0 0 / 0.55);
   }
 }
@@ -193,7 +292,7 @@
 .nav-shell[data-dark] .nav-cta:not([data-quiet]) { color: var(--color-ink); background: #fff; }
 .nav-shell[data-dark] .nav-cta:not([data-quiet]) .nav-cta-icon { color: #fff; background: var(--color-ink); }
 .cta-pill { transition: translate var(--dur-4) var(--ease), opacity var(--dur-2) var(--ease), visibility 0s var(--dur-4), background-color var(--dur-4) var(--ease); }
-.cta-pill[data-dark] { background-color: rgb(16 22 40 / 0.5); box-shadow: var(--lg-night-rim), 0 14px 34px -16px rgb(0 0 0 / 0.55); }
+.cta-pill[data-dark] { background-color: rgb(22 23 26 / 0.52); background-image: var(--lg-grain), var(--field-smoke); box-shadow: var(--lg-night-rim), 0 14px 34px -16px rgb(0 0 0 / 0.55); }
 .cta-pill[data-dark] p { color: rgb(255 255 255 / 0.86); }
 .cta-pill[data-dark] .nav-cta { color: var(--color-ink); background: #fff; }
 .cta-pill[data-dark] .nav-cta .nav-cta-icon { color: #fff; background: var(--color-ink); }
@@ -203,4 +302,4 @@
 @media (max-width: 1023px) { .faq-grid > .liquid { display: none; } }
 
 /* Panels people read (the nav glances, an opened system) carry more white than the bar they hang from. */
-.nav-peek-body, .island-panel { background-color: rgb(255 255 255 / 0.86); }
+.nav-peek-body, .island-panel { background-color: rgb(250 251 253 / 0.86); background-image: var(--lg-grain), var(--field-milk); }

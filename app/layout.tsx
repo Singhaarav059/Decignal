@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter_Tight } from "next/font/google";
+import localFont from "next/font/local";
 import {
   BRAND,
   OG_BASE,
@@ -14,11 +14,22 @@ import {
 import { LiquidLens } from "@/components/LiquidLens";
 import "./globals.css";
 
-// One family for everything (the 2026-10-13 redesign): Inter Tight, variable weight. Headlines run
-// medium with a light second line; labels and numbers use the same face.
-const display = Inter_Tight({
+// Two families, both variable and self-hosted from app/fonts (no font request leaves the site, and the
+// build needs no network). Bricolage Grotesque carries headlines, numerals and labels; its optical-size
+// axis tightens it at display sizes on its own. Figtree carries running text and small UI copy.
+const display = localFont({
+  src: "./fonts/bricolage-grotesque-latin-opsz.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
+  weight: "200 800",
+  display: "swap",
+  fallback: ["Helvetica Neue", "Arial", "sans-serif"],
+});
+const text = localFont({
+  src: "./fonts/figtree-latin-wght.woff2",
+  variable: "--font-text",
+  weight: "300 900",
+  display: "swap",
+  fallback: ["Helvetica Neue", "Arial", "sans-serif"],
 });
 
 // Canonical URLs are set per page: a canonical here would be inherited by every route.
@@ -85,7 +96,7 @@ const INTRO_SEEN_JS =
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${text.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_JS }} />
         <noscript dangerouslySetInnerHTML={{ __html: `<style>${NOSCRIPT_CSS}</style>` }} />

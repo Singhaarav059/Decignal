@@ -993,7 +993,7 @@ export function DealerNetwork({ motion, step, pin }: SceneProps) {
 /* ------------------------------------------------------------------ */
 /* 06. MAINTENANCE: Diagnostic Motor & Vibration Decoupling           */
 /* ------------------------------------------------------------------ */
-export function Motor({ motion, still }: Pick<SceneProps, "motion" | "still">) {
+function Motor({ motion, still }: Pick<SceneProps, "motion" | "still">) {
   const rotor = useRef<THREE.Group>(null);
   const cover = useRef<THREE.Group>(null);
   const bearing = useRef<THREE.Group>(null);

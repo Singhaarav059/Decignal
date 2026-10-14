@@ -14,7 +14,7 @@ import { type Pose, type Vec3 } from "@/lib/scene";
 /* ------------------------------------------------------------------ */
 
 /** A small overshoot, kept for UI-sized things only (opt in with overshoot). */
-export const backOut = (x: number) => {
+const backOut = (x: number) => {
   const c = 0.65;
   return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
 };
@@ -40,7 +40,7 @@ type Exit = (c: number) => Vec3 | null;
  * - build: grows up out of the ground (height only), as a building goes up.
  * `leave: "build"` takes it back down into the ground the same way.
  */
-export type ActorOpts = {
+type ActorOpts = {
   arrive?: "rise" | "drop" | "build";
   leave?: "shrink" | "build";
   overshoot?: boolean;

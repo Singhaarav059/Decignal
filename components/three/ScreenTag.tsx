@@ -9,7 +9,7 @@ import * as THREE from "three";
 import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
 
-export type ScreenTagProps = {
+type ScreenTagProps = {
   title: string;
   value?: string;
   /** The dot's colour: the system or object the tag names. */

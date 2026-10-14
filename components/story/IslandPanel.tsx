@@ -46,6 +46,8 @@ export function IslandPanel() {
     window.addEventListener("resize", updateRect, { passive: true });
     window.addEventListener("scroll", updateRect, { passive: true });
     const timer = setTimeout(updateRect, 350);
+    // Written only when the island has moved, so a still frame costs no style work.
+    let lastD = "";
 
     const tick = () => {
       const p = rect || panel.current?.getBoundingClientRect();
@@ -67,9 +69,12 @@ export function IslandPanel() {
               ? `M${x},${y} L${x},${ty} L${p.left + 32},${ty} L${p.left + 32},${p.top}`
               : `M${x},${y} L${x},${ty} L${p.left},${ty}`;
         }
-        line.current.setAttribute("d", d);
-        dot.current.setAttribute("cx", String(x));
-        dot.current.setAttribute("cy", String(y));
+        if (d !== lastD) {
+          lastD = d;
+          line.current.setAttribute("d", d);
+          dot.current.setAttribute("cx", String(x));
+          dot.current.setAttribute("cy", String(y));
+        }
       }
       raf = requestAnimationFrame(tick);
     };

@@ -3,7 +3,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { toneVars, type Tone } from "@/lib/tone";
 
-export type PillItem = { label: ReactNode; tone?: Tone | string; controls?: string };
+type PillItem = { label: ReactNode; tone?: Tone | string; controls?: string };
 
 /**
  * The story card's selector: the shared segmented control's look (ink pill, white text, tone dot),

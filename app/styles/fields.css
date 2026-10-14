@@ -1,0 +1,103 @@
+/* Background fields (2026-10-14, after the CreditKarma references): the page itself now carries the
+   references' blurred colour. Every background keeps its solid (the chapter sky, the sheet, a band's
+   colour) and gains a few soft blooms of the glass tones near its edges plus the film grain, so it
+   reads like a defocused photograph. The user lifted the flat rule for backgrounds too; text, buttons
+   and lines stay flat. Warm blooms only sit on warm or pale grounds (saffron, the bento), never on
+   dark ones or beside slate, so nothing mixes to brown. The tones and grain are defined in
+   liquid-glass.css. */
+
+:root {
+  /* A softer grain for the big dark grounds, where the light specks show most. */
+  --bg-grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.4 0 0 0 -1.3'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -2.4 0 0 0 1.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)' opacity='0.3'/%3E%3Crect width='100%25' height='100%25' filter='url(%23l)' opacity='0.1'/%3E%3C/svg%3E");
+
+  /* Band fields: blooms laid over a band's solid. Light blooms keep to the right and the foot, where
+     no heading sits, so white type keeps its contrast. */
+  /* rules-check: allow gradient */
+  --bf-light: radial-gradient(70% 60% at 0% 0%, rgb(255 255 255 / 0.26), rgb(255 255 255 / 0.1) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(60% 55% at 100% 100%, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 100%);
+  /* rules-check: allow gradient */
+  --bf-mist: radial-gradient(60% 55% at 0% 0%, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.24) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(50% 60% at 100% 12%, rgb(134 180 208 / 0.5), rgb(134 180 208 / 0.2) 45%, rgb(134 180 208 / 0) 100%), radial-gradient(55% 50% at 6% 100%, rgb(201 226 100 / 0.38), rgb(201 226 100 / 0.14) 45%, rgb(201 226 100 / 0) 100%), radial-gradient(45% 50% at 100% 100%, rgb(185 191 219 / 0.5), rgb(185 191 219 / 0) 100%);
+  /* rules-check: allow gradient */
+  --bf-violet: radial-gradient(55% 65% at 100% 0%, rgb(157 134 255 / 0.6), rgb(157 134 255 / 0.22) 45%, rgb(157 134 255 / 0) 100%), radial-gradient(60% 60% at 0% 100%, rgb(52 30 170 / 0.62), rgb(52 30 170 / 0) 100%), radial-gradient(45% 50% at 100% 100%, rgb(134 180 208 / 0.34), rgb(134 180 208 / 0) 100%);
+  /* rules-check: allow gradient */
+  --bf-cobalt: radial-gradient(55% 65% at 100% 0%, rgb(140 175 255 / 0.55), rgb(140 175 255 / 0.2) 45%, rgb(140 175 255 / 0) 100%), radial-gradient(60% 60% at 0% 100%, rgb(24 52 190 / 0.62), rgb(24 52 190 / 0) 100%), radial-gradient(45% 50% at 100% 100%, rgb(185 191 219 / 0.32), rgb(185 191 219 / 0) 100%);
+  /* The references' amber ground: butter where the light enters, orange at the foot. Ink type. */
+  /* rules-check: allow gradient */
+  --bf-saffron: radial-gradient(60% 65% at 0% 0%, rgb(249 234 148 / 0.8), rgb(249 234 148 / 0.3) 45%, rgb(249 234 148 / 0) 100%), radial-gradient(55% 60% at 100% 100%, rgb(243 154 69 / 0.62), rgb(243 154 69 / 0.24) 45%, rgb(243 154 69 / 0) 100%), radial-gradient(40% 45% at 100% 0%, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0) 100%);
+  /* Graphite: a breath of cool light at the top left, slate at the foot right (the "Health Karma" panel
+     without its warm glow). */
+  /* rules-check: allow gradient */
+  --bf-night: radial-gradient(60% 55% at 0% 0%, rgb(190 204 224 / 0.08), rgb(190 204 224 / 0) 100%), radial-gradient(55% 60% at 100% 100%, rgb(77 120 148 / 0.24), rgb(77 120 148 / 0.08) 45%, rgb(77 120 148 / 0) 100%), radial-gradient(40% 40% at 0% 100%, rgb(185 191 219 / 0.06), rgb(185 191 219 / 0) 100%);
+}
+
+/* ---- The story's sky (components/Backdrop.tsx): one field per chapter sky, cross-faded by opacity.
+   Blooms keep to the corners: the middle stays the solid the 3D fog melts into. Each field carries the
+   grain too (one layer, not two); two fields mid-fade share the same grain, so it never doubles. ---- */
+.backdrop-field { position: absolute; inset: 0; will-change: opacity; }
+.backdrop-field[data-sky="cobalt"] {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(55vmax 45vmax at 0% 0%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(45vmax 38vmax at 100% 6%, rgb(134 180 208 / 0.64), rgb(134 180 208 / 0.26) 45%, rgb(134 180 208 / 0) 100%), radial-gradient(48vmax 38vmax at 0% 100%, rgb(185 191 219 / 0.84), rgb(185 191 219 / 0.33) 45%, rgb(185 191 219 / 0) 100%), radial-gradient(40vmax 34vmax at 100% 100%, rgb(122 160 214 / 0.54), rgb(122 160 214 / 0) 100%);
+}
+.backdrop-field[data-sky="signal"] {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(55vmax 45vmax at 0% 0%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(45vmax 38vmax at 100% 6%, rgb(185 191 219 / 0.72), rgb(185 191 219 / 0.28) 45%, rgb(185 191 219 / 0) 100%), radial-gradient(48vmax 38vmax at 0% 100%, rgb(255 188 212 / 0.77), rgb(255 188 212 / 0.31) 45%, rgb(255 188 212 / 0) 100%), radial-gradient(40vmax 34vmax at 100% 100%, rgb(185 191 219 / 0.59), rgb(185 191 219 / 0) 100%);
+}
+.backdrop-field[data-sky="violet"] {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(55vmax 45vmax at 0% 0%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(45vmax 38vmax at 100% 6%, rgb(185 191 219 / 0.79), rgb(185 191 219 / 0.31) 45%, rgb(185 191 219 / 0) 100%), radial-gradient(48vmax 38vmax at 0% 100%, rgb(196 182 255 / 0.77), rgb(196 182 255 / 0.31) 45%, rgb(196 182 255 / 0) 100%), radial-gradient(40vmax 34vmax at 100% 100%, rgb(134 180 208 / 0.54), rgb(134 180 208 / 0) 100%);
+}
+.backdrop-field[data-sky="emerald"] {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(55vmax 45vmax at 0% 0%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(45vmax 38vmax at 100% 6%, rgb(201 226 100 / 0.59), rgb(201 226 100 / 0.23) 45%, rgb(201 226 100 / 0) 100%), radial-gradient(48vmax 38vmax at 0% 100%, rgb(134 180 208 / 0.56), rgb(134 180 208 / 0.23) 45%, rgb(134 180 208 / 0) 100%), radial-gradient(40vmax 34vmax at 100% 100%, rgb(150 214 190 / 0.64), rgb(150 214 190 / 0) 100%);
+}
+.backdrop-field[data-sky="rose"] {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(55vmax 45vmax at 0% 0%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(45vmax 38vmax at 100% 6%, rgb(185 191 219 / 0.72), rgb(185 191 219 / 0.28) 45%, rgb(185 191 219 / 0) 100%), radial-gradient(48vmax 38vmax at 0% 100%, rgb(255 190 222 / 0.69), rgb(255 190 222 / 0.26) 45%, rgb(255 190 222 / 0) 100%), radial-gradient(40vmax 34vmax at 100% 100%, rgb(134 180 208 / 0.49), rgb(134 180 208 / 0) 100%);
+}
+.backdrop-field[data-sky="sky"] {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(55vmax 45vmax at 0% 0%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0) 100%), radial-gradient(45vmax 38vmax at 100% 6%, rgb(134 180 208 / 0.67), rgb(134 180 208 / 0.26) 45%, rgb(134 180 208 / 0) 100%), radial-gradient(48vmax 38vmax at 0% 100%, rgb(150 214 190 / 0.59), rgb(150 214 190 / 0.23) 45%, rgb(150 214 190 / 0) 100%), radial-gradient(40vmax 34vmax at 100% 100%, rgb(185 191 219 / 0.67), rgb(185 191 219 / 0) 100%);
+}
+
+/* ---- Each big field is its own layer. The surface keeps its solid; the blooms and grain sit on a
+   ::before promoted to a layer of its own, drawn once per tile. Painted on the surface itself, they
+   were drawn again under every looping drawing above them (the area art in the night panel, the bento
+   charts, the step drawings) on every frame: a steady 40-80 fps at rest on a laptop. ---- */
+:where(.night-panel, .how-sheet) { position: relative; }
+:is(.night-panel, .how-sheet[data-field]) { isolation: isolate; }
+:is(.editorial, .page-foot, .night-panel, .how-sheet[data-field], .site-footer)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  will-change: transform;
+}
+.band::before { will-change: transform; }
+
+/* ---- The editorial sheet: its pale solid under a tile of blooms that repeats down the page (each
+   bloom sits wholly inside the tile, so no seam shows), and the grain. ---- */
+:is(.editorial, .page-foot)::before {
+  /* rules-check: allow gradient */
+  background-image: var(--lg-grain), radial-gradient(560px 380px at 100% 380px, rgb(134 180 208 / 0.59), rgb(134 180 208 / 0.23) 45%, rgb(134 180 208 / 0) 100%), radial-gradient(620px 400px at 0% 1000px, rgb(185 191 219 / 0.77), rgb(185 191 219 / 0.31) 45%, rgb(185 191 219 / 0) 100%), radial-gradient(500px 320px at 100% 1560px, rgb(201 226 100 / 0.41), rgb(201 226 100 / 0.15) 45%, rgb(201 226 100 / 0) 100%);
+  background-size: auto, 100% 1900px, 100% 1900px, 100% 1900px;
+  background-repeat: repeat, repeat-y, repeat-y, repeat-y;
+}
+
+/* ---- Bands, the night panel, the how-it-works sheets and the footer: their solid, a field, grain ---- */
+.band::before {
+  background-color: var(--band-bg);
+  background-image: var(--lg-grain), var(--band-field, var(--bf-light));
+}
+.band[data-band="mist"] { --band-field: var(--bf-mist); }
+.band[data-band="violet"] { --band-field: var(--bf-violet); }
+.band[data-band="cobalt"] { --band-field: var(--bf-cobalt); }
+.band[data-band="saffron"] { --band-field: var(--bf-saffron); }
+.band:is([data-band="night"], [data-band="ink"]) { --band-field: var(--bf-night); }
+.band:is([data-band="night"], [data-band="ink"])::before { background-image: var(--bg-grain-dark), var(--band-field); }
+.night-panel::before { background-image: var(--bg-grain-dark), var(--bf-night); }
+.how-sheet[data-field="cobalt"]::before { background-image: var(--lg-grain), var(--bf-cobalt); }
+.how-sheet[data-field="violet"]::before { background-image: var(--lg-grain), var(--bf-violet); }
+.how-sheet[data-field="saffron"]::before { background-image: var(--lg-grain), var(--bf-saffron); }
+.how-sheet[data-field="night"]::before { background-image: var(--bg-grain-dark), var(--bf-night); }
+.site-footer::before { background-image: var(--lg-grain), var(--bf-cobalt); }

@@ -3,8 +3,8 @@
 // screen: on a phone that re-styled and re-laid out SVG it never drew on every scroll frame. Each block
 // of those sections is watched; one more than half a screen away is marked [data-still], which pauses
 // its CSS animations (base.css) until it comes back. The story's fixed layers do the same once the
-// story has scrolled away. SMIL clocks are left running: resumed after a long pause, Chrome replayed
-// every missed loop at once and froze the page for a second or two.
+// story has scrolled away. The site has no SMIL: its clock could not be paused (resumed after a long
+// pause, Chrome replayed every missed loop at once and froze the page), so every loop is CSS.
 
 /** The blocks watched: each section's top-level parts (a tall section holds several), and the footer's. */
 const SCOPES = ".editorial > section > *, .page-foot > footer > *";

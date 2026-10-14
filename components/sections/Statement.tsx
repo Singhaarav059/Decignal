@@ -24,7 +24,9 @@ const FLOW = [
 ];
 
 /** The sentence, drawn: four systems feed Decignal, and one decision goes to the person who approves.
- *  The threads draw in turn as the section arrives (data-on), then a pulse keeps travelling them. */
+ *  The threads draw in turn as the section arrives (data-on), then a pulse keeps travelling them: a
+ *  round-capped dash of no length (a dot) run along the thread by a CSS animation, which holds still
+ *  off screen. SMIL motion re-laid out the drawing on every frame of the page and could not be paused. */
 function FlowArt() {
   return (
     <svg className="flow-art" viewBox="0 0 520 270" aria-hidden>
@@ -38,14 +40,11 @@ function FlowArt() {
             pathLength={1}
             d={`M120 ${f.y} C 200 ${f.y}, 200 135, 262 135`}
           />
-          <circle className="flow-pulse" r="4">
-            <animateMotion
-              dur="2.8s"
-              begin={`${i * 0.5}s`}
-              repeatCount="indefinite"
-              path={`M120 ${f.y} C 200 ${f.y}, 200 135, 262 135`}
-            />
-          </circle>
+          <path
+            className="flow-pulse"
+            pathLength={1}
+            d={`M120 ${f.y} C 200 ${f.y}, 200 135, 262 135`}
+          />
           <rect
             className="flow-chip"
             x="8"
@@ -236,9 +235,10 @@ function AppsArt() {
 }
 
 /**
- * What Decignal does, in one sentence and five facts (Orvan's "About"). The sentence sharpens word by
- * word as it scrolls through the screen, tied to the scroll; the facts sit in a bento of white cards,
- * each a label and a figure that counts up, with the approver's photograph as a duotone beside them.
+ * What Decignal does, in one sentence and five facts (Orvan's "About"). The sentence comes up word by
+ * word as it scrolls through the screen, tied to the scroll; the facts sit in a bento of glass cards
+ * (two wear the references' slate and amber fields), each a label and a figure that counts up, with the
+ * approver's photograph as a duotone beside them.
  */
 export function Statement({ index }: { index: string }) {
   const root = useRef<HTMLElement>(null);
@@ -260,13 +260,12 @@ export function Statement({ index }: { index: string }) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
       return () => io.disconnect();
     const ctx = gsap.context(() => {
+      // Opacity only (the words are inline, so a transform would not apply): no blur on text.
       gsap.fromTo(
         ".stmt-word",
-        { opacity: 0.14, filter: "blur(6px)", y: 6 },
+        { opacity: 0.14 },
         {
           opacity: 1,
-          filter: "blur(0px)",
-          y: 0,
           ease: "none",
           stagger: 0.12,
           scrollTrigger: {
@@ -321,7 +320,7 @@ export function Statement({ index }: { index: string }) {
           <LiquidShapes preset="bento" />
           <ul className="bento">
             {[readOnly, weeks].map((g, i) => (
-              <li key={g.label} className="bento-card" style={toneVars(g.tone)}>
+              <li key={g.label} className="bento-card" data-field={i === 0 ? "slate" : undefined} style={toneVars(g.tone)}>
                 <p className="bento-k t-label">
                   <span className="tabular">{pad(i + 1)}</span> / {g.label}
                 </p>
@@ -361,7 +360,7 @@ export function Statement({ index }: { index: string }) {
                 <CountUp value={approver.n} play={seen} />
               </p>
             </li>
-            <li className="bento-card" style={toneVars(apps.tone)}>
+            <li className="bento-card" data-field="amber" style={toneVars(apps.tone)}>
               <p className="bento-k t-label">
                 <span className="tabular">03</span> / {apps.label}
               </p>

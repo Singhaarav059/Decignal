@@ -31,7 +31,7 @@ export function ChapterArt({ i, live = false }: { i: number; live?: boolean }) {
       {i === 1 && <Signal />}
       {i === 2 && <Problem />}
       {i === 3 && <Context />}
-      {i === 4 && <Decision id={`ca-road-${uid}`} />}
+      {i === 4 && <Decision />}
       {i === 5 && <Control />}
       {i === 6 && <Scale />}
       {i === 7 && <Industries clip={`ca-clip-${uid}`} />}
@@ -242,22 +242,20 @@ function Plant({ x, label }: { x: number; label: string }) {
   );
 }
 
-/** 05: the transfer, Plant 02 to Plant 01. */
-function Decision({ id }: { id: string }) {
+/** 05: the transfer, Plant 02 to Plant 01. The truck drives the road (CSS ca-drive, sampled from this
+ *  path at even steps of length) only while the tile is pointed at, like the other drawings' motion. */
+function Decision() {
   return (
     <>
       <Plant x={12} label="02" />
       <Plant x={236} label="01" />
-      <path id={id} d="M50 58C96 58 108 42 140 42S186 58 230 58" className="ca-line" strokeDasharray="2 5" strokeOpacity=".6" />
+      <path d="M50 58C96 58 108 42 140 42S186 58 230 58" className="ca-line" strokeDasharray="2 5" strokeOpacity=".6" />
       <g className="ca-truck">
         <rect x="-11" y="-6" width="14" height="8" rx="1.5" className="ca-fill" />
         <path d="M3 -4h5l3 3.5v3.5H3z" className="ca-fill" />
         <path d="M3 -4h5l3 3.5v3.5H3z" className="ca-shade" />
         <circle cx="-7" cy="3.5" r="2" fill="var(--color-ink)" />
         <circle cx="7" cy="3.5" r="2" fill="var(--color-ink)" />
-        <animateMotion dur="4.5s" repeatCount="indefinite" rotate="auto">
-          <mpath href={`#${id}`} />
-        </animateMotion>
       </g>
       <rect x="120" y="10" width="40" height="18" rx="9" fill="var(--color-ink)" />
       <text x="140" y="23" textAnchor="middle" className="ca-on">

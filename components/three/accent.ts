@@ -11,8 +11,6 @@ import { useEffect, useRef } from "react";
 
 /** Paint, enamel and plastic parts go to this grey when their system is not the subject. */
 export const NEUTRAL = "#C9CFD8";
-/** Large light surfaces (signs, wide panels) go lighter, so they read as white, not as grey blocks. */
-export const NEUTRAL_LIGHT = "#E8EBEF";
 
 /**
  * A material with a second colour to ease (a sign's lettering): `fg` is its live colour, `fgTone`

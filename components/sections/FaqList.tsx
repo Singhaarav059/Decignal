@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { jumpTo, onQuestion } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
 
-export type FaqItem = { q: string; a: string; topic?: string; tone?: string };
+type FaqItem = { q: string; a: string; topic?: string; tone?: string };
 
 /**
  * Questions as a ruled list that opens one answer at a time. Answers stay in the DOM (inert while

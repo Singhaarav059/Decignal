@@ -69,13 +69,6 @@ export function Footer() {
 
   return (
     <footer className="site-footer">
-      {/* Six plate edges: every system, one foundation */}
-      <div className="footer-strata" aria-hidden>
-        {STRATA.map((c) => (
-          <span key={c} style={{ background: `var(--color-${c})` }} />
-        ))}
-      </div>
-
       <div className="page-wrap footer-grid">
         <div className="footer-lead">
           {/* Six systems, one resolved decision: the story's opening network, closed. */}
@@ -93,7 +86,8 @@ export function Footer() {
                     strokeWidth={1.5}
                     strokeLinecap="round"
                   />
-                  <circle cx={10} cy={y} r={4} fill={`var(--color-${c})`} />
+                  {/* White-ringed, so the cobalt system still reads on the cobalt footer. */}
+                  <circle cx={10} cy={y} r={4} className="footer-dot" fill={`var(--color-${c})`} />
                 </g>
               );
             })}

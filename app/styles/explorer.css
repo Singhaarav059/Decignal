@@ -88,7 +88,7 @@
 
 /* Chart text: 11px on screen at any width. --k (rendered width / 400) is set from script. */
 .evidence-chart { display: block; width: 100%; height: auto; overflow: visible; }
-.evidence-chart text { font-family: var(--font-label); font-size: calc(11px / var(--k, 1)); font-weight: 600; font-stretch: 92%; letter-spacing: 0.03em; }
+.evidence-chart text { font-family: var(--font-label); font-size: calc(11px / var(--k, 1)); font-weight: 600; letter-spacing: 0.03em; }
 /* Default only: a label's own colour (risk red, resolved green, ink) must survive. */
 .evidence-chart text:not([fill]) { fill: var(--color-ink-soft); }
 .chart-grid { stroke: var(--color-line); stroke-width: 1; fill: none; }

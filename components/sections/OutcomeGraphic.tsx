@@ -11,8 +11,6 @@ import { useSvgScale } from "./svgScale";
  * service cases come from the CRM (violet). Index-aligned with OUTCOMES. Use with toneVars.
  */
 export const OUTCOME_TONE = ["pink", "saffron", "violet"] as const;
-/** The raw colours, for callers that set --tone directly (the nav's glance). */
-export const OUTCOME_FILL = OUTCOME_TONE.map((t) => `var(--color-${t})`);
 
 const { plant01: P1, plant02: P2, transfer: T } = EXAMPLE;
 

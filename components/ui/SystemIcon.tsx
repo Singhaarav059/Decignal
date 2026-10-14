@@ -35,19 +35,6 @@ const PATHS: Record<string, string> = {
   sheet: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 10h16 M4 15h16 M10 4v16",
 };
 
-/** Icon key for a CONNECTS_MORE name. */
-export const MORE_ICON: Record<string, string> = {
-  TMS: "tms",
-  CMMS: "cmms",
-  "SCADA and IoT": "scada",
-  QMS: "qms",
-  POS: "pos",
-  DMS: "dms",
-  "Service desk": "desk",
-  "Data warehouse": "dwh",
-  Spreadsheets: "sheet",
-};
-
 /** Icon key for a source an application reads (lib/content.ts APPLICATIONS connects). */
 const SOURCE_ICON: [RegExp, string][] = [
   [/ERP/, "erp"], [/CRM/, "crm"], [/MES/, "mes"], [/WMS/, "wms"], [/TMS/, "tms"], [/CMMS/, "cmms"],

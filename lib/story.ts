@@ -2,7 +2,7 @@
 // g = chapterIndex + localProgress. Each chapter holds its state, then transitions
 // into the next one after `ts` (transition start) of its length.
 
-export type Chapter = {
+type Chapter = {
   id: string;
   label: string;
   len: number; // length in viewport heights
@@ -74,8 +74,8 @@ export const store = {
   listeners: new Set<(g: number) => void>(),
 };
 
-export type CardRect = { x: number; y: number; w: number; h: number };
-export type StoryDecision = { mode: "idle" | "approved" | "rejected"; qty: number };
+type CardRect = { x: number; y: number; w: number; h: number };
+type StoryDecision = { mode: "idle" | "approved" | "rejected"; qty: number };
 
 /** StoryCard reports its viewport rect (ResizeObserver plus resize); null when it is gone. */
 export function setCardRect(r: CardRect | null) {
@@ -187,13 +187,13 @@ export const BEATS = {
 /** Context steps through the evidence one system at a time, in the card's order: WMS, Suppliers, External. */
 export const CONTEXT_PINS = [3, 4, 5] as const;
 /** Which evidence step (0..2) Context shows at local t: its hold (0.05 to 0.55) in three equal beats. */
-export const contextBeat = (t: number) => Math.min(2, Math.max(0, Math.floor((t - 0.05) / (0.5 / 3))));
+const contextBeat = (t: number) => Math.min(2, Math.max(0, Math.floor((t - 0.05) / (0.5 / 3))));
 
 /**
  * Steps through `count` items over local progress a..a+u: equal holds, each followed by a turn that
  * takes `turn` of a hold's length. Returns the item in front, fractional while turning.
  */
-export function stepped(t: number, a: number, u: number, count: number, turn: number) {
+function stepped(t: number, a: number, u: number, count: number, turn: number) {
   const h = u / (count + (count - 1) * turn);
   const p = h * (1 + turn);
   const n = count - 1;
@@ -203,7 +203,7 @@ export function stepped(t: number, a: number, u: number, count: number, turn: nu
   return k < n && r > h ? k + smootherstep(h, p, r) : k;
 }
 /** Local progress in the middle of item k's hold, for `stepped` with the same arguments. */
-export const steppedAt = (k: number, a: number, u: number, count: number, turn: number) => {
+const steppedAt = (k: number, a: number, u: number, count: number, turn: number) => {
   const h = u / (count + (count - 1) * turn);
   return a + k * h * (1 + turn) + h / 2;
 };
@@ -239,7 +239,7 @@ export function setAfter(p: number) {
  * "truck", "plant01" (Decision), "fn:<k>" (Scale), "industry:<k>" (Industries). Hero, Signal,
  * Problem, Control and Final pin nothing by default; between chapters nothing is pinned.
  */
-export function pinAt(g: number): string | null {
+function pinAt(g: number): string | null {
   const { i, local, e } = blendAt(g);
   if (e > 0.4) return null;
   switch (i) {
@@ -263,15 +263,6 @@ export function pinAt(g: number): string | null {
 export const SYSTEMS = ["ERP", "CRM", "MES", "WMS", "SUPPLIERS", "EXTERNAL"] as const;
 
 // Figures follow the fact sheet in lib/example.ts; section and chapter strings live in lib/copy.ts.
-
-export const CONTEXT = [
-  { system: "ERP", title: "410 on hand, safety stock 175" },
-  { system: "CRM", title: "Open orders up 18%" },
-  { system: "MES", title: "45 X90 used a day" },
-  { system: "WMS", title: "Plant 02 holds 620" },
-  { system: "SUPPLIERS", title: "Next delivery in 21 days" },
-  { system: "EXTERNAL", title: "Lane clear, 2 days" },
-];
 
 export const LAYERS = [
   { name: "Signal", text: "Plant 01 below safety stock on day 6" },
@@ -348,9 +339,6 @@ export const INDUSTRIES = [
 
 /** Each industry's accent, matching its 3D card badge (components/three/faces.ts INDUSTRY_TONE). */
 export const INDUSTRY_TONE = ["emerald", "cobalt", "pink", "tangerine", "violet", "saffron"] as const;
-
-/** The industries stand on the ground: no turning block any more (kept for old importers). */
-export const PLINTH_H = 0;
 
 /* Industries: six equal holds with a half turn between each, over local 0.02..0.83; the last hold
    ends where the chapter starts its exit (ts 0.85). */

@@ -172,7 +172,7 @@
   font-size: clamp(24px, 2.2vw, 30px);
   font-weight: 600;
   line-height: 1.1;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.011em;
   outline: none;
 }
 .audit-head .t-label { flex: none; }

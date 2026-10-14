@@ -6,7 +6,6 @@ import { useLayoutEffect, useRef } from "react";
  * Keeps SVG labels at a legible size (F-10 b): writes the drawing's on-screen scale to `--svg-k`, so CSS
  * can set `font-size: calc(11px / var(--svg-k, 1))` and the text renders at 11px whatever the drawing's
  * width. Under 0.8 the drawing is a thumbnail and `data-small` lets CSS drop its labels instead.
- * Also pauses SMIL motion under reduced motion.
  */
 export function useSvgScale<T extends SVGSVGElement>(viewWidth: number, viewHeight?: number) {
   const ref = useRef<T>(null);
@@ -27,8 +26,6 @@ export function useSvgScale<T extends SVGSVGElement>(viewWidth: number, viewHeig
       else delete el.dataset.small;
     };
     set();
-    // SMIL motion (a truck on its road, a dot on its rail) ignores CSS; hold it still under reduced motion.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) el.pauseAnimations?.();
     const ro = new ResizeObserver(set);
     ro.observe(el);
     return () => ro.disconnect();

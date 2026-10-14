@@ -3,7 +3,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
 import { toneVars, type Tone } from "@/lib/tone";
 
-export type SegmentedItem<V extends string = string> = {
+type SegmentedItem<V extends string = string> = {
   value: V;
   label: ReactNode;
   /** Small dot in the item's system colour. */

@@ -648,13 +648,13 @@ function GlassCard() {
   const want = useRef({ tier: START_TIER, for: 0 });
   const print = useFace(GLASS_FACE, false, tier);
   const art = useHandArt(GLASS_FACE, tier);
-  // Smoked blue glass: what lies under it shows through, deepened and frosted enough that its white
-  // print reads over any card. Not tone mapped: it refracts the page and the cards as drawn, and tone
+  // Smoked slate glass (the references' slate-teal, 2026-10-14; smoked blue before): what lies under it
+  // shows through, deepened and frosted enough that its white print reads over any card. Not tone mapped: it refracts the page and the cards as drawn, and tone
   // mapping greyed them.
   const glass = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: "#3D4FA8",
+        color: "#41728F",
         transmission: 1,
         transparent: true,
         toneMapped: false,

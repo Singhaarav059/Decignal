@@ -636,7 +636,7 @@ function handName(c: C, text: string, color: string) {
    foot. Every card shares it, so the hand's names, graphics and decisions line up card to card. */
 
 /** The graphic's box on the portrait grid: the full text width, between the name and the decision. */
-export const HAND_ART = { x: HAND_PAD, y: 500, w: PW - HAND_PAD * 2, h: 468 };
+const HAND_ART = { x: HAND_PAD, y: 500, w: PW - HAND_PAD * 2, h: 468 };
 /** The decision's first baseline: just under the graphic, whatever its line count. */
 const DECISION_Y = 1092;
 

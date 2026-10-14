@@ -2,7 +2,7 @@
 // their own pixel density, with GPU work sized to a phone screen rather than a desktop one.
 import { useSyncExternalStore } from "react";
 
-export const PHONE = "(max-width: 767px)";
+const PHONE = "(max-width: 767px)";
 
 export const isPhone = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches;
 

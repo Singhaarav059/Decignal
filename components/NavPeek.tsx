@@ -9,7 +9,7 @@ import { CTA, NAV, STORY_PEEK } from "@/lib/copy";
 import { CHAPTERS, subscribe } from "@/lib/story";
 import { showOutcome, showQuestion, showStep } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
-import { StepArt } from "./sections/GrowlioSections";
+import { StepArt } from "./sections/StepArt";
 import { AreaArt } from "./sections/AreaArt";
 import { OUTCOME_TONE, OutcomeGraphic } from "./sections/OutcomeGraphic";
 import { TONE, goToChapter } from "./story/chapters";
@@ -23,7 +23,7 @@ export type SectionPeek = Exclude<PeekId, "story">;
 const LABEL: Record<string, string> = Object.fromEntries(NAV.sections);
 
 /** What each section is, in one line: the glance's foot and the phone menu both use it. */
-export const PEEKS: Record<SectionPeek, { blurb: string; id: string; label: string }> = {
+const PEEKS: Record<SectionPeek, { blurb: string; id: string; label: string }> = {
   apps: { blurb: NAV.blurbs.apps, id: "applications", label: LABEL.applications },
   outcomes: { blurb: NAV.blurbs.outcomes, id: "outcomes", label: LABEL.outcomes },
   how: { blurb: NAV.blurbs.how, id: "how", label: LABEL.how },

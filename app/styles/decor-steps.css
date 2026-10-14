@@ -6,7 +6,7 @@
 /* ---- The drawing ---- */
 .step-art { overflow: hidden; padding: 0; border-radius: var(--radius-md); background: var(--color-sunken); }
 .step-art text { font-family: var(--font-heading); font-size: calc(11px / var(--svg-k, 1)); font-weight: 600; letter-spacing: 0; fill: var(--color-ink-2); dominant-baseline: central; }
-.step-art .sx-k { font-stretch: 92%; letter-spacing: 0.08em; fill: var(--color-ink-soft); }
+.step-art .sx-k { letter-spacing: 0.08em; fill: var(--color-ink-soft); }
 .step-art .sx-h { font-size: calc(13px / var(--svg-k, 1)); letter-spacing: -0.01em; fill: var(--color-ink); }
 .step-art .sx-soft { font-weight: 500; fill: var(--color-ink-soft); }
 .step-art .sx-faint { fill: var(--color-ink-soft); }
@@ -16,8 +16,7 @@
 .step-art[data-small] text { display: none; }
 
 /* Surfaces: white on the sunken well, hairline edges. The decision itself takes the ink edge. */
-.sx-chip, .sx-frame, .sx-sheet { fill: #fff; stroke: var(--color-line-strong); stroke-width: 1; }
-.sx-sheet { stroke: var(--color-line); }
+.sx-chip, .sx-frame { fill: #fff; stroke: var(--color-line-strong); stroke-width: 1; }
 .sx-card { fill: #fff; stroke: var(--color-ink); stroke-width: 1.25; }
 .sx-wire { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
 .sx-wire.sx-paper { fill: #fff; }
@@ -42,7 +41,6 @@
 .sx-plug { fill: none; stroke: var(--tone); stroke-width: 1.5; stroke-linecap: round; }
 .sx-draw { stroke-dasharray: 1; stroke-dashoffset: 0; }
 
-@keyframes sx-rise { from { opacity: 0; transform: translateY(6px); } }
 @keyframes sx-drop { from { opacity: 0; transform: translateY(-12px); } }
 @keyframes sx-draw { from { stroke-dashoffset: 1; } }
 @keyframes sx-pulse { to { opacity: 0.35; } }
@@ -50,100 +48,9 @@
 @media (prefers-reduced-motion: no-preference) {
   /* The one idle motion: the live marker in 03 breathes its own opacity. */
   .sx-pulse { animation: sx-pulse 2.4s ease-in-out infinite alternate; }
-
-  /* Pinned panel: the drawing builds as its step arrives. Resting state is fully drawn, so a step
-     that leaves fades out whole instead of un-drawing. */
-  .road-step-body[data-on] .sx-in { animation: sx-rise var(--dur-4) var(--ease) backwards; animation-delay: calc(80ms + var(--d, 0) * var(--stagger)); }
-  .road-step-body[data-on] .sx-drop { animation: sx-drop var(--dur-4) var(--ease) backwards; animation-delay: calc(80ms + var(--d, 0) * var(--stagger)); }
-  .road-step-body[data-on] .sx-draw { animation: sx-draw var(--dur-5) var(--ease) backwards; animation-delay: calc(80ms + var(--d, 0) * var(--stagger)); }
-}
-
-/* Phone cards: the same build, tied to the card scrolling into view. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) and (max-width: 899px) {
-    .road-card .step-art { view-timeline: --sx-card block; }
-    .road-card :is(.sx-in, .sx-drop, .sx-draw) { animation-duration: 1ms; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: --sx-card; animation-range: entry calc(20% + var(--d, 0) * 4%) entry calc(70% + var(--d, 0) * 4%); }
-    .road-card .sx-in { animation-name: sx-rise; }
-    .road-card .sx-drop { animation-name: sx-drop; }
-    .road-card .sx-draw { animation-name: sx-draw; }
-  }
-}
-
-/* ---- Phones: each card opens on its drawing, inset 8px in the card (radius 24 - 8 = 16) ---- */
-.road-card .step-art {
-  width: calc(100% + 2 * var(--card-pad) - 16px);
-  height: auto;
-  aspect-ratio: 4 / 3;
-  margin: calc(8px - var(--card-pad)) calc(8px - var(--card-pad)) 20px;
 }
 
 /* ---- The nav's glance: a quieter thumbnail, no labels, no idle motion ---- */
 .peek-step .step-art { aspect-ratio: 16 / 10; height: auto; }
 .peek-step .sx-pulse { animation: none; }
 
-/* ---- Wide screens: rail | copy | drawing ---- */
-@media (min-width: 900px) {
-  .roadmap-panel { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 32px; align-items: stretch; }
-
-  /* The rail: a neutral pill slides behind the current row. */
-  .road-rail { position: relative; align-self: start; }
-  .road-hl {
-    position: absolute; top: 0; left: 20px; right: 0;
-    height: var(--hl-h, 0px);
-    border-radius: var(--radius-sm);
-    background: var(--color-sunken);
-    transform: translateY(var(--hl-y, 0px));
-    transition: transform var(--dur-3) var(--ease), height var(--dur-3) var(--ease);
-  }
-  .roadmap-list button:hover { background: var(--color-wash); }
-  .roadmap-list li[data-state="now"] button:hover { background: transparent; }
-
-  /* The four steps share one cell and crossfade: the leaving step fades fast, the arriving one rises. */
-  .roadmap-step { display: grid; }
-  .road-step-body {
-    grid-area: 1 / 1;
-    display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    grid-template-rows: auto 1fr;
-    grid-template-areas: "copy art" "gets art";
-    column-gap: 24px;
-    opacity: 0;
-    visibility: hidden;
-    animation: none;
-    transition: opacity var(--dur-2) var(--ease), visibility 0s linear var(--dur-2);
-  }
-  .road-step-body[data-on] { opacity: 1; visibility: visible; transition: opacity var(--dur-3) var(--ease) 80ms, visibility 0s; }
-  .road-copy { grid-area: copy; }
-  .road-gets-block { grid-area: gets; align-self: end; margin-top: var(--stack-lede); }
-  .road-gets-block .road-gets { margin-top: 0; }
-  .roadmap-step .road-deliver { display: grid; gap: 6px; }
-  .road-copy .road-numeral { margin-bottom: var(--stack-label); }
-  .road-copy .road-when { margin-top: 0; }
-
-  /* The drawing fills the column's height; the art keeps its 4:3 and centres in the well. */
-  .road-art { grid-area: art; position: relative; min-height: 240px; }
-  .road-art .step-art { position: absolute; inset: 0; width: 100%; height: 100%; }
-}
-@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
-  .road-step-body[data-on] :is(.road-copy, .road-gets-block) { animation: sx-rise var(--dur-4) var(--ease) backwards; animation-delay: 80ms; }
-  .road-step-body[data-on] .road-gets-block { animation-delay: calc(80ms + 2 * var(--stagger)); }
-}
-@media (min-width: 900px) and (prefers-reduced-motion: reduce) {
-  .road-step-body, .road-step-body[data-on] { transition-duration: var(--dur-2), 0s; transition-delay: 0s, 0s; }
-  .road-hl { transition: none; }
-}
-@media (min-width: 1200px) {
-  .roadmap-panel { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 40px; }
-  .road-step-body { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); column-gap: 40px; }
-}
-/* Short screens: the rail already numbers the steps, so the big numeral gives its height back. */
-@media (min-width: 900px) and (max-height: 760px) {
-  .road-copy .road-numeral { display: none; }
-}
-
-/* Inspect a source: pointing at a system in 01 keeps its line to the decision and quiets the rest. */
-@media (hover: hover) {
-  :is(.road-art, .road-card) .sx-sys { transition: opacity var(--dur-2) var(--ease); }
-  :is(.road-art, .road-card) .step-art:has(.sx-sys:hover) .sx-sys:not(:hover) { opacity: 0.3; }
-  :is(.road-art, .road-card) .sx-sys:hover .sx-link { stroke-width: 2; }
-}

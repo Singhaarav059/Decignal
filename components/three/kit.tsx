@@ -55,9 +55,9 @@ export function useDisposeOnUnmount<T>(value: T, dispose: (v: T) => void) {
 type G = React.ComponentProps<"group">;
 
 /** A system's yard: a poured concrete slab, 1.9 x 1.6 and a kerb's height thick, with a painted edge line. */
-export const PAD = { w: 1.9, d: 1.6, h: 0.034, r: 0.09, line: 0.012, inset: 0.06 };
+const PAD = { w: 1.9, d: 1.6, h: 0.034, r: 0.09, line: 0.012, inset: 0.06 };
 /** Models stand on the pad's top (lib/scene ISLAND_TOP should match it). */
-export const PAD_TOP = PAD.h + 0.002;
+const PAD_TOP = PAD.h + 0.002;
 
 function roundRect(w: number, d: number, r: number) {
   const s = new THREE.Shape();
@@ -107,7 +107,7 @@ const line = () =>
     return new THREE.ShapeGeometry(outer, 8).rotateX(-Math.PI / 2);
   })());
 
-export { pad as padGeometry, line as padLineGeometry };
+export { pad as padGeometry };
 
 /** Paints every vertex one colour (linear), so differently coloured parts can share one draw. With
  *  `side`, faces that are not facing up take that colour: the slab's edge reads as a crisp kerb. */
@@ -161,7 +161,6 @@ export function Crate({ color = TINTS.saffron, material, open = false, children 
   );
 }
 
-export { ServerRacks, Storefront, Factory, Warehouse, SupplierTruck, Globe };
 
 /** Model for each system, in SYSTEMS order: ERP, CRM, MES, WMS, suppliers, external. */
 export const SYSTEM_MODELS = [ServerRacks, Storefront, Factory, Warehouse, SupplierTruck, Globe];

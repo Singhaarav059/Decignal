@@ -29,9 +29,6 @@ export const onStep = (fn: (i: number) => void) => listen("step-jump", fn);
 export const showQuestion = (i: number) => send("faq-jump", i);
 export const onQuestion = (fn: (i: number) => void) => listen("faq-jump", fn);
 
-/** Bring one business area's panel to the front of the area stack. */
-export const showArea = (i: number) => send("area-jump", i);
-export const onArea = (fn: (i: number) => void) => listen("area-jump", fn);
 
 /** Cut the application explorer to one application (by APPLICATIONS index). */
 export const showApplication = (i: number) => send("application-jump", i);
@@ -48,7 +45,7 @@ export const getLenis = () => lenis;
 
 /* ---------------- jumpTo ---------------- */
 
-export type JumpTarget = string | number | Element;
+type JumpTarget = string | number | Element;
 export type JumpOptions = {
   /** What gets focus on landing: true (default for elements and selectors) focuses the target itself,
    *  a selector or element focuses that, false leaves focus where it is. */
@@ -209,7 +206,7 @@ function place(y: number) {
 /** Fired right after the page moves at once (a veil cut, a hash landing, an immediate jump), with the
  *  new y. Anything that eases toward the scroll position (the story camera) should snap to it here,
  *  so the veil opens on the settled frame instead of a camera still flying in. */
-export const JUMP_CUT = "jump-cut";
+const JUMP_CUT = "jump-cut";
 export const onJumpCut = (fn: (y: number) => void) => listen(JUMP_CUT, fn);
 
 function glide(l: Lenis, y: number, seconds: number) {
@@ -289,15 +286,10 @@ export async function jumpTo(target: JumpTarget, opts: JumpOptions = {}) {
   if (id === current) focusOn(focus, r.el);
 }
 
-/** The old entry point: every existing caller now goes through jumpTo. */
-export const scrollToTarget = (target: string | number, immediate = false) => {
-  void jumpTo(target, { immediate });
-};
-
 /* ---------------- Hash landing ---------------- */
 
 /** The element the URL hash names, if this page has it. */
-export function hashTarget() {
+function hashTarget() {
   const hash = window.location.hash;
   if (hash.length < 2) return null;
   try {
@@ -322,7 +314,7 @@ export function holdVeil() {
 }
 
 /** Opens a held veil. */
-export async function releaseVeil() {
+async function releaseVeil() {
   if (!held()) return;
   await openVeil();
   if (document.documentElement.dataset.jump === "in") rest();

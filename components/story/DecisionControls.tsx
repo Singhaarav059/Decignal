@@ -9,7 +9,7 @@ import { EXAMPLE } from "@/lib/example";
 type Mode = "idle" | "adjust" | "reject" | "approved" | "rejected";
 
 /** The reader's choice, for the 3D decision card (S69-05, 2A/2B store contract). */
-export type Decision = { mode: "idle" | "approved" | "rejected"; qty: number };
+type Decision = { mode: "idle" | "approved" | "rejected"; qty: number };
 const publish = (d: Decision) => {
   (store as typeof store & { decision?: Decision }).decision = d;
 };

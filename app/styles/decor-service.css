@@ -26,7 +26,6 @@
 .svc-art .k-sheet { fill: var(--color-surface); stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .svc-art .k-missing { fill: var(--color-surface); stroke: var(--color-signal); stroke-width: 1.2; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 .svc-art .k-hair { fill: none; stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.svc-art .k-hair-strong { fill: none; stroke: var(--color-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .svc-art .k-axis { fill: none; stroke: var(--color-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .svc-art .k-guide { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
 /* A threshold: safety stock, a vibration limit, an escalation line. */
@@ -161,7 +160,7 @@
   }
   .svc-areas[data-art] > li:first-child .svc-area-art .area-art { height: clamp(150px, 15vw, 200px); transform-origin: 50% 50%; }
   .svc-areas[data-art] > li:first-child .svc-area-body { padding: var(--panel-pad); }
-  .svc-areas[data-art] > li:first-child .t-subtitle { font-size: var(--fs-title-card); font-weight: 560; letter-spacing: -.02em; line-height: 1.1; }
+  .svc-areas[data-art] > li:first-child .t-subtitle { font-size: var(--fs-title-card); font-weight: 560; letter-spacing: -0.01em; line-height: 1.1; }
   .svc-areas[data-art] > li:first-child .svc-area-lead { font-size: var(--fs-body); max-width: 34ch; }
 }
 @media (min-width: 1200px) {

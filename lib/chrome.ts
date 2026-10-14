@@ -2,7 +2,7 @@
 // works out where the reader is. Consumers read it with useChrome(selector); only the driver listens
 // to scroll, so adding a control never adds a scroll listener.
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { blendAt, store as story, subscribe as onStory } from "./story";
 import { pageBox, viewTop } from "./offsets";
 
@@ -17,7 +17,7 @@ export type ChromeSection = {
   dock?: boolean;
 };
 
-export type ChromeState = {
+type ChromeState = {
   /** The nav steps aside while reading down past the story. */
   navHidden: boolean;
   /** A jumpTo is running: controls ignore scroll direction until it lands. */
@@ -31,7 +31,7 @@ export type ChromeState = {
   section: string | null;
   /** Its label; sections that start together share one ("FAQ and free audit"). */
   sectionLabel: string;
-  /** A pinned stage ([data-pin], or the application journey) fills the viewport. */
+  /** A pinned stage (the application journey) fills the viewport. */
   pinned: boolean;
   /** The audit form is on screen: other audit CTAs step back. */
   auditNear: boolean;
@@ -90,7 +90,7 @@ export function setChrome(patch: Partial<ChromeState>) {
   listeners.forEach((l) => l());
 }
 
-export function subscribeChrome(fn: () => void) {
+function subscribeChrome(fn: () => void) {
   listeners.add(fn);
   return () => {
     listeners.delete(fn);
@@ -108,7 +108,7 @@ export function useChrome<T>(select: (s: ChromeState) => T): T {
 
 /* ---------------- Scene readiness ---------------- */
 
-export const SCENE_READY = "scene-ready";
+const SCENE_READY = "scene-ready";
 
 /** The story scene calls this after its first rendered frame (or dispatches 'scene-ready' itself). */
 export const markSceneReady = () => window.dispatchEvent(new Event(SCENE_READY));
@@ -123,23 +123,48 @@ export function whenSceneReady() {
   });
 }
 
-/* ---------------- Section detector ---------------- */
+/* ---------------- Page elements ---------------- */
 
-/** Page top of a section's reading start. */
-function sectionTop(s: ChromeSection) {
-  const el = (s.start && document.querySelector(s.start)) || document.getElementById(s.id);
-  return el ? pageBox(el).top : null;
+/** The elements the driver reads on every frame, looked up once per layout change rather than per
+ *  frame: a document-wide query on each scroll frame cost more than the rest of the frame's script. */
+type Refs = {
+  story: HTMLElement | null;
+  /** Pages without the story open on a hero, the first block in <main>. */
+  hero: Element | null;
+  audit: HTMLElement | null;
+  footer: HTMLElement | null;
+  journeys: Element[];
+  docks: HTMLElement[];
+  /** Each section's reading start (its `start` element, else the element with its id). */
+  starts: { s: ChromeSection; el: Element | null }[];
+};
+let refs: Refs | null = null;
+
+function getRefs(): Refs {
+  if (refs) return refs;
+  const story = document.getElementById("story");
+  return (refs = {
+    story,
+    hero: story ? null : (document.getElementById("main")?.firstElementChild ?? null),
+    audit: document.getElementById("audit"),
+    footer: document.querySelector("footer"),
+    journeys: Array.from(document.querySelectorAll(".application-journey")),
+    docks: Array.from(document.querySelectorAll<HTMLElement>("[data-dock]")),
+    starts: sections.map((s) => ({ s, el: (s.start && document.querySelector(s.start)) || document.getElementById(s.id) })),
+  });
 }
+
+/* ---------------- Section detector ---------------- */
 
 /** The section being read: the last one whose top has passed 45% of the viewport. Sections whose
  *  tops sit within 8px of each other (FAQ and audit side by side) count as one, named for both. */
-export function detectSection(sections: ChromeSection[] = HOME_SECTIONS): { id: string | null; label: string } {
+function detectSection(): { id: string | null; label: string } {
   const line = window.scrollY + window.innerHeight * 0.45;
   let found: { id: string | null; label: string } = { id: null, label: "" };
   let foundTop = -Infinity;
-  for (const s of sections) {
-    const top = sectionTop(s);
-    if (top === null) continue;
+  for (const { s, el } of getRefs().starts) {
+    if (!el) continue;
+    const top = pageBox(el).top;
     if (Math.abs(top - foundTop) <= 8 && found.id) {
       found = { id: found.id, label: `${found.label} and ${s.label.charAt(0).toLowerCase()}${s.label.slice(1)}` };
       continue;
@@ -157,21 +182,12 @@ const flowBox = (el: Element) => (el.parentElement?.classList.contains("pin-spac
 
 function isPinned() {
   const vh = window.innerHeight;
-  for (const el of document.querySelectorAll("[data-pin], .application-journey")) {
+  for (const el of getRefs().journeys) {
     const box = flowBox(el);
     const top = viewTop(box);
     if (top <= 0 && top + pageBox(box).height >= vh) return true;
   }
   return false;
-}
-
-/** A sticky stack ([data-stick], the area panels) holds the screen like a pin while its first panel
- *  rests on its sticky line. Kept apart from `pinned`. */
-function isStuck() {
-  const first = document.querySelector<HTMLElement>("[data-stick] > :first-child");
-  if (!first) return false;
-  const cs = getComputedStyle(first);
-  return cs.position === "sticky" && Math.abs(first.getBoundingClientRect().top - parseFloat(cs.top)) < 1.5;
 }
 
 /* ---------------- Floating CTA clearance ---------------- */
@@ -215,7 +231,7 @@ let kick = () => {};
 
 /** The strip the shown pill or dock takes, with its air. Null when neither shows at this width. */
 function dockBand(): Band | null {
-  for (const el of document.querySelectorAll<HTMLElement>("[data-dock]")) {
+  for (const el of getRefs().docks) {
     if (!el.getClientRects().length) continue;
     // Its translate only moves it down while hidden, so its shown top comes from `bottom` and height.
     const r = el.getBoundingClientRect();
@@ -343,15 +359,11 @@ function releaseBand() {
 let sections = HOME_SECTIONS;
 let running = false;
 
-/** Service pages hand in their own section list. */
-export const setChromeSections = (list: ChromeSection[]) => {
-  sections = list;
-};
-
 /** The single driver: one rAF-throttled scroll listener plus the story subscription. SmoothScroll
  *  starts it once per page. Returns its cleanup. */
 export function startChrome(list?: ChromeSection[]) {
   sections = list ?? HOME_SECTIONS;
+  refs = null;
   if (running) return () => {};
   running = true;
   let raf = 0;
@@ -371,30 +383,27 @@ export function startChrome(list?: ChromeSection[]) {
     const dy = y - lastY;
     lastY = y;
     const vh = window.innerHeight;
-    const storyEl = document.getElementById("story");
+    const { story: storyEl, hero, audit, footer } = getRefs();
     const inStory = !!storyEl && viewTop(storyEl) + pageBox(storyEl).height > vh * 0.5;
     // Pages without the story open on a hero with its own CTA; it holds the screen the same way.
-    const hero = storyEl ? null : document.getElementById("main")?.firstElementChild;
     const inHero = !!hero && viewTop(hero) + pageBox(hero).height > vh * 0.5;
     let chapter = state.chapter;
     if (storyEl) {
       const { i, j, e } = blendAt(story.g);
       chapter = e >= 0.5 ? j : i;
     }
-    const sec = inStory ? { id: null, label: "" } : detectSection(sections);
+    const sec = inStory ? { id: null, label: "" } : detectSection();
     // The pinned stages all sit below the story, so while it holds the screen none can be pinned: skip
     // the query on the story's every frame.
     const pinned = !inStory && isPinned();
-    const audit = document.getElementById("audit");
     const auditTop = audit ? viewTop(audit) : Infinity;
     const auditNear = !!audit && auditTop < vh * 0.9 && auditTop + pageBox(audit).height > 0;
-    const footer = document.querySelector("footer");
     const footerNear = !!footer && viewTop(footer) < vh;
 
-    // Hide after 24px of reading down, show after 12px back up; never in the story, a pinned stage or
-    // stuck stack (the floating CTA would sit on it), an open menu or a jump, and never at the very top.
+    // Hide after 24px of reading down, show after 12px back up; never in the story or a pinned stage
+    // (the floating CTA would sit on it), an open menu or a jump, and never at the very top.
     let navHidden = state.navHidden;
-    if (state.jumping || state.menuOpen || inStory || pinned || isStuck() || y < 24) {
+    if (state.jumping || state.menuOpen || inStory || pinned || y < 24) {
       navHidden = false;
       anchorY = y;
     } else if (navHidden) {
@@ -449,13 +458,18 @@ export function startChrome(list?: ChromeSection[]) {
     restTimer = window.setTimeout(schedule, restMs + 20);
     schedule();
   };
-  // Content that grows or shrinks at rest (an answer opening) is checked again.
-  const ro = new ResizeObserver(schedule);
+  // Content that grows or shrinks at rest (an answer opening) is checked again, and the page's
+  // elements are looked up afresh (a lazy section mounting changes the body's size).
+  const relayout = () => {
+    refs = null;
+    schedule();
+  };
+  const ro = new ResizeObserver(relayout);
   ro.observe(document.body);
 
   frame();
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", schedule);
+  window.addEventListener("resize", relayout);
   const offStory = onStory(schedule);
   // A jump or the menu starting or ending re-evaluates at once.
   const offSelf = subscribeChrome(() => {
@@ -472,14 +486,10 @@ export function startChrome(list?: ChromeSection[]) {
     releaseBand();
     kick = () => {};
     window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", schedule);
+    window.removeEventListener("resize", relayout);
+    refs = null;
     offStory();
     offSelf();
     setChrome({ ...INITIAL, sceneReady: state.sceneReady });
   };
-}
-
-/** For a component that wants to own the driver instead (one per page). */
-export function useChromeDriver(list?: ChromeSection[]) {
-  useEffect(() => startChrome(list), [list]);
 }

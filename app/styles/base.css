@@ -50,21 +50,16 @@ body {
 
 /* Headings: Inter Tight, like everything else.
    The role classes (.t-*) carry their own family; this list covers classes not yet moved to a role. */
-h1, h2, h3, h4, .display, .font-serif,
-.glance-num, .faq-q-title,
+h1, h2, h3, h4, .display, .font-serif, .faq-q-title,
 .peek-side-figure, .peek-case-value, dd.tabular, p.tabular.font-semibold {
   font-family: var(--font-heading);
   font-optical-sizing: auto;
-}
-/* Labels set in the display face run slightly condensed, the way a mono label would read. */
-.eyebrow, [class*="font-mono"] {
-  font-stretch: 92%;
 }
 
 /* Display type: the headline role's weight and tracking (sizes come from the call site). */
 .display {
   font-weight: 500;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.011em;
   line-height: 0.98;
   text-wrap: balance;
 }
@@ -74,7 +69,7 @@ h1, h2, h3, h4, .display, .font-serif,
 /* The serif utility maps to the headline face at the subtitle weight. */
 .font-serif {
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.011em;
 }
 
 /* The label role (same as .t-label, kept for existing call sites). */
@@ -180,16 +175,6 @@ h1, h2, h3, h4, .display, .font-serif,
   }
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 
 /* Line reveal: each line rises out of its own mask. */
 .line-mask {

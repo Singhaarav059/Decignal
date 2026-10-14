@@ -1,45 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { ArrowDownRight, Plus } from "lucide-react";
 import { AREAS, appsOf, areaHref } from "@/lib/areas";
 import { APPLICATION_DEMOS } from "@/lib/application-demos";
 import { CTA } from "@/lib/copy";
-import { jumpTo, onArea, showApplication } from "@/lib/jump";
+import { showApplication } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
 import { AreaPhoto } from "./AreaPhoto";
 import { AreaArt } from "./AreaArt";
-import { plainClick } from "./AreaStack";
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/** A plain left click stays on the page; modifier and middle clicks keep the link's own behaviour. */
+const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
 /**
  * The five business areas as numbered rows on the night band (Orvan's services): number, name, one
  * line, the count of applications and the area's place as a small duotone. One row is open at a time:
  * it grows to the place at full size beside the area's signal (drawn), its applications (each opens in
- * the explorer below) and the link to its service page. The nav's area links and showArea(i) open a
- * row and bring it under the nav.
+ * the explorer below) and the link to its service page.
  */
 export function AreaRows() {
   const [open, setOpen] = useState(0);
   const list = useRef<HTMLOListElement>(null);
-
-  const bring = useCallback((i: number) => {
-    setOpen(i);
-    const row = list.current?.children[i] as HTMLElement | undefined;
-    if (!row) return;
-    // After the row has opened, so the page measures its final place.
-    window.setTimeout(
-      () =>
-        void jumpTo(row.getBoundingClientRect().top + window.scrollY - 96, {
-          focus: row.querySelector("button") ?? false,
-        }),
-      60,
-    );
-  }, []);
-  useEffect(() => onArea(bring), [bring]);
 
   // The rows draw in one after another as the list arrives.
   useEffect(() => {
@@ -74,19 +60,24 @@ export function AreaRows() {
       return;
     let raf = 0;
     const at = { x: 0, y: 0 };
+    // The easing runs only while the preview is catching up with the pointer, then rests: a loop
+    // for the page's lifetime restyled it on every frame, wherever the reader was.
+    const tick = () => {
+      const dx = target.current.x - at.x;
+      const dy = target.current.y - at.y;
+      const settled = Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2;
+      at.x = settled ? target.current.x : at.x + dx * 0.16;
+      at.y = settled ? target.current.y : at.y + dy * 0.16;
+      const tilt = settled ? 0 : Math.max(-8, Math.min(8, dx * 0.06));
+      el.style.transform = `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) rotate(${tilt.toFixed(2)}deg)`;
+      raf = settled ? 0 : requestAnimationFrame(tick);
+    };
     const move = (e: PointerEvent) => {
       const r = box.getBoundingClientRect();
       target.current = { x: e.clientX - r.left, y: e.clientY - r.top };
-    };
-    const tick = () => {
-      at.x += (target.current.x - at.x) * 0.16;
-      at.y += (target.current.y - at.y) * 0.16;
-      const tilt = Math.max(-8, Math.min(8, (target.current.x - at.x) * 0.06));
-      el.style.transform = `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0) rotate(${tilt.toFixed(2)}deg)`;
-      raf = requestAnimationFrame(tick);
+      if (!raf) raf = requestAnimationFrame(tick);
     };
     box.addEventListener("pointermove", move);
-    raf = requestAnimationFrame(tick);
     return () => {
       box.removeEventListener("pointermove", move);
       cancelAnimationFrame(raf);

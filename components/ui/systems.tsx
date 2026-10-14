@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type SystemMeta = {
+type SystemMeta = {
   id: string;
   name: string;
   full: string;
@@ -40,4 +40,3 @@ export const SYSTEMS: SystemMeta[] = [
   { id: "ext", name: "External", full: "The outside world", tone: "pink", Icon: Globe, knows: "Inter-plant lane", value: "Clear", short: "Lane clear", detail: "Next 14 days", product: "Freight, weather and traffic feeds", records: "6 feeds", sync: "15 min ago", reads: [["Lane, Plant 02 to Plant 01", "Clear, 2 days"], ["Rain risk on route", "Low"], ["Freight for 3 pallets", "INR 38,000"]], role: "Checks the world between plants: the road, the weather and what freight costs today.", compare: [{ label: "Transfer by road", value: "2 days", f: 0.1 }, { label: "Wait for supplier", value: "21 days", f: 1 }] },
 ];
 
-export const tone = (t: string) => `var(--color-${t})`;

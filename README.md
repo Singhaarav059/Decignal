@@ -11,7 +11,7 @@ Live: https://decignal.up.railway.app
 - Next.js 16.3 App Router (Turbopack), React 19, TypeScript
 - three.js r186 with @react-three/fiber and drei for both canvases (the story stage and the applications explorer)
 - GSAP and Lenis for scroll, Tailwind CSS v4 with tokens in `app/styles/tokens.css`
-- Fonts: Bricolage Grotesque (headlines, labels) and Figtree (text) through `next/font`; `public/fonts/*.woff` are the static files the 3D labels use
+- Fonts: Bricolage Grotesque (headlines, numerals, labels) and Figtree (text), self-hosted from `app/fonts` through `next/font/local` (variable woff2, OFL licences beside them), so neither the build nor the page fetches a font from anywhere else; `public/fonts/*.woff` are the static cuts the 3D labels use
 
 ## Getting started
 
@@ -31,7 +31,7 @@ In development, `window.__goto(g)` jumps the story to a position.
 | `npm run dev` | Dev server with HMR |
 | `npm run build` | Production build |
 | `npm start` | Serve the build (reads `PORT`) |
-| `npm run lint` | ESLint over the repo (agent tooling and `references/` are ignored) |
+| `npm run lint` | ESLint over the repo (`.claude/` and `references/` are ignored) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run rules` | Design-rule gate in warn mode (`scripts/rules-check.mjs`): em dashes, warm colours, gradients, blur, backdrop filters, ink colour-mix, `100vw` in `calc`, soft shadows |
 | `npm run check` | typecheck, lint, rules, then build. Run before pushing |

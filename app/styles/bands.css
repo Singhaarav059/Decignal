@@ -1,7 +1,7 @@
 /* Colour bands: a section painted as one solid slab of colour, inset from the screen edge with the XL
    radius (the editorial sheet's corner). The slab is a ::before layer, so the section's content keeps
-   the shared --edge and lines up with the light sections around it. Flat colour only: no gradient,
-   tint or glow. White panels inside keep ink text.
+   the shared --edge and lines up with the light sections around it. The solid carries a soft field of
+   blooms and grain (fields.css); no glow. White panels inside keep ink text.
 
    data-band picks the colour. Bright tones (pink, saffron, emerald, tangerine) carry solid ink text,
    never ink at an alpha (that reads brown over warm colours); cobalt, violet and ink carry white.
@@ -73,7 +73,6 @@
 
 /* Section heads, ledes, notes and labels on the band itself. */
 .band .section-title-label,
-.band .tr-head .t-label,
 .band .results-note { color: var(--band-soft); }
 .band .section-title-dot { background: var(--band-dot); }
 .band .ed-title .accent { --accent-ink: var(--band-accent); }
@@ -84,18 +83,6 @@
 
 /* White panels inside a band keep their own ink. */
 .band :is(.card, .outcome-figure, .seg) { color: var(--color-ink); }
-
-/* The facts row under the trail, on the band. */
-.band .glance-band { border-top-color: var(--band-line-strong); }
-.band .glance-cell { border-color: var(--band-line); }
-.band :is(.glance-num, .glance-label) { color: var(--band-fg); }
-.band .glance-text { color: var(--band-fg-2); }
-@media (min-width: 900px) {
-  .band .glance-cell + .glance-cell { border-left-color: var(--band-line); }
-}
-@media (min-width: 900px) and (hover: hover) and (pointer: fine) {
-  .band .glance-text { color: var(--color-ink-2); }
-}
 
 @media (prefers-reduced-motion: reduce) { .band::before { transition: none; } }
 
@@ -119,13 +106,6 @@
   .area-ui-app:hover > svg { color: var(--tone-ink, var(--color-ink)); }
 }
 
-/* The area index: a chip fills with its area's colour on hover. */
-.apps-index a { transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
-@media (hover: hover) {
-  .apps-index a:hover { color: var(--tone-on, var(--color-ink)); background: var(--tone); box-shadow: none; transform: translateY(-2px); }
-  .apps-index a:hover i { background: currentColor; }
-}
-
 /* FAQ: a question slides in on hover and its button fills with the question's colour; the open one stays filled. */
 :is(.faq-n, .faq-q-text) { transition: transform var(--dur-3) var(--ease), color var(--dur-2) var(--ease); }
 @media (hover: hover) {
@@ -135,61 +115,11 @@
 .faq-item[data-open] .faq-plus { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); }
 
 @media (prefers-reduced-motion: reduce) {
-  .area-ui-app, .apps-index a, .faq-n, .faq-q-text { transition: none; transform: none !important; }
+  .area-ui-app, .faq-n, .faq-q-text { transition: none; transform: none !important; }
 }
-
-/* The trail's truck: an emerald trailer and an ink cab on the rule, nose at the fill's head. */
-.tr-truck { display: none; position: absolute; left: calc(var(--len) * var(--f, 1)); bottom: 1px; transform: translateX(-100%); overflow: visible; }
-.tr-rule[data-axis="x"] .tr-truck { display: block; }
-.tr-truck rect { fill: var(--color-emerald); }
-.tr-truck .tr-truck-cab { fill: var(--color-ink); }
-.tr-truck circle { fill: var(--color-ink); stroke: var(--color-surface); stroke-width: 1.2; }
-
-/* How it works: the step's numeral in its colour, its drawing on a pale solid of it. */
-:is(.road-step-body, .road-card) .road-numeral { color: var(--tone, var(--color-ink)); }
-:is(.road-step-body, .road-card) .step-art { background: color-mix(in srgb, var(--tone) 10%, var(--color-surface)); transition: background-color var(--dur-4) var(--ease); }
 
 /* The area panels' index: a solid pill in the area's colour. */
 .area-index { padding: 4px 10px; border-radius: var(--radius-pill); color: var(--tone-on, var(--color-ink)); background: var(--tone); }
-
-/* Outcomes play in turn: the active tab's pill fills while its case shows (Editorial.tsx advances on
-   the fill's animationend). Hovering the tabs or the case holds it. */
-.results-tabs .seg-pill::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgb(255 255 255 / 0.26); transform: scaleX(0); transform-origin: left; }
-.results[data-auto] .results-tabs .seg-pill[data-run]::after { animation: seg-progress 6s linear forwards; }
-.results[data-auto]:has(.results-tabs:hover, .outcome-card:hover, .results-tabs :focus-visible) .results-tabs .seg-pill::after { animation-play-state: paused; }
-@keyframes seg-progress { to { transform: scaleX(1); } }
-
-/* ---- Works with: each system type as a solid tile of its colour with its drawn object (SystemIcon),
-   turning white with a check once read; the feed marks match; the recommendation sits on ink. ---- */
-.ribbon-tile { width: clamp(50px, 4.8vw, 66px); background: var(--tone); box-shadow: 0 3px 0 rgb(15 18 23 / 0.12); transition: background-color var(--dur-3) var(--ease); }
-.ribbon-tile[data-zone="2"] { background: var(--color-surface); box-shadow: var(--edge-line); }
-.ribbon-mark { gap: 4px; color: var(--tone-on, var(--color-ink)); }
-.ribbon-mark b { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; }
-@media (max-width: 1023px) { .ribbon-mark b { display: none; } }
-.ribbon-feed-mark { color: var(--tone-on, var(--color-ink)); background: var(--tone); }
-.ribbon-decision { color: var(--color-on-ink); background: var(--color-ink); }
-.ribbon-decision .t-label { color: rgb(255 255 255 / 0.72); }
-
-/* The other types drift by on a saffron strip under the ribbon, full width: the names in ink with no
-   chips (a logo band), each turning into a white chip under the pointer. The strip keeps the bands'
-   inset and XL radius. */
-.marquee { min-width: 0; overflow: hidden; padding-bottom: var(--section-y); }
-.marquee-label { margin-bottom: 14px; }
-.marquee-track { display: flex; overflow: hidden; margin-inline: 12px; padding-block: clamp(18px, 2.2vw, 30px); border-radius: var(--radius-xl); background: var(--color-saffron); }
-.marquee-row { flex: none; display: flex; align-items: center; gap: clamp(12px, 2vw, 32px); padding-right: clamp(12px, 2vw, 32px); animation: marquee 48s linear infinite; }
-.marquee-row li { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 18px 0 14px; border-radius: var(--radius-pill); font-family: var(--font-heading); font-size: clamp(17px, 1.45vw, 21px); font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; color: var(--color-ink); transition: background-color var(--dur-2) var(--ease), transform var(--dur-3) var(--ease), box-shadow var(--dur-2) var(--ease); }
-.marquee-row li svg { color: var(--color-ink); }
-@media (hover: hover) {
-  .marquee:hover .marquee-row { animation-play-state: paused; }
-  .marquee-row li:hover { background: var(--color-surface); transform: translateY(-2px); box-shadow: 0 3px 0 rgb(15 18 23 / 0.12); }
-}
-@media (max-width: 599px) { .marquee-track { margin-inline: 6px; border-radius: var(--radius-lg); } }
-@keyframes marquee { to { transform: translateX(-100%); } }
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track { flex-wrap: wrap; padding-inline: var(--edge); }
-  .marquee-row { flex-wrap: wrap; animation: none; }
-  .marquee-row[aria-hidden] { display: none; }
-}
 
 /* ---- Application explorer: the world on a pale stage of the application's colour (--tone eases
    between applications, explorer.css), and the sources it reads as chips under the title. ---- */

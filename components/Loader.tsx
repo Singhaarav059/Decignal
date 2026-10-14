@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getLenis, hashOffset, holdVeil, landOnHash, token } from "@/lib/jump";
 import { whenSceneReady } from "@/lib/chrome";
+import { LOADER } from "@/lib/copy";
 import { Logo } from "./ui/Logo";
 
 const PLATES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
@@ -158,7 +159,7 @@ export function Loader() {
         <Logo size={30} />
       </div>
       <div className="loader-foot">
-        <p className="eyebrow max-w-[30ch]">Decision intelligence for enterprises across India and Africa</p>
+        <p className="eyebrow max-w-[30ch]">{LOADER.positioning}</p>
         <span ref={count} className="loader-count tabular font-serif">
           000
         </span>

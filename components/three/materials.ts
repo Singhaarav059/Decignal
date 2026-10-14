@@ -61,7 +61,7 @@ function profileNormal(key: string, size: number, height: (u: number) => number,
 }
 
 /** Trapezoidal steel cladding / container corrugation, one rib per texture repeat. */
-export const corrugation = () =>
+const corrugation = () =>
   profileNormal("corrugation", 256, (u) => {
     const x = ((u % 1) + 1) % 1;
     // flat crest, sloped flanks, flat valley
@@ -79,14 +79,14 @@ export const fineRibs = () =>
   }, 3.5);
 
 /** Tyre tread: blocks across the tread band. */
-export const tread = () =>
+const tread = () =>
   profileNormal("tread", 128, (u) => {
     const x = ((u % 1) + 1) % 1;
     return x < 0.62 ? 1 : 0;
   }, 9, true);
 
 /** Soft concrete / asphalt mottling for roughness. */
-export const grain = (key: string, base: number, spread: number) =>
+const grain = (key: string, base: number, spread: number) =>
   canvasTex(`grain-${key}`, 256, 256, (c) => {
     const img = c.createImageData(256, 256);
     let s = 1234567;

@@ -92,7 +92,7 @@ html[data-jump] .nav-shell {
 .loader-count {
   font-size: clamp(48px, 7vw, 96px);
   line-height: 0.8;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.011em;
 }
 /* Progress, as a hairline: its scaleX is the same real progress as the count. */
 .loader-bar {

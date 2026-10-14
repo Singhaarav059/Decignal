@@ -7,8 +7,8 @@
 .faq-item { border-bottom: 0; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--edge-line); transition: box-shadow var(--dur-3) var(--ease), transform var(--dur-3) var(--ease); }
 .faq-item[data-open] { box-shadow: var(--edge-line), 0 24px 48px -32px rgb(15 18 23 / 0.35); }
 .faq-q { gap: 20px; padding: 14px 16px 14px 20px; }
-.faq-n { width: auto; min-width: 2.2ch; font-size: clamp(28px, 2.6vw, 40px); font-weight: 300; line-height: 1; letter-spacing: -0.04em; color: var(--tone-ink, var(--color-ink)); }
-.faq-q-title { font-size: clamp(16px, 1.25vw, 19px); font-weight: 500; letter-spacing: -0.015em; }
+.faq-n { width: auto; min-width: 2.2ch; font-size: clamp(28px, 2.6vw, 40px); font-weight: 300; line-height: 1; letter-spacing: -0.011em; color: var(--tone-ink, var(--color-ink)); }
+.faq-q-title { font-size: clamp(16px, 1.25vw, 19px); font-weight: 500; letter-spacing: -0.011em; }
 .faq-a p { padding: 0 64px 22px calc(2.2ch * 1.6 + 40px); }
 @media (max-width: 640px) { .faq-a p { padding: 0 16px 18px 20px; } }
 @media (hover: hover) {
@@ -38,7 +38,7 @@
 .band[data-band="mist"] .section-title-label { background: var(--color-surface); box-shadow: var(--edge-line); }
 
 /* ---- Footer: Orvan's closing colour band. A cobalt slab with white type, white link rows and area
-   pills, and the giant wordmark in white across the foot. The six-colour strip steps aside: the colour
+   pills, and the giant wordmark in white across the foot. No six-colour strip: the colour
    is the band itself. ---- */
 .site-footer {
   --on: #fff;
@@ -50,7 +50,6 @@
   background: var(--color-cobalt);
 }
 @media (max-width: 599px) { .site-footer { margin-inline: 6px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; } }
-.footer-strata { display: none; }
 .footer-grid { padding-top: clamp(56px, 8vw, 112px); }
 .site-footer .t-label { color: var(--on-2); }
 .site-footer .t-title { color: var(--on); }
@@ -71,33 +70,20 @@
 .footer-top { color: var(--on); }
 .footer-top > span { box-shadow: inset 0 0 0 1px var(--on-line); }
 .footer-top:hover > span { color: var(--color-cobalt); background: #fff; }
-.footer-wordmark-word { color: #fff; font-weight: 500; letter-spacing: -0.05em; }
+.footer-wordmark-word { color: #fff; font-weight: 500; letter-spacing: -0.014em; }
 .footer-motif .footer-thread { stroke: rgb(255 255 255 / 0.85); }
+/* A white halo outside each system dot (stroke painted under the fill), so the cobalt dot reads whole
+   on the cobalt footer and the six stay one set. */
+.footer-motif .footer-dot { stroke: #fff; stroke-width: 4px; paint-order: stroke; }
 
 /* ---- "Also reads": a wall of white tiles in two rows drifting opposite ways (SystemsRibbon.tsx) ---- */
-.marquee { padding-bottom: calc(var(--section-y) * 0.5); }
 .marquee-label { margin-bottom: 18px; text-align: center; }
 .wall { display: grid; gap: 12px; overflow: hidden; }
-.wall-row { display: flex; width: max-content; }
-.wall-track { display: flex; gap: 12px; padding-right: 12px; animation: wall-left 60s linear infinite; }
-.wall-row[data-dir="right"] .wall-track { animation-name: wall-right; }
-@keyframes wall-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-@keyframes wall-right { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 .wall-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; align-items: center; width: 300px; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--edge-line); transition: transform var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease); }
-.wall-icon { grid-row: 1 / span 2; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; color: var(--color-ink); background: var(--color-sunken); transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease); }
-.wall-name { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
-.wall-reads { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (hover: hover) {
-  .wall:hover .wall-track { animation-play-state: paused; }
   .wall-tile:hover { transform: translateY(-3px); box-shadow: var(--edge-line), 0 18px 32px -20px rgb(15 18 23 / 0.35); }
-  .wall-tile:hover .wall-icon { color: #fff; background: var(--color-cobalt); }
 }
 @media (max-width: 599px) { .wall-tile { width: 240px; } }
-@media (prefers-reduced-motion: reduce) {
-  .wall-row { width: auto; flex-wrap: wrap; justify-content: center; padding-inline: var(--gutter); }
-  .wall-track { animation: none; flex-wrap: wrap; justify-content: center; padding: 0; }
-  .wall-track[aria-hidden] { display: none; }
-}
 
 /* ---- Statement graphics (Statement.tsx): the sentence drawn as a flow, and a motion drawing per fact ---- */
 .stmt-head { display: grid; gap: 40px; margin-top: 28px; align-items: center; }
@@ -107,7 +93,10 @@
 .flow-thread { fill: none; stroke: var(--tone, var(--color-ink)); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1100ms var(--ease) calc(200ms + var(--i, 0) * 140ms); }
 .flow-out { stroke: var(--color-emerald); transition-delay: 900ms; }
 .stmt[data-on] .flow-thread { stroke-dashoffset: 0; }
-.flow-pulse { fill: var(--tone); opacity: 0; transition: opacity 400ms var(--ease) 1400ms; }
+/* The pulse: a dot (r 4) travelling the thread. The dash pattern's period is twice the path, so only
+   one dot is ever on it. */
+.flow-pulse { fill: none; stroke: var(--tone); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 0 2; opacity: 0; transition: opacity 400ms var(--ease) 1400ms; animation: flow-pulse 2.8s linear infinite; animation-delay: calc(var(--i, 0) * 0.5s); }
+@keyframes flow-pulse { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1; } }
 .stmt[data-on] .flow-pulse { opacity: 1; }
 .flow-chip { fill: var(--color-surface); stroke: var(--color-line); }
 .flow-dot { fill: var(--tone); }
@@ -282,20 +271,20 @@
 .story-details-btn { background: var(--color-surface); }
 
 /* ---- 09 Decide: the card turns night, like the audit band it leads to ---- */
-.story-card[data-night] { color: #fff; background: var(--color-night); box-shadow: 0 30px 70px -30px rgb(12 18 34 / 0.6); }
+.story-card[data-night] { color: #fff; background: var(--color-night); box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.5); }
 .story-card[data-night] .story-progress li { background: rgb(255 255 255 / 0.12); }
 .story-card[data-night] .story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 70%, var(--color-night)); }
 .story-card[data-night] .story-progress li[data-on] { background: #fff; }
 .story-card[data-night] :is(.story-label-name, .story-label) { color: #fff; }
 .story-card[data-night] .story-label-n { color: #9fb3ff; }
 .story-card[data-night] .story-label-of { color: rgb(255 255 255 / 0.45); }
-.final-lead { margin-top: 14px; font-size: clamp(19px, 1.6vw, 23px); font-weight: 500; line-height: 1.25; letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
+.final-lead { margin-top: 14px; font-size: clamp(19px, 1.6vw, 23px); font-weight: 500; line-height: 1.25; letter-spacing: -0.01em; color: #fff; text-wrap: balance; }
 .final-card-title { margin-top: 18px; color: rgb(255 255 255 / 0.6); }
 .final-outcomes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
 .final-outcomes li { position: relative; display: grid; align-content: start; gap: 6px; padding: 12px; border-radius: 14px; background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); transition: background-color var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
 .final-outcomes li:hover { background: rgb(255 255 255 / 0.12); transform: translateY(-2px); }
 .final-outcomes i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
-.final-outcomes strong { font-size: clamp(20px, 1.8vw, 26px); font-weight: 500; line-height: 1; letter-spacing: -0.03em; color: #fff; white-space: nowrap; }
+.final-outcomes strong { font-size: clamp(20px, 1.8vw, 26px); font-weight: 500; line-height: 1; letter-spacing: -0.013em; color: #fff; white-space: nowrap; }
 .final-outcomes span { font-size: 12px; line-height: 1.35; color: rgb(255 255 255 / 0.7); }
 .final-systems { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); }
 .final-systems .t-label { color: rgb(255 255 255 / 0.6); }
@@ -416,16 +405,9 @@
   .dial-band[data-loop] .dial-arc { stroke: var(--color-emerald); }
   .dial-band[data-loop] .dial-face { box-shadow: var(--lg-rim), inset 0 0 0 10px color-mix(in srgb, var(--color-emerald) 14%, #fff), 0 30px 60px -36px rgb(15 18 23 / 0.35); }
 }
-
-/* Also reads: a heading with the count, and tiles whose icons sit on discs of the palette. */
-.wall-head { display: grid; justify-items: center; gap: 10px; margin-bottom: 28px; text-align: center; }
-.wall-head .marquee-label { margin: 0; }
-.wall-title { display: inline-flex; align-items: center; gap: 12px; font-size: clamp(26px, 2.8vw, 40px); font-weight: 500; letter-spacing: -0.04em; line-height: 1.05; }
 .wall-count { display: inline-grid; place-items: center; height: 36px; padding: 0 12px; border-radius: var(--radius-pill); font-size: 15px; font-weight: 600; letter-spacing: 0; color: #fff; background: var(--color-ink); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.28); }
-.wall-icon { color: var(--tone-on, #fff); background: var(--tone); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.45), 0 6px 12px -8px var(--tone); transition: transform var(--dur-3) var(--ease); }
 .wall-tile { background: rgb(255 255 255 / 0.9); }
 @media (hover: hover) {
-  .wall-tile:hover .wall-icon { color: var(--tone-on, #fff); background: var(--tone); transform: scale(1.08) rotate(-4deg); }
   .wall-tile:hover { box-shadow: var(--lg-rim), 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent), 0 18px 32px -20px var(--tone); }
 }
 

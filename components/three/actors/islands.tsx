@@ -49,7 +49,7 @@ const reduceMotion = () => typeof window !== "undefined" && window.matchMedia("(
 const islandsLive = () => Math.max(weight(CH.fragments, store.g), weight(CH.context, store.g)) > 0.9;
 
 /** World position of a system island, for the camera to lean toward. */
-export const islandWorld = (i: number, out: THREE.Vector3) => {
+const islandWorld = (i: number, out: THREE.Vector3) => {
   const g = islandRoots[i];
   return g ? g.getWorldPosition(out) : null;
 };

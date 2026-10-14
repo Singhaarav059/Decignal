@@ -4,7 +4,7 @@
    with an example read and two bars, the card names it and the application that uses it.
    Phones: the head, then the types as a list. */
 .rw-track { padding-top: clamp(56px, 8vw, 96px); }
-.rw-title { margin-top: 12px; text-wrap: balance; font-size: clamp(30px, 3.4vw, 48px); font-weight: 500; line-height: 1.05; letter-spacing: -0.04em; color: var(--color-ink); }
+.rw-title { margin-top: 12px; text-wrap: balance; font-size: clamp(30px, 3.4vw, 48px); font-weight: 500; line-height: 1.05; letter-spacing: -0.011em; color: var(--color-ink); }
 .rw-title .wall-count { display: inline-grid; margin-left: 12px; vertical-align: 0.3em; }
 .rw-lede { margin-top: 14px; max-width: 44ch; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
 .rw-top { padding-inline: var(--gutter); }
@@ -21,8 +21,6 @@
 .rw-list-k { color: var(--color-ink-soft); }
 .rw-list-body strong { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
 .rw-list-body .t-small { color: var(--color-ink-soft); }
-.rw-list-fig { font-size: 22px; font-weight: 500; letter-spacing: -0.03em; white-space: nowrap; color: var(--tone-ink, var(--color-ink)); }
-.rw-list-fig small { font-size: 12px; color: var(--color-ink-soft); letter-spacing: 0; }
 
 @media (min-width: 1024px) {
   .rw-list { display: none; }
@@ -57,7 +55,7 @@
   .rw-card-phase { display: inline-flex; align-items: center; gap: 7px; color: var(--tone-ink, var(--color-ink)); }
   .rw-card-phase i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
   .rw-card-phase { color: var(--tone-ink, var(--color-ink)); }
-  .rw-card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: 22px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; color: var(--color-ink); }
+  .rw-card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: 22px; font-weight: 600; line-height: 1.15; letter-spacing: -0.01em; color: var(--color-ink); }
   .rw-card-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--tone-on); background: var(--tone); }
   .rw-card-full { font-size: 14px; font-weight: 500; letter-spacing: -0.005em; color: var(--color-ink-soft); }
   .rw-card-text { margin-top: 10px; color: var(--color-ink-2); }
@@ -94,7 +92,7 @@
   .rw-readout { position: absolute; left: 0; top: calc(-1 * var(--R) + clamp(54px, 8vh, 92px)); width: min(440px, 34vw); translate: -50% 0; text-align: center; }
   .rw-read-k { display: inline-flex; align-items: center; gap: 9px; color: var(--color-ink-soft); }
   .rw-read-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--tone-on); background: var(--tone); }
-  .rw-fig { margin-top: 12px; font-size: clamp(56px, min(6vw, 10vh), 96px); font-weight: 500; line-height: 1; letter-spacing: -0.055em; white-space: nowrap; color: var(--tone-ink, var(--color-ink)); }
+  .rw-fig { margin-top: 12px; font-size: clamp(56px, min(6vw, 10vh), 96px); font-weight: 500; line-height: 1; letter-spacing: -0.015em; white-space: nowrap; color: var(--tone-ink, var(--color-ink)); }
   .rw-fig small { margin-left: 0.22em; font-size: 0.28em; font-weight: 500; letter-spacing: -0.01em; color: var(--color-ink-soft); }
   .rw-caption { margin-top: 10px; font-size: 15px; color: var(--color-ink-2); }
   .rw-bars { display: grid; gap: 14px; margin-top: clamp(16px, 3vh, 26px); text-align: left; }

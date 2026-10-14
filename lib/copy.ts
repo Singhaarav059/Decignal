@@ -80,7 +80,7 @@ export const HERO = {
   scrollCue: "Scroll",
 } as const;
 
-export type ChapterCopy = {
+type ChapterCopy = {
   /** Two lines, line 2 in the chapter tone; red only when the line states a risk (S14). */
   title: Headline;
   /** At most 2 lines in the 440px card (95 characters or fewer). */
@@ -156,7 +156,7 @@ export const CHAPTER_COPY: (ChapterCopy | null)[] = [
  * Each names the system it is read from and takes that system's tone; `risk` turns the figure red.
  * Figures come from the running example (lib/example.ts) and never repeat the card's own readout.
  */
-export type ChapterFact = { value: string; unit?: string; label: string; source: string; tone: string; risk?: boolean };
+type ChapterFact = { value: string; unit?: string; label: string; source: string; tone: string; risk?: boolean };
 export const CHAPTER_FACTS: (ChapterFact[] | null)[] = [
   null,
   [

@@ -2,9 +2,9 @@
 // from return null, and the actor scales in or out of the scene during the transition.
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
-import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, industryF, scaleDeal, SCALE_DEAL, PLINTH_H } from "./story";
+import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, industryF, scaleDeal, SCALE_DEAL } from "./story";
 
-export { industryF, PLINTH_H, BEATS };
+export { industryF, BEATS };
 
 export type Vec3 = [number, number, number];
 export type Pose = { p: Vec3; rx?: number; ry?: number; s?: number };
@@ -24,7 +24,7 @@ export const ISO_R: Vec3 = [CA, 0, -SA];
 export const ISO_U: Vec3 = [-SA * SE, CE, -CA * SE];
 
 /** A layout drawn square to the viewer (x right, z toward the viewer), placed in the world about (cx, cz). */
-export const isoXZ = (x: number, z: number, cx = 0, cz = 0): [number, number] => [cx + x * CA + z * SA, cz - x * SA + z * CA];
+const isoXZ = (x: number, z: number, cx = 0, cz = 0): [number, number] => [cx + x * CA + z * SA, cz - x * SA + z * CA];
 
 /* ---------------- Sizes ---------------- */
 
@@ -55,7 +55,7 @@ const PORTRAIT_LAYOUT: [number, number, number][] = [
 ];
 const aboutHub = (l: [number, number, number][]) =>
   l.map(([x, z, ry]) => [...isoXZ(x - HUB[0], z - HUB[1], HUB[0], HUB[1]), ry] as [number, number, number]);
-export const ISLANDS = aboutHub(HERO_LAYOUT);
+const ISLANDS = aboutHub(HERO_LAYOUT);
 const PORTRAIT_ISLANDS = aboutHub(PORTRAIT_LAYOUT);
 export const WMS = 3;
 
@@ -67,7 +67,7 @@ export const RING = (s: number) => {
 };
 /** Centre height of the signal tote in Context: on the ground at the ring's centre. */
 export const CONTEXT_CRATE_S = 1.7;
-export const HUB_Y = (CRATE.h * CONTEXT_CRATE_S) / 2;
+const HUB_Y = (CRATE.h * CONTEXT_CRATE_S) / 2;
 
 export function islandPose(s: number, c: number, portrait = false): Pose | null {
   const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[s];
@@ -96,10 +96,10 @@ export function islandPose(s: number, c: number, portrait = false): Pose | null 
 // Where it sits on the warehouse island, relative to the island centre: stacked on the warehouse's own tote.
 // Totes on the island are shown at half size, in proportion to the warehouse beside them.
 export const ISLAND_TOTE = 0.5;
-export const CRATE_ON_ISLAND: Vec3 = [0.48, ISLAND_TOP + CRATE.h * ISLAND_TOTE * 1.5, 0.42];
+const CRATE_ON_ISLAND: Vec3 = [0.48, ISLAND_TOP + CRATE.h * ISLAND_TOTE * 1.5, 0.42];
 /** Signal: the tote stands on the ground in front of the hub, where the six systems fold into it. */
-export const SIGNAL_AT: [number, number] = [0.1, 0.55];
-export const SIGNAL_S = 1.5;
+const SIGNAL_AT: [number, number] = [0.1, 0.55];
+const SIGNAL_S = 1.5;
 
 /* ---------------- 03 Problem: crates become the inventory chart ---------------- */
 
@@ -108,7 +108,7 @@ export const STEP_Y = CRATE.h + 0.035;
 export const DAY_X = (d: number) => (d - 3) * 1.0;
 export const SAFETY_Y = 2.5 * STEP_Y;
 /** Stock behind the chart: each tote holds about 70 units; today's count is exact. */
-export const UNITS_PER_CRATE = 70;
+const UNITS_PER_CRATE = 70;
 export const SAFETY_UNITS = 175;
 export const dayUnits = (d: number) => 410 - d * 45;
 export const crateFill = (d: number, level: number) => Math.min(1, Math.max(0, dayUnits(d) / UNITS_PER_CRATE - level));
@@ -552,16 +552,13 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot, wide = 
   return o;
 }
 
-/** Re-exported for the exit of the last chapter, which blendAt does not blend. */
-export { finalExit };
-
-export { clamp01 };
-
-/* ---------------- Background: one pale solid per chapter, no gradients ---------------- */
+/* ---------------- Background: one pale solid per chapter, under a soft field ---------------- */
 
 // Each chapter's sky is a pale solid of its colour (components/story/chapters.ts TONE); scrolling
 // eases from one solid to the next, and the fog takes the same colour so the far ground still melts
 // into the page. Warm chapters lean pink, never peach or cream (shadows on peach read brown).
+// components/Backdrop.tsx lays the chapter's field of blooms and a film grain over the solid
+// (fields.css), keeping the blooms to the edges so the ground still melts into the solid.
 const SKY = {
   cobalt: [233, 238, 255],
   signal: [255, 236, 241],
@@ -570,17 +567,29 @@ const SKY = {
   rose: [252, 237, 248],
   sky: [236, 242, 250],
 } as const satisfies Record<string, readonly [number, number, number]>;
-const BG: (readonly [number, number, number])[] = [
-  SKY.cobalt, // systems
-  SKY.signal, // signal
-  SKY.signal, // problem
-  SKY.violet, // context
-  SKY.emerald, // decision
-  SKY.emerald, // control
-  SKY.rose, // scale
-  SKY.sky, // industries: each industry brings its own colour on its board and place
-  SKY.cobalt, // final
+type SkyKey = keyof typeof SKY;
+export const SKY_KEYS = Object.keys(SKY) as SkyKey[];
+const SKY_OF: SkyKey[] = [
+  "cobalt", // systems
+  "signal", // signal
+  "signal", // problem
+  "violet", // context
+  "emerald", // decision
+  "emerald", // control
+  "rose", // scale
+  "sky", // industries: each industry brings its own colour on its board and place
+  "cobalt", // final
 ];
+const BG = SKY_OF.map((k) => SKY[k]);
+
+/** How much of each chapter sky (and so its field) shows at story position g. */
+export function skyWeights(g: number): Record<SkyKey, number> {
+  const { i, j, e } = blendAt(g);
+  const w = Object.fromEntries(SKY_KEYS.map((k) => [k, 0])) as Record<SkyKey, number>;
+  w[SKY_OF[i]] += 1 - e;
+  w[SKY_OF[j]] += e;
+  return w;
+}
 
 /** Background colour at story position g, as [r, g, b]. */
 export function bgAt(g: number): [number, number, number] {

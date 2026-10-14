@@ -4,12 +4,12 @@
 
 @theme static {
   /* Neutrals. bg-2 and paper are kept as aliases so existing utilities keep working. */
-  /* A cool, faintly blue white (Koushik), so white cards lift off it; night is the deep navy of the
-     contrast bands (Orvan's dark sections, never black). */
+  /* A cool, faintly blue white (Koushik), so white cards lift off it; night is the graphite of the
+     contrast bands (the CreditKarma panels, 2026-10-14: near-black, a breath of the cool hue). */
   --color-bg: #eef1f7;
-  --color-night: #0c1222;
-  --color-night-2: #151d33;
-  --color-on-night-2: #a9b2c7;
+  --color-night: #0f1012;
+  --color-night-2: #1a1b1e;
+  --color-on-night-2: #a7aab1;
   --color-night-line: rgb(255 255 255 / 0.12);
   --color-surface: #ffffff;
   --color-paper: #ffffff;
@@ -50,10 +50,11 @@
   --color-demand-ink: #2a52f0;
   --color-ok-ink: #087a54;
 
-  /* Inter Tight (next/font --font-display) carries everything: headlines medium with a light second
-     line, text regular, labels semibold. --font-serif and --font-mono stay as aliases. */
+  /* Bricolage Grotesque (--font-display, app/fonts) carries headlines (medium, a light second line),
+     numerals and labels; Figtree (--font-text) carries running text. --font-serif and --font-mono stay
+     as aliases. */
   --font-heading: var(--font-display), "Helvetica Neue", Arial, sans-serif;
-  --font-sans: var(--font-display), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-text), "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font-heading);
   --font-mono: var(--font-heading);
 

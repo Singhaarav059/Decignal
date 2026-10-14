@@ -353,7 +353,7 @@ const FIGURES = [Dashboards, Integration, Data, Security, Control, Delivery, Own
 /* ---------------------------------------------------------------- pieces */
 
 /** One answer's drawing. `on` draws it in (strokes, then the result); off, it waits undrawn. */
-export function FaqArt({ index, on }: { index: number; on: boolean }) {
+function FaqArt({ index, on }: { index: number; on: boolean }) {
   const ref = useSvgScale(W, H);
   const Figure = FIGURES[index];
   if (!Figure) return null;

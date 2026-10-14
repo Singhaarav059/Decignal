@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Person, Walker } from "./people";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GlobeMaterial, SignMaterial, aluminium, brushed, chrome, cladding, clearGlass, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, rubber, steel } from "./materials";
+import { GlobeMaterial, SignMaterial, aluminium, brushed, chrome, cladding, clearGlass, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, steel } from "./materials";
 import { Bake, LIVE } from "./Bake";
 import { NEUTRAL } from "./accent";
 import { LoadedPallet, Tote, box, cylY, geo, merge, rbox } from "./parts";
@@ -18,7 +18,7 @@ import { FACES } from "@/lib/copy";
 /* ---------------- Signs: lettering drawn at the size it shows on screen ---------------- */
 
 /** Lettering that reads on a system colour: ink on saffron, white on the others (palette INK_ON). */
-export function inkOn(tone: string) {
+function inkOn(tone: string) {
   const key = (Object.keys(TINTS) as (keyof typeof TINTS)[]).find((k) => TINTS[k].toLowerCase() === tone.toLowerCase());
   return key ? INK_ON[key].ink : "#FFFFFF";
 }
@@ -33,7 +33,7 @@ const signB = new THREE.Vector3();
  * A painted sign, w x h, facing +z. The panel takes `bg` and the lettering `fg`; in the story a model's
  * accent driver eases both (to ink on white) when its system is not the subject.
  */
-export function Sign({ text, bg, fg, w, h, weight = 700, ...props }: React.ComponentProps<"mesh"> & { text: string; bg: string; fg: string; w: number; h: number; weight?: number }) {
+function Sign({ text, bg, fg, w, h, weight = 700, ...props }: React.ComponentProps<"mesh"> & { text: string; bg: string; fg: string; w: number; h: number; weight?: number }) {
   const gl = useThree((st) => st.gl);
   const ref = useRef<THREE.Mesh>(null);
   const [tier, setTier] = useState(3);
@@ -127,7 +127,7 @@ export function Sign({ text, bg, fg, w, h, weight = 700, ...props }: React.Compo
 /* Plant: an industrial shed with dock doors, a drive-in door, offices  */
 /* ------------------------------------------------------------------ */
 
-export const PLANT = { W: 17, D: 10, H: 7, door: -5.0 /* x of the drive-in door */ };
+const PLANT = { W: 17, D: 10, H: 7, door: -5.0 /* x of the drive-in door */ };
 
 function plantDark() {
   return geo("plant-dark", () => {
@@ -983,4 +983,3 @@ export function BearingBed({ filled = 7 }: { filled?: number }) {
   );
 }
 
-export { rubber };

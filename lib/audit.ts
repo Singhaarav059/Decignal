@@ -110,7 +110,7 @@ export type AuditResponse =
   | { ok: false; error: Exclude<AuditErrorCode, "invalid" | "rate_limited"> };
 
 /** Field messages (COPY-12). Shown under the field; plain sentences, no codes. */
-export const AUDIT_MESSAGES = {
+const AUDIT_MESSAGES = {
   name: "Enter your name",
   email: "Enter a work email, like name@company.com",
   company: "Enter your company",
@@ -179,7 +179,7 @@ function block(v: unknown): string {
     .trim();
 }
 
-export function isTimeZone(tz: unknown): tz is string {
+function isTimeZone(tz: unknown): tz is string {
   if (typeof tz !== "string" || !tz || tz.length > LIMITS.timeZone) return false;
   try {
     new Intl.DateTimeFormat("en-GB", { timeZone: tz });

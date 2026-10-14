@@ -5,7 +5,7 @@ import { subscribe, weight } from "@/lib/story";
 import { FACE_H, FACE_W, drawFace, readFonts, type FaceSpec } from "../three/faces";
 
 // One card every 2.8s: long enough to read its headline, short enough that the deck feels alive.
-export const DECK_STEP_MS = 2800;
+const DECK_STEP_MS = 2800;
 // A finger on the deck pauses the cycle; it resumes this long after the last touch.
 const TOUCH_HOLD_MS = 6000;
 

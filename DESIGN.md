@@ -13,15 +13,16 @@ The tokens live in `app/styles/tokens.css`; the type roles, layout, card and seg
 - System colours: cobalt #2E5BFF (ERP), violet #7C5CFF (CRM), emerald #0FA874 (MES; also a valid or approved outcome), saffron #FFB21E (WMS), tangerine #FF7438 (suppliers), pink #FF5FA2 (external). Signal red #F2361F means risk and nothing else.
 - Text in a system colour uses its text-safe ink, never a mix with ink: cobalt-ink #2A52F0, violet-ink #5B3BE6, emerald-ink #087A54, pink-ink #C42B70, tangerine-ink #C7440F, signal-ink #C2331B. Saffron is never text (its ink is ink). In TSX set colour with `toneVars(tone)` from `lib/tone.ts` (`--tone` for fills and strokes, `--tone-ink` for text); CSS reads `var(--tone-ink, var(--color-ink))`.
 - Colour lives only in dots, numerals, text-ink, drawings and the chapter's 3D object. Area tone colours chapter chrome only (dot, number, the headline's accent line); data uses the colour of the system it came from.
-- Surfaces are white or neutral. The one strong surface is ink: the closing audit panel and the active selector pill. No cobalt-filled panels.
+- Surfaces are white or neutral. Dark sections are graphite (night #0F1012, night-2 #1A1B1E), not navy. The active selector pill is ink. No cobalt-filled panels.
+- Glass tones (CreditKarma references, 2026-10-14), on glass only: slate #4D7894, slate-deep #213F53, sky #86B4D0, lilac #B9BFDB, amber #F5C95A, butter #F9EA94, orange #F39A45, olive #55681D, lime #C9E264, mist #DFE4EA. Orange never meets slate or a dark tone (it mixes to brown).
 
 ## Type
 
 Three roles, nine classes (`.t-*`, in the components layer so a utility can still adjust them):
 
-- Headline: `.t-display` (hero and final statement only, Bricolage 560, clamp(40px, min(6.2vw, 10.5vh), 96px), tracking -.032em), `.t-title` (section heads, 560, clamp(32px, min(3.8vw, 6.4vh), 56px), -.026em), `.t-title-card` (a title inside the StoryCard, up to 40px), `.t-subtitle` (600, 17-20px), `.t-num-lg` (600, 48-80px, tabular), `.t-num-md` (600, 28px, tabular).
+- Headline: `.t-display` (hero and final statement only, Bricolage Grotesque 500 with optical sizing, `--fs-display`, tracking -.013em), `.t-title` (section heads, 500, `--fs-title`, -.011em), `.t-title-card` (a title inside the StoryCard, up to 40px), `.t-subtitle` (600, 17-20px), `.t-num-lg` (600, 48-80px, tabular), `.t-num-md` (600, 28px, tabular).
 - Text: `.t-lede` (Figtree 450, 16-18px, ink-2), `.t-body` (450, 15px; buttons, nav links and CTAs at 600), `.t-small` (500, 13px).
-- Label: `.t-label` (Bricolage 600, 11px, .1em, uppercase, 92% width, ink-soft). `.eyebrow` is the same role.
+- Label: `.t-label` (Bricolage Grotesque 600, 11px, .1em, uppercase, ink-soft). `.eyebrow` is the same role.
 - Two-line headlines use `components/ui/SectionTitle.tsx`: line one in ink, line two in the tone's ink on its own line, an optional label above (16px) and lede below (24px).
 - No rendered text under 11px, including SVG labels after viewBox scaling. No em dashes in copy.
 
@@ -31,7 +32,7 @@ Three roles, nine classes (`.t-*`, in the components layer so a utility can stil
 - Spacing: a 4px scale, 4 8 12 16 24 32 48 64 96 128. Every editorial section uses `.section` (`--section-y` clamp(80px, 10vw, 144px)). Header stack: label to title 16, title to lede 24, lede to actions 32, header to content 64.
 - Radius: xs 6, sm 10, md 16, lg 24, xl 32, pill. A nested element takes the next step down. (Tailwind `rounded-xs` to `rounded-xl` now map to this scale.)
 - One card: `.card` (surface, radius md, hairline edge, `--card-pad`), `.card--panel` (radius lg) for anything holding a graphic or a section's content, `.card-inset` (sunken, radius sm) for rows inside a card. The StoryCard uses `--card-x`, `--card-b`, `--card-w` and radius lg.
-- Elevation: hairlines only (`--edge-line`, `--edge-strong` on hover, `--edge-selected` ink ring when selected). The only drop shadow is `--shadow-float`, for layers floating over content. No gradients, glass, backdrop blur, glow or translucent surfaces. Tone appears in an item's dot or numeral, never as a ring or an underline.
+- Elevation: hairlines only (`--edge-line`, `--edge-strong` on hover, `--edge-selected` ink ring when selected). The only drop shadow is `--shadow-float`, for layers floating over content. Glass is the one exception (`app/styles/liquid-glass.css`): mist (chrome, controls), milk (cards people read) and smoke (on graphite), each a frosted pane with a soft colour field, film grain and a rim; big cards take squircle corners. A few hero cards wear the slate or amber fields. Backgrounds carry fields too (`app/styles/fields.css`): the story sky (each chapter's solid plus its blooms and grain, cross-faded by `components/Backdrop.tsx`, blooms kept to the corners so the 3D fog still melts into the solid), the editorial sheet (a repeating tile of blooms), the bands, the how-it-works sheets and the footer. Gradients appear only in glass and these fields; text, buttons and lines stay flat, with no glow. Tone appears in an item's dot or numeral, never as a ring or an underline.
 - Stacking: canvas 10 < story 20 < island 28/29 < editorial 30 < rail 40 < pill/dock 45 < menu 47 < veil 48 < nav 50 < loader 70 < skip link 80 (`--z-*`).
 
 ## Controls and motion

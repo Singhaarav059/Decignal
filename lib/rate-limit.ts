@@ -4,9 +4,9 @@
 
 type Bucket = { tokens: number; at: number };
 
-export type Take = { ok: true; remaining: number } | { ok: false; retryAfter: number };
+type Take = { ok: true; remaining: number } | { ok: false; retryAfter: number };
 
-export type LimiterOptions = {
+type LimiterOptions = {
   /** Requests allowed in a burst. */
   capacity: number;
   /** One token comes back every `refillMs`. */

@@ -198,19 +198,6 @@ export const CONNECTS: { id: string; name: string; full: string; tone: string; r
   { id: "ext", name: "External feeds", full: "Freight, port and weather feeds", tone: "pink", reads: "Freight rates, port status and weather on the route", read: "Inter-plant lane clear, 2 days" },
 ];
 
-/** Other system types the applications read, shown neutral (no system colour). */
-export const CONNECTS_MORE: { name: string; reads: string }[] = [
-  { name: "TMS", reads: "Shipments, lanes and carrier ETAs" },
-  { name: "CMMS", reads: "Assets, work orders and maintenance history" },
-  { name: "SCADA and IoT", reads: "Sensor readings such as vibration and temperature" },
-  { name: "QMS", reads: "Inspections, non-conformances and batch holds" },
-  { name: "POS", reads: "Sell-through by store and region" },
-  { name: "DMS", reads: "Dealer orders, stock and allocation" },
-  { name: "Service desk", reads: "Service cases, SLAs and part history" },
-  { name: "Data warehouse", reads: "History, forecasts and models you already keep" },
-  { name: "Spreadsheets", reads: "The plans and trackers that live outside systems" },
-];
-
 /** Each business area keeps one colour everywhere it appears. */
 export const CATEGORY_TONE: Record<Category, string> = {
   "Supply Chain": "cobalt",

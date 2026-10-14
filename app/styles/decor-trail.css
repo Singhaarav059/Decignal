@@ -1,51 +1,6 @@
-/* Decor pass (trail lane). Loaded after the section sheets so it can refine them.
-   The trail band (components/sections/Trail.tsx, drawings in trail/TrailArt.tsx): one white panel
-   holding seven stations on a shared subgrid. Each station: its drawing, then its dot on the rule,
-   then number, name and the running example. The band fits its content on the --section-y rhythm.
-   Progress is two variables written from scroll: --f on each run of the rule (its fill, 0 to 1) and
-   --q on each station (its drawing, 0 to 1). Both default to 1, so without script or with reduced
-   motion everything is drawn. */
-
-.trail-band { min-height: 0; padding-block: var(--section-y); }
-
-.tr-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: var(--stack-lede); }
-.tr-head .trail-title { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
-.tr-head .section-title-index { color: var(--band-fg); }
-.tr-example { margin: 0; font-variant-numeric: tabular-nums; }
-
-.tr-panel { position: relative; padding: 32px; }
-.tr { --tr-gap: 20px; position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); column-gap: var(--tr-gap); }
-.tr-group { grid-column: span var(--span); display: grid; grid-template-columns: subgrid; align-content: start; }
-/* The phase name and a hairline to the end of its stations: SIGNAL ——  EVIDENCE ———————— */
-.tr-group-name { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-.tr-group-name::after { content: ""; flex: 1; height: 1px; background: var(--color-line); }
-.tr-steps { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; }
-.tr-step { position: relative; display: grid; align-content: start; }
-
-/* The dot: a ring in the station's colour that fills as the rule reaches it. The surface halo lets
-   the rule pass behind it. */
-.tr-dot { position: relative; z-index: 1; width: 9px; height: 9px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: 0 0 0 3px var(--color-surface), inset 0 0 0 1.5px var(--tone); }
-.tr-dot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--tone); transform: scale(clamp(0, var(--q, 1) * 6, 1)); }
-
-.tr-copy { display: grid; gap: 4px; margin-top: 16px; }
-.tr-n { margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-.tr-name { font-size: var(--fs-body); font-weight: 600; line-height: 1.4; letter-spacing: -0.005em; color: var(--color-ink); }
-.tr-ex { color: var(--color-ink-2); }
-
-/* The rule: one run per line of stations, from its first dot's centre to its last (placed by
-   Trail.tsx), a hairline track with an ink fill. Hidden until placed. */
-.tr-rule { display: none; position: absolute; left: var(--x); top: var(--y); background: var(--color-line-strong); pointer-events: none; }
-.tr-rule > span { position: absolute; inset: 0; background: var(--color-ink); transform-origin: 0 0; }
-.tr-rule[data-axis="x"] { display: block; width: var(--len); height: 1px; }
-.tr-rule[data-axis="x"] > span { transform: scaleX(var(--f, 1)); }
-.tr-rule[data-axis="y"] { display: block; width: 1px; height: var(--len); }
-.tr-rule[data-axis="y"] > span { transform: scaleY(var(--f, 1)); }
-
-/* Pointing at a station brings it forward; the others step back. */
-@media (hover: hover) {
-  .tr-step { transition: opacity var(--dur-2) var(--ease); }
-  .tr:has(.tr-step:hover) .tr-step:not(:hover) { opacity: 0.5; }
-}
+/* Decor pass (trail lane): the seven step drawings (components/sections/trail/TrailArt.tsx) that the
+   trail dial (TrailDial.tsx) draws in its face. --q on each drawing (0 to 1) is its progress, written
+   from scroll; it defaults to 1, so without script or with reduced motion everything is drawn. */
 
 /* ---- The drawings: 140 x 104. useSvgScale writes the on-screen scale to --svg-k, so labels stay
    11px and every stroke keeps its weight (data 2, outlines 1.25, axes 1) at any drawing size. ---- */
@@ -113,38 +68,19 @@
    three tracks each, the second tier's three take four. Every drawing keeps the first tier's width,
    so the two tiers share one drawing size and stroke scale. ---- */
 @media (min-width: 768px) and (max-width: 1199px) {
-  .tr-panel { padding: var(--panel-pad); }
-  .tr { grid-template-columns: repeat(12, minmax(0, 1fr)); row-gap: 40px; }
-  .tr-group:nth-child(1) { grid-column: span 3; }
-  .tr-group:nth-child(2) { grid-column: span 9; }
-  .tr-group:nth-child(3) { grid-column: 1 / -1; }
-  .tr-step { grid-column: span 3; }
-  .tr-group:nth-child(3) .tr-step { grid-column: span 4; }
-  /* Three of a second-tier station's four tracks: (100% - 3 gaps) x 3/4 + 2 gaps. */
-  .tr-group:nth-child(3) .tr-art { width: calc((100% - 3 * var(--tr-gap)) * 0.75 + 2 * var(--tr-gap)); }
+  
   .tr-art { max-width: 208px; }
 }
 
 /* ---- Phones: the trail runs down the left edge, each drawing beside or under its text ---- */
 @media (max-width: 767px) {
-  .tr-panel { padding: var(--panel-pad); }
-  .tr, .tr-group, .tr-steps { display: block; }
-  .tr-group + .tr-group { margin-top: 8px; }
-  .tr-group-name { margin: 0 0 4px; padding-left: 33px; }
-  .tr-step { grid-template-columns: 9px 160px minmax(0, 1fr); grid-template-areas: "dot art copy"; column-gap: 24px; align-items: start; padding-block: 14px; }
-  .tr-dot { grid-area: dot; margin-top: 3px; }
   .tr-art { grid-area: art; width: 160px; margin: calc(var(--headroom, 0) * var(--svg-k, 1) * -1px) 0 0; }
-  .tr-copy { grid-area: copy; margin: 0; max-width: 44ch; }
 }
 @media (max-width: 640px) {
-  .tr-step { grid-template-columns: 9px minmax(0, 1fr); grid-template-areas: "dot copy" ". art"; column-gap: 20px; row-gap: 12px; padding-block: 12px; }
   .tr-art { width: 156px; }
-  .tr-group-name { padding-left: 29px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tr-rule { --f: 1 !important; }
-  .tr-step { --q: 1 !important; }
   .tg-pulse { animation: none; }
 }
 

@@ -11,16 +11,16 @@
     font-weight: 500;
     text-wrap: balance;
   }
-  .t-display { font-size: var(--fs-display); line-height: 0.98; letter-spacing: -0.045em; }
-  .t-title { font-size: var(--fs-title); line-height: 1.02; letter-spacing: -0.04em; }
-  .t-title-card { font-size: var(--fs-title-card); line-height: 1.06; letter-spacing: -0.03em; }
+  .t-display { font-size: var(--fs-display); line-height: 0.98; letter-spacing: -0.013em; }
+  .t-title { font-size: var(--fs-title); line-height: 1.02; letter-spacing: -0.011em; }
+  .t-title-card { font-size: var(--fs-title-card); line-height: 1.06; letter-spacing: -0.013em; }
   .t-subtitle {
     font-family: var(--font-heading);
     font-optical-sizing: auto;
     font-size: var(--fs-subtitle);
     font-weight: 600;
     line-height: 1.25;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.011em;
   }
   .t-lede {
     font-family: var(--font-sans);
@@ -36,7 +36,6 @@
     font-family: var(--font-heading);
     font-size: var(--fs-label);
     font-weight: 600;
-    font-stretch: 92%;
     line-height: 1.2;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -49,8 +48,8 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
-  .t-num-lg { font-size: var(--fs-num-lg); line-height: 0.95; letter-spacing: -0.035em; }
-  .t-num-md { font-size: var(--fs-num-md); line-height: 1; letter-spacing: -0.02em; }
+  .t-num-lg { font-size: var(--fs-num-lg); line-height: 0.95; letter-spacing: -0.01em; }
+  .t-num-md { font-size: var(--fs-num-md); line-height: 1; letter-spacing: -0.01em; }
   /* Text in a tone: its text-safe ink (set with lib/tone.ts toneVars). */
   .t-tone { color: var(--tone-ink, var(--color-ink)); }
   /* Two-line headline: the first line medium in ink, the second light in the section's text-safe ink
@@ -59,7 +58,7 @@
     display: block;
     font-style: normal;
     font-weight: 300;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.01em;
     color: var(--accent-ink, var(--color-cobalt-ink));
   }
 
@@ -97,10 +96,8 @@
     border-radius: var(--radius-sm);
     padding: 12px 14px;
   }
-  /* A layer floating over content (glance panel, island popover, sticky CTA, phone dock). */
-  .card--float { box-shadow: var(--edge-line), var(--shadow-float); }
-  /* The single strong surface: the closing audit panel. */
-  .card--accent { background: var(--color-ink); color: var(--color-on-ink); box-shadow: none; }
+  
+  
   .card[data-interactive] {
     transition: box-shadow var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
   }

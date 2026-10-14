@@ -6,8 +6,9 @@ import { useEffect } from "react";
  * Liquid glass refraction (the lens at the edge of Apple's Liquid Glass). Every element marked
  * [data-lens] gets its own SVG filter: a displacement map shaped like the element's rounded rectangle,
  * flat in the middle and bending toward the rim, so whatever passes behind the glass curves at its
- * edges. The map is drawn once per size on a canvas; the filter then blurs a little, displaces and
- * lifts saturation, all as the element's backdrop-filter.
+ * edges. The map is drawn once per size on a canvas and kept, so a size seen before (the nav pill
+ * growing and shrinking with its section label) costs nothing; the filter then blurs a little,
+ * displaces and lifts saturation, all as the element's backdrop-filter.
  *
  * Only Chromium renders an SVG filter as a backdrop-filter, so other browsers (and readers who ask for
  * reduced transparency) keep the plain glass from liquid-glass.css: a light blur and saturation, no bending.
@@ -19,21 +20,44 @@ const RIM = 22;
 
 const isChromium = () => /Chrome\/\d+/.test(navigator.userAgent);
 
+/** Maps already drawn, by size and radius; the oldest goes once there are more than MAPS. */
+const drawn = new Map<string, string>();
+const MAPS = 24;
+
 /** The displacement map for a w x h box with corner radius r: red and green carry x and y (128 = none). */
 function lensMap(w: number, h: number, r: number) {
+  const key = `${w}x${h}r${r}`;
+  const hit = drawn.get(key);
+  if (hit) {
+    drawn.delete(key);
+    drawn.set(key, hit);
+    return hit;
+  }
+  const url = drawMap(w, h, r);
+  drawn.set(key, url);
+  if (drawn.size > MAPS) drawn.delete(drawn.keys().next().value!);
+  return url;
+}
+
+function drawMap(w: number, h: number, r: number) {
+  // A large map is drawn at half size and stretched by the filter: the field is smooth (and blurred
+  // after), so it bends the same, for a quarter of the work on a phone's CPU.
+  const k = w * h > 40_000 ? 0.5 : 1;
+  const cw = Math.ceil(w * k);
+  const ch = Math.ceil(h * k);
   const c = document.createElement("canvas");
-  c.width = w;
-  c.height = h;
+  c.width = cw;
+  c.height = ch;
   const ctx = c.getContext("2d")!;
-  const img = ctx.createImageData(w, h);
+  const img = ctx.createImageData(cw, ch);
   const d = img.data;
   const rim = Math.max(4, Math.min(RIM, r * 0.9, Math.min(w, h) / 2));
   const hw = w / 2;
   const hh = h / 2;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const px = x + 0.5 - hw;
-      const py = y + 0.5 - hh;
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      const px = ((x + 0.5) * w) / cw - hw;
+      const py = ((y + 0.5) * h) / ch - hh;
       const ax = Math.abs(px) - (hw - r);
       const ay = Math.abs(py) - (hh - r);
       const ox = Math.max(ax, 0);
@@ -58,7 +82,7 @@ function lensMap(w: number, h: number, r: number) {
         dx = -nx * m;
         dy = -ny * m;
       }
-      const i = (y * w + x) * 4;
+      const i = (y * cw + x) * 4;
       d[i] = Math.round(128 + dx * 127);
       d[i + 1] = Math.round(128 + dy * 127);
       d[i + 2] = 128;
@@ -133,6 +157,15 @@ export function LiquidLens() {
         seen.set(el, rec);
       }
       rec.key = key;
+      const map = lensMap(w, h, Math.max(Math.round(r), 2));
+      // A new size for a filter that exists: swap its map in place rather than rebuilding the filter.
+      if (rec.image && rec.map && rec.image.isConnected) {
+        rec.image.setAttribute("href", map);
+        rec.image.setAttribute("width", String(w));
+        rec.image.setAttribute("height", String(h));
+        rec.map.setAttribute("scale", String(Math.min(BEND * 2, h * 0.9)));
+        return;
+      }
       defs.querySelector(`#${rec.id}`)?.remove();
       const blur = el.dataset.lens === "clear" ? 1.5 : 4;
       const f = document.createElementNS(NS, "filter");
@@ -144,7 +177,7 @@ export function LiquidLens() {
       f.setAttribute("primitiveUnits", "userSpaceOnUse");
       f.setAttribute("color-interpolation-filters", "sRGB");
       f.innerHTML =
-        `<feImage href="${lensMap(w, h, Math.max(r, 2))}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>` +
+        `<feImage href="${map}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>` +
         `<feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="soft"/>` +
         `<feDisplacementMap in="soft" in2="map" scale="${Math.min(BEND * 2, h * 0.9)}" xChannelSelector="R" yChannelSelector="G" result="bent"/>` +
         `<feColorMatrix in="bent" type="saturate" values="1.7"/>`;

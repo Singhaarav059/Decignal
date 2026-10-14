@@ -11,9 +11,6 @@ export type Motion = RefObject<{ progress: number; edge?: number }>;
 export type Vec = [number, number, number];
 export const phase = (p: number, a: number, b: number) => THREE.MathUtils.smoothstep(p, a, b);
 
-/** Linear 0..1 progress between a and b (no easing), for choreography that must stay in step. */
-export const ramp = (p: number, a: number, b: number) => THREE.MathUtils.clamp((p - a) / (b - a), 0, 1);
-
 /** A pin's hover override: the object the reader points at in the card (or on its dot), else null. */
 export type PinRef = RefObject<string | null>;
 

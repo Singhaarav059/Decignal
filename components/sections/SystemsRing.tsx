@@ -128,7 +128,8 @@ export function SystemsRing({ children }: { children: ReactNode }) {
         const depth = (pt.y / B + 1) / 2;
         const sc = 0.76 + 0.24 * depth;
         t.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
-        t.style.zIndex = String(Math.round(depth * 10));
+        const z = String(Math.round(depth * 10));
+        if (t.style.zIndex !== z) t.style.zIndex = z;
         // The front is the tile nearest the bottom middle.
         const score = pt.y - Math.abs(pt.x) * 0.6;
         if (score > best) {

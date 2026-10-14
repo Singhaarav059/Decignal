@@ -12,13 +12,13 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LIVE } from "./Bake";
 
-export type Pose = "stand" | "walk" | "sit" | "tablet" | "point" | "wave";
+type Pose = "stand" | "walk" | "sit" | "tablet" | "point" | "wave";
 
 type Hair = "short" | "crop" | "ponytail" | "bun" | "long";
 type Headwear = { kind: "hardhat" | "cap"; color: string } | null;
 
 /** An outfit and a body. `vest` is the hi-vis colour (or null). */
-export type Look = {
+type Look = {
   skin: string;
   shirt: string;
   trousers: string;

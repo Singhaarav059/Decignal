@@ -343,7 +343,7 @@ const Rest = ({ children }: { children: ReactNode }) => <div className="story-pa
  * The card's head, on every chapter: a strip of nine segments (one per chapter, each in its own
  * colour, filled up to this one), then "02 / 09 Signal" and the honesty label for the running example.
  */
-export function Label({ ch, example = true }: { ch: number; example?: boolean }) {
+function Label({ ch, example = true }: { ch: number; example?: boolean }) {
   return (
     <div className="story-head" style={toneVars(TONE[ch])}>
       <ol className="story-progress" aria-hidden>
@@ -364,7 +364,7 @@ export function Label({ ch, example = true }: { ch: number; example?: boolean })
 }
 
 /** Two-line chapter title: line two in the chapter's text-safe tone. */
-export function Title({ ch, lines }: { ch: number; lines: Headline | readonly [string, ReactNode] }) {
+function Title({ ch, lines }: { ch: number; lines: Headline | readonly [string, ReactNode] }) {
   return (
     <h2 className="t-title-card story-title" style={accentVars(TONE[ch])}>
       <span className="story-title-line">{lines[0]}</span> <span className="accent">{lines[1]}</span>

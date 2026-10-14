@@ -124,13 +124,6 @@ html.ready .intro-stage { opacity: 1; transform: none; }
   gap: 8px;
   min-width: 0;
 }
-.story-label-dot {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-pill);
-  background: var(--tone, var(--color-ink));
-}
 .story-label-note {
   margin-left: auto;
   padding-left: 12px;
@@ -373,7 +366,6 @@ html.ready .intro-stage { opacity: 1; transform: none; }
   font-family: var(--font-heading);
   font-size: var(--fs-label);
   font-weight: 600;
-  font-stretch: 92%;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -400,7 +392,7 @@ html.ready .intro-stage { opacity: 1; transform: none; }
 }
 @media (max-width: 479px) {
   /* Narrow cards set the stages in the body face, wrapping under their dot. */
-  .stepper-label { font-family: var(--font-sans); font-stretch: normal; font-size: var(--fs-label); letter-spacing: 0; text-transform: none; white-space: normal; line-height: 1.2; padding-right: 4px; }
+  .stepper-label { font-family: var(--font-sans); font-size: var(--fs-label); letter-spacing: 0; text-transform: none; white-space: normal; line-height: 1.2; padding-right: 4px; }
 }
 
 /* 06: the approval panel inside the card. */

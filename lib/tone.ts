@@ -22,16 +22,16 @@ const HEX: Record<string, Tone> = {
 };
 
 /** The raw colour of a tone, for fills and strokes. */
-export const toneColor = (t: Tone) => `var(--color-${t})`;
+const toneColor = (t: Tone) => `var(--color-${t})`;
 
 /** The text-safe ink of a tone. Saffron and ink resolve to ink. */
-export const toneInk = (t: Tone) => (t === "ink" ? "var(--color-ink)" : `var(--tone-ink-${t})`);
+const toneInk = (t: Tone) => (t === "ink" ? "var(--color-ink)" : `var(--tone-ink-${t})`);
 
 /**
  * Resolves a tone name, a `var(--color-x)` reference or a raw system hex to its tone name.
  * Returns undefined for anything else.
  */
-export function toneOf(value: string | null | undefined): Tone | undefined {
+function toneOf(value: string | null | undefined): Tone | undefined {
   if (!value) return undefined;
   const v = value.trim().toLowerCase();
   if (isTone(v)) return v;
@@ -53,7 +53,7 @@ export function toneVars(tone: Tone | string | null | undefined): CSSProperties 
 
 /** Text on a solid fill of the tone: white on the deep tones, ink on the bright ones (never ink at an alpha). */
 const DEEP: readonly Tone[] = ["cobalt", "violet", "signal", "demand", "ink"];
-export const toneOn = (t: Tone) => (DEEP.includes(t) ? "var(--color-on-ink)" : "var(--color-ink)");
+const toneOn = (t: Tone) => (DEEP.includes(t) ? "var(--color-on-ink)" : "var(--color-ink)");
 
 /** Inline style for a headline's accent line (SectionTitle, .accent): `--accent-ink` only. */
 export function accentVars(tone: Tone | string | null | undefined): CSSProperties {

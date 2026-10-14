@@ -8,7 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CRATE } from "@/lib/scene";
-import { aluminium, chrome, darkGlass, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
+import { aluminium, chrome, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
 
 /* ---------------- Geometry helpers ---------------- */
 
@@ -111,7 +111,7 @@ function rimGeometry(r: number, w: number, dual: boolean) {
   return merge([face, back]);
 }
 
-export function wheelParts({ r, w, dual = false }: WheelSpec) {
+function wheelParts({ r, w, dual = false }: WheelSpec) {
   const key = `${r}-${w}-${dual}`;
   const tw = dual ? w / 2 - 0.01 : w;
   const tyres = geo(`tyre-${key}`, () => {
@@ -345,7 +345,7 @@ export function Tote({ material, open = false, children }: { material: THREE.Mat
 
 /* ---------------- Bearing: deep-groove ball bearing ---------------- */
 
-export function bearingGeometry() {
+function bearingGeometry() {
   return geo("bearing", () => {
     const ring = (ro: number, ri: number, wd: number) =>
       new THREE.LatheGeometry(
@@ -383,7 +383,7 @@ export function Bearing(props: React.ComponentProps<"group">) {
 /* ---------------- Pallet with a wrapped load of totes ---------------- */
 
 /** Euro pallet, 1.2 x 0.8 m, built at 1 unit = 1 m. */
-export function palletGeometry() {
+function palletGeometry() {
   return geo("pallet", () => {
     const parts: THREE.BufferGeometry[] = [];
     const L = 1.2;
@@ -442,4 +442,3 @@ export function LoadedPallet({ tote, wrapped = true }: { tote: THREE.Material; w
 }
 
 /** Dark glass helper re-exported for models that compose windows. */
-export { darkGlass };
