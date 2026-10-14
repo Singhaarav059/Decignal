@@ -7,14 +7,15 @@
 .rw-title { margin-top: 12px; text-wrap: balance; font-size: clamp(30px, 3.4vw, 48px); font-weight: 500; line-height: 1.05; letter-spacing: -0.011em; color: var(--color-ink); }
 .rw-title .wall-count { display: inline-grid; margin-left: 12px; vertical-align: 0.3em; }
 .rw-lede { margin-top: 14px; max-width: 44ch; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
-.rw-top { padding-inline: var(--gutter); }
 .rw-swap { animation: rw-in 620ms var(--ease-out-expo) both; }
 @keyframes rw-in { from { opacity: 0; translate: 0 10px; } }
 
 /* Phones and tablets: no dial. */
 .rw-tabs, .rw-card, .rw-wheel { display: none; }
 .rw-top { padding-top: 0; }
-.rw-list { display: grid; gap: 10px; margin: 28px auto 0; padding-inline: var(--gutter); max-width: 720px; }
+.rw-list { display: grid; gap: 10px; width: min(100% - 2 * var(--gutter), var(--grid-max)); margin: 28px auto 0; }
+/* Tablets: two columns, so the nine rows do not run four screens long. */
+@media (min-width: 640px) { .rw-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .rw-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 14px 16px 14px 14px; border-radius: 18px; background: rgb(255 255 255 / 0.72); box-shadow: inset 0 0 0 1px var(--color-line); }
 .rw-list-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--tone-on); background: var(--tone); }
 .rw-list-body { display: grid; gap: 3px; min-width: 0; }
@@ -28,7 +29,6 @@
   .rw-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
   .rw-top { position: relative; z-index: 3; display: flex; align-items: flex-start; justify-content: space-between; gap: 48px; padding-top: calc(92px + 2.4vh); }
   .rw-track { padding-top: 0; }
-  .rw-top { padding-inline: 0; }
   .rw-copy { max-width: min(620px, 46vw); }
   .rw-title { font-size: clamp(34px, min(3.4vw, 6vh), 52px); }
 
@@ -41,7 +41,6 @@
   }
   .rw-tab i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); transition: background-color var(--dur-3) var(--ease); }
   .rw-tab span { font-size: 12px; color: var(--color-ink-soft); }
-  .rw-tab:hover { box-shadow: inset 0 0 0 1px var(--color-line-strong); }
   .rw-tab[aria-pressed="true"] { color: var(--tone-on); background: var(--tone); box-shadow: none; }
   .rw-tab[aria-pressed="true"] i { background: currentColor; }
   .rw-tab[aria-pressed="true"] span { color: inherit; opacity: 0.8; }
@@ -84,7 +83,6 @@
   .rw-label-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--tone-on); background: var(--tone); transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease); }
   .rw-label:not([data-phase]) .rw-label-in { color: var(--color-ink-soft); }
   .rw-label:not([data-phase]) .rw-label-icon { color: var(--tone-ink, var(--color-ink)); background: color-mix(in srgb, var(--tone) 18%, #fff); }
-  .rw-label:hover .rw-label-in { box-shadow: inset 0 0 0 1px var(--color-line-strong), 0 8px 18px -10px rgb(15 18 23 / 0.35); }
   .rw-label[data-on] .rw-label-in { scale: 1.12; color: var(--tone-on); background: var(--tone); box-shadow: 0 10px 22px -12px rgb(15 18 23 / 0.5); }
   .rw-label[data-on] .rw-label-icon { color: var(--tone-ink, var(--color-ink)); background: #fff; }
 
@@ -105,6 +103,10 @@
   .rw-bars li[data-risk] .rw-bar i { background: var(--color-signal); }
   @keyframes rw-grow { from { transform: scaleX(0); } }
 }
+@media (min-width: 1024px) and (hover: hover) {
+  .rw-tab:not([aria-pressed="true"]):hover { box-shadow: inset 0 0 0 1px var(--color-line-strong); }
+  .rw-label:not([data-on]):hover .rw-label-in { box-shadow: inset 0 0 0 1px var(--color-line-strong), 0 8px 18px -10px rgb(15 18 23 / 0.35); }
+}
 @media (min-width: 1024px) and (max-height: 760px) {
   .rw-bars li:nth-child(2), .rw-card-text, .rw-lede { display: none; }
 }
@@ -113,5 +115,5 @@
 }
 
 /* The label over the dial, and the count of further system types beside the title. */
-.marquee-label { margin-bottom: 18px; text-align: center; }
+.marquee-label { margin-bottom: 18px; }
 .wall-count { display: inline-grid; place-items: center; height: 36px; padding: 0 12px; border-radius: var(--radius-pill); font-size: 15px; font-weight: 600; letter-spacing: 0; color: #fff; background: var(--color-ink); box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.28); }
