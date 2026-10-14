@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { gToProgress, progressToG, setAfter, setG, store } from "@/lib/story";
+import { HOVER_REST, gToProgress, progressToG, setAfter, setG, store } from "@/lib/story";
 import { getLenis, jumpTo, scrollToTarget, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
@@ -27,7 +27,9 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
       lenis.on("scroll", ScrollTrigger.update);
       lenis.on("scroll", (l: Lenis) => {
         store.velocity = l.velocity;
-        store.scrollAt = performance.now();
+        const now = performance.now();
+        if (now - store.scrollAt >= HOVER_REST) store.scrollFrom = now;
+        store.scrollAt = now;
       });
       gsap.ticker.add(animate);
       gsap.ticker.lagSmoothing(0);
@@ -55,10 +57,17 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
         })
       : null;
 
+    let px = NaN;
+    let py = NaN;
     const onPointer = (e: PointerEvent) => {
       store.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
       store.pointer.y = -((e.clientY / window.innerHeight) * 2 - 1);
       store.pointerIn = true;
+      // Only a real move counts: hover that wakes under a still pointer as the page scrolls past it
+      // makes things open and close on their own.
+      if (e.type === "pointerdown" || Math.abs(e.clientX - px) + Math.abs(e.clientY - py) >= 2) store.pointerAt = performance.now();
+      px = e.clientX;
+      py = e.clientY;
     };
     const onLeave = () => (store.pointerIn = false);
     window.addEventListener("pointermove", onPointer, { passive: true });

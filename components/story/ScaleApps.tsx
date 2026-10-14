@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
-import { CH, CHAPTERS, FUNCTIONS, localIn, scaleBeat, setPinHint, store, subscribe, weight } from "@/lib/story";
+import { CH, FUNCTIONS, localIn, scaleBeat, scaleSettle, setPinHint, store, subscribe, weight } from "@/lib/story";
 import { APPLICATIONS, CATEGORY_TONE, type Category } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
 import { SCALE, STORY_UI } from "@/lib/copy";
@@ -11,11 +11,8 @@ import { StoryPills } from "./StoryPills";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
 
-/** Local progress in Scale where function k is brought forward (the middle of its step). */
-const slotAt = (k: number) => 0.04 + ((k + 0.5) / FUNCTIONS.length) * (CHAPTERS[CH.scale].ts - 0.08);
-
-/** Scrolls to function k's step: the 3D cards, the pills and the phone deck all follow the scroll. */
-export const goToFunction = (k: number) => goToStory(CH.scale, slotAt(k));
+/** Scrolls to function k's step (the middle of its hold): the 3D hand, the pills and the phone deck all follow the scroll. */
+export const goToFunction = (k: number) => goToStory(CH.scale, scaleSettle(k));
 
 const FN = FUNCTIONS.map((f) => {
   const category = f.name as Category;

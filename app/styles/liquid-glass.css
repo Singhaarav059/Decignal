@@ -71,7 +71,7 @@
 .nav-links a:hover, .nav-links a[aria-current] { color: var(--color-ink); }
 
 /* ---- Glass over content: cards and controls that float over the world, photos or colour ---- */
-:is(.story-card, .application-card, .hero-tag, .section-title-label, .sys-chip, .btn-ghost, .story-details-btn, .dial-face,
+:is(.story-card, .application-card, .ind-callout, .hero-tag, .section-title-label, .sys-chip, .btn-ghost, .story-details-btn, .dial-face,
   .dial-node-chip, .faq-item, .faq-fig, .faq-help, .bento-card, .outcome-figure, .how-legend, .area-preview-name, .faq-plus) {
   background-color: rgb(255 255 255 / 0.56);
   -webkit-backdrop-filter: var(--lg-blur);
@@ -85,7 +85,7 @@
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
 }
 /* Reading surfaces carry more white so long text keeps its contrast over anything. */
-:is(.story-card, .application-card) { background-color: rgb(255 255 255 / 0.7); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+:is(.story-card, .application-card, .ind-callout) { background-color: rgb(255 255 255 / 0.7); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
 :is(.faq-item, .bento-card, .faq-fig) { background-color: rgb(255 255 255 / 0.62); }
 /* Cards that stack over each other keep an opaque face, or the covered card's figures would ghost through. */
 .outcome-figure { background-color: rgb(255 255 255 / 0.96); -webkit-backdrop-filter: none; backdrop-filter: none; }

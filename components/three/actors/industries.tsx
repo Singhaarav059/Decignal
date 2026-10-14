@@ -1,13 +1,14 @@
 "use client";
 
 // 08 Industries: one service road past six places, one per industry (S69-02). The camera tracks
-// along it; the decision board (actors/cards) stands on the near verge in front of each place.
+// along it. On wide screens each place's decision is page text pinned to it (IndustryCallout, the
+// leader placed here); on narrower ones the decision board (actors/cards) stands on the near verge.
 // Neutral cool greys and whites; each industry's tone sits only on the part that matters.
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { CH, blendAt, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
-import { IND, IND_ROAD, indX, industryTrack } from "@/lib/scene";
+import { CH, blendAt, industryF, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
+import { IND, IND_CALLOUT_MIN, IND_ROAD, indPin, indX, industryTrack } from "@/lib/scene";
 import { TINTS } from "../palette";
 import { Factory, ServerRacks, Storefront } from "../buildings";
 import { SemiTruck, TRUCK } from "../vehicles";
@@ -268,6 +269,49 @@ const sphere = new THREE.Sphere();
 const frustum = new THREE.Frustum();
 const pv = new THREE.Matrix4();
 
+/* The callout's leader (wide screens): from the callout's edge, level with its chip, to the pin on
+   the place in front. Drawn while the camera holds at a place; gone while it travels to the next. The
+   callout's box is read on entry and then every half second (its slot only moves with the card). */
+const lead = { stage: null as HTMLElement | null, box: null as HTMLElement | null, rect: null as DOMRect | null, read: 0, last: "" };
+const pin = new THREE.Vector3();
+function placeLeader(camera: THREE.Camera, size: { width: number; height: number }, w: number, track: number) {
+  if (!lead.stage?.isConnected) {
+    lead.stage = document.querySelector<HTMLElement>(".ind-callout-stage");
+    lead.box = lead.stage?.querySelector<HTMLElement>(".ind-callout") ?? null;
+    lead.rect = null;
+  }
+  const { stage, box } = lead;
+  if (!stage || !box) return;
+  const now = performance.now();
+  if (!lead.rect || now - lead.read > 500) {
+    lead.rect = box.getBoundingClientRect();
+    lead.read = now;
+  }
+  const r = lead.rect;
+  const k = Math.round(industryF(localIn(CH.industries, store.g)));
+  pin.set(...indPin(k)).project(camera);
+  const px = ((pin.x + 1) / 2) * size.width;
+  const py = ((1 - pin.y) / 2) * size.height;
+  const ax = r.right;
+  const ay = r.top + 30;
+  const dx = px - ax;
+  const dy = py - ay;
+  // At a place (its pin clear of the callout), and only as the chapter is fully in.
+  const at = 1 - smoothstep(0.04, 0.2, Math.abs(track - Math.round(track)));
+  const o = r.width > 0 && dx > 28 ? at * smoothstep(0.85, 1, w) : 0;
+  const v = `${px.toFixed(1)}|${py.toFixed(1)}|${o.toFixed(3)}|${ax}|${ay}`;
+  if (v === lead.last) return;
+  lead.last = v;
+  stage.style.setProperty("--pin-x", `${px.toFixed(1)}px`);
+  stage.style.setProperty("--pin-y", `${py.toFixed(1)}px`);
+  stage.style.setProperty("--lead-x", `${ax.toFixed(1)}px`);
+  stage.style.setProperty("--lead-y", `${ay.toFixed(1)}px`);
+  // It stops short of the pin's white ring.
+  stage.style.setProperty("--lead-l", `${Math.max(0, Math.hypot(dx, dy) - 9).toFixed(1)}px`);
+  stage.style.setProperty("--lead-a", `${Math.atan2(dy, dx).toFixed(4)}rad`);
+  stage.style.setProperty("--lead-o", o.toFixed(3));
+}
+
 /** How much of place k stands while the camera is at `track` along the road: the place you are at
  *  stands; as the camera leaves, it goes back down and the next one comes up, both well inside the
  *  move, so the frame is never empty and only one place holds the screen. */
@@ -276,6 +320,7 @@ const standing = (track: number, k: number) => 1 - smootherstep(0.3, 0.85, Math.
 export function IndustriesRoad() {
   const presence = useRef({ len: 0, alpha: 0, from: 0 });
   const sites = useRef<(THREE.Group | null)[]>([]);
+  const size = useThree((state) => state.size);
   useFrame(({ camera }) => {
     const { i, j, e } = blendAt(store.g);
     const still = reducedMotion();
@@ -290,6 +335,7 @@ export function IndustriesRoad() {
     const b = still ? (w > 0.5 ? 1 : 0) : smootherstep(0.35, 0.95, w);
     const track = industryTrack(localIn(CH.industries, store.g));
     camera.updateMatrixWorld();
+    if (w > 0.01 && size.width >= IND_CALLOUT_MIN) placeLeader(camera, size, w, track);
     frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     sites.current.forEach((g, k) => {
       if (!g) return;

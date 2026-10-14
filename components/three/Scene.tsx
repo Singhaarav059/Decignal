@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
 import { CHAPTERS, CH, EXIT_DRIFT, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
-import { ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
+import { IND_CALLOUT_MIN, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
 import { ChartMarks, SignalPing, Threads } from "./Marks";
@@ -35,9 +35,10 @@ const [UX, UY, UZ] = ISO_U;
 const FX = Math.sin(Math.atan2(DX, DZ));
 const FZ = Math.cos(Math.atan2(DX, DZ));
 
-/** What the page measured: the nav's bottom edge, the giant headlines (hero and final), and the blocks
- *  around them the world keeps clear of one by one ([data-frame]: the hero's corners). */
-const page = { navB: 72, head: [] as (Box | null)[], frames: [] as Box[][], at: 0 };
+/** What the page measured: the nav's bottom edge, the giant headlines (hero and final), the blocks
+ *  around them the world keeps clear of one by one ([data-frame]: the hero's corners), and the
+ *  Industries callout, whose right edge starts that chapter's stage. */
+const page = { navB: 72, head: [] as (Box | null)[], frames: [] as Box[][], at: 0, callout: null as Box | null };
 /** The card's rect as last seen while each chapter held (the card's content changes height per chapter). */
 const cardSeen: (Box | null)[] = CHAPTERS.map(() => null);
 
@@ -50,6 +51,8 @@ function measurePage() {
   }
   page.head = CHAPTERS.map(() => null);
   page.frames = CHAPTERS.map(() => []);
+  const callout = document.querySelector(".ind-callout")?.getBoundingClientRect();
+  page.callout = callout && callout.width > 0 ? { x0: callout.left, y0: callout.top, x1: callout.right, y1: callout.bottom } : null;
   document.querySelectorAll<HTMLElement>("[data-ch] .t-display, [data-ch] .display, [data-ch] h1, [data-ch] [data-frame], [data-ch] [data-head]").forEach((el) => {
     const c = Number(el.closest<HTMLElement>("[data-ch]")?.dataset.ch);
     // A chapter head (ChapterHeads.tsx) counts as one block: its headline and its figures together.
@@ -308,6 +311,10 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
       nEx--;
     }
   }
+  // Industries on wide screens: the callout stands beside the card, so the stage starts at its right
+  // edge. As an exclusion inside the stage it left two ways round it (move right, or shrink and lift),
+  // and the framing swapped between them from one scroll step to the next: the place pumped in and out.
+  if (c === CH.industries && page.callout && vw >= IND_CALLOUT_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
   for (const f of page.frames[c] ?? []) {
     if (nEx >= EX.length) break;
     const fEx = EX[nEx++];
@@ -331,6 +338,17 @@ const framed = (): Framed => ({ x: 0, y: 0, z: 0, d: 10 });
 /** Target and distance that put shot s, as large as it can be up to its own distance, in the free stage. */
 function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, out: Framed) {
   setStage(c, vw, vh, panel);
+  // A shot that lives right of the card (open 1: Scale's hand) gets the stage from the card's edge
+  // rather than the card as an exclusion in it: with the card inside the stage there were two ways
+  // round it (shift right, or lift), and the framing swapped between them from step to step.
+  if (s.open >= 1 && nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) {
+    stage.x0 = Math.max(stage.x0, EX[0].x1);
+    const first = EX[0];
+    for (let k = 1; k < nEx; k++) EX[k - 1] = EX[k];
+    EX[nEx - 1] = first;
+    nEx--;
+    cardEx = false;
+  }
   // Subject centre.
   let x0 = Infinity;
   let x1 = -Infinity;
@@ -497,7 +515,8 @@ function Rig() {
     // Reduced motion: the camera cuts at the midpoint and settles.
     const k = still ? (e < 0.5 ? 0 : 1) : e;
     lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
-    const a = shotAt(i, local, portrait, shots[0]);
+    const wide = vw >= IND_CALLOUT_MIN;
+    const a = shotAt(i, local, portrait, shots[0], wide);
     frameShot(a, i, vw, vh, false, fr[0]);
     let A = fr[0];
     if (lean.current > 0.001) {
@@ -507,7 +526,7 @@ function Rig() {
     }
     let F = A;
     if (k > 0 && j !== i) {
-      const b = shotAt(j, 0, portrait, shots[1]);
+      const b = shotAt(j, 0, portrait, shots[1], wide);
       frameShot(b, j, vw, vh, false, fr[1]);
       // Pulling back to a bigger subject, the camera leads, so the next scene assembles in its own
       // frame; pushing in on a smaller one, it holds back while the scene folds into it (partly, so

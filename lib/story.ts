@@ -9,7 +9,8 @@ export type Chapter = {
   ts: number; // fraction of the chapter where the transition to the next one begins
 };
 
-// Story length budget (viewport heights): 16.15 in all. Scale holds one function per step (S69-04);
+// Story length budget (viewport heights): 16.7 in all. Scale holds one function per step (S69-04),
+// then one more for the glass layer card that lands on the fan;
 // the final chapter is short and ends in an exit (S69-07).
 export const CHAPTERS: Chapter[] = [
   // The hero hands off almost at once (ts 0.12): a long hold read as the page sticking, then the camera
@@ -21,13 +22,16 @@ export const CHAPTERS: Chapter[] = [
   { id: "context", label: "Context", len: 1.5, ts: 0.55 },
   { id: "decision", label: "Decision", len: 2.7, ts: 0.9 },
   { id: "control", label: "Control", len: 1.7, ts: 0.62 },
-  { id: "scale", label: "Scale", len: 2.2, ts: 0.75 },
+  { id: "scale", label: "Scale", len: 2.5, ts: 0.75 },
   { id: "industries", label: "Industries", len: 3.2, ts: 0.85 },
   { id: "final", label: "Decide", len: 1, ts: 1 },
 ];
 
 export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<string, number>;
 export const TOTAL_LEN = CHAPTERS.reduce((s, c) => s + c.len, 0);
+
+/** How long the scroll must rest before hover effects wake (ms). */
+export const HOVER_REST = 380;
 
 export const store = {
   g: 0,
@@ -36,6 +40,10 @@ export const store = {
   velocity: 0, // scroll velocity from Lenis, px per frame
   /** performance.now() of the last scroll frame (Lenis), so hover effects can wait for the scroll to settle. */
   scrollAt: -1e9,
+  /** performance.now() of the first frame of the current scroll (after a pause of HOVER_REST or more). */
+  scrollFrom: -1e9,
+  /** performance.now() of the pointer's last real move (not content sliding under a still pointer). */
+  pointerAt: -1e9,
   pointer: { x: 0, y: 0 },
   camK: 1, // how far narrow screens step the camera back (1 on desktop)
   /** Pointer is over the page (false once it leaves the window). */
@@ -200,11 +208,15 @@ export const steppedAt = (k: number, a: number, u: number, count: number, turn: 
   return a + k * h * (1 + turn) + h / 2;
 };
 
-/** Scale brings one function forward at a time: which one faces the front at local t (fractional while changing). */
-export const scaleF = (t: number) => stepped(t, 0.03, CHAPTERS[CH.scale].ts - 0.06, 5, 0.6);
+/** Scale deals its hand one card per step: the five functions, then the glass layer card that lands on
+ *  top of them. How many are dealt at local t (fractional while one is on its way). */
+export const SCALE_DEAL = 6;
+export const scaleDeal = (t: number) => stepped(t, 0.03, CHAPTERS[CH.scale].ts - 0.06, SCALE_DEAL, 0.6);
+/** The function being read: the last one dealt (the glass card's step keeps the last function). */
+export const scaleF = (t: number) => Math.min(FUNCTIONS.length - 1, scaleDeal(t));
 export const scaleBeat = (t: number) => Math.round(scaleF(t));
-/** Local progress where function k holds the front (for jumps from the card's function tabs). */
-export const scaleSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.scale].ts - 0.06, 5, 0.6);
+/** Local progress where step k holds (for jumps from the card's function tabs). */
+export const scaleSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.scale].ts - 0.06, SCALE_DEAL, 0.6);
 
 /**
  * The hand-off to the page below: how far its sheet has slid over the finished story (0..1, from

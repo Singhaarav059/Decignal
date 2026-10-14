@@ -1,8 +1,10 @@
 "use client";
 
 // Energy: a distribution substation, built in code in island units (1 unit about 10 m). A
-// transformer on its plinth with a saffron hazard band, a kiosk, a fence, and two lattice poles
-// carrying the feeder away from the yard and off the back of the frame.
+// transformer on its plinth with a saffron hazard band, a kiosk, a fence, and two lattice poles in
+// the yard carrying the feeder out over its fence and off the side of the frame. Along the road, not away from
+// it: in the story's camera "away" is up the screen, and the far pole and its wires climbed into the
+// chapter's headline figures.
 import * as THREE from "three";
 import { Person } from "./people";
 import { aluminium, concrete, enamel, steel } from "./materials";
@@ -10,8 +12,8 @@ import { box, cylX, cylY, geo, merge, rbox } from "./parts";
 import { TINTS } from "./palette";
 
 const H = 0.95; // pole height
-const POLES: [number, number][] = [[-0.3, -0.34], [-0.3, -1.3]]; // x, z: near the yard, then further out
-const PHASES = [-0.15, 0, 0.15]; // conductor offsets along the crossarm
+const POLES: [number, number][] = [[-0.3, -0.34], [0.55, -0.36]]; // x, z: both along the yard's back fence
+const PHASES = [-0.15, 0, 0.15]; // conductor offsets along the crossarm (across the line, in z)
 const ARM_Y = H - 0.05;
 const DROP = 0.07; // insulator length under the arm
 const BUSH = [-0.09, 0, 0.09]; // transformer bushings, x
@@ -48,9 +50,9 @@ function lattice(x: number, z: number) {
       }
     }
   }
-  // Crossarm across the line, braced back to the tower
-  parts.push(box(0.4, 0.016, 0.022, x, ARM_Y, z));
-  for (const s of [-1, 1]) parts.push(strut(new THREE.Vector3(x + s * 0.17, ARM_Y, z), new THREE.Vector3(x + s * 0.03, ARM_Y - 0.12, z), 0.007));
+  // Crossarm across the line (the line runs along x), braced back to the tower
+  parts.push(box(0.022, 0.016, 0.4, x, ARM_Y, z));
+  for (const s of [-1, 1]) parts.push(strut(new THREE.Vector3(x, ARM_Y, z + s * 0.17), new THREE.Vector3(x, ARM_Y - 0.12, z + s * 0.03), 0.007));
   return merge(parts);
 }
 
@@ -59,8 +61,8 @@ function insulators() {
   const parts: THREE.BufferGeometry[] = [];
   for (const [x, z] of POLES)
     for (const p of PHASES) {
-      parts.push(cylY(0.005, DROP, x + p, ARM_Y - DROP / 2, z, 8));
-      for (let i = 0; i < 3; i++) parts.push(cylY(0.016, 0.006, x + p, ARM_Y - 0.018 - i * 0.02, z, 16));
+      parts.push(cylY(0.005, DROP, x, ARM_Y - DROP / 2, z + p, 8));
+      for (let i = 0; i < 3; i++) parts.push(cylY(0.016, 0.006, x, ARM_Y - 0.018 - i * 0.02, z + p, 16));
     }
   // Transformer bushings: a porcelain stack on each terminal
   for (const bx of BUSH) {
@@ -84,12 +86,12 @@ function span(a: THREE.Vector3, b: THREE.Vector3, sag: number) {
 function conductors() {
   const parts: THREE.BufferGeometry[] = [];
   const [a, b] = POLES;
-  const tip = (x: number, z: number, p: number) => new THREE.Vector3(x + p, ARM_Y - DROP, z);
+  const tip = (x: number, z: number, p: number) => new THREE.Vector3(x, ARM_Y - DROP, z + p);
   PHASES.forEach((p, i) => {
     parts.push(span(new THREE.Vector3(TX[0] + BUSH[i], TOP + 0.18, TX[1] - 0.04), tip(a[0], a[1], p), 0.03));
-    parts.push(span(tip(a[0], a[1], p), tip(b[0], b[1], p), 0.05));
-    // The feeder runs on out of the frame, to a pole far behind.
-    parts.push(span(tip(b[0], b[1], p), new THREE.Vector3(b[0] - 0.9 + p, ARM_Y + 0.1, b[1] - 4.2), 0.32));
+    parts.push(span(tip(a[0], a[1], p), tip(b[0], b[1], p), 0.06));
+    // The feeder runs on out of the frame along the road (to the right, down the screen).
+    parts.push(span(tip(b[0], b[1], p), new THREE.Vector3(b[0] + 4.4, ARM_Y + 0.05, b[1] - 0.5 + p), 0.3));
   });
   return merge(parts);
 }

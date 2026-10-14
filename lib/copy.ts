@@ -288,6 +288,8 @@ export const INDUSTRY = {
   start: "Typical start",
   startLink: (app: string, weeks: string) => `Typical start: ${app} · ${weeks} weeks`,
   indexAria: "Industries",
+  /** IndustryCallout: the decision pinned to the place on wide screens. */
+  action: "Recommended action",
 } as const;
 
 /** 09 Decide (D1 Option A): the 3D world, the giant headline, one line, the CTA pair and the example card. */
@@ -909,6 +911,31 @@ export const FACES = {
     [APP_FACTS.finance.matched[0], inrShort(APP_FACTS.finance.matched[1]), false],
     ...APP_FACTS.finance.held.map(([id, , n]) => [id, inrShort(n), true] as const),
   ] as readonly (readonly [string, string, boolean])[],
+  /** faces.ts hand faces: the status every function card in Scale's hand ends on. */
+  ready: "Ready for approval",
+  /** faces.ts hand art: each card's evidence graphic, headed by a label and its figure (functions in
+   *  order, then the glass layer card). */
+  art: {
+    labels: ["Stock", "Vibration", "Allocation", "Cases", "Invoices", "Functions"],
+    figures: [
+      `${EXAMPLE.transfer.units} units`,
+      APP_FACTS.maintenance.peak,
+      `${APP_FACTS.sales.shiftPct}% to ${APP_FACTS.sales.region}`,
+      "1 cause",
+      `${APP_FACTS.finance.held.length} held`,
+      "5",
+    ],
+    limit: "Limit",
+    days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    regions: ["North", "West", "South", "East"],
+    layer: "Context · Policy · Approval",
+  },
+  /** faces.ts glass(): the layer card dealt last onto Scale's hand, over every function. */
+  layer: {
+    title: "One layer",
+    body: "Shared context and controls under every function.",
+    foot: "Every function",
+  },
   /** faces.ts final(): the lead-magnet face (D1). */
   final: {
     title: "Bring one decision. Leave with a plan.",

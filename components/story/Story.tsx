@@ -17,6 +17,7 @@ import { FinalBar } from "./FinalCard";
 import { IslandPanel } from "./IslandPanel";
 import { LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
+import { IndustryCallout } from "./IndustryCallout";
 import { TONE } from "./chapters";
 
 /** The eyebrow's two halves: one line on wide screens, two beside the systems on phones. */
@@ -212,6 +213,7 @@ export function Story() {
         <div data-ch={CH.scale} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.scale})` }}>
           <ScalePhone />
         </div>
+        <IndustryCallout />
       </div>
 
       {/* The closing statement, also behind the world; after the card in reading order. */}

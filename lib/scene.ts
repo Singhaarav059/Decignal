@@ -2,7 +2,7 @@
 // from return null, and the actor scales in or out of the scene during the transition.
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
-import { BEATS, CH, blendAt, clamp01, finalExit, smoothstep, smootherstep, industryF, scaleF, PLINTH_H } from "./story";
+import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, industryF, scaleDeal, SCALE_DEAL, PLINTH_H } from "./story";
 
 export { industryF, PLINTH_H, BEATS };
 
@@ -197,30 +197,77 @@ const FAN: [number, number] = [2.8, -0.45];
 const FAN_S = 1.65;
 /** The audit board's size on portrait screens, where it is framed on its own: the Industries board's. */
 const FINAL_SP = 1.6;
-/** Scale's line of functions; its front card becomes the Industries board at the origin. */
+/** Scale's hand of functions stands about this point; its last function card becomes the Industries board. */
 const SCALE_AT: [number, number] = [0, 0.2];
 /**
- * The line: every card square to the viewer, one behind another on the ground. Each place back is dz
- * further away, which the elevated camera shows as a step up, so the cards behind show only their top
- * strip (the function's name) above the one in front. `sw` is the step aside a card takes as it walks
- * round to the back: its width and a little more, so it never passes through the line.
+ * Scale's hand: the cards turned upright (portrait), dealt one per step into a fan square to the viewer,
+ * each a little in front of the one before so the newest lands on top. Slot i's roll is (i - mid) * roll,
+ * its centre on an arc about a pivot far below, so the fan's top is a gentle arch. The whole hand stands
+ * on the ground: its lowest corner rests on it. Cards not yet dealt wait off the right of the frame.
+ * `step` is the gap between slot centres, in card widths.
  */
-const LINE = { s: 1.45, sP: 1.15, dz: 0.5, sw: 1.6 * 1.45 + 0.18 };
-
-/** Card k's place in Scale's line at function f: x right and z toward the viewer, square to the viewer. */
-function linePlace(k: number, f: number, s: number): [number, number] {
-  const n = CARDS;
-  // 0 is the front, n - 1 the back; between n - 1 and n the card is walking round from front to back.
-  const q = (((k - f) % n) + n) % n;
-  if (q <= n - 1) return [0, -q * LINE.dz];
-  const u = n - q;
-  // Out to the right first, back past the end of the line, then in behind it.
-  const side = smoothstep(0, 0.35, u) * (1 - smoothstep(0.7, 1, u));
-  const back = smoothstep(0.2, 0.7, u) * (n - 0.5) - smoothstep(0.7, 1, u) * 0.5;
-  return [side * LINE.sw * (s / LINE.s), -back * LINE.dz];
+export const HAND = { s: 1.2, sP: 1.0, slots: SCALE_DEAL, step: 0.5, roll: 0.085, gap: 0.09, deck: 2.8, open: 0.6, nudge: 0.1 };
+/** How far card k slides right (in card widths) while card f is read. The card lying straight over f
+ *  slides off it and tucks under the next one; the rest of the hand only steps aside enough to clear
+ *  f's tilted corner, so the hand barely widens and never runs off the frame. */
+export const handShift = (k: number, f: number) => (f < 0 || k <= f ? 0 : k === f + 1 ? HAND.open : HAND.nudge);
+/** The quarter turn that stands a card upright for the hand (its function face is drawn to match). */
+export const HAND_TURN = Math.PI / 2;
+type Slot = { u: number; v: number; d: number; roll: number };
+const slotCache = new Map<number, Slot[]>();
+/** Every slot of the hand at card scale s: u right and v up in the cards' leaned plane, d toward the viewer. */
+function handSlots(s: number): Slot[] {
+  let out = slotCache.get(s);
+  if (out) return out;
+  const W = CARD.h * s;
+  const H = CARD.w * s;
+  const mid = (HAND.slots - 1) / 2;
+  const R = (HAND.step * W) / HAND.roll; // the arc whose chord between slots is one step
+  out = Array.from({ length: HAND.slots }, (_, i) => {
+    const roll = (i - mid) * HAND.roll;
+    return { u: R * Math.sin(roll), v: R * (Math.cos(roll) - 1), d: i * HAND.gap, roll };
+  });
+  // Rest the lowest corner on the ground (standY's 0.03 clearance), measured in the leaned plane.
+  const low = Math.min(...out.map((o) => o.v - (W / 2) * Math.abs(Math.sin(o.roll)) - (H / 2) * Math.cos(o.roll) + (o.d * Math.sin(LEAN)) / Math.cos(LEAN)));
+  out.forEach((o) => (o.v += 0.03 / Math.cos(LEAN) - low));
+  slotCache.set(s, out);
+  return out;
+}
+/** Card i's place in the hand when `deal` cards are dealt (fractional while one is on its way). A card
+ *  on its way comes in from the right, rising over the hand and turning into its slot. */
+function handPlace(i: number, deal: number, s: number): Slot {
+  const slots = handSlots(s);
+  const at = slots[i];
+  const W = CARD.h * s;
+  const k = clamp01(deal - (i - 1));
+  if (k >= 1) return at;
+  const e = smootherstep(0, 1, k);
+  return {
+    u: slots[slots.length - 1].u + HAND.deck * W + (at.u - slots[slots.length - 1].u - HAND.deck * W) * e,
+    v: at.v + Math.sin(Math.PI * e) * 0.18 * W,
+    d: at.d + (1 - e) * 0.06,
+    roll: at.roll + (1 - e) * 0.45,
+  };
+}
+/** World position of a point at (u, v, d) in the hand's leaned plane. */
+function handWorld(u: number, v: number, d: number): Vec3 {
+  const y = v * Math.cos(LEAN) + d * Math.sin(LEAN);
+  const [x, z] = isoXZ(u, d * Math.cos(LEAN) - v * Math.sin(LEAN), SCALE_AT[0], SCALE_AT[1]);
+  return [x, y, z];
+}
+/** Pose of card i (0..4 the functions, 5 the glass layer card) in Scale's hand at local t. `peek` deals a
+ *  waiting card in early while its function is pointed at on the page. */
+export function handPose(i: number, t: number, portrait: boolean, peek = 0): Pose {
+  const s = portrait ? HAND.sP : HAND.s;
+  const { u, v, d } = handPlace(i, Math.max(scaleDeal(t), i - 1 + peek), s);
+  return { p: handWorld(u, v, d), rx: FLIP - LEAN, ry: ISO.az, s };
+}
+/** The roll of card i in the hand about its own face, as the hand's pose cannot carry it (cardPose). */
+export function handRoll(i: number, t: number, portrait: boolean, peek = 0) {
+  return handPlace(i, Math.max(scaleDeal(t), i - 1 + peek), portrait ? HAND.sP : HAND.s).roll;
 }
 
-export function cardPose(k: number, c: number, t: number, portrait = false, phone = false): Pose | null {
+export function cardPose(k: number, c: number, t: number, portrait = false, phone = false, peek = 0, wide = false): Pose | null {
   // Phones read the layers and functions as a flat deck at full width (components/story/PhoneDeck.tsx);
   // in 3D they could only be shown a third of that size, so the cards step out for those two chapters.
   if (phone && (c === CH.control || c === CH.scale)) return null;
@@ -231,19 +278,15 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
       const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
       return { p: [x, standY(s, LEAN), z], rx: UP - LEAN, ry: -0.4 - t * 0.04 + ISO.az, s };
     }
-    case CH.scale: {
-      // Flip: the back of each card is a different business function. They stand in one line, the
-      // function being read at the front; reading on, it steps aside and walks round to the back
-      // while the rest move up one place, so every hold shows the same tidy line.
-      const s = portrait ? LINE.sP : LINE.s;
-      const [lx, lz] = linePlace(k, scaleF(t), s);
-      const [x, z] = isoXZ(lx, lz, SCALE_AT[0], SCALE_AT[1]);
-      return { p: [x, standY(s, LEAN), z], rx: FLIP - LEAN, ry: ISO.az, s };
-    }
+    case CH.scale:
+      // Flip: the back of each card is a different business function, dealt into a hand one per step.
+      return handPose(k, t, portrait, peek);
     case CH.industries: {
       // The board stands on the road's near verge in front of each industry's place and travels with
-      // the camera, turning a half turn per industry as it goes (S69-02).
-      if (k !== DECISION_CARD) return null;
+      // the camera, turning a half turn per industry as it goes (S69-02). Wide screens pin the decision
+      // to the place as page text instead (IndustryCallout): the board was small, half its time turning,
+      // and stood among the road's traffic.
+      if (k !== DECISION_CARD || wide) return null;
       const s = portrait ? IND.boardSP : IND.boardS;
       const [bx, bz] = portrait ? IND.boardP : IND.board;
       return { p: [indX(industryTrack(t)) + bx, standY(s, LEAN) + IND.lift, bz], rx: UP - LEAN, ry: industryF(t) * Math.PI + ISO.az, s };
@@ -290,6 +333,41 @@ export const IND = {
   distP: 7.5,
 };
 export const indX = (f: number) => (f - 2.5) * IND.step;
+/** Screens this wide pin each industry's decision to its place as page text (IndustryCallout). */
+export const IND_CALLOUT_MIN = 1024;
+/** Each place's reach along the screen's right axis from its centre (world units, measured from its
+ *  parts): the round footprint the shot used to frame cut the wider ones (the quay, the substation's
+ *  pole, the truck's cab) at the stage's edge. */
+const IND_REACH: [number, number][] = [
+  [-1.75, 1.6], // factory
+  [-1.42, 2.0], // truck
+  [-1.7, 1.66], // store
+  [-1.88, 2.4], // quay
+  [-1.9, 1.24], // ops room
+  [-1.9, 1.9], // substation (its feeder runs on off the frame by design)
+];
+/** The reach at a camera position between stops, eased like the glide. */
+function indReach(track: number): [number, number] {
+  const k = Math.min(Math.max(Math.floor(track), 0), IND_REACH.length - 1);
+  const n = Math.min(k + 1, IND_REACH.length - 1);
+  const a = smootherstep(0, 1, track - k);
+  return [IND_REACH[k][0] + (IND_REACH[n][0] - IND_REACH[k][0]) * a, IND_REACH[k][1] + (IND_REACH[n][1] - IND_REACH[k][1]) * a];
+}
+
+/** Where the callout's leader meets each place (island units from the place's centre): the part of it
+ *  the decision is about, on the side facing the callout. */
+const IND_PIN: Vec3[] = [
+  [-0.36, 0.42, 0.18], // the factory's line hall
+  [-0.2, 0.26, 0.05], // the harness crates on the trailer
+  [-0.32, 0.36, 0.3], // the store's awning
+  [-0.3, 0.3, 0.0], // the containers on the quay
+  [-0.28, 0.3, -0.05], // the server racks
+  [0.02, 0.4, 0.06], // the transformer
+];
+export const indPin = (k: number): Vec3 => {
+  const [x, y, z] = IND_PIN[k];
+  return [indX(k) + x * IND.siteS, y * IND.siteS, IND.siteZ + z * IND.siteS];
+};
 /** The road's x range: past the frame's edges at the first and last stops. */
 export const IND_ROAD = { x0: indX(0) - 9, x1: indX(5) + 9 };
 /** The camera glides between stops over a wider span than the board's half turn (industryF), centred
@@ -316,7 +394,7 @@ export function industryTrack(t: number) {
  * free, at the one ISO angle, so only the distance and target ever change between chapters.
  */
 export type Shot = { n: number; pil: Float32Array; dist: number; pan: Vec3; exit: number; steady: boolean; open: number };
-export const makeShot = (): Shot => ({ n: 0, pil: new Float32Array(5 * 12), dist: 10, pan: [0, 0, 0], exit: 0, steady: false, open: 0.5 });
+export const makeShot = (): Shot => ({ n: 0, pil: new Float32Array(5 * 16), dist: 10, pan: [0, 0, 0], exit: 0, steady: false, open: 0.5 });
 
 function pillar(o: Shot, x: number, z: number, r: number, y0: number, y1: number) {
   const i = o.n * 5;
@@ -335,7 +413,7 @@ function islandPillars(o: Shot, portrait: boolean, r: number, h: number) {
 }
 
 /** The shot for chapter c at local progress t. Writes into `o` (no allocation per frame). */
-export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
+export function shotAt(c: number, t: number, portrait: boolean, o: Shot, wide = false): Shot {
   o.n = 0;
   o.pan[0] = o.pan[1] = o.pan[2] = 0;
   o.exit = 0;
@@ -396,18 +474,28 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
       o.dist = 13.3 * drift;
       break;
     case CH.scale: {
-      // Framed on the line at rest: the front card by its two side edges (a thin plane square to the
-      // viewer) and the last card's top. The card walking round leaves the frame for a moment on the
-      // right; the camera holds still for it.
-      const s = portrait ? LINE.sP : LINE.s;
-      const hw = (CARD.w / 2) * s;
-      const top = standY(s, LEAN) + (CARD.h / 2) * s;
-      for (const e of [-1, 1]) {
-        const [x, z] = isoXZ(e * hw, 0, SCALE_AT[0], SCALE_AT[1]);
-        pillar(o, x, z, 0.08, 0, top);
-      }
-      const [bx, bz] = isoXZ(0, -(CARDS - 1) * LINE.dz, SCALE_AT[0], SCALE_AT[1]);
-      pillar(o, bx, bz, 0.08, 0, top);
+      // Framed on the whole hand as dealt, so the camera holds still while cards land in it: the
+      // corners and outer edges of the two outer cards (points, so a tilted edge between two corners
+      // must be pinned too or it slides under the card), and the tops of the middle two (the arch's
+      // crown). Cards on their way come in from beyond the frame's right edge. 15 of the 16 pillars.
+      const s = portrait ? HAND.sP : HAND.s;
+      const W = (CARD.h / 2) * s;
+      const H = (CARD.w / 2) * s;
+      const slots = handSlots(s);
+      const corner = (i: number, a: number, b: number) => {
+        const { u, v, d, roll } = slots[i];
+        const cu = a * W * Math.cos(roll) + b * H * Math.sin(roll);
+        const cv = -a * W * Math.sin(roll) + b * H * Math.cos(roll);
+        const [x, y, z] = handWorld(u + cu, v + cv, d);
+        pillar(o, x, z, 0.04, y, y);
+      };
+      for (const i of [0, slots.length - 1]) for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) corner(i, a, b);
+      // The first card's left edge leans out toward the top, over the card's top-right corner: points
+      // every quarter of it, so no stretch between two of them crosses that corner.
+      for (const b of [0.75, 0.5, 0.25, 0]) corner(0, -1, b);
+      corner(slots.length - 1, 1, 0);
+      corner(2, -1, 1);
+      corner(3, 1, 1);
       // Centred in the open space right of the card, under the head's figures.
       o.open = 1;
       o.dist = 9.6 * drift;
@@ -416,7 +504,16 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
     case CH.industries: {
       // A tracking shot along the road: the board and the place behind it, the same shape at every
       // stop so the distance holds while the camera glides from one industry to the next.
-      const x = indX(industryTrack(t));
+      const track = industryTrack(t);
+      const x = indX(track);
+      if (wide) {
+        // The place alone: its callout is page text beside the card, left of the stage (Scene setStage).
+        // Its height and depth by the round footprint, its width by what it reaches either side.
+        pillar(o, x, IND.siteZ, IND.siteR, 0, IND.siteH);
+        for (const r of indReach(track)) pillar(o, x + r * ISO_R[0], IND.siteZ + r * ISO_R[2], 0.05, 0, 0.6);
+        o.dist = IND.dist * (1 - 0.02 * t);
+        break;
+      }
       const s = portrait ? IND.boardSP : IND.boardS;
       const [bx, bz] = portrait ? IND.boardP : IND.board;
       const top = standY(s, LEAN) + IND.lift + (CARD.h / 2) * s;
