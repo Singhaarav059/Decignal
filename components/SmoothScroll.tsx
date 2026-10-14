@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Lenis from "lenis";
+import type Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HOVER_REST, gToProgress, progressToG, setAfter, store } from "@/lib/story";
@@ -58,24 +58,31 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     // page under the thumb: the scroll felt heavy and late.
     const touch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
     let lenis: Lenis | null = null;
+    let gone = false;
     const animate = (t: number) => lenis?.raf(t * 1000);
     let offNative: (() => void) | null = null;
-    if (!touch && !reduce) {
-      lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
-      lenis.on("scroll", ScrollTrigger.update);
-      lenis.on("scroll", (l: Lenis) => {
-        store.velocity = l.velocity;
-        const now = performance.now();
-        if (now - store.scrollAt >= HOVER_REST) store.scrollFrom = now;
-        store.scrollAt = now;
-      });
-      gsap.ticker.add(animate);
-      gsap.ticker.lagSmoothing(0);
-    }
     // Without Lenis (touch, or reduced motion on a desktop) the native scroll feeds the same readings,
     // or the hover guards that wait on store.scrollAt would never see the page move.
-    if (!lenis) offNative = trackNative();
-    setLenis(lenis);
+    if (touch || reduce) offNative = trackNative();
+    else {
+      // Its own chunk, so touch screens never download it. Until it lands (a moment after hydration,
+      // under the loader) the wheel scrolls natively.
+      void import("lenis").then(({ default: Smooth }) => {
+        if (gone) return;
+        lenis = new Smooth({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
+        lenis.on("scroll", ScrollTrigger.update);
+        lenis.on("scroll", (l: Lenis) => {
+          store.velocity = l.velocity;
+          const now = performance.now();
+          if (now - store.scrollAt >= HOVER_REST) store.scrollFrom = now;
+          store.scrollAt = now;
+        });
+        gsap.ticker.add(animate);
+        gsap.ticker.lagSmoothing(0);
+        setLenis(lenis);
+      });
+    }
+    setLenis(null);
 
     // Before the story trigger: its first reading goes through the pace.
     const offPace = startPace();
@@ -147,6 +154,7 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     }
 
     return () => {
+      gone = true;
       offSnap?.();
       offCut();
       offPace();

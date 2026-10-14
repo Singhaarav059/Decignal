@@ -37,12 +37,14 @@ export const onApplication = (fn: (i: number) => void) => listen("application-ju
 /* ---------------- Smooth scroll instance ---------------- */
 
 let lenis: Lenis | null = null;
-/** SmoothScroll registers its Lenis here (null when it unmounts or under reduced motion). */
+let locks = 0;
+/** SmoothScroll registers its Lenis here (null when it unmounts or under reduced motion). It arrives
+ *  after the loader may have locked the page, so it starts stopped while a lock holds. */
 export const setLenis = (l: Lenis | null) => {
   lenis = l;
+  if (l && locks) l.stop();
 };
 
-let locks = 0;
 /** Holds the page still (the loader, the open menu): Lenis stops where it runs, and on touch screens,
  *  which scroll natively, html.scroll-lock hides the overflow. Counted, so two holders can overlap. */
 export function lockScroll(on: boolean) {
