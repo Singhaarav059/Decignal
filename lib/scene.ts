@@ -267,7 +267,7 @@ export function handRoll(i: number, t: number, portrait: boolean, peek = 0) {
   return handPlace(i, Math.max(scaleDeal(t), i - 1 + peek), portrait ? HAND.sP : HAND.s).roll;
 }
 
-export function cardPose(k: number, c: number, t: number, portrait = false, phone = false, peek = 0, wide = false): Pose | null {
+export function cardPose(k: number, c: number, t: number, portrait = false, phone = false, peek = 0): Pose | null {
   // Phones read the layers and functions as a flat deck at full width (components/story/PhoneDeck.tsx);
   // in 3D they could only be shown a third of that size, so the cards step out for those two chapters.
   if (phone && (c === CH.control || c === CH.scale)) return null;
@@ -281,20 +281,10 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
     case CH.scale:
       // Flip: the back of each card is a different business function, dealt into a hand one per step.
       return handPose(k, t, portrait, peek);
-    case CH.industries: {
-      // The board stands on the road's near verge in front of each industry's place and travels with
-      // the camera, turning a half turn per industry as it goes (S69-02). Wide screens pin the decision
-      // to the place as page text instead (IndustryCallout): the board was small, half its time turning,
-      // and stood among the road's traffic.
-      if (k !== DECISION_CARD || wide) return null;
-      const s = portrait ? IND.boardSP : IND.boardS;
-      const [bx, bz] = portrait ? IND.boardP : IND.board;
-      return { p: [indX(industryTrack(t)) + bx, standY(s, LEAN) + IND.lift, bz], rx: UP - LEAN, ry: industryF(t) * Math.PI + ISO.az, s };
-    }
     case CH.final: {
-      // Keeps the last industry's half turn (5π) and tips over its top edge to show the other face:
-      // the free AI audit, standing at the hub the six systems feed. Its face is drawn rotated to match.
-      // Wide screens end on the Decignal mark at the hub instead (actors/mark.tsx); the board leaves.
+      // The free AI audit, standing at the hub the six systems feed, tipped back to face the viewer
+      // after a half turn (its face is drawn rotated to match). It rises there as Industries hands over.
+      // Wide screens end on the Decignal mark at the hub instead (actors/mark.tsx).
       if (k !== DECISION_CARD || !portrait) return null;
       const lean = 0.5;
       const s = portrait ? FINAL_SP : 2.1;
@@ -309,7 +299,7 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
 
 import { industrySettle } from "./story";
 
-/** The road runs along x; one stop per industry, centred on the origin, the board on the near verge. */
+/** The road runs along x; one stop per industry, centred on the origin, each place behind the road. */
 export const IND = {
   step: 4.2,
   roadZ: -0.2,
@@ -320,21 +310,14 @@ export const IND = {
   siteR: 1.6,
   /** Tall enough for the pylon, the chimney's smoke and the globe's satellite. */
   siteH: 3.0,
-  /** The board's offset from the stop and its scale; portrait screens stand it in front, larger.
-   *  Wide screens stand it on the near verge, left of the place's yard (which reaches about 1.6 to
-   *  the left of the stop), so the place is never behind it. */
-  board: [-2.4, 1.75] as [number, number],
-  boardP: [-0.2, 0.75] as [number, number],
-  boardS: 1.7,
-  boardSP: 1.6,
-  /** Raised on its stand so the board reads at eye level beside the place, not down at the road. */
-  lift: 0.6,
+  /** How far the near verge reaches toward the viewer (it was laid out to the old board's feet). */
+  verge: 1.75,
   dist: 9.5,
-  distP: 7.5,
 };
 export const indX = (f: number) => (f - 2.5) * IND.step;
-/** Screens this wide pin each industry's decision to its place as page text (IndustryCallout). */
-export const IND_CALLOUT_MIN = 1024;
+/** Screens this wide stand each industry's callout (IndustryCallout) beside the card; narrower ones
+ *  stand it above the place, under the nav. */
+export const IND_BESIDE_MIN = 1024;
 /** Each place's reach along the screen's right axis from its centre (world units, measured from its
  *  parts): the round footprint the shot used to frame cut the wider ones (the quay, the substation's
  *  pole, the truck's cab) at the stage's edge. */
@@ -353,6 +336,16 @@ function indReach(track: number): [number, number] {
   const a = smootherstep(0, 1, track - k);
   return [IND_REACH[k][0] + (IND_REACH[n][0] - IND_REACH[k][0]) * a, IND_REACH[k][1] + (IND_REACH[n][1] - IND_REACH[k][1]) * a];
 }
+/** Each place's height (world units, measured from its parts, the factory's to its smoke): portrait
+ *  screens frame each place by its own, as siteH left the low ones (the truck, the quay) small under a
+ *  band of empty sky in the short space a phone leaves between the callout and the card. */
+const IND_TOP = [3.0, 1.45, 1.75, 1.35, 1.8, 2.25];
+/** The height at a camera position between stops, eased like the glide. */
+function indTop(track: number) {
+  const k = Math.min(Math.max(Math.floor(track), 0), IND_TOP.length - 1);
+  const n = Math.min(k + 1, IND_TOP.length - 1);
+  return IND_TOP[k] + (IND_TOP[n] - IND_TOP[k]) * smootherstep(0, 1, track - k);
+}
 
 /** Where the callout's leader meets each place (island units from the place's centre): the part of it
  *  the decision is about, on the side facing the callout. */
@@ -370,7 +363,7 @@ export const indPin = (k: number): Vec3 => {
 };
 /** The road's x range: past the frame's edges at the first and last stops. */
 export const IND_ROAD = { x0: indX(0) - 9, x1: indX(5) + 9 };
-/** The camera glides between stops over a wider span than the board's half turn (industryF), centred
+/** The camera glides between stops over a wider span than the title's roll (industryF), centred
  *  on the same moment, so each move reads as one travel with the turn inside it. Integer at the holds. */
 const GLIDE = 0.8;
 export function industryTrack(t: number) {
@@ -413,7 +406,7 @@ function islandPillars(o: Shot, portrait: boolean, r: number, h: number) {
 }
 
 /** The shot for chapter c at local progress t. Writes into `o` (no allocation per frame). */
-export function shotAt(c: number, t: number, portrait: boolean, o: Shot, wide = false): Shot {
+export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
   o.n = 0;
   o.pan[0] = o.pan[1] = o.pan[2] = 0;
   o.exit = 0;
@@ -502,28 +495,15 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot, wide = 
       break;
     }
     case CH.industries: {
-      // A tracking shot along the road: the board and the place behind it, the same shape at every
-      // stop so the distance holds while the camera glides from one industry to the next.
+      // A tracking shot along the road: the place alone, its callout page text beside the card on wide
+      // screens or above the place on narrow ones, outside the stage (Scene setStage). Its height and
+      // depth by the round footprint, its width by what it reaches either side, so the distance holds
+      // while the camera glides from one industry to the next.
       const track = industryTrack(t);
       const x = indX(track);
-      if (wide) {
-        // The place alone: its callout is page text beside the card, left of the stage (Scene setStage).
-        // Its height and depth by the round footprint, its width by what it reaches either side.
-        pillar(o, x, IND.siteZ, IND.siteR, 0, IND.siteH);
-        for (const r of indReach(track)) pillar(o, x + r * ISO_R[0], IND.siteZ + r * ISO_R[2], 0.05, 0, 0.6);
-        o.dist = IND.dist * (1 - 0.02 * t);
-        break;
-      }
-      const s = portrait ? IND.boardSP : IND.boardS;
-      const [bx, bz] = portrait ? IND.boardP : IND.board;
-      const top = standY(s, LEAN) + IND.lift + (CARD.h / 2) * s;
-      // The board is a thin plane square to the viewer: framed by its two side edges, not a round
-      // footprint, which would read about a third wider than it is.
-      const ry = ISO.az - 0.12;
-      const hw = (CARD.w / 2) * s;
-      for (const e of [-1, 1]) pillar(o, x + bx + e * hw * Math.cos(ry), bz - e * hw * Math.sin(ry), 0.08, 0, top);
-      if (!portrait) pillar(o, x, IND.siteZ, IND.siteR, 0, IND.siteH);
-      o.dist = (portrait ? IND.distP : IND.dist) * (1 - 0.02 * t);
+      pillar(o, x, IND.siteZ, IND.siteR, 0, portrait ? indTop(track) : IND.siteH);
+      for (const r of indReach(track)) pillar(o, x + r * ISO_R[0], IND.siteZ + r * ISO_R[2], 0.05, 0, 0.6);
+      o.dist = IND.dist * (1 - 0.02 * t);
       break;
     }
     default: {

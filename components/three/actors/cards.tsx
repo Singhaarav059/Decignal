@@ -1,13 +1,13 @@
 "use client";
 
-// Cards: the decision, its layers, functions and industries, read under the pointer.
+// Cards: the decision, its layers and functions, read under the pointer, and the ending's audit board.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { easing } from "maath";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CH, HOVER_REST, INDUSTRIES, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
-import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, IND_CALLOUT_MIN, ISO_DIR, bgAt, cardPose, handPose, handRoll, handShift, industryF } from "@/lib/scene";
+import { CH, HOVER_REST, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
+import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, ISO_DIR, bgAt, cardPose, handPose, handRoll, handShift } from "@/lib/scene";
 import { WHITE, clay, useDisposeOnUnmount } from "../kit";
 import { aluminium } from "../materials";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type DecisionMode, type FaceSpec } from "../faces";
@@ -15,12 +15,12 @@ import { reducedMotion, useActor } from "./core";
 import { goToFunction } from "@/components/story/ScaleApps";
 
 /* ------------------------------------------------------------------ */
-/* Cards: the decision, its layers, functions and industries           */
+/* Cards: the decision, its layers, functions and the ending's audit   */
 /* ------------------------------------------------------------------ */
 
-type Mode = "base" | "industries" | "final";
-// The final face goes on as the card starts its last half turn, while that face is still turned away.
-const modeAt = (g: number): Mode => (g < CH.industries - 0.4 ? "base" : g < CH.final - 0.1 ? "industries" : "final");
+// The decision card stands out of Industries (each place's callout is page text), so it takes the
+// ending's face there, out of sight, before it rises at the hub on portrait screens.
+const finalAt = (g: number) => g >= CH.industries + 0.5;
 
 /* Faces are drawn at about their size on screen in device pixels. A texture much larger than the
    face's footprint is shrunk through its mipmaps, which softens text; one much smaller is stretched.
@@ -258,7 +258,7 @@ function CardFocus() {
 /** The approval lift lasts 300 ms. */
 const PULSE = 0.3;
 
-/* The Industries board and the ending's card stand on the ground on a stand of their own: two
+/* The ending's audit board stands on the ground on a stand of its own: two
    aluminium legs under the board's lower edge, each on a foot rail, and at the end a rear strut. It
    is built each frame from the card's pose, so it holds whatever height and lean the card has. */
 
@@ -301,11 +301,10 @@ function Stand({ card, drive }: { card: React.RefObject<THREE.Group | null>; dri
     const g = card.current;
     const st = root.current;
     if (!g || !st) return;
-    const ind = weight(CH.industries, store.g);
     const fin = weight(CH.final, store.g);
     const s = g.scale.x;
-    // It comes and goes with the board: its parts thin in with the chapters' weight.
-    const w = THREE.MathUtils.smoothstep(Math.max(ind, fin), 0.05, 0.6) * (g.visible ? 1 : 0);
+    // It comes and goes with the board: its parts thin in with the chapter's weight.
+    const w = THREE.MathUtils.smoothstep(fin, 0.05, 0.6) * (g.visible ? 1 : 0);
     st.visible = w > 0.001 && s > 0.05;
     if (!st.visible) return;
     const { P, N, D, lo, hi, A, F, M, cam } = sv;
@@ -402,8 +401,7 @@ function Card({ k }: { k: number }) {
   const phone = useThree((state) => state.size.width < 768);
   // A function still waiting to be dealt comes into the hand early while it is pointed at on the page.
   const peek = useRef(0);
-  const wide = useThree((state) => state.size.width >= IND_CALLOUT_MIN);
-  useActor(ref, (c, t) => cardPose(k, c, t, portrait, phone, peek.current, wide), k * 0.05, 0.11);
+  useActor(ref, (c, t) => cardPose(k, c, t, portrait, phone, peek.current), k * 0.05, 0.11);
   const anim = useRef({ me: 0, other: 0, side: 0, shift: 0 });
   // The card's turn about its own face in Scale's hand (upright, then its slot's roll), eased like its pose.
   const roll = useRef({ v: 0 });
@@ -426,8 +424,8 @@ function Card({ k }: { k: number }) {
   const want = useRef({ tier: START_TIER, for: 0 });
   const top = useFace(faces.top, faces.topRotated ?? false, tier);
   const bottom = useFace(faces.bottom, faces.bottomRotated, tier);
-  // The hand face carries its evidence graphic; any other face (the Industries board) carries none.
-  const handFace = faces.bottom.kind === "function" && !!faces.bottom.hand;
+  // The hand face carries its evidence graphic.
+  const handFace = faces.bottom.kind === "function";
   const art = useHandArt(handFace ? faces.bottom : null, tier);
   const artMat = useRef<THREE.MeshBasicMaterial>(null);
   useFrame(({ camera, size, gl }, dt) => {
@@ -439,26 +437,9 @@ function Card({ k }: { k: number }) {
       axY.set(0, 1, 0).applyQuaternion(g.quaternion);
       s = axY.dot(toCam.subVectors(camera.position, g.position)) >= 0 ? 1 : -1;
     }
-    const stage = modeAt(store.g);
-    let next: FaceState;
-    if (k !== DECISION_CARD || stage === "base") next = baseFaces(k);
-    else if (stage === "final")
-      next = { top: { kind: "final" }, topRotated: true, bottom: { kind: "industry", k: INDUSTRIES.length - 1 }, bottomRotated: true };
-    else {
-      const f = industryF(localIn(CH.industries, store.g));
-      const front = Math.min(2 * Math.round(f / 2), INDUSTRIES.length - 1);
-      const back = Math.min(2 * Math.round((f - 1) / 2) + 1, INDUSTRIES.length - 1);
-      next = { top: { kind: "industry", k: front }, bottom: { kind: "industry", k: back }, bottomRotated: true };
-      // Until the chapter begins the card is still turning from Scale (bottom to the viewer) to
-      // Industries (top to the viewer): the bottom keeps its function and only the top, turned away
-      // until the flip, becomes the first industry. No upside-down industry shows during the turn,
-      // scrolling either way, and a card that rises in face up (phones skip Scale) already reads
-      // as the first industry.
-      if (store.g < CH.industries) {
-        const base = baseFaces(k);
-        next = { ...next, bottom: base.bottom, bottomRotated: base.bottomRotated };
-      }
-    }
+    let next = baseFaces(k);
+    // Its back (the function face) is turned away at the hub, so only the face it shows changes.
+    if (k === DECISION_CARD && finalAt(store.g)) next = { ...next, top: { kind: "final" }, topRotated: true };
     if (
       faceKey(next.top) !== faceKey(faces.top) ||
       faceKey(next.bottom) !== faceKey(faces.bottom) ||
@@ -756,7 +737,7 @@ const baseFaces = (k: number): FaceState => {
   return {
     // The layers are read fanned out (Control); the decision shows what the page's panel decided.
     top: k === DECISION_CARD ? { kind: "decision", qty: d?.qty, mode: d?.mode } : { kind: "layer", k, fan: true },
-    bottom: { kind: "function", k, hand: true },
+    bottom: { kind: "function", k },
     bottomRotated: false,
   };
 };

@@ -6,12 +6,11 @@ import { APPLICATIONS, CATEGORY_TONE, type Category } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
 import { SCALE, STORY_UI } from "@/lib/copy";
 import { goToStory } from "./chapters";
-import { setDeckAt } from "./PhoneDeck";
 import { StoryPills } from "./StoryPills";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
 
-/** Scrolls to function k's step (the middle of its hold): the 3D hand, the pills and the phone deck all follow the scroll. */
+/** Scrolls to step k's hold (the functions, then the glass layer): the 3D hand, the pills and the phone hand all follow the scroll. */
 export const goToFunction = (k: number) => goToStory(CH.scale, scaleSettle(k));
 
 const FN = FUNCTIONS.map((f) => {
@@ -44,7 +43,6 @@ export function ScaleCard() {
       if (v === last) return;
       last = v;
       setAt(v);
-      setDeckAt("scale", v);
     };
     // The 3D card under the pointer changes without a scroll: poll while the chapter is on screen.
     const loop = () => {

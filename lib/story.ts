@@ -337,7 +337,7 @@ export const INDUSTRIES = [
   },
 ];
 
-/** Each industry's accent, matching its 3D card badge (components/three/faces.ts INDUSTRY_TONE). */
+/** Each industry's accent: its chip, its callout and the pin on its place. */
 export const INDUSTRY_TONE = ["emerald", "cobalt", "pink", "tangerine", "violet", "saffron"] as const;
 
 /* Industries: six equal holds with a half turn between each, over local 0.02..0.83; the last hold

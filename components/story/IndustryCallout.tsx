@@ -6,11 +6,12 @@ import { toneVars } from "@/lib/tone";
 import { useIndustryAt } from "./IndustryDetail";
 
 /**
- * 08 on wide screens: the recommended action for the industry in front, as page text pinned to its
- * place. The callout keeps one slot beside the story card (the chapter's stage starts at its right
- * edge, Scene setStage); a leader runs from it to a pin on the place, drawn while the camera holds at
- * the place (IndustriesRoad writes its ends). The text swaps with the title, at the middle of each move.
- * It repeats the card's first recommendation, so it is hidden from assistive tech like the heads.
+ * 08: the recommended action for the industry in front, as page text pinned to its place. The callout
+ * keeps one slot: beside the story card on wide screens (the chapter's stage starts at its right edge),
+ * under the nav on narrower ones (the stage starts below it; Scene setStage). A leader runs from it to
+ * a pin on the place, drawn while the camera holds at the place (IndustriesRoad writes its ends). The
+ * text swaps with the title, at the middle of each move. It repeats the card's first recommendation,
+ * so it is hidden from assistive tech like the heads.
  */
 export function IndustryCallout() {
   const at = useIndustryAt();

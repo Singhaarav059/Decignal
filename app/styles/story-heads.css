@@ -148,98 +148,132 @@
   .final-bar-systems { padding: 0 20px; }
 }
 
-/* 08 Industries, wide screens: the recommended action as page text pinned to its place
-   (components/story/IndustryCallout.tsx). One slot beside the story card, level with its top; the
-   camera keeps the places clear of it. The leader and its pin are placed by the canvas each frame
-   (IndustriesRoad), and only drawn while the camera holds at a place. */
-.ind-callout-stage { display: none; }
+/* 08 Industries: the recommended action as page text pinned to its place
+   (components/story/IndustryCallout.tsx). Wide screens give it one slot beside the story card, level
+   with its top; narrower ones stand it under the nav, above the place, in a shorter form. The camera
+   keeps the places clear of it (Scene setStage). The leader and its pin are placed by the canvas each
+   frame (IndustriesRoad), and only drawn while the camera holds at a place. */
+.ind-callout-stage { position: absolute; inset: 0; pointer-events: none; }
+.ind-callout {
+  position: absolute;
+  display: grid;
+  padding: 16px 18px 14px;
+  border-radius: var(--radius-lg);
+}
 @media (min-width: 1024px) {
-  .ind-callout-stage { display: block; position: absolute; inset: 0; pointer-events: none; }
   .ind-callout {
-    position: absolute;
     left: calc(var(--card-x) + var(--card-w) + 40px);
     top: calc(100% - var(--card-b) - var(--story-card-h-7, 420px));
     width: 320px;
-    display: grid;
-    padding: 16px 18px 14px;
-    border-radius: var(--radius-lg);
   }
-  .ind-callout-item {
-    grid-area: 1 / 1;
-    display: flex;
-    flex-direction: column;
-    transition: transform var(--dur-2) var(--ease), opacity var(--dur-1) linear;
+}
+/* Narrower screens: the card's width, under the nav where the phone decks start (.story-stage). The
+   card below already lists the decision with the rest, so the callout keeps the chip, the status and
+   the decision: short enough to leave the place most of the band. */
+@media (max-width: 1023px) {
+  .ind-callout {
+    left: var(--card-x);
+    top: max(76px, 9vh);
+    width: var(--card-w);
+    padding: 11px 14px 12px;
   }
-  .ind-callout-item[data-at="past"] { opacity: 0; transform: translate3d(0, -8px, 0); }
-  .ind-callout-item[data-at="next"] { opacity: 0; transform: translate3d(0, 8px, 0); }
-  .ind-callout-item[data-at="on"] { transition: transform var(--dur-3) var(--ease) var(--dur-1), opacity var(--dur-2) var(--ease) var(--dur-1); }
-  .ind-callout-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .ind-callout-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    min-width: 0;
-    white-space: nowrap;
-    padding: 4px 11px 4px 9px;
-    border-radius: var(--radius-pill);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-ink);
-    background: rgb(15 18 23 / 0.05);
-  }
-  .ind-callout-chip i, .ind-callout-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
-  .ind-callout-label { margin-top: 14px; color: var(--color-ink-soft); }
-  .ind-callout-decision {
-    margin-top: 6px;
-    font-size: 21px;
-    font-weight: 600;
-    line-height: 1.16;
-    letter-spacing: -0.013em;
-    color: var(--color-ink);
-    text-wrap: balance;
-  }
-  .ind-callout-foot {
-    margin-top: 14px;
-    padding-top: 12px;
-    box-shadow: inset 0 1px 0 var(--color-line);
-    color: var(--color-ink-soft);
-  }
-  .ind-callout-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 9px;
-    border-radius: var(--radius-pill);
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    color: var(--color-emerald-ink);
-    background: rgb(15 168 116 / 0.1);
-  }
-  .ind-callout-status i { background: var(--color-emerald); }
-  /* The leader: from the callout's edge to the pin on the place (ends written by the canvas). */
-  .ind-leader {
+  .ind-callout-label, .ind-callout-foot { display: none; }
+}
+.ind-callout-item {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-1) linear;
+}
+.ind-callout-item[data-at="past"] { opacity: 0; transform: translate3d(0, -8px, 0); }
+.ind-callout-item[data-at="next"] { opacity: 0; transform: translate3d(0, 8px, 0); }
+.ind-callout-item[data-at="on"] { transition: transform var(--dur-3) var(--ease) var(--dur-1), opacity var(--dur-2) var(--ease) var(--dur-1); }
+.ind-callout-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ind-callout-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  white-space: nowrap;
+  padding: 4px 11px 4px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: rgb(15 18 23 / 0.05);
+}
+.ind-callout-chip i, .ind-callout-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.ind-callout-label { margin-top: 14px; color: var(--color-ink-soft); }
+.ind-callout-decision {
+  margin-top: 6px;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -0.013em;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+@media (max-width: 1023px) {
+  .ind-callout-decision { margin-top: 8px; font-size: 17px; line-height: 1.2; }
+}
+/* Short phones (an SE, or a phone browser with its bars showing): the decision alone behind the
+   industry's dot. The title right below names the industry, and the place keeps a readable size. */
+@media (max-width: 767px) and (max-height: 760px) {
+  .ind-callout { padding: 9px 13px 10px; }
+  .ind-callout-top { display: none; }
+  .ind-callout-decision { position: relative; margin-top: 0; padding-left: 15px; font-size: 15px; line-height: 1.25; }
+  .ind-callout-decision::before {
+    content: "";
     position: absolute;
     left: 0;
-    top: 0;
-    width: var(--lead-l, 0px);
-    height: 1.5px;
-    background: var(--color-line-strong);
-    transform-origin: 0 50%;
-    transform: translate3d(var(--lead-x, 0px), var(--lead-y, 0px), 0) rotate(var(--lead-a, 0rad));
-    opacity: var(--lead-o, 0);
-  }
-  .ind-pin {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    margin: -6px 0 0 -6px;
+    top: calc(0.625em - 3.5px);
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--tone);
-    box-shadow: 0 0 0 3px #fff;
-    transform: translate3d(var(--pin-x, 0px), var(--pin-y, 0px), 0) scale(calc(0.5 + 0.5 * var(--lead-o, 0)));
-    opacity: var(--lead-o, 0);
   }
+}
+.ind-callout-foot {
+  margin-top: 14px;
+  padding-top: 12px;
+  box-shadow: inset 0 1px 0 var(--color-line);
+  color: var(--color-ink-soft);
+}
+.ind-callout-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-emerald-ink);
+  background: rgb(15 168 116 / 0.1);
+}
+.ind-callout-status i { background: var(--color-emerald); }
+/* The leader: from the callout's edge to the pin on the place (ends written by the canvas). */
+.ind-leader {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--lead-l, 0px);
+  height: 1.5px;
+  background: var(--color-line-strong);
+  transform-origin: 0 50%;
+  transform: translate3d(var(--lead-x, 0px), var(--lead-y, 0px), 0) rotate(var(--lead-a, 0rad));
+  opacity: var(--lead-o, 0);
+}
+.ind-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 0 3px #fff;
+  transform: translate3d(var(--pin-x, 0px), var(--pin-y, 0px), 0) scale(calc(0.5 + 0.5 * var(--lead-o, 0)));
+  opacity: var(--lead-o, 0);
 }

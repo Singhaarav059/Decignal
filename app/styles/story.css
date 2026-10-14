@@ -678,6 +678,40 @@ html.ready .intro-stage { opacity: 1; transform: none; }
 .phone-deck-face { display: block; width: 100%; height: 100%; }
 .phone-deck-stack:active .phone-deck-card[data-rank="0"] { transform: scale(0.985); }
 
+/* Scale's hand (components/story/ScalePhone.tsx): upright cards fanned about their feet from the band's
+   foot, laid out along the scroll (--hand-w and --hand-h fit the band). Each face is the 3D hand's
+   own drawing; the art canvas lies over its empty box. */
+.phone-hand { position: relative; flex: 1 1 auto; min-height: 140px; }
+.phone-hand-card {
+  position: absolute;
+  left: calc(50% - var(--hand-w, 150px) / 2);
+  bottom: 4px;
+  width: var(--hand-w, 150px);
+  height: var(--hand-h, 240px);
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  border-radius: calc(var(--hand-w, 150px) * 0.045);
+  background: transparent;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  /* A soft shade on the card under each one, so the overlaps read as layers (the 3D hand's light). */
+  box-shadow: -10px 2px 16px -12px rgb(15 18 23 / 0.5), 0 14px 24px -18px rgb(15 18 23 / 0.45);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.phone-hand-face { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.phone-hand-art { position: absolute; display: block; }
+/* The glass layer: smoked slate glass over the functions, their colours frosted through it, its print white. */
+.phone-hand-card[data-glass] {
+  background-color: rgb(65 114 143 / 0.62);
+  background-image: var(--lg-grain-strong);
+  -webkit-backdrop-filter: blur(7px) saturate(1.25);
+  backdrop-filter: blur(7px) saturate(1.25);
+  box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.45), inset 0 0 0 0.75px rgb(255 255 255 / 0.22), inset 0 0 22px -8px rgb(255 255 255 / 0.35), -10px 2px 18px -12px rgb(15 18 23 / 0.5), 0 16px 28px -18px rgb(33 63 83 / 0.6);
+}
+.phone-hand-card:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+
 /* ---- Opened system island: a spec sheet tied to its island by a leader line ---- */
 .island-panel {
   position: fixed;

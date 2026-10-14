@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { easing } from "maath";
 import { CHAPTERS, CH, EXIT_DRIFT, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
-import { IND_CALLOUT_MIN, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
+import { IND_BESIDE_MIN, ISO_DIR, ISO_R, ISO_U, bgAt, makeShot, shotAt, type Shot } from "@/lib/scene";
 import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
 import { ChartMarks, SignalPing, Threads } from "./Marks";
@@ -312,10 +312,14 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
       nEx--;
     }
   }
-  // Industries on wide screens: the callout stands beside the card, so the stage starts at its right
-  // edge. As an exclusion inside the stage it left two ways round it (move right, or shrink and lift),
-  // and the framing swapped between them from one scroll step to the next: the place pumped in and out.
-  if (c === CH.industries && page.callout && vw >= IND_CALLOUT_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
+  // Industries: the callout stands beside the card on wide screens, so the stage starts at its right
+  // edge; on narrow ones it stands under the nav, so the stage starts below it. As an exclusion inside
+  // the stage it left two ways round it (move right, or shrink and lift), and the framing swapped
+  // between them from one scroll step to the next: the place pumped in and out.
+  if (c === CH.industries && page.callout) {
+    if (vw >= IND_BESIDE_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
+    else stage.y0 = Math.max(stage.y0, page.callout.y1 + gap);
+  }
   for (const f of page.frames[c] ?? []) {
     if (nEx >= EX.length) break;
     const fEx = EX[nEx++];
@@ -516,8 +520,7 @@ function Rig() {
     // Reduced motion: the camera cuts at the midpoint and settles.
     const k = still ? (e < 0.5 ? 0 : 1) : e;
     lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
-    const wide = vw >= IND_CALLOUT_MIN;
-    const a = shotAt(i, local, portrait, shots[0], wide);
+    const a = shotAt(i, local, portrait, shots[0]);
     frameShot(a, i, vw, vh, false, fr[0]);
     let A = fr[0];
     if (lean.current > 0.001) {
@@ -527,7 +530,7 @@ function Rig() {
     }
     let F = A;
     if (k > 0 && j !== i) {
-      const b = shotAt(j, 0, portrait, shots[1], wide);
+      const b = shotAt(j, 0, portrait, shots[1]);
       frameShot(b, j, vw, vh, false, fr[1]);
       // Pulling back to a bigger subject, the camera leads, so the next scene assembles in its own
       // frame; pushing in on a smaller one, it holds back while the scene folds into it (partly, so

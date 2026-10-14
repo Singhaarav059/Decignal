@@ -1,14 +1,14 @@
 "use client";
 
 // 08 Industries: one service road past six places, one per industry (S69-02). The camera tracks
-// along it. On wide screens each place's decision is page text pinned to it (IndustryCallout, the
-// leader placed here); on narrower ones the decision board (actors/cards) stands on the near verge.
+// along it. Each place's decision is page text pinned to it (IndustryCallout, the leader placed here):
+// beside the card on wide screens, above the place on narrower ones.
 // Neutral cool greys and whites; each industry's tone sits only on the part that matters.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { CH, blendAt, industryF, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
-import { IND, IND_CALLOUT_MIN, IND_ROAD, indPin, indX, industryTrack } from "@/lib/scene";
+import { IND, IND_BESIDE_MIN, IND_ROAD, indPin, indX, industryTrack } from "@/lib/scene";
 import { TINTS } from "../palette";
 import { Factory, ServerRacks, Storefront } from "../buildings";
 import { SemiTruck, TRUCK } from "../vehicles";
@@ -18,13 +18,13 @@ import { aluminium, asphalt, cladding, concrete, enamel, plastic, rubber, steel 
 import { box, cylY, geo, merge, rbox } from "../parts";
 import { reducedMotion } from "./core";
 
-/* ---------------- The road: asphalt, paint and a verge the board stands on ---------------- */
+/* ---------------- The road: asphalt, paint and a near verge ---------------- */
 
 const ROAD_L = IND_ROAD.x1 - IND_ROAD.x0;
 const ROAD_CX = (IND_ROAD.x0 + IND_ROAD.x1) / 2;
-/** The near verge reaches past the board's feet: it stands on it, nearer the viewer than the road. */
+/** The near verge, between the road and the viewer. */
 const VERGE_Z0 = IND.roadZ + IND.roadW / 2;
-const VERGE = { z0: VERGE_Z0, w: Math.max(0.85, IND.board[1] + 0.55 - VERGE_Z0) };
+const VERGE = { z0: VERGE_Z0, w: Math.max(0.85, IND.verge + 0.55 - VERGE_Z0) };
 
 /** A concrete apron under each place, with a drive-in crossing to the road: part of the road, so the
  *  ground runs on unbroken while the places themselves go up and down. */
@@ -269,9 +269,11 @@ const sphere = new THREE.Sphere();
 const frustum = new THREE.Frustum();
 const pv = new THREE.Matrix4();
 
-/* The callout's leader (wide screens): from the callout's edge, level with its chip, to the pin on
-   the place in front. Drawn while the camera holds at a place; gone while it travels to the next. The
-   callout's box is read on entry and then every half second (its slot only moves with the card). */
+/* The callout's leader: from the callout's edge to the pin on the place in front. Wide screens run it
+   from the right edge, level with the chip; narrower ones drop it from the foot, straight down where it
+   can (the callout stands above the place). Drawn while the camera holds at a place; gone while it
+   travels to the next. The callout's box is read on entry and then every half second (its slot only
+   moves with the card). */
 const lead = { stage: null as HTMLElement | null, box: null as HTMLElement | null, rect: null as DOMRect | null, read: 0, last: "" };
 const pin = new THREE.Vector3();
 function placeLeader(camera: THREE.Camera, size: { width: number; height: number }, w: number, track: number) {
@@ -292,13 +294,14 @@ function placeLeader(camera: THREE.Camera, size: { width: number; height: number
   pin.set(...indPin(k)).project(camera);
   const px = ((pin.x + 1) / 2) * size.width;
   const py = ((1 - pin.y) / 2) * size.height;
-  const ax = r.right;
-  const ay = r.top + 30;
+  const beside = size.width >= IND_BESIDE_MIN;
+  const ax = beside ? r.right : Math.min(Math.max(px, r.left + 28), r.right - 28);
+  const ay = beside ? r.top + 30 : r.bottom;
   const dx = px - ax;
   const dy = py - ay;
   // At a place (its pin clear of the callout), and only as the chapter is fully in.
   const at = 1 - smoothstep(0.04, 0.2, Math.abs(track - Math.round(track)));
-  const o = r.width > 0 && dx > 28 ? at * smoothstep(0.85, 1, w) : 0;
+  const o = r.width > 0 && (beside ? dx : dy) > 28 ? at * smoothstep(0.85, 1, w) : 0;
   const v = `${px.toFixed(1)}|${py.toFixed(1)}|${o.toFixed(3)}|${ax}|${ay}`;
   if (v === lead.last) return;
   lead.last = v;
@@ -335,7 +338,7 @@ export function IndustriesRoad() {
     const b = still ? (w > 0.5 ? 1 : 0) : smootherstep(0.35, 0.95, w);
     const track = industryTrack(localIn(CH.industries, store.g));
     camera.updateMatrixWorld();
-    if (w > 0.01 && size.width >= IND_CALLOUT_MIN) placeLeader(camera, size, w, track);
+    if (w > 0.01) placeLeader(camera, size, w, track);
     frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     sites.current.forEach((g, k) => {
       if (!g) return;

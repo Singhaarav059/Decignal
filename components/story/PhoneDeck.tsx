@@ -9,7 +9,7 @@ const DECK_STEP_MS = 2800;
 // A finger on the deck pauses the cycle; it resumes this long after the last touch.
 const TOUCH_HOLD_MS = 6000;
 
-/* A deck's state is shared by the deck in the stage and the pills in the story card. */
+/* A deck's state is shared by the deck in the stage and the controls in the story card. */
 type DeckState = { at: number; held: boolean };
 const decks = new Map<string, { s: DeckState; fns: Set<() => void> }>();
 const deckOf = (key: string) => {
@@ -26,11 +26,8 @@ const setDeck = (key: string, patch: Partial<DeckState>) => {
 };
 const SERVER: DeckState = { at: 0, held: false };
 
-/** Moves a deck to card `at` from outside it (the story card drives the Scale deck from the scroll). */
-export const setDeckAt = (key: string, at: number) => setDeck(key, { at });
-
 /** The deck's current card and whether the reader holds it, plus a picker (a pick holds the card). */
-export function useDeck(key: string) {
+function useDeck(key: string) {
   const s = useSyncExternalStore(
     (fn) => {
       const d = deckOf(key);
@@ -135,4 +132,3 @@ export function PhoneDeck({
 }
 
 export const LAYER_FACES: FaceSpec[] = [0, 1, 2, 3].map((k) => ({ kind: "layer", k }) as FaceSpec).concat({ kind: "decision" });
-export const FUNCTION_FACES: FaceSpec[] = [0, 1, 2, 3, 4].map((k) => ({ kind: "function", k }) as FaceSpec);
