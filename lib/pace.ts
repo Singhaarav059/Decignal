@@ -20,6 +20,8 @@ const OMEGA = 4.6;
 const MAX_SPEED = 2.4;
 
 let target = 0;
+/** Where the current move started (the story's position when the spring last left rest). */
+let from = 0;
 let v = 0;
 let raf = 0;
 let last = 0;
@@ -58,6 +60,7 @@ export function storyTo(g: number) {
   target = g;
   if (!eased) return setG(g);
   if (!raf) {
+    from = store.g;
     last = performance.now();
     raf = requestAnimationFrame(step);
   }
@@ -75,6 +78,12 @@ export function storyCut(g = target) {
 /** The story is still easing toward the scroll. */
 export const pacing = () => raf !== 0;
 
+/** Where the scroll has sent the story (the hold a swipe snaps to). */
+export const paceTarget = () => target;
+
+/** How much of the current move is left, 0..1 (0 at rest). */
+export const paceLeft = () => (raf ? Math.min(1, Math.abs(target - store.g) / Math.max(Math.abs(target - from), 1e-6)) : 0);
+
 /** How long after the last scroll or touch the page counts as resting (ms). */
 const REST = 250;
 /** A tap or drag on the page keeps the 3D at full rate this long (an island lifting, a stage turning). */
@@ -84,3 +93,18 @@ const TOUCHED = 1500;
 export function resting(now = performance.now()) {
   return !pacing() && now - store.scrollAt > REST && now - store.pointerAt > TOUCHED;
 }
+
+let cuts = 0;
+/** The phone story woke from a still (components/three/Pacer.tsx): the camera lands on its framing at
+ *  once rather than flying in from the old hold, since the move between was never drawn. */
+export const stillCut = () => void cuts++;
+export const stillCuts = () => cuts;
+
+/** Switches the on-phone probe (lib/perf-probe.ts) flips to measure what each part costs: the 3D off,
+ *  or drawn at another density. Inert unless the page was opened with ?perf. */
+export const probe = {
+  off3d: false,
+  /** Phones draw the story as stills at each hold (components/three/Pacer.tsx); false draws every move. */
+  still: true,
+  dprSetters: new Set<(dpr: number | [number, number]) => void>(),
+};

@@ -15,7 +15,7 @@ import { SystemNetwork } from "./SystemNetwork";
 import { canvasQuality } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
-import { isTouch } from "@/lib/pace";
+import { isTouch, stillCuts } from "@/lib/pace";
 import { Pacer } from "./Pacer";
 import { prewarm } from "./Warm";
 import { SceneBoundary } from "./SceneBoundary";
@@ -481,6 +481,7 @@ function Rig() {
   const lastI = useRef(-1);
   // Frames left to place the camera exactly on its goal after the page moved at once (a veil cut).
   const snap = useRef(0);
+  const cuts = useRef(stillCuts());
   const shots = useMemo(() => [makeShot(), makeShot()], []);
   const fr = useMemo(() => [framed(), framed(), framed(), framed()], []);
   useEffect(() => onJumpCut(() => (snap.current = 3)), []);
@@ -554,6 +555,10 @@ function Rig() {
     const side = e < 0.5 ? i : i + 1;
     const cut = still && side !== lastI.current;
     lastI.current = side;
+    if (cuts.current !== stillCuts()) {
+      cuts.current = stillCuts();
+      snap.current = Math.max(snap.current, 1);
+    }
     if (!ready.current || cut || snap.current > 0) {
       camera.position.copy(goal.p);
       look.current.copy(goal.t);
@@ -760,7 +765,7 @@ export default function Scene() {
 
 function World3D() {
   const q = useMemo(() => canvasQuality(), []);
-  // Touch screens draw on the phone budget (Pacer, lib/pace.ts).
+  // Touch screens draw on the phone budget (Pacer, lib/pace.ts); phones draw the story as stills.
   const paced = useMemo(() => isTouch(), []);
   return (
     <Canvas
@@ -785,7 +790,7 @@ function World3D() {
       }}
     >
       <World />
-      {paced && <Pacer paused={storyPaused} />}
+      {paced && <Pacer paused={storyPaused} still />}
     </Canvas>
   );
 }
