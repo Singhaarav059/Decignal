@@ -10,7 +10,7 @@ import { gToProgress } from "./story";
 import { canvasQuality } from "./device";
 import type { ProbeLog } from "@/components/PerfProbe";
 
-type Config = { name: string; css?: string; off3d?: boolean };
+type Config = { name: string; css?: string; off3d?: boolean; dpr?: number };
 
 const HIDE_3D = ".story-canvas canvas, .application-world canvas { visibility: hidden !important; }";
 const NO_EFFECTS =
@@ -21,6 +21,7 @@ const NO_SHADOWS = "*, *::before, *::after { box-shadow: none !important; filter
 
 const CONFIGS: Config[] = [
   { name: "Normal" },
+  { name: "3D at 1.5x", dpr: 1.5 },
   { name: "Effects off", css: NO_EFFECTS },
   { name: "Blur off", css: NO_BLUR },
   { name: "Fields off", css: NO_FIELDS },
@@ -188,6 +189,7 @@ export function startProbe(log: ProbeLog) {
         const cfg = CONFIGS[c];
         style.textContent = cfg.css ?? "";
         probe.off3d = !!cfg.off3d;
+        probe.dprSetters.forEach((set) => set(cfg.dpr ?? quality.dpr));
         const cells: string[] = [];
         const a = performance.now();
         for (const [name, y] of places()) {
