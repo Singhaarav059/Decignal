@@ -201,6 +201,20 @@
   backdrop-filter: none !important;
 }
 
+/* Touch screens draw no film grain. The grain is an SVG noise filter (feTurbulence), which a phone's
+   GPU cannot run: Chrome computes it pixel by pixel on the CPU each time a surface wearing it repaints.
+   The story card repaints on every swipe as its content rolls, the fields on every chapter change, so
+   a Mali-G68 phone spent its frames on noise it could hardly show at 3x (the ?perf probe, 2026-10-14:
+   with the backgrounds off the moves ran at 60 fps, with them 6-9). */
+@media (pointer: coarse) {
+  /* Doubled: fields.css sets its grain on :root too, and may load later. */
+  :root:root {
+    --lg-grain: none;
+    --lg-grain-strong: none;
+    --bg-grain-dark: none;
+  }
+}
+
 /* Phones: glass over the 3D is a fixed frost. A live blur re-ran over the whole card on every frame the
    world moved behind it, at the phone's own density, on the same GPU the 3D needed (user's choice,
    2026-10-14). The face turns a little more opaque instead, so the world shows through as softly. */

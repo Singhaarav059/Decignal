@@ -5,7 +5,7 @@
 // measuring the frame rate the phone itself reaches and how much of each second went to script and
 // to style and layout on the main thread. It also says whether the 3D runs at all, and why not: the
 // errors and lost contexts since the page loaded. The result is text to copy or screenshot.
-import { probe } from "./pace";
+import { pacing, probe } from "./pace";
 import { canvasQuality } from "./device";
 import type { ProbeLog } from "@/components/PerfProbe";
 
@@ -197,7 +197,10 @@ export function startProbe(log: ProbeLog) {
         for (const [name, y] of places()) {
           line.textContent = `testing ${c + 1}/${CONFIGS.length} ${cfg.name}: ${name}… keep the phone still`;
           window.scrollTo({ top: y, behavior: "instant" });
-          await wait(1200);
+          // The story eases to the new place (lib/pace.ts): rest is measured once it is there.
+          await wait(300);
+          for (let k = 0; k < 40 && pacing(); k++) await wait(100);
+          await wait(600);
           const rest = await frames(1200);
           const move = await frames(1500, y);
           cells.push(`${name} ${fps(rest)}/${fps(move)}`);
