@@ -169,8 +169,9 @@ a.skip-link { left: var(--edge); }
 /* Phones keep one bar height when it goes compact (the logo folds and the readout still animate). The
    bar shrinking by 8px resized its glass, and a phone re-rastered the pill and the CTA, with their
    blurred rims, on every frame of the 320 ms change: a stutter each time the page left the top
-   (raster 330 to 79 ms/s on the probe's sway, 2026-10-14, the user's choice). */
-@media (max-width: 639px) {
+   (raster 330 to 79 ms/s on the probe's sway, 2026-10-14, the user's choice). Tablets keep it too: their
+   bar is the same frosted surface, resized the same way. */
+@media (max-width: 1023px) {
   .nav-pill[data-compact] { height: 56px; margin-top: 12px; padding-right: 7px; }
   .nav-pill[data-compact] .nav-cta { height: 42px; padding-right: 5px; }
   .nav-pill[data-compact] .nav-cta-icon { width: 32px; height: 32px; }

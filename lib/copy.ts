@@ -743,8 +743,8 @@ export const FOOTER = {
   navTitle: "Explore",
   /** Section cards (Footer.tsx NAV). Card 05 is dropped (critic §2). */
   nav: [
-    { label: "Applications", href: "#applications", blurb: "Eight applications across five business areas" },
-    { label: "Outcomes", href: "#outcomes", blurb: "Three example decisions and what they change" },
+    { label: "Solutions", href: "#applications", blurb: "Eight applications across five business areas" },
+    { label: "Results", href: "#outcomes", blurb: "Three example decisions and what they change" },
     { label: "How it works", href: "#how", blurb: "One decision first, live in weeks" },
     { label: "FAQ", href: "#faq", blurb: "What teams ask before they start" },
   ],

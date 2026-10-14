@@ -13,6 +13,7 @@ import { toneVars } from "@/lib/tone";
 import { LogoMark } from "../ui/Logo";
 import { Arrow } from "../ui/Arrow";
 import { SectionLink } from "../ui/SectionLink";
+import { AuditLink } from "../CtaPill";
 import SectionTitle from "../ui/SectionTitle";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
 
@@ -97,10 +98,11 @@ export function Footer() {
             </g>
           </svg>
           <SectionTitle lines={[FOOTER.headline[0], FOOTER.headline[1]]} tone="ink" className="ed-title" id="footer-title" />
-          <SectionLink href={`/${CTA.href}`} className="btn btn-primary footer-cta">
+          {/* The same CTA as the nav's: on a page with the form it glides there and focuses the first field. */}
+          <AuditLink className="btn btn-primary footer-cta">
             {CTA.primary}
             <Arrow />
-          </SectionLink>
+          </AuditLink>
         </div>
 
         <nav aria-label="Footer" className="footer-nav">

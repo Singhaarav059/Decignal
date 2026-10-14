@@ -54,7 +54,7 @@ export const HOME_SECTIONS: ChromeSection[] = [
   { id: "outcomes", label: "Results" },
   { id: "how", label: "How it works", short: "How" },
   { id: "faq", label: "FAQ" },
-  { id: "audit", label: "Free audit", short: "Audit" },
+  { id: "audit", label: "Free AI audit", short: "Audit" },
 ];
 
 const INITIAL: ChromeState = {
