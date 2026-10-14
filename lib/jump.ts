@@ -43,6 +43,18 @@ export const setLenis = (l: Lenis | null) => {
 };
 export const getLenis = () => lenis;
 
+let locks = 0;
+/** Holds the page still (the loader, the open menu): Lenis stops where it runs, and on touch screens,
+ *  which scroll natively, html.scroll-lock hides the overflow. Counted, so two holders can overlap. */
+export function lockScroll(on: boolean) {
+  locks = Math.max(locks + (on ? 1 : -1), 0);
+  if (lenis) {
+    if (locks) lenis.stop();
+    else lenis.start();
+  }
+  document.documentElement.classList.toggle("scroll-lock", locks > 0);
+}
+
 /* ---------------- jumpTo ---------------- */
 
 type JumpTarget = string | number | Element;
@@ -209,6 +221,29 @@ function place(y: number) {
 const JUMP_CUT = "jump-cut";
 export const onJumpCut = (fn: (y: number) => void) => listen(JUMP_CUT, fn);
 
+/** The glide without Lenis (touch screens scroll natively): the same ease, frame by frame. A touch on
+ *  the screen hands the page back to the reader at once. */
+function glideNative(y: number, seconds: number) {
+  return new Promise<void>((done) => {
+    const from = window.scrollY;
+    const t0 = performance.now();
+    let raf = 0;
+    const stop = () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("touchstart", stop);
+      done();
+    };
+    const step = (t: number) => {
+      const k = Math.min((t - t0) / (seconds * 1000), 1);
+      window.scrollTo({ top: from + (y - from) * ease(k), behavior: "instant" });
+      if (k < 1) raf = requestAnimationFrame(step);
+      else stop();
+    };
+    window.addEventListener("touchstart", stop, { passive: true });
+    raf = requestAnimationFrame(step);
+  });
+}
+
 function glide(l: Lenis, y: number, seconds: number) {
   return new Promise<void>((done) => {
     const fallback = setTimeout(done, seconds * 1000 + 400);
@@ -229,7 +264,7 @@ function glide(l: Lenis, y: number, seconds: number) {
  * Takes the reader to a target. Within 2.5 viewports (or 2 story chapters) the page glides,
  * 0.6-1.2s by distance (0.5s per chapter in the story, up to 1.4s). Further than that, a solid
  * background veil closes, the page moves at once, the scene draws the new spot, and the veil
- * opens. Reduced motion, or no smooth scroll, lands at once. The nav, pill and dock hold
+ * opens. Reduced motion lands at once; touch screens (no Lenis) glide natively. The nav, pill and dock hold
  * still meanwhile (chrome.jumping, html[data-jump]); focus moves to the target on landing.
  */
 export async function jumpTo(target: JumpTarget, opts: JumpOptions = {}) {
@@ -251,7 +286,7 @@ export async function jumpTo(target: JumpTarget, opts: JumpOptions = {}) {
 
   setChrome({ jumping: true });
   try {
-    if (opts.immediate || !lenis || reduced()) {
+    if (opts.immediate || reduced()) {
       if (!held()) phase("run");
       place(y);
       await frames(1);
@@ -264,7 +299,7 @@ export async function jumpTo(target: JumpTarget, opts: JumpOptions = {}) {
       if (inStory ? chapters <= 2 : d <= 2.5) {
         phase("run");
         const seconds = inStory ? Math.min(Math.max(chapters * 0.5, 0.6), 1.4) : Math.min(Math.max(0.6 + d * 0.25, 0.6), 1.2);
-        await glide(lenis, y, seconds);
+        await (lenis ? glide(lenis, y, seconds) : glideNative(y, seconds));
       } else {
         ensureVeil();
         phase("out");

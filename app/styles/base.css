@@ -14,6 +14,10 @@ html.lenis body {
 .lenis.lenis-stopped {
   overflow: hidden;
 }
+/* The same hold on touch screens, which scroll natively (lib/jump.ts lockScroll). */
+html.scroll-lock {
+  overflow: hidden;
+}
 
 /* A block far off screen holds its loops (lib/still.ts): ticking them re-styled and re-laid out SVG
    nobody saw. Only the loops the browser runs on the main thread (SVG drawings, the wallpaper's shape

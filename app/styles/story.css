@@ -9,6 +9,21 @@
   #story { height: calc(var(--story-len) * 70svh); }
 }
 
+/* Touch screens rest only on the story's holds (lib/story.ts STOPS): a swipe carries the move through
+   and lands on the next settled picture, one per swipe. The page after the story is one tall snap area,
+   so it scrolls freely and only its top edge is a stop. lib/snap.ts keeps only the stops near the reader
+   live, so a hard fling cannot skip a chapter. Jumps glide with snapping off, or each step of
+   the glide would be pulled to a stop. */
+#story { position: relative; }
+.story-stop { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
+@media (pointer: coarse) and (hover: none) {
+  html { scroll-snap-type: y mandatory; }
+  html[data-jump] { scroll-snap-type: none; }
+  .story-stop:not([data-off]) { scroll-snap-align: start; scroll-snap-stop: always; }
+  .editorial:not([data-off]) { scroll-snap-align: start; }
+  .page-foot:not([data-off]) { scroll-snap-align: end; }
+}
+
 /* ---- Layers ---- */
 .story-back { z-index: 0; }
 .story-canvas { z-index: var(--z-canvas); }

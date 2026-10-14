@@ -349,3 +349,26 @@ export const industryF = (t: number) => stepped(t, IND[0], IND[1], INDUSTRIES.le
 
 /** Local progress in the middle of industry k's hold (the inverse of industryF, for jumps). */
 export const industrySettle = (k: number) => steppedAt(k, IND[0], IND[1], INDUSTRIES.length, IND[2]);
+
+/**
+ * Where a phone's swipe comes to rest in the story: every hold the story has, as g. On a touch screen
+ * the page snaps to these (story.css), so a swipe always lands on a settled picture and its card,
+ * never between two (a thumb kept stopping mid-move and needed several swipes per chapter).
+ * Chapters with beats rest on each one: Context's three systems, Decision's truck before loading,
+ * loaded, arrived and unloaded, Scale's six cards and the six industries.
+ */
+export const STOPS: number[] = (() => {
+  const settle = (i: number) => i + Math.min(CHAPTERS[i].ts * 0.5, 0.3);
+  const at = (i: number, locals: number[]) => locals.map((t) => i + t);
+  return [
+    0,
+    settle(CH.signal),
+    settle(CH.problem),
+    ...at(CH.context, [0, 1, 2].map((k) => 0.05 + (2 * k + 1) / 12)),
+    ...at(CH.decision, [0.03, (BEATS.load[1] + BEATS.drive[0]) / 2, (BEATS.drive[1] + BEATS.unload[0]) / 2, BEATS.unload[1] + 0.01]),
+    settle(CH.control),
+    ...at(CH.scale, Array.from({ length: SCALE_DEAL }, (_, k) => scaleSettle(k))),
+    ...at(CH.industries, INDUSTRIES.map((_, k) => industrySettle(k))),
+    CH.final + 0.4,
+  ];
+})();

@@ -8,19 +8,59 @@ import { HOVER_REST, gToProgress, progressToG, setAfter, setG, store } from "@/l
 import { jumpTo, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
+import { rearmSnap, startSnap } from "@/lib/snap";
 
 gsap.registerPlugin(ScrollTrigger);
 
 
+/** Puts each touch snap stop (Story.tsx) at the scroll y where the story reaches its g, read from the
+ *  trigger's own range so a stop lands on the exact frame the story maps there. */
+function placeStops(storyEl: HTMLElement, start: number, end: number) {
+  const top = storyEl.getBoundingClientRect().top + window.scrollY;
+  storyEl.querySelectorAll<HTMLElement>(".story-stop").forEach((el) => {
+    el.style.top = `${Math.round(start + gToProgress(Number(el.dataset.g)) * (end - start) - top)}px`;
+  });
+}
+
+/** What Lenis reports on other screens, from the native scroll: its speed in px per frame (the story
+ *  camera eases faster while the page moves fast) and the times hover effects wait on. */
+function trackNative() {
+  let y = window.scrollY;
+  let t = performance.now();
+  let rest = 0;
+  const onScroll = () => {
+    const now = performance.now();
+    const ny = window.scrollY;
+    store.velocity = ((ny - y) * 16.7) / Math.max(now - t, 1);
+    y = ny;
+    t = now;
+    if (now - store.scrollAt >= HOVER_REST) store.scrollFrom = now;
+    store.scrollAt = now;
+    clearTimeout(rest);
+    rest = window.setTimeout(() => (store.velocity = 0), 120);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  return () => {
+    clearTimeout(rest);
+    window.removeEventListener("scroll", onScroll);
+  };
+}
+
 /** Lenis drives the scroll, GSAP's ticker drives Lenis, ScrollTrigger maps the story (on pages that
  *  have one), and the chrome driver works out where the reader is. Mounted by each page, never a
- *  layout, so every route starts with a fresh Lenis and its own triggers. */
+ *  layout, so every route starts with a fresh Lenis and its own triggers. Touch screens skip Lenis. */
 export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Touch screens scroll natively. Lenis only smooths the wheel, yet it still listens to touchmove
+    // with passive: false, so the phone waited on the main thread (busy with the 3D) before moving the
+    // page under the thumb: the scroll felt heavy and late.
+    const touch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
     let lenis: Lenis | null = null;
     const animate = (t: number) => lenis?.raf(t * 1000);
-    if (!reduce) {
+    let offNative: (() => void) | null = null;
+    if (touch) offNative = trackNative();
+    else if (!reduce) {
       lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
       lenis.on("scroll", (l: Lenis) => {
@@ -41,7 +81,11 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
           start: "top top",
           end: "bottom bottom",
           onUpdate: (self) => setG(progressToG(self.progress)),
-          onRefresh: (self) => setG(progressToG(self.progress)),
+          onRefresh: (self) => {
+            setG(progressToG(self.progress));
+            placeStops(storyEl, self.start, self.end);
+            rearmSnap();
+          },
         })
       : null;
     // The page below sliding over the finished story: the closing layer drifts up with it (finalExit).
@@ -54,6 +98,8 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
           onRefresh: (self) => setAfter(self.progress),
         })
       : null;
+
+    const offSnap = storyEl ? startSnap(storyEl) : null;
 
     let px = NaN;
     let py = NaN;
@@ -94,11 +140,13 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     }
 
     return () => {
+      offSnap?.();
       st?.kill();
       after?.kill();
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       document.documentElement.removeEventListener("pointerleave", onLeave);
+      offNative?.();
       gsap.ticker.remove(animate);
       lenis?.destroy();
       setLenis(null);

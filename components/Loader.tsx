@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getLenis, hashOffset, holdVeil, landOnHash, token } from "@/lib/jump";
+import { hashOffset, holdVeil, landOnHash, lockScroll, token } from "@/lib/jump";
 import { whenSceneReady } from "@/lib/chrome";
 import { LOADER } from "@/lib/copy";
 import { Logo } from "./ui/Logo";
@@ -56,9 +56,15 @@ export function Loader() {
     let leaveTimer = 0;
     let capTimer = 0;
 
+    // The page holds still under the curtain; released once, on lift or unmount.
+    let held = false;
+    const release = () => {
+      if (held) lockScroll(false);
+      held = false;
+    };
     const finish = () => {
       html.classList.add("ready");
-      getLenis()?.start();
+      release();
       remember();
     };
     const lift = () => {
@@ -83,7 +89,8 @@ export function Loader() {
       };
     }
 
-    getLenis()?.stop();
+    lockScroll(true);
+    held = true;
     const start = performance.now();
     // On a full load the loader has been up since the first paint; on a client navigation, since now.
     const since = document.readyState !== "complete" || start < CAP ? 0 : start;
@@ -134,6 +141,7 @@ export function Loader() {
 
     return () => {
       alive = false;
+      release();
       cancelAnimationFrame(raf);
       clearTimeout(leaveTimer);
       clearTimeout(capTimer);

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
-import { CH, EXIT_DRIFT, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
+import { CH, EXIT_DRIFT, STOPS, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
 import { CTA, FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
 import { SceneBoundary } from "../three/SceneBoundary";
@@ -239,7 +239,12 @@ export function Story() {
       <IslandPanel />
 
       {/* The scroll track the story is mapped onto */}
-      <div id="story" style={{ ["--story-len" as string]: TOTAL_LEN }} aria-hidden />
+      <div id="story" style={{ ["--story-len" as string]: TOTAL_LEN }} aria-hidden>
+        {/* Where a swipe rests on touch screens; SmoothScroll places them on the story's scroll map. */}
+        {STOPS.map((g) => (
+          <i key={g} className="story-stop" data-g={g} />
+        ))}
+      </div>
     </>
   );
 }
