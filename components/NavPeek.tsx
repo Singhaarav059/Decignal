@@ -310,6 +310,7 @@ function StoryPeek({ act }: { act: Act }) {
     // Written only when they change: this runs on every scroll frame, mostly with the glance closed.
     let lastHere = -1;
     let lastPct = -1;
+    let lastText = "";
     return subscribe((g) => {
       const here = Math.min(Math.floor(g + 0.5), CHAPTERS.length - 1);
       if (here !== lastHere) {
@@ -324,7 +325,9 @@ function StoryPeek({ act }: { act: Act }) {
       if (n === lastPct) return;
       lastPct = n;
       total?.style.setProperty("--fill", (n / 1000).toFixed(3));
-      if (pct.current) pct.current.textContent = `${Math.round(p * 100)}%`;
+      // The figure moves by whole percents: rewriting its text each step replaced the node and laid out the nav.
+      const text = `${Math.round(p * 100)}%`;
+      if (pct.current && text !== lastText) pct.current.textContent = lastText = text;
     });
   }, []);
   return (

@@ -35,6 +35,7 @@ export function TrailDial({ index }: { index: string }) {
     const el = root.current;
     if (!el) return;
     const hand = el.querySelector<HTMLElement>(".dial-hand");
+    const arc = el.querySelector<SVGElement>(".dial-arc");
     const nodes = Array.from(el.querySelectorAll<HTMLElement>(".dial-node"));
     const faces = Array.from(el.querySelectorAll<HTMLElement>(".dial-face-art"));
     const reads = Array.from(el.querySelectorAll<HTMLElement>(".dial-read"));
@@ -43,6 +44,11 @@ export function TrailDial({ index }: { index: string }) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     let last = -1;
+    // Written only when they move, and the arc's share on the arc itself: set on the section, a custom
+    // property restyled all ~400 of its elements on every scroll frame.
+    const lastQ: string[] = [];
+    let lastP = "";
+    let lastHand = "";
     const frame = () => {
       raf = 0;
       if (!wide.matches) return;
@@ -58,11 +64,16 @@ export function TrailDial({ index }: { index: string }) {
       const eased = k >= N ? N : k + (t < 0.35 ? 0 : t > 0.85 ? 1 : (1 - Math.cos(((t - 0.35) / 0.5) * Math.PI)) / 2);
       const on = Math.round(eased);
       const step = on % N;
-      if (hand) hand.style.transform = `rotate(${(angleOf(0) + (eased * 360) / N + 90).toFixed(2)}deg)`;
-      el.style.setProperty("--dial-p", (eased / N).toFixed(4));
+      const turn = `rotate(${(angleOf(0) + (eased * 360) / N + 90).toFixed(2)}deg)`;
+      if (hand && turn !== lastHand) hand.style.transform = lastHand = turn;
+      const share = (eased / N).toFixed(4);
+      if (arc && share !== lastP) arc.style.setProperty("--dial-p", (lastP = share));
       // The face draws the step under the hand from the moment the hand arrives.
       const q = reduced ? 1 : Math.min(1, Math.max(0, (f - on + 0.35) / 0.55));
-      faces.forEach((a, i) => a.style.setProperty("--q", i === step ? (on === N ? "1" : q.toFixed(3)) : "0"));
+      faces.forEach((a, i) => {
+        const v = i === step ? (on === N ? "1" : q.toFixed(3)) : "0";
+        if (lastQ[i] !== v) a.style.setProperty("--q", (lastQ[i] = v));
+      });
       if (on !== last) {
         last = on;
         const loop = on === N;

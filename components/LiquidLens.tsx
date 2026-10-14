@@ -26,7 +26,7 @@ const RIM = 22;
 const isChromium = () => /Chrome\/\d+/.test(navigator.userAgent);
 
 /** Maps already drawn, by size and radius; the oldest goes once there are more than MAPS. */
-const drawn = new Map<string, string>();
+const drawn = new Map<string, Promise<string>>();
 const MAPS = 24;
 
 /** The displacement map for a w x h box with corner radius r: red and green carry x and y (128 = none). */
@@ -40,11 +40,21 @@ function lensMap(w: number, h: number, r: number) {
   }
   const url = drawMap(w, h, r);
   drawn.set(key, url);
-  if (drawn.size > MAPS) drawn.delete(drawn.keys().next().value!);
+  if (drawn.size > MAPS) {
+    const [old, gone] = drawn.entries().next().value!;
+    drawn.delete(old);
+    // Its blob goes too, unless a filter still shows it.
+    void gone.then((u) => {
+      if (u.startsWith("blob:") && !document.querySelector(`feImage[href="${u}"]`)) URL.revokeObjectURL(u);
+    });
+  }
   return url;
 }
 
-function drawMap(w: number, h: number, r: number) {
+/** The map as an image URL. Encoded with toBlob, off the main thread: toDataURL encoded the PNG in the
+ *  frame, and the story card's map, redrawn as it settled after each chapter's hand-off, cost the scroll
+ *  a third of a second over the story. */
+function drawMap(w: number, h: number, r: number): Promise<string> {
   // A large map is drawn at half size and stretched by the filter: the field is smooth (and blurred
   // after), so it bends the same, for a quarter of the work on a phone's CPU.
   const k = w * h > 40_000 ? 0.5 : 1;
@@ -95,7 +105,15 @@ function drawMap(w: number, h: number, r: number) {
     }
   }
   ctx.putImageData(img, 0, 0);
-  return c.toDataURL("image/png");
+  return new Promise((done) =>
+    c.toBlob((b) => {
+      const url = b ? URL.createObjectURL(b) : c.toDataURL("image/png");
+      // Decoded before a filter takes it, so the swap never draws a frame with an empty map.
+      const im = new Image();
+      im.src = url;
+      im.decode().then(() => done(url), () => done(url));
+    }, "image/png"),
+  );
 }
 
 const NS = "http://www.w3.org/2000/svg";
@@ -162,7 +180,14 @@ export function LiquidLens() {
         seen.set(el, rec);
       }
       rec.key = key;
-      const map = lensMap(w, h, Math.max(Math.round(r), 2));
+      const r2 = rec;
+      void lensMap(w, h, Math.max(Math.round(r), 2)).then((map) => {
+        // Moved on to another size (or bare) while this map was encoding: that call places its own.
+        if (r2.key === key && el.isConnected) place(el, r2, map, w, h);
+      });
+    }
+
+    function place(el: HTMLElement, rec: { id: string; image?: SVGFEImageElement; map?: SVGFEDisplacementMapElement }, map: string, w: number, h: number) {
       // A new size for a filter that exists: swap its map in place rather than rebuilding the filter.
       if (rec.image && rec.map && rec.image.isConnected) {
         rec.image.setAttribute("href", map);

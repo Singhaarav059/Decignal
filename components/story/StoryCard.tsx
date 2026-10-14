@@ -135,8 +135,11 @@ export function StoryCard() {
       });
       layout(g);
 
-      // The ending turns the card to the night of the closing bands.
-      frame.toggleAttribute("data-night", on === CH.final);
+      // The ending turns the card to the night of the closing bands. Not where the card is away in the
+      // ending (wide screens): there nobody sees it, and its colour transition restyled the card's ~800
+      // elements on every frame for 0.6s as the story closed.
+      const night = on === CH.final && !awayAt(on);
+      if (frame.hasAttribute("data-night") !== night) frame.toggleAttribute("data-night", night);
 
       // Wide screens: the card rises in after the hero and leaves before the ending with the scroll.
       const { i, j, e } = blendAt(g);

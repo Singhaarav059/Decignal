@@ -111,6 +111,8 @@ export function Story() {
         // A phone deck sits 12px above the card, so it travels less than that and never crosses it.
         put(el, "transform", `translate3d(0, ${((1 - w) * (el.dataset.stage !== undefined ? 10 : 18) + drift).toFixed(2)}px, 0)`);
         put(el, "visibility", w < 0.005 ? "hidden" : "visible");
+        // Gone, its loops hold still (story.css: the hero's scroll cue).
+        if (el.hasAttribute("data-gone") !== w < 0.005) el.toggleAttribute("data-gone", w < 0.005);
         // The closing statement's words rise once it is mostly in, and drop back only once it has gone.
         if (el.classList.contains("statement-rise")) {
           const on = el.hasAttribute("data-on") ? w > 0.02 : w > 0.4;

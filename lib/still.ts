@@ -6,8 +6,10 @@
 // story has scrolled away. The site has no SMIL: its clock could not be paused (resumed after a long
 // pause, Chrome replayed every missed loop at once and froze the page), so every loop is CSS.
 
-/** The blocks watched: each section's top-level parts (a tall section holds several), and the footer's. */
-const SCOPES = ".editorial > section > *, .page-foot > footer > *";
+/** The blocks watched: each section's top-level parts (a tall section holds several), and the footer's; and
+ *  the looping drawings themselves, as one block can be several screens tall (the statement's head and
+ *  its bento grid: at the head, the bento's charts below the fold kept restyling every frame). */
+const SCOPES = ".editorial > section > *, .page-foot > footer > *, .liquid, .flow-art, .bento-art, .step-art, .area-art";
 
 function hold(el: Element, still: boolean) {
   if (still !== el.hasAttribute("data-still")) el.toggleAttribute("data-still", still);

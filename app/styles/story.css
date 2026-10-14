@@ -214,6 +214,9 @@ html.ready .intro-stage { opacity: 1; transform: none; }
   background: var(--color-ink-soft);
   animation: story-cue 1.8s var(--ease) infinite;
 }
+/* Hidden (the hero gone, its card pane put away), the cue holds still: a running animation restyles
+   it every frame through the whole story. */
+:is([data-gone], [inert]) .story-cue-wheel { animation-play-state: paused; }
 @keyframes story-cue {
   0% { opacity: 0; transform: translate(-50%, -2px); }
   30% { opacity: 1; }

@@ -189,6 +189,8 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .nav-peek-pane[data-on] { opacity: 1; transform: none; pointer-events: auto; transition-delay: 60ms, 0s; }
 .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: peekIn var(--dur-4) var(--ease) both; animation-delay: calc(40ms + var(--k) * 35ms); }
 @keyframes peekIn { from { opacity: 0; transform: translateY(8px); } }
+/* A closed glance, or a pane not shown, holds its live reading still: hidden, it restyled every frame. */
+:is(.nav-peek:not([data-open]), .nav-peek-pane:not([data-on])) .aa-live { animation-play-state: paused; }
 
 .peek-grid { display: grid; grid-template-columns: minmax(0, 1fr) 216px; gap: 10px; }
 .peek-list { display: grid; gap: 2px; align-content: start; }
@@ -314,8 +316,9 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 @keyframes ca-press { 50% { transform: scale(.94); } }
 @keyframes ca-pop { 50% { transform: scale(1.1); } }
 @keyframes ca-pass { to { transform: translateX(var(--run)); } }
-/* Motion only on the tile being pointed at, or the chapter being read; the rest hold still. */
-:is(.peek-act button:hover, .peek-act [data-here] button, .peek-act button:focus-visible) .chapter-art,
+/* Motion only on the tile being pointed at, or the chapter being read while the glance is open; the rest
+   hold still (closed, the reading tile looped in a hidden panel, restyling its SVG every frame). */
+:is(.peek-act button:hover, .nav-peek[data-open] .nav-peek-pane[data-on] .peek-act [data-here] button, .peek-act button:focus-visible) .chapter-art,
 .chapter-art[data-live] {
   .ca-bob { animation: ca-bob 2.4s ease-in-out infinite; animation-delay: calc(var(--i) * -.4s); }
   .ca-blink { animation: ca-blink 1.2s var(--ease) infinite; }
