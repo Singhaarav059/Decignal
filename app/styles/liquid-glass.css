@@ -232,21 +232,6 @@
   .story-card[data-night] { background-color: rgb(20 21 24 / 0.94); }
 }
 
-/* Tablets: the glass over the 3D keeps its face and drops the backdrop pass. A tablet draws the world
-   live behind it, and each frame the world changed, the browser copied out what lay under every pane
-   and filtered it again: three to four times the GPU process's time in the moving chapters (iPad Air,
-   at rest). A cheaper filter (the colour pass alone, no blur) cost the same: the copy is the cost. The
-   framing keeps the world out from under the card, so what showed through was the chapter's colour
-   field, already soft: the same face over it reads within 1-2% of the blurred one (PSNR 47-48 dB on
-   the card). Phones (above) also make the face more opaque; tablets keep the desktop's. */
-@media (pointer: coarse) and (hover: none) and (min-width: 768px) {
-  :is(.story-card, .application-card, .ind-callout, .final-bar, .hero-tag, .sys-chip, .island-panel,
-    .nav-surface, .nav-links, .nav-brand, .nav-cta[data-quiet], .cta-pill) {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
 /* Readers who ask for less transparency get solid surfaces. */
 @media (prefers-reduced-transparency: reduce) {
   :is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
