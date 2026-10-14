@@ -8,6 +8,7 @@ import { Backdrop } from "@/components/Backdrop";
 import { Story } from "@/components/story/Story";
 import { Editorial } from "@/components/sections/Editorial";
 import { Footer } from "@/components/sections/Footer";
+import { PerfProbe } from "@/components/PerfProbe";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
@@ -29,6 +30,7 @@ export default function Home() {
       <div className="page-foot">
         <Footer />
       </div>
+      <PerfProbe />
     </>
   );
 }

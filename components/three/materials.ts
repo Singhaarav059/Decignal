@@ -109,8 +109,9 @@ const grain = (key: string, base: number, spread: number) =>
  */
 export function coated(p: THREE.MeshPhysicalMaterialParameters): THREE.MeshStandardMaterial {
   if (!isPhone()) return new THREE.MeshPhysicalMaterial(p);
+  // Physical-only settings have no standard counterpart.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { clearcoat, clearcoatRoughness, ...rest } = p;
+  const { clearcoat, clearcoatRoughness, transmission, thickness, ior, ...rest } = p;
   return new THREE.MeshStandardMaterial(rest as THREE.MeshStandardMaterialParameters);
 }
 
