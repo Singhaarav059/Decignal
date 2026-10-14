@@ -115,7 +115,8 @@ function places() {
   const at = (g: number) => (story ? top + gToProgress(g) * (story.offsetHeight - window.innerHeight) : 0);
   const apps = document.querySelector(".application-journey");
   const list: [string, number][] = [
-    ["hero", 0],
+    // Swayed about a point past the nav's compact line (48px), so the hero is measured, not the nav's flip.
+    ["hero", Math.round(window.innerHeight * 0.36)],
     ["decision", at(4.415)],
   ];
   if (apps) list.push(["apps", apps.getBoundingClientRect().top + window.scrollY + window.innerHeight * 0.6]);

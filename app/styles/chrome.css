@@ -166,6 +166,19 @@ a.skip-link { left: var(--edge); }
   .nav-cta-icon, .nav-pill[data-compact] .nav-cta-icon { width: 28px; height: 28px; }
   .nav-logo { padding-inline: 2px 4px; }
 }
+/* Phones keep one bar height when it goes compact (the logo folds and the readout still animate). The
+   bar shrinking by 8px resized its glass, and a phone re-rastered the pill and the CTA, with their
+   blurred rims, on every frame of the 320 ms change: a stutter each time the page left the top
+   (raster 330 to 79 ms/s on the probe's sway, 2026-10-14, the user's choice). */
+@media (max-width: 639px) {
+  .nav-pill[data-compact] { height: 56px; margin-top: 12px; padding-right: 7px; }
+  .nav-pill[data-compact] .nav-cta { height: 42px; padding-right: 5px; }
+  .nav-pill[data-compact] .nav-cta-icon { width: 32px; height: 32px; }
+}
+@media (max-width: 379px) {
+  .nav-pill[data-compact] .nav-cta { padding-right: 7px; }
+  .nav-pill[data-compact] .nav-cta-icon { width: 28px; height: 28px; }
+}
 
 /* Entrance once the loader lifts: the bar drops in, then its links follow one by one. */
 html:not(.ready) .nav-pill { opacity: 0; }
