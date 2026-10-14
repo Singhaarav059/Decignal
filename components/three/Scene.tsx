@@ -822,7 +822,7 @@ function World3D() {
       }}
     >
       <World />
-      {paced && <Pacer paused={storyPaused} still drawnAt={lastDraw} />}
+      {paced && <Pacer paused={storyPaused} still={false} drawnAt={lastDraw} />}
     </Canvas>
   );
 }

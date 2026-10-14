@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import { CH, EXIT_DRIFT, STOPS, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
 import { CTA, FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
@@ -19,21 +19,13 @@ import { LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { TONE } from "./chapters";
-import { PhoneStory } from "./PhoneStory";
-import { PhoneFlow } from "./PhoneFlow";
-import { liveForced, onStillsChange, phoneFlow, phoneStills } from "@/lib/stills";
+import { liveForced } from "@/lib/stills";
 import { exposeLive3d } from "@/lib/live3d";
 
 /** The eyebrow's two halves: one line on wide screens, two beside the systems on phones. */
 const [EYEBROW_A, EYEBROW_B] = HERO.eyebrow.split(" · ");
 
 const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
-
-/** How the story's world is drawn here: from stills on an upright phone (lib/stills.ts), the live 3D
- *  elsewhere. Undecided while hydrating, so a phone never starts fetching the 3D's code. */
-function useEngine(): "pending" | "flow" | "stills" | "live" {
-  return useSyncExternalStore(onStillsChange, () => (phoneFlow() ? "flow" : phoneStills() ? "stills" : "live"), () => "pending");
-}
 
 // A statement leaves before the next chapter arrives: the gap between them belongs to the object moving.
 const shown = (w: number) => smoothstep(0.7, 1, w);
@@ -57,7 +49,7 @@ function rollOf(p: number, k: number, n: number) {
 }
 
 /**
- * The story: one 3D world and one info card. Behind the world, the two statement headlines (the hero's,
+ * The story: one live 3D world and one info card. Behind the world, the two statement headlines (the hero's,
  * the page's h1, and the final one). In front, the StoryCard (bottom-left, every chapter) and, on phones,
  * the decks that stand in for the 3D cards in Control and Scale.
  */
@@ -66,21 +58,7 @@ export function Story() {
   const front = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLDivElement>(null);
   const actions = useRef<HTMLDivElement>(null);
-  const engine = useEngine();
-  // Stills that cannot load (a missing or stale manifest) hand the phone to the live 3D.
-  const [stillsFailed, setStillsFailed] = useState(false);
-  const failStills = useCallback(() => {
-    // The scrolling page has no stills to show: load again as the pinned story with the live 3D (once).
-    if (document.documentElement.dataset.flow === "phone") {
-      try {
-        sessionStorage.setItem("decignal:noflow", "1");
-      } catch {}
-      window.location.reload();
-      return;
-    }
-    setStillsFailed(true);
-  }, []);
-  const world = engine === "pending" ? null : engine === "flow" && !stillsFailed ? "flow" : engine === "stills" && !stillsFailed ? "stills" : "live";
+
   useEffect(() => {
     if (liveForced()) exposeLive3d();
   }, []);
@@ -158,16 +136,6 @@ export function Story() {
     };
   }, []);
 
-  // An upright phone reads the story as a page that scrolls with the thumb (PhoneFlow); without its
-  // stills it falls back to the pinned story with the live 3D.
-  if (world === "flow")
-    return (
-      <>
-        <PhoneFlow onFail={failStills} />
-        <IslandPanel />
-      </>
-    );
-
   return (
     <>
       {/* Behind the world: the hero, on one centre line (Orvan, Koushik). The systems tag and the h1 at the
@@ -234,17 +202,12 @@ export function Story() {
         <ChapterHeads />
       </div>
 
-      {/* The world */}
+      {/* The world: full live 3D across all screen sizes, perfectly adapted */}
       <div className="story-canvas pointer-events-none fixed inset-0" aria-hidden>
         <div className="intro-stage size-full">
-          {/* Without WebGL (or after a lost context) the chapter's flat drawing stands in. Upright phones
-              draw the world from pre-rendered stills and never load the 3D. */}
-          {world === "live" && (
-            <SceneBoundary story label="Drawing of the story's scene: six business systems and one stock transfer">
-              <Scene />
-            </SceneBoundary>
-          )}
-          {world === "stills" && <PhoneStory onFail={failStills} />}
+          <SceneBoundary story label="Drawing of the story's scene: six business systems and one stock transfer">
+            <Scene />
+          </SceneBoundary>
         </div>
       </div>
 

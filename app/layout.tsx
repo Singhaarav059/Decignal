@@ -93,16 +93,11 @@ const NOSCRIPT_CSS =
 // hydration, hence suppressHydrationWarning on <html>.
 const INTRO_SEEN_JS =
   'try{if(sessionStorage.getItem("decignal:intro")==="1")document.documentElement.classList.add("intro-seen")}catch(e){}';
-// Upright phones read the story as a page that scrolls with the thumb (components/story/PhoneFlow.tsx),
-// decided before the first paint so the pinned story never shows there (lib/stills.ts phoneFlow).
-const FLOW_JS =
-  'try{if(matchMedia("(max-width: 767px)").matches&&innerHeight>=innerWidth*1.4&&!/[?&]live3d/.test(location.search)&&sessionStorage.getItem("decignal:noflow")!=="1")document.documentElement.dataset.flow="phone"}catch(e){}';
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${text.variable} antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_JS + FLOW_JS }} />
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_JS }} />
         <noscript dangerouslySetInnerHTML={{ __html: `<style>${NOSCRIPT_CSS}</style>` }} />
       </head>
       <body>

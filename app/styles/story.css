@@ -18,13 +18,8 @@
 #story { position: relative; }
 .story-stop { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
 @media (pointer: coarse) and (hover: none) {
-  html { scroll-snap-type: y mandatory; }
-  /* Off while a jump glides or the veil is shut; back on once it has landed (rest), so the first swipe
-     after a jump lands on a hold too. */
-  html[data-jump]:not([data-jump="rest"]) { scroll-snap-type: none; }
-  .story-stop:not([data-off]) { scroll-snap-align: start; scroll-snap-stop: always; }
-  .editorial:not([data-off]) { scroll-snap-align: start; }
-  .page-foot:not([data-off]) { scroll-snap-align: end; }
+  /* Fluid, uninterrupted smooth scrolling on touch screens matching laptop fluidity */
+  html { scroll-snap-type: none; }
 }
 
 /* ---- Layers ---- */
@@ -987,8 +982,7 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 
 /* ---- Upright phones: the story as a page that scrolls with the thumb (components/story/PhoneFlow.tsx).
    Decided before the first paint (app/layout.tsx FLOW_JS), so the pinned layers never show there. ---- */
-html[data-flow="phone"] { scroll-snap-type: none !important; }
-html[data-flow="phone"] :is(.story-back, .story-canvas, .story-overlay, #story) { display: none !important; }
+
 .pf { position: relative; }
 /* Each chapter on its own sky, eased in from the one before over its first lines. */
 .pf-ch {

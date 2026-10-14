@@ -44,9 +44,9 @@ function step(t: number) {
   raf = requestAnimationFrame(step);
 }
 
-/** Starts easing the story on touch screens; elsewhere storyTo sets g at once. */
+/** Starts tracking the story on touch screens; storyTo sets g at once for 1:1 responsive tracking. */
 export function startPace() {
-  eased = isTouch();
+  eased = false;
   target = store.g;
   return () => {
     cancelAnimationFrame(raf);
@@ -106,7 +106,7 @@ export const stillCuts = () => cuts;
  *  or drawn at another density. Inert unless the page was opened with ?perf. */
 export const probe = {
   off3d: false,
-  /** Phones draw the story as stills at each hold (components/three/Pacer.tsx); false draws every move. */
-  still: true,
+  /** Phones draw the story live: false draws every move. */
+  still: false,
   dprSetters: new Set<(dpr: number | [number, number]) => void>(),
 };

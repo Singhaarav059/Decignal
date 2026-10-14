@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
@@ -18,7 +18,6 @@ import { AreaArt } from "./AreaArt";
 import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
 import { whenStill } from "@/lib/idle";
-import { onStillsChange, phoneStills } from "@/lib/stills";
 import { ExplorerStills } from "./ExplorerStills";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -31,11 +30,10 @@ const ALL = APPLICATIONS.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Upright phones show the home explorer's world as pre-rendered stills (ExplorerStills, lib/stills.ts)
- *  and never load its 3D; undecided while hydrating. Service pages (compact) keep the live 3D: the
- *  stills are framed for the home page's stage. */
-function useStills(compact: boolean) {
-  return useSyncExternalStore(onStillsChange, () => !compact && phoneStills(), () => null);
+/** Live 3D across all screen sizes. */
+function useStills(compact?: boolean) {
+  void compact;
+  return false;
 }
 
 /**
@@ -174,11 +172,6 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     let live = true;
     let cancel = () => {};
     const prefetch = () => {
-      // A phone's stills need no code: the world is set up at the next pause.
-      if (!compact && phoneStills()) {
-        cancel = whenStill(() => setNear(true));
-        return;
-      }
       cancel = whenStill(() => {
         void import("../three/ApplicationScene").then(() => {
           if (live) cancel = whenStill(() => setNear(true));

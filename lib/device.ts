@@ -39,7 +39,9 @@ export const tallTouch = (w: number, h: number) => w >= 1024 && h > w * 1.15 && 
  * for free, edges come out smoother for about 60% of the shading (user's choice, 2026-10-14).
  */
 export function canvasQuality() {
-  return { phone: isPhone(), dpr: [1, 2] as [number, number], antialias: true };
+  const phone = isPhone();
+  const maxDpr = phone ? 1.5 : 2;
+  return { phone, dpr: [1, maxDpr] as [number, number], antialias: true };
 }
 
 // A classic scrollbar (Windows, or macOS set to always show scrollbars) narrows the full-width story

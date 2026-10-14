@@ -52,16 +52,12 @@ export type Manifest = { v: number; dpr: number; formats: string[]; decls: strin
 export const liveForced = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("live3d");
 
 const PHONE = "(max-width: 767px)";
-/** An upright phone screen. A landscape phone or a narrow desktop window has no matching stills and
- *  keeps the live 3D. */
-const upright = () => window.innerHeight >= window.innerWidth * 1.4;
 
-/** Whether the story is drawn from stills on this screen now. */
-export const phoneStills = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches && upright() && !liveForced();
+/** Whether the story is drawn from stills on this screen now. Disabled so all devices run full live 3D. */
+export const phoneStills = () => false;
 
-/** The story is read as a scrolling page on this screen (an upright phone at load, app/layout.tsx FLOW_JS):
- *  fixed for the page's life, so a rotation never swaps the story's whole structure mid-read. */
-export const phoneFlow = () => typeof document !== "undefined" && document.documentElement.dataset.flow === "phone";
+/** The story is read as a scrolling page on this screen. Disabled so all devices run full live 3D. */
+export const phoneFlow = () => false;
 
 /** Re-checks phoneStills on resize and on crossing the phone width. */
 export function onStillsChange(fn: () => void) {
