@@ -427,10 +427,12 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
     case CH.problem:
       for (let d = 0; d < DAYS.length; d++) pillar(o, DAY_X(d), 0.05, 0.42, -0.25, DAYS[d] * STEP_Y + 0.3);
       // The safety label left of the chart and the demand line's end on the right (narrow screens
-      // carry them in a legend under the axis instead).
+      // carry them in a legend under the axis instead). The demand label is "DEMAND +18%" in full, from
+      // 0.16 past the line's end to about 1.4 on a short screen (Marks.tsx grows its type there): a pillar
+      // at 0.6 kept only its first half in frame, and at 1280 x 800 the figure ran off the right edge.
       if (!portrait) {
         pillar(o, DAY_X(0) - 1.25, 0, 0.2, SAFETY_Y - 0.1, SAFETY_Y + 0.1);
-        pillar(o, DAY_X(6) + 0.6, 0.2, 0.2, 2.2, 2.6);
+        pillar(o, DAY_X(6) + 0.95, 0.2, 0.5, 2.2, 2.6);
       }
       o.dist = 17 * drift;
       break;

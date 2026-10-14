@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect } from "react";
 import { ArrowLeftRight, Building2, Layers, Network, ShieldCheck, TrendingDown, TriangleAlert, type LucideIcon } from "lucide-react";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE } from "@/lib/story";
 import { CHAPTER_COPY, CHAPTER_FACTS, EXAMPLE_LABEL, INDUSTRY } from "@/lib/copy";
@@ -32,6 +33,7 @@ const HEADS = CHAPTERS.map((_, i) => i).filter((i) => CHAPTER_FACTS[i]);
  * keep the title in the card.
  */
 export function ChapterHeads() {
+  useFitHeads();
   return (
     <>
       {HEADS.map((c) => (
@@ -39,6 +41,52 @@ export function ChapterHeads() {
       ))}
     </>
   );
+}
+
+/** One line's width as set on one row: from its first word to its last (a word's mask pads its sides). */
+function lineWidth(line: HTMLElement) {
+  const words = line.querySelectorAll<HTMLElement>(".word > span");
+  if (words.length) return words[words.length - 1].getBoundingClientRect().right - words[0].getBoundingClientRect().left;
+  const range = document.createRange();
+  range.selectNodeContents(line);
+  return range.getBoundingClientRect().width;
+}
+
+/**
+ * Wide screens: a head whose longest line would overrun its column steps its type down just enough to
+ * fit (--fit, story-heads.css). At 78px the Industries head's "Financial Services." needs 589px where
+ * screens 1536px and wider leave it about 510, and its mask cut it off mid-word. Every other head keeps
+ * the display size. Measured once the fonts are in, and again whenever a column changes width.
+ */
+function useFitHeads() {
+  useLayoutEffect(() => {
+    const heads = Array.from(document.querySelectorAll<HTMLElement>(".chapter-head .chapter-h"));
+    const fit = () =>
+      heads.forEach((h) => {
+        const room = h.clientWidth;
+        if (!room) return;
+        const was = parseFloat(h.style.getPropertyValue("--fit")) || 1;
+        // On one row each, as the lines are meant to sit (a too-long one would otherwise wrap). Only the
+        // text is measured, never a box that fills the column (the Industries roll), or the type would
+        // shrink a little more on every pass.
+        h.style.whiteSpace = "nowrap";
+        let need = 0;
+        h.querySelectorAll<HTMLElement>(".line-mask > [data-roll]:not(:has(.ind-roll)), .ind-roll > span").forEach((line) => (need = Math.max(need, lineWidth(line))));
+        h.style.whiteSpace = "";
+        if (!need) return;
+        const k = Math.min(1, Math.floor(((room - 4) / (need / was)) * 1000) / 1000);
+        if (Math.abs(k - was) > 0.002) h.style.setProperty("--fit", String(k));
+      });
+    fit();
+    let live = true;
+    document.fonts?.ready.then(() => live && fit());
+    const ro = new ResizeObserver(fit);
+    heads.forEach((h) => ro.observe(h));
+    return () => {
+      live = false;
+      ro.disconnect();
+    };
+  }, []);
 }
 
 function ChapterHead({ c }: { c: number }) {

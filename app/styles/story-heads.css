@@ -33,7 +33,8 @@
   .chapter-kicker-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--tone-on, #fff); background: var(--tone, var(--color-ink)); }
   .chapter-kicker-note { padding-left: 10px; margin-left: 2px; box-shadow: inset 1px 0 0 var(--color-line-strong, var(--color-line)); color: var(--color-ink-soft); }
 
-  .chapter-h { margin-top: 18px; font-size: clamp(44px, min(4.7vw, 8.2vh), 78px); line-height: 1; letter-spacing: -0.013em; }
+  /* --fit (ChapterHeads.tsx) steps a head down only where its longest line would overrun its column. */
+  .chapter-h { margin-top: 18px; font-size: calc(clamp(44px, min(4.7vw, 8.2vh), 78px) * var(--fit, 1)); line-height: 1; letter-spacing: -0.013em; }
   .chapter-h .accent { font-weight: 300; }
   .chapter-roll { display: grid; justify-items: start; height: 1.1em; margin-bottom: -0.1em; }
   .chapter-roll > span { height: 1.1em; line-height: 1.04; }

@@ -37,6 +37,7 @@
   --gl-amber: #f5c95a;
   --gl-butter: #f9ea94;
   --gl-orange: #f39a45;
+  --gl-lime: #c9e264;
 
   /* Film grain: one noise, dark where it runs high and light where it runs low, so it reads on any
      tint. Drawn as vector, it stays one device pixel fine at 2x. */
@@ -128,7 +129,7 @@
 :is(.story-card, .application-card, .ind-callout, .final-bar) { background-color: rgb(250 251 253 / 0.72); background-image: var(--lg-grain), var(--field-milk); box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
 :is(.faq-item, .bento-card, .faq-fig) { background-color: rgb(250 251 253 / 0.66); background-image: var(--lg-grain), var(--field-milk); }
 /* Cards that stack over each other keep an opaque face, or the covered card's figures would ghost through. */
-.outcome-figure { background-color: rgb(255 255 255 / 0.97); background-image: var(--lg-grain), var(--field-milk); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.outcome-figure { background-color: #fff; background-image: var(--lg-grain), var(--field-milk); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .faq-item[data-open] { background-color: rgb(252 253 254 / 0.84); }
 /* The face hides the hand's pivot: solid white glass, the rim light only. */
 .dial-face { background-color: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
