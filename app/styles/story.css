@@ -2,10 +2,11 @@
    decks, and the opened-island panel (components/story). Type comes from the role classes (.t-*). */
 
 /* The scroll track the story is mapped onto: each chapter's length in viewport heights (lib/story.ts).
-   A phone travels 70% of it: the same moves, the same order, in fewer flicks of the thumb (a whole
-   chapter took two to four swipes). */
+   Phones and touch tablets travel 70% of it: the same moves, the same order, in fewer flicks of the
+   thumb (a whole chapter took two to four swipes). At full length a tablet's holds stood 1.5 screens
+   apart, so a slow drag under three quarters of the screen snapped back to the hold it left. */
 #story { height: calc(var(--story-len) * 100svh); }
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) and (hover: none) {
   #story { height: calc(var(--story-len) * 70svh); }
 }
 
