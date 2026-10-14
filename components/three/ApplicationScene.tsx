@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import { isTouch } from "@/lib/pace";
 import { Pacer } from "./Pacer";
+import { AdaptiveQuality } from "./AdaptiveQuality";
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { Studio } from "./Studio";
@@ -13,7 +14,7 @@ import { Logistics, Maintenance, Production, SupplyRisk, Distribution, DealerNet
 import { FLOORS, phase, type Motion } from "./SceneKit";
 import { Warm } from "./Warm";
 import { ShadowGate } from "./Shadows";
-import { canvasQuality } from "@/lib/device";
+import { canvasQuality, usePhone } from "@/lib/device";
 import { whenStill } from "@/lib/idle";
 
 /** The part of the canvas the page's copy leaves free, as insets in CSS px from each edge. */
@@ -209,7 +210,8 @@ export default function ApplicationScene(props: Props) {
   // Up to 2x with MSAA, as the story (lib/device.ts); the shadow maps are sized to the scene's on-screen size.
   const q = useMemo(() => canvasQuality(), []);
   // While it plays, touch screens draw on the phone budget (Pacer, lib/pace.ts).
-  const paced = useMemo(() => isTouch(), []);
+  const phone = usePhone();
+  const paced = phone || isTouch();
   const playing = props.active && !props.still;
   return (
     <Canvas dpr={q.dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
@@ -230,6 +232,7 @@ export default function ApplicationScene(props: Props) {
         <ShadowGate />
       </Suspense>
       {playing && paced && <Pacer />}
+      <AdaptiveQuality />
     </Canvas>
   );
 }

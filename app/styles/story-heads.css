@@ -278,3 +278,11 @@
   transform: translate3d(var(--pin-x, 0px), var(--pin-y, 0px), 0) scale(calc(0.5 + 0.5 * var(--lead-o, 0)));
   opacity: var(--lead-o, 0);
 }
+
+@media (min-width: 600px) and (max-width: 1023px) and (max-height: 500px) {
+  .ind-callout {
+    left: calc(var(--card-x) + var(--card-w) + 16px);
+    width: calc(100% - var(--card-x) - var(--card-w) - 16px - var(--gutter));
+    top: 76px;
+  }
+}

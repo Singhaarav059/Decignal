@@ -59,6 +59,7 @@ export function StoryCard() {
     let chrome = frame.offsetHeight - inner.offsetHeight;
     let lastStock = "";
     let lastRect = "";
+    let lastChapter = -1;
     let left = false;
     // Wide screens: the hero carries its own line and CTA in its corners, so the card waits for 02; the
     // ending carries them on its own bar.
@@ -120,6 +121,10 @@ export function StoryCard() {
 
     const off = subscribe((g) => {
       const on = onAt(g);
+      if (on !== lastChapter) {
+        lastChapter = on;
+        inner.scrollTop = 0;
+      }
       const r = rollAt(g);
       frame.toggleAttribute("data-rolling", !!r);
       // Held: one chapter in place. Rolling: the old chapter and the next one as one stack, the next

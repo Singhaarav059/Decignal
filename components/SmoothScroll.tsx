@@ -9,7 +9,6 @@ import { startPace, storyCut, storyTo } from "@/lib/pace";
 import { jumpTo, onJumpCut, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
-import { rearmSnap, startSnap } from "@/lib/snap";
 import { dropEmptyRafLoops } from "@/lib/idle-raf";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -91,6 +90,9 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     // A jump that moves the page at once lands the story there too, without easing in.
     const offCut = onJumpCut(() => storyCut());
     const storyEl = document.getElementById("story");
+    let resizeG: number | null = null;
+    let screenWidth = window.innerWidth;
+    let screenHeight = window.innerHeight;
     const st = storyEl
       ? ScrollTrigger.create({
           trigger: storyEl,
@@ -98,12 +100,28 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
           end: "bottom bottom",
           onUpdate: (self) => storyTo(progressToG(self.progress)),
           onRefresh: (self) => {
-            storyCut(progressToG(self.progress));
+            // A rotation changes the track's length. Keep the same story moment
+            // instead of interpreting the old pixel offset as a later chapter.
+            if (resizeG !== null) {
+              const g = resizeG;
+              resizeG = null;
+              const y = self.start + gToProgress(g) * (self.end - self.start);
+              void jumpTo(y, { immediate: true, focus: false, story: true });
+              storyCut(g);
+            } else storyCut(progressToG(self.progress));
             placeStops(storyEl, self.start, self.end);
-            rearmSnap();
           },
         })
       : null;
+    const onResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const changed = width !== screenWidth || Math.abs(height - screenHeight) > screenHeight * 0.2;
+      if (changed && st && window.scrollY >= st.start && window.scrollY <= st.end) resizeG = store.g;
+      screenWidth = width;
+      screenHeight = height;
+    };
+    window.addEventListener("resize", onResize, { passive: true });
     // The page below sliding over the finished story: the closing layer drifts up with it (finalExit).
     const after = storyEl
       ? ScrollTrigger.create({
@@ -115,7 +133,6 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
         })
       : null;
 
-    const offSnap = storyEl ? startSnap(storyEl) : null;
 
     let px = NaN;
     let py = NaN;
@@ -157,11 +174,11 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
 
     return () => {
       gone = true;
-      offSnap?.();
       offCut();
       offPace();
       st?.kill();
       after?.kill();
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       document.documentElement.removeEventListener("pointerleave", onLeave);

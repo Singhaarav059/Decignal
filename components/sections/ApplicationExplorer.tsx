@@ -31,9 +31,9 @@ const ALL = APPLICATIONS.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Upright phones show the home explorer's world as pre-rendered stills (ExplorerStills, lib/stills.ts)
- *  and never load its 3D; undecided while hydrating. Service pages (compact) keep the live 3D: the
- *  stills are framed for the home page's stage. */
+/** Share live application motion across screens. Reduced-motion or opt-in
+ *  lightweight upright phones use the home-page bake. Service pages keep live
+ *  framing because their stage differs from the baked one. */
 function useStills(compact: boolean) {
   return useSyncExternalStore(onStillsChange, () => !compact && phoneStills(), () => null);
 }
@@ -217,8 +217,9 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       st.style.setProperty("--head-b", `${Math.round(hb.bottom - s.top)}px`);
       if (opened.current) return;
       const cb = c.getBoundingClientRect();
-      frameBox.current = s.width >= 1024
-        ? { left: Math.max(hb.right, cb.right) - s.left + 40, top: 96, right: 32, bottom: idx && idx.offsetHeight ? s.bottom - idx.getBoundingClientRect().top + 24 : 40 }
+      const landscape = s.width >= 600 && s.width < 1024 && s.height <= 500;
+      frameBox.current = s.width >= 1024 || landscape
+        ? { left: Math.max(hb.right, cb.right) - s.left + (landscape ? 16 : 40), top: landscape ? 76 : 96, right: landscape ? 16 : 32, bottom: landscape ? 16 : idx && idx.offsetHeight ? s.bottom - idx.getBoundingClientRect().top + 24 : 40 }
         : { left: 12, right: 12, top: hb.bottom - s.top + 16, bottom: s.bottom - cb.top + 16 };
     };
     measure();
@@ -237,6 +238,9 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     if (el) observer.observe(el);
     const total = lens.reduce((a, b) => a + b, 0);
     const last = { op: "", tf: "" };
+    let resizeProgress: number | null = null;
+    let screenWidth = window.innerWidth;
+    let screenHeight = window.innerHeight;
     const apply = (progress: number) => {
       let distance = progress * total;
       let chapter = 0;
@@ -269,12 +273,29 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
       start: "top top",
       end: "bottom bottom",
       onUpdate: (self) => apply(self.progress),
-      onRefresh: (self) => apply(self.progress),
+      onRefresh: (self) => {
+        if (resizeProgress !== null) {
+          const progress = resizeProgress;
+          resizeProgress = null;
+          void jumpTo(self.start + progress * (self.end - self.start), { immediate: true, focus: false });
+          apply(progress);
+        } else apply(self.progress);
+      },
     });
+    const resize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      if ((width !== screenWidth || Math.abs(height - screenHeight) > screenHeight * 0.2) &&
+        window.scrollY >= trigger.start && window.scrollY <= trigger.end) resizeProgress = trigger.progress;
+      screenWidth = width;
+      screenHeight = height;
+    };
+    window.addEventListener("resize", resize, { passive: true });
     return () => {
       trigger.kill();
       observer.disconnect();
       media.removeEventListener("change", sync);
+      window.removeEventListener("resize", resize);
     };
   }, [lens, list]);
 

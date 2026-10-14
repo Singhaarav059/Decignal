@@ -1,4 +1,4 @@
-// Phones draw the story from pre-rendered stills: one picture per hold (lib/story.ts STOPS), rendered
+// Reduced-motion and opt-in lightweight phones draw the story from pre-rendered stills: one picture per hold (lib/story.ts STOPS), rendered
 // from the live 3D at phone framing by scripts/bake-phone-stills.mjs, shown and dissolved by
 // components/story/PhoneStory.tsx. A phone then never downloads three.js, builds the world or compiles
 // a shader for the story; it decodes one image per swipe. The labels the 3D places (ScreenTag), the
@@ -56,16 +56,21 @@ const PHONE = "(max-width: 767px)";
  *  keeps the live 3D. */
 const upright = () => window.innerHeight >= window.innerWidth * 1.4;
 
-/** Whether the story is drawn from stills on this screen now. */
-export const phoneStills = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches && upright() && !liveForced();
+/** Live animation is the default on every screen. Upright phones can use the baked
+ *  artwork for reduced motion or the explicit lightweight preview (?stills). */
+export const phoneStills = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches && upright() && !liveForced() &&
+  (window.matchMedia("(prefers-reduced-motion: reduce)").matches || new URLSearchParams(window.location.search).has("stills"));
 
 /** Re-checks phoneStills on resize and on crossing the phone width. */
 export function onStillsChange(fn: () => void) {
   const m = window.matchMedia(PHONE);
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   m.addEventListener("change", fn);
+  motion.addEventListener("change", fn);
   window.addEventListener("resize", fn, { passive: true });
   return () => {
     m.removeEventListener("change", fn);
+    motion.removeEventListener("change", fn);
     window.removeEventListener("resize", fn);
   };
 }

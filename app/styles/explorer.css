@@ -168,3 +168,13 @@
   .application-index button[aria-current] .tabular { color: var(--tone-ink, var(--color-ink)); background: #fff; }
   .application-index button:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
 }
+
+/* A landscape phone has room for two columns, but not a tall pinned stage. */
+@media (min-width: 600px) and (max-width: 1023px) and (max-height: 500px) {
+  .application-stage { min-height: 0; }
+  .application-head { top: 76px; right: auto; width: var(--card-w); }
+  .application-title { margin-top: 8px; font-size: 26px; }
+  .application-card { right: auto; width: var(--card-w); max-width: none; gap: 10px; padding: 16px; }
+  .application-metric-value { font-size: 32px; }
+  .application-stage[data-open] .application-card { max-height: calc(100% - 92px); }
+}

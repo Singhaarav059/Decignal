@@ -2,7 +2,9 @@
 
 Marketing site for Decignal, decision intelligence for enterprises across India and Africa. Decignal reads the systems a business already runs (ERP, CRM, MES, WMS, suppliers, external feeds) and turns what it sees into decisions people approve.
 
-The home page is one scroll-driven 3D story: a connected world of islands that follows a single shortage from signal to decision. After the story come the applications explorer, outcomes, how it works, FAQ and the free AI audit form. Service pages live under `/solutions/{slug}`.
+The home page is one scroll-driven 3D story: a connected world of islands that follows a single shortage from signal to decision. Phones use the same live world, chapter transitions and application mechanisms as laptops, framed above the touch controls. Native touch scrolling drives the timeline directly. Rendering starts at up to 1.5x density on phones and 2x on desktops with antialiased edges, then adapts to sustained frame timings. Hidden tabs and offscreen stories pause. Upright phones with reduced motion use the baked artwork; `?stills` enables that lightweight preview and `?live3d` forces the live world.
+
+After the story come the applications explorer, outcomes, how it works, FAQ and the free AI audit form. Service pages live under `/solutions/{slug}`.
 
 Live: https://decignal.up.railway.app
 
@@ -33,8 +35,9 @@ In development, `window.__goto(g)` jumps the story to a position.
 | `npm start` | Serve the build (reads `PORT`) |
 | `npm run lint` | ESLint over the repo (`.claude/` and `references/` are ignored) |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm run test:motion` | Behavioral regression checks for rendering cadence, visibility, offscreen wake, adaptive density and rotation |
 | `npm run rules` | Design-rule gate in warn mode (`scripts/rules-check.mjs`): em dashes, warm colours, gradients, blur, backdrop filters, ink colour-mix, `100vw` in `calc`, soft shadows |
-| `npm run check` | typecheck, lint, rules, then build. Run before pushing |
+| `npm run check` | typecheck, lint, motion checks, rules, then build. Run before pushing |
 
 `node scripts/rules-check.mjs --strict` fails on any finding; use it as the release gate.
 

@@ -13,7 +13,7 @@ import { aluminium } from "../materials";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type DecisionMode, type FaceSpec } from "../faces";
 import { reducedMotion, useActor } from "./core";
 import { goToFunction } from "@/components/story/ScaleApps";
-import { phoneWide, portraitWide } from "@/lib/device";
+import { isTouchPhone, phoneWide, portraitWide } from "@/lib/device";
 
 /* ------------------------------------------------------------------ */
 /* Cards: the decision, its layers, functions and the ending's audit   */
@@ -399,10 +399,9 @@ function Card({ k }: { k: number }) {
   const ref = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
   const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
-  const phone = useThree((state) => phoneWide(state.size.width));
   // A function still waiting to be dealt comes into the hand early while it is pointed at on the page.
   const peek = useRef(0);
-  useActor(ref, (c, t) => cardPose(k, c, t, portrait, phone, peek.current), k * 0.05, 0.11);
+  useActor(ref, (c, t) => cardPose(k, c, t, portrait, peek.current), k * 0.05, 0.11);
   const anim = useRef({ me: 0, other: 0, side: 0, shift: 0 });
   // The card's turn about its own face in Scale's hand (upright, then its slot's roll), eased like its pose.
   const roll = useRef({ v: 0 });
@@ -575,7 +574,7 @@ function Card({ k }: { k: number }) {
 
 /* The glass layer card: dealt last onto Scale's hand, over every function. Frosted glass (the cards
    under it show through, softened) with its print on the face turned to the viewer. Only in Scale, and
-   never on phones, where the hand is a flat deck. */
+   translucent on phones to avoid a second full-scene refraction pass. */
 
 const GLASS = HAND.slots - 1;
 const GLASS_FACE: FaceSpec = { kind: "glass" };
@@ -621,8 +620,8 @@ function GlassCard() {
   const ref = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
   const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
-  const phone = useThree((state) => phoneWide(state.size.width));
-  useActor(ref, (c, t) => (c === CH.scale && !phone ? handPose(GLASS, t, portrait) : null), 0.2, 0.11);
+  const phone = useThree((state) => phoneWide(state.size.width) || isTouchPhone());
+  useActor(ref, (c, t) => (c === CH.scale ? handPose(GLASS, t, portrait) : null), 0.2, 0.11);
   const roll = useRef({ v: 0, open: 0, fade: 0 });
   const printMat = useRef<THREE.MeshBasicMaterial>(null);
   const artMat = useRef<THREE.MeshBasicMaterial>(null);
@@ -637,7 +636,8 @@ function GlassCard() {
     () =>
       new THREE.MeshPhysicalMaterial({
         color: "#41728F",
-        transmission: 1,
+        transmission: phone ? 0 : 1,
+        opacity: phone ? 0.66 : 1,
         transparent: true,
         toneMapped: false,
         roughness: 0.3,
@@ -647,7 +647,7 @@ function GlassCard() {
         clearcoatRoughness: 0.04,
         envMapIntensity: 1,
       }),
-    [],
+    [phone],
   );
   useDisposeOnUnmount(glass, (m) => m.dispose());
   // What the glass refracts is frosted (blurred) anyway: half the resolution reads the same and saves the
@@ -697,8 +697,8 @@ function GlassCard() {
   return (
     <>
     <GlassSky glass={ref} />
-    {/* Never shown on phones: the warm-up leaves it out (its transmission pass would link programs for nothing). */}
-    <group ref={ref} visible={false} userData={{ noWarm: phone }}>
+    {/* Phones keep the glass layer with a translucent surface and no refraction pass. */}
+    <group ref={ref} visible={false} userData={{ noWarm: false }}>
       <mesh
         ref={(m) => {
           onRestLayer(m);

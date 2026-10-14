@@ -12,7 +12,7 @@ import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
-import { canvasQuality, mediaWidth, portraitWide, tallTouch } from "@/lib/device";
+import { canvasQuality, usePhone, mediaWidth, portraitWide, tallTouch } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
 import { isTouch, stillCuts } from "@/lib/pace";
@@ -22,6 +22,7 @@ import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
 import { ShadowFloor, ShadowGate } from "./Shadows";
 import { FrameGate, lastDraw } from "./FrameGate";
+import { AdaptiveQuality } from "./AdaptiveQuality";
 
 /* ------------------------------------------------------------------ */
 /* Stage framing: fit each chapter's subject into the screen area the  */
@@ -104,7 +105,10 @@ function cardFor(c: number, vw: number, vh: number, out: Box) {
     out.x1 = live.x + live.w;
     out.y1 = live.y + live.h;
     if (heldNow === c) out.y0 = live.y;
-    else if (cardH[c] > 0) out.y0 = out.y1 - cardH[c];
+    else if (cardH[c] > 0) {
+      const landscape = mediaWidth(vw) >= 600 && mediaWidth(vw) < 1024 && vh <= 500;
+      out.y0 = out.y1 - (landscape ? Math.min(cardH[c], vh - 92) : cardH[c]);
+    }
     else out.y0 = cardSeen[c]?.y0 ?? live.y;
     return;
   }
@@ -280,6 +284,7 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   stage.x1 = vw - m;
   // Room under the nav for a pin's label above the subject.
   stage.y0 = page.navB + (phone ? 8 : 16);
+  if (phone && c === CH.control) stage.y0 = Math.max(stage.y0, 132);
   stage.y1 = vh - m;
   nEx = 0;
   const gap = phone ? 10 : 24;
@@ -357,7 +362,10 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   if (panel) {
     // An open system panel (app/styles/story.css .island-panel): 360 wide at the right edge, or a
     // sheet along the bottom on phones.
-    if (!phone) stage.x1 = Math.min(stage.x1, vw - edgeOf(vw) - 360 - gap);
+    if (mediaWidth(vw) >= 600 && mediaWidth(vw) < 1024 && vh <= 500) {
+      // Landscape phones dock the system sheet over the copy column.
+      stage.x0 = Math.max(stage.x0, e.x1);
+    } else if (!phone) stage.x1 = Math.min(stage.x1, vw - edgeOf(vw) - 360 - gap);
     else stage.y1 = Math.min(stage.y1, vh - 16 - (panelSeen.h || Math.min(340, vh * 0.45)) - gap);
   }
 }
@@ -633,10 +641,10 @@ function Atmosphere() {
   return null;
 }
 
-function World() {
+function World({ paced }: { paced: boolean }) {
   return (
     <>
-      <Studio />
+      <Studio resolution={canvasQuality().phone ? 256 : 1024} />
       <Atmosphere />
       <KeyLight />
       <Suspense fallback={null}>
@@ -648,7 +656,7 @@ function World() {
         <IndustriesRoad />
         <FinalMark />
         <ChartMarks />
-        <Warmup />
+        <Warmup paced={paced} />
       </Suspense>
       <Threads />
       <SystemNetwork />
@@ -657,7 +665,7 @@ function World() {
       <Rig />
       <ShadowGate />
       <FrameGate />
-      <Pause />
+      <Pause paced={paced} />
     </>
   );
 }
@@ -673,7 +681,7 @@ const storyPaused = () => loop.hidden || loop.warming;
  * while the loader is up and nothing renders, then uploads geometry and textures, then draws a few
  * frames and tells the loader the scene is ready.
  */
-function Warmup() {
+function Warmup({ paced }: { paced: boolean }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
@@ -685,7 +693,6 @@ function Warmup() {
     loop.warming = true;
     // Switching the loop restarts the scene clock from 0: carry the time on, as Pause does.
     // Touch screens stay on "never" throughout: their Pacer draws, and holds while warming or hidden.
-    const paced = isTouch();
     const run = (on: boolean) => {
       const t = clock.elapsedTime;
       setFrameloop(on && !paced ? "always" : "never");
@@ -707,7 +714,7 @@ function Warmup() {
       if (loop.hidden) ready();
     };
     const hidden: THREE.Object3D[] = [];
-    // A subtree never drawn on this screen (userData.noWarm, the Scale glass on a phone) stays hidden,
+    // A subtree never drawn on this screen (userData.noWarm) stays hidden,
     // as Warm.tsx leaves it: compiling it would link programs for nothing.
     const skip = (o: THREE.Object3D | null) => {
       for (let x = o; x; x = x.parent) if (x.userData.noWarm) return true;
@@ -733,7 +740,7 @@ function Warmup() {
     return () => {
       live = false;
     };
-  }, [gl, scene, camera, setFrameloop, clock]);
+  }, [gl, scene, camera, setFrameloop, clock, paced]);
   useFrame(() => {
     if (frames.current < 0) return;
     if (++frames.current === 3) ready();
@@ -750,7 +757,7 @@ function ready() {
 }
 
 /** Stops rendering while the story is out of sight: scrolled past its end, or the canvas faded out. */
-function Pause() {
+function Pause({ paced }: { paced: boolean }) {
   const gl = useThree((s) => s.gl);
   const setFrameloop = useThree((s) => s.setFrameloop);
   const clock = useThree((s) => s.clock);
@@ -767,20 +774,26 @@ function Pause() {
       return !!wrap && wrap !== document.body && wrap.style.opacity !== "" && Number(wrap.style.opacity) < 0.01;
     };
     let elapsed = 0;
-    return subscribe((g) => {
+    const update = () => {
       // Resume as soon as anything shows (opacity above 0), never at the midpoint of a fade.
-      const off = g > CHAPTERS.length - 0.01 || faded();
+      const off = document.hidden || store.g > CHAPTERS.length - 0.01 || faded();
       if (off === loop.hidden) return;
       loop.hidden = off;
       if (loop.warming) return;
       if (off) elapsed = clock.elapsedTime;
-      if (isTouch()) return;
+      if (paced) return;
       setFrameloop(off ? "never" : "always");
       // Restarting the loop resets the clock to 0, which replayed every entrance (the islands
       // vanished and rose again on the way back up). Carry the time on from where it paused.
       if (!off) clock.elapsedTime = elapsed;
-    });
-  }, [gl, setFrameloop, clock]);
+    };
+    const off = subscribe(update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      off();
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [gl, setFrameloop, clock, paced]);
   return null;
 }
 
@@ -797,14 +810,14 @@ export default function Scene() {
 
 function World3D() {
   const q = useMemo(() => canvasQuality(), []);
-  // Touch screens draw on the phone budget (Pacer, lib/pace.ts); phones draw the story as stills.
-  const paced = useMemo(() => isTouch(), []);
+  // Touch screens draw on the phone budget (Pacer, lib/pace.ts); phones retain all the story's live animation.
+  const phone = usePhone();
+  const paced = phone || isTouch();
   return (
     <Canvas
       frameloop={paced ? "never" : "always"}
       shadows="percentage"
-      // Up to 2x with MSAA on every screen (lib/device.ts): smooth edges at a density a phone's GPU
-      // can hold at full frame rate.
+      // Density fits the screen and adapts to measured frame time, with MSAA edges.
       dpr={q.dpr}
       // Layout size, not the on-screen rect: the intro scales the stage (1.04) while the canvas mounts,
       // and a measured rect would keep that size after the intro (the framing then ran 4% off).
@@ -821,8 +834,9 @@ function World3D() {
         gl.setClearColor(0x000000, 0);
       }}
     >
-      <World />
-      {paced && <Pacer paused={storyPaused} still drawnAt={lastDraw} />}
+      <World paced={paced} />
+      <AdaptiveQuality />
+      {paced && <Pacer paused={storyPaused} drawnAt={lastDraw} />}
     </Canvas>
   );
 }

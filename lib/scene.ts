@@ -274,15 +274,13 @@ export function handRoll(i: number, t: number, portrait: boolean, peek = 0) {
   return handPlace(i, Math.max(scaleDeal(t), i - 1 + peek), portrait ? HAND.sP : HAND.s).roll;
 }
 
-export function cardPose(k: number, c: number, t: number, portrait = false, phone = false, peek = 0): Pose | null {
-  // Phones read the layers and functions as a flat deck at full width (components/story/PhoneDeck.tsx);
-  // in 3D they could only be shown a third of that size, so the cards step out for those two chapters.
-  if (phone && (c === CH.control || c === CH.scale)) return null;
+export function cardPose(k: number, c: number, t: number, portrait = false, peek = 0): Pose | null {
+  // Portrait framing fits the same layer fan and dealt hand above the phone's card.
   switch (c) {
     case CH.control: {
       // The decision opens into the layers it was built from: a fan, square to the viewer.
       const s = FAN_S;
-      const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
+      const [x, z] = isoXZ((k - 2) * (portrait ? 0.34 : 0.78), (k - 2) * (portrait ? 0.28 : 0.62), FAN[0], FAN[1]);
       return { p: [x, standY(s, LEAN), z], rx: UP - LEAN, ry: -0.4 - t * 0.04 + ISO.az, s };
     }
     case CH.scale:
@@ -472,7 +470,7 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
       for (let k = 0; k < CARDS; k++) {
         // Each layer is turned 0.4 from square: about 0.92 of its half width either side on screen.
         // The outer layers also budget the step aside a read neighbour gives them (cards.tsx).
-        const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
+        const [x, z] = isoXZ((k - 2) * (portrait ? 0.34 : 0.78), (k - 2) * (portrait ? 0.28 : 0.62), FAN[0], FAN[1]);
         const edge = k === 0 || k === CARDS - 1 ? 0.3 : 0;
         pillar(o, x, z, (CARD.w / 2) * FAN_S * 0.92 + edge, 0, CARD.h * FAN_S + 0.1);
       }

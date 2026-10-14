@@ -10,22 +10,10 @@
   #story { height: calc(var(--story-len) * 70svh); }
 }
 
-/* Touch screens rest only on the story's holds (lib/story.ts STOPS): a swipe carries the move through
-   and lands on the next settled picture, one per swipe. The page after the story is one tall snap area,
-   so it scrolls freely and only its top edge is a stop. lib/snap.ts keeps only the stops near the reader
-   live, so a hard fling cannot skip a chapter. Jumps glide with snapping off, or each step of
-   the glide would be pulled to a stop. */
+/* Native touch scrolling drives the same continuous story as the desktop wheel.
+   Stops remain useful as timeline markers, without capturing the reader's scroll. */
 #story { position: relative; }
 .story-stop { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
-@media (pointer: coarse) and (hover: none) {
-  html { scroll-snap-type: y mandatory; }
-  /* Off while a jump glides or the veil is shut; back on once it has landed (rest), so the first swipe
-     after a jump lands on a hold too. */
-  html[data-jump]:not([data-jump="rest"]) { scroll-snap-type: none; }
-  .story-stop:not([data-off]) { scroll-snap-align: start; scroll-snap-stop: always; }
-  .editorial:not([data-off]) { scroll-snap-align: start; }
-  .page-foot:not([data-off]) { scroll-snap-align: end; }
-}
 
 /* ---- Layers ---- */
 .story-back { z-index: 0; }
@@ -39,7 +27,7 @@
   opacity: 0;
   visibility: hidden;
 }
-[data-ch] { will-change: transform, opacity; }
+.story-back > [data-ch], .story-overlay > [data-stage] { will-change: transform, opacity; }
 @media (prefers-reduced-motion: reduce) {
   [data-ch] { transform: none !important; }
 }
@@ -728,6 +716,15 @@ html.ready .phone-still[data-hero] .phone-still-img { opacity: 1; transform: non
 
 /* ---- Phones: the decks stand in for the 3D cards, in the band between the nav and the card ---- */
 .story-stage { display: none; }
+/* The live world includes the layer fan and dealt hand. The flat decks accompany
+   baked artwork only, so a phone never runs two versions of these animations. */
+.story-overlay[data-engine="live"] .story-stage { display: none; }
+@media (max-width: 767px) {
+  .story-overlay[data-engine="live"] .story-stage[data-ch="5"] {
+    display: flex;
+    bottom: auto;
+  }
+}
 @media (max-width: 767px) {
   .story-stage {
     position: absolute;
@@ -983,4 +980,46 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 
 @media (prefers-reduced-motion: reduce) {
   .hero-tag-sys { opacity: 1; scale: 1; animation: none !important; }
+}
+
+/* Landscape phones: keep the complete story readable beside the world. Long
+   cards scroll inside their column; the page still drives the scene normally. */
+@media (min-width: 600px) and (max-width: 1023px) and (max-height: 500px) {
+  :root { --gutter: 20px; --card-w: min(360px, 43%); --card-b: max(16px, env(safe-area-inset-bottom)); }
+  .story-card { --card-pad: 16px; max-height: calc(100svh - 92px); }
+  .story-card-body {
+    max-height: calc(100svh - 92px - 2 * var(--card-pad) + 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .story-card .story-title { margin-top: 10px; font-size: 26px; }
+  .story-label-note { display: none; }
+  .hero-head {
+    left: calc(var(--card-x) + var(--card-w) + 16px);
+    right: var(--gutter);
+    top: 76px;
+  }
+  .hero-tag { max-width: 100%; }
+  .hero-tag-text { display: grid; gap: 3px; }
+  .hero-tag-sep { display: none; }
+  .hero-h1 { margin-top: 12px; font-size: 32px; }
+  .final-stage {
+    left: calc(var(--card-x) + var(--card-w) + 16px);
+    right: var(--gutter);
+    top: 76px;
+    padding: 0;
+  }
+  .final-h1 { font-size: 32px; }
+  .story-overlay[data-dim] .story-card-wrap { opacity: 0; }
+  .island-panel {
+    left: var(--card-x);
+    right: auto;
+    top: 76px;
+    width: var(--card-w);
+    max-height: calc(100svh - 92px);
+    overflow-y: auto;
+    transform: translate3d(0, 12px, 0);
+  }
+  .island-panel[data-open] { transform: none; }
 }

@@ -8,7 +8,8 @@ export const isPhone = () => typeof window !== "undefined" && window.matchMedia(
 
 /** A phone in the hand: phone width and a touch screen. A desktop window that merely loads narrow is not
  *  one; it may be widened later, and what is built once (materials) must not stay on the phone budget. */
-export const isTouchPhone = () => isPhone() && window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+export const isTouchPhone = () => typeof window !== "undefined" && Math.min(window.innerWidth, window.innerHeight) < 768 &&
+  window.matchMedia("(pointer: coarse) and (hover: none)").matches;
 
 const subscribe = (fn: () => void) => {
   const m = window.matchMedia(PHONE);
@@ -32,14 +33,11 @@ const touchOnly = () => typeof window !== "undefined" && (touchMq ??= window.mat
  */
 export const tallTouch = (w: number, h: number) => w >= 1024 && h > w * 1.15 && touchOnly();
 
-/**
- * Canvas settings for the screen in use. Desktop and phone both draw the 3D at up to 2x with MSAA. A
- * phone's own density (often 2.6-3x) without MSAA left stair-steps on edges and cost a mid-range
- * phone GPU half again as many pixels; at 2x with 4x MSAA, which a phone's tiled GPU resolves almost
- * for free, edges come out smoother for about 60% of the shading (user's choice, 2026-10-14).
- */
+/** Keep crisp MSAA edges, with fewer shaded pixels on a small screen. The live
+ *  canvas can reduce density further when sustained frame timings exceed budget. */
 export function canvasQuality() {
-  return { phone: isPhone(), dpr: [1, 2] as [number, number], antialias: true };
+  const phone = isPhone() || isTouchPhone();
+  return { phone, dpr: [1, phone ? 1.5 : 2] as [number, number], antialias: true };
 }
 
 // A classic scrollbar (Windows, or macOS set to always show scrollbars) narrows the full-width story

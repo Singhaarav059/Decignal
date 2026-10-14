@@ -28,8 +28,8 @@ const [EYEBROW_A, EYEBROW_B] = HERO.eyebrow.split(" · ");
 
 const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
-/** How the story's world is drawn here: from stills on an upright phone (lib/stills.ts), the live 3D
- *  elsewhere. Undecided while hydrating, so a phone never starts fetching the 3D's code. */
+/** The same live world on every screen, with baked artwork on upright phones
+ *  under reduced motion or ?stills. Decide after hydration before fetching 3D. */
 function useEngine(): "pending" | "stills" | "live" {
   return useSyncExternalStore(onStillsChange, () => (phoneStills() ? "stills" : "live"), () => "pending");
 }
@@ -216,8 +216,8 @@ export function Story() {
       {/* The world */}
       <div className="story-canvas pointer-events-none fixed inset-0" aria-hidden>
         <div className="intro-stage size-full">
-          {/* Without WebGL (or after a lost context) the chapter's flat drawing stands in. Upright phones
-              draw the world from pre-rendered stills and never load the 3D. */}
+          {/* Without WebGL (or after a lost context) the chapter's flat drawing stands in.
+              Reduced-motion phones can use the pre-rendered artwork. */}
           {world === "live" && (
             <SceneBoundary story label="Drawing of the story's scene: six business systems and one stock transfer">
               <Scene />
@@ -228,13 +228,13 @@ export function Story() {
       </div>
 
       {/* In front of the world: the one card, and on phones the decks above it */}
-      <div ref={front} className="story-overlay pointer-events-none fixed inset-0">
+      <div ref={front} data-engine={world ?? "pending"} className="story-overlay pointer-events-none fixed inset-0">
         <StoryCard />
         <div data-ch={CH.control} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.control})` }}>
-          <LayerReadout />
+          {world && <LayerReadout live={world === "live"} />}
         </div>
         <div data-ch={CH.scale} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.scale})` }}>
-          <ScalePhone />
+          {world === "stills" && <ScalePhone />}
         </div>
         <IndustryCallout />
       </div>
@@ -263,7 +263,7 @@ export function Story() {
 
       {/* The scroll track the story is mapped onto */}
       <div id="story" style={{ ["--story-len" as string]: TOTAL_LEN }} aria-hidden>
-        {/* Where a swipe rests on touch screens; SmoothScroll places them on the story's scroll map. */}
+        {/* Timeline markers, positioned by SmoothScroll and used by the performance probe. */}
         {STOPS.map((g) => (
           <i key={g} className="story-stop" data-g={g} />
         ))}

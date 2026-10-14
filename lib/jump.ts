@@ -226,21 +226,25 @@ export const onJumpCut = (fn: (y: number) => void) => listen(JUMP_CUT, fn);
  *  the screen hands the page back to the reader at once. */
 function glideNative(y: number, seconds: number) {
   return new Promise<void>((done) => {
+    const owner = current;
     const from = window.scrollY;
     const t0 = performance.now();
     let raf = 0;
     const stop = () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("touchstart", stop);
+      window.removeEventListener("resize", stop);
       done();
     };
     const step = (t: number) => {
+      if (owner !== current) return stop();
       const k = Math.min((t - t0) / (seconds * 1000), 1);
       window.scrollTo({ top: from + (y - from) * ease(k), behavior: "instant" });
       if (k < 1) raf = requestAnimationFrame(step);
       else stop();
     };
     window.addEventListener("touchstart", stop, { passive: true });
+    window.addEventListener("resize", stop, { passive: true });
     raf = requestAnimationFrame(step);
   });
 }
