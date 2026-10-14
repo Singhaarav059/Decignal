@@ -10,7 +10,7 @@ import { EXAMPLE } from "@/lib/example";
 import { COLORS, TINTS } from "../palette";
 import { Crate, useDisposeOnUnmount } from "../kit";
 import { BearingBed } from "../buildings";
-import { fineRibs } from "../materials";
+import { coated, fineRibs } from "../materials";
 import { TOTE_LABEL } from "../parts";
 import { Actor, Rise } from "./core";
 
@@ -70,7 +70,7 @@ export function SignalCrate() {
   const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
   // Same moulded, ribbed plastic as every other tote; only its colour changes.
   const mat = useMemo(
-    () => new THREE.MeshPhysicalMaterial({ roughness: 0.5, clearcoat: 0.15, clearcoatRoughness: 0.5, normalMap: fineRibs(), normalScale: new THREE.Vector2(0.6, 0.6) }),
+    () => coated({ roughness: 0.5, clearcoat: 0.15, clearcoatRoughness: 0.5, normalMap: fineRibs(), normalScale: new THREE.Vector2(0.6, 0.6) }),
     [],
   );
   const saffron = useMemo(() => new THREE.Color(TINTS.saffron), []);

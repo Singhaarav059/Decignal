@@ -4,8 +4,9 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { HOVER_REST, gToProgress, progressToG, setAfter, setG, store } from "@/lib/story";
-import { jumpTo, setLenis } from "@/lib/jump";
+import { HOVER_REST, gToProgress, progressToG, setAfter, store } from "@/lib/story";
+import { startPace, storyCut, storyTo } from "@/lib/pace";
+import { jumpTo, onJumpCut, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
 import { rearmSnap, startSnap } from "@/lib/snap";
@@ -74,15 +75,19 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     }
     setLenis(lenis);
 
+    // Before the story trigger: its first reading goes through the pace.
+    const offPace = startPace();
+    // A jump that moves the page at once lands the story there too, without easing in.
+    const offCut = onJumpCut(() => storyCut());
     const storyEl = document.getElementById("story");
     const st = storyEl
       ? ScrollTrigger.create({
           trigger: storyEl,
           start: "top top",
           end: "bottom bottom",
-          onUpdate: (self) => setG(progressToG(self.progress)),
+          onUpdate: (self) => storyTo(progressToG(self.progress)),
           onRefresh: (self) => {
-            setG(progressToG(self.progress));
+            storyCut(progressToG(self.progress));
             placeStops(storyEl, self.start, self.end);
             rearmSnap();
           },
@@ -141,6 +146,8 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
 
     return () => {
       offSnap?.();
+      offCut();
+      offPace();
       st?.kill();
       after?.kill();
       window.removeEventListener("pointermove", onPointer);

@@ -2,6 +2,8 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
+import { isTouch } from "@/lib/pace";
+import { Pacer } from "./Pacer";
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import { Studio } from "./Studio";
@@ -206,8 +208,11 @@ function Ground({ kind, step, motion, active, phone }: { kind: DemoKind; step: n
 export default function ApplicationScene(props: Props) {
   // Up to 2x with MSAA, as the story (lib/device.ts); the shadow maps are sized to the scene's on-screen size.
   const q = useMemo(() => canvasQuality(), []);
+  // While it plays, touch screens draw on the phone budget (Pacer, lib/pace.ts).
+  const paced = useMemo(() => isTouch(), []);
+  const playing = props.active && !props.still;
   return (
-    <Canvas dpr={q.dpr} shadows="percentage" frameloop={props.active && !props.still ? "always" : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
+    <Canvas dpr={q.dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.NeutralToneMapping;
@@ -224,6 +229,7 @@ export default function ApplicationScene(props: Props) {
             re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
         <ShadowGate />
       </Suspense>
+      {playing && paced && <Pacer />}
     </Canvas>
   );
 }

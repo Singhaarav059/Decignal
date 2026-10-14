@@ -1,6 +1,7 @@
 // Real-world materials for the story's models, all generated in code.
 // Each surface reads as what it is: paint, rubber, chrome, aluminium, ribbed steel, plastic, glass, concrete.
 import * as THREE from "three";
+import { isPhone } from "@/lib/device";
 
 const cache = new Map<string, THREE.Material>();
 function memo<T extends THREE.Material>(key: string, make: () => T): T {
@@ -101,10 +102,22 @@ const grain = (key: string, base: number, spread: number) =>
 
 /* ---------------- Materials ---------------- */
 
+/**
+ * A clear-coated surface. Phones draw it as a standard material: the clear coat is a second specular
+ * layer on every pixel it covers, and a phone's GPU could not hold its frame rate with it (user's
+ * choice, 2026-10-14: a little less sparkle on phones). Same colour, roughness, metal and opacity.
+ */
+export function coated(p: THREE.MeshPhysicalMaterialParameters): THREE.MeshStandardMaterial {
+  if (!isPhone()) return new THREE.MeshPhysicalMaterial(p);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { clearcoat, clearcoatRoughness, ...rest } = p;
+  return new THREE.MeshStandardMaterial(rest as THREE.MeshStandardMaterialParameters);
+}
+
 /** Automotive paint: colour coat under a hard clear coat. */
 export const paint = (color: string, rough = 0.32) =>
   memo(`paint-${color}-${rough}`, () =>
-    new THREE.MeshPhysicalMaterial({ color, roughness: rough, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.06 }),
+    coated({ color, roughness: rough, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.06 }),
   );
 
 /** Powder-coated or industrial enamel: satin, no clear coat. */
@@ -134,19 +147,19 @@ export const steel = (color = "#3A3D43", rough = 0.45) =>
 /** Tinted automotive / architectural glass: dark, glossy, reflects the studio. */
 export const darkGlass = () =>
   memo("darkglass", () =>
-    new THREE.MeshPhysicalMaterial({ color: "#1B232C", roughness: 0.03, metalness: 0.25, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6 }),
+    coated({ color: "#1B232C", roughness: 0.03, metalness: 0.25, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6 }),
   );
 
 /** Vehicle side and windscreen glass: tinted and glossy, but you can see the driver through it. */
 export const cabTint = () =>
   memo("cabtint", () =>
-    new THREE.MeshPhysicalMaterial({ color: "#26323D", roughness: 0.04, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, opacity: 0.42, depthWrite: false, envMapIntensity: 1.5 }),
+    coated({ color: "#26323D", roughness: 0.04, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, opacity: 0.42, depthWrite: false, envMapIntensity: 1.5 }),
   );
 
 /** Shopfront / skylight glass: pale and reflective. */
 export const clearGlass = () =>
   memo("clearglass", () =>
-    new THREE.MeshPhysicalMaterial({ color: "#C9D9E6", roughness: 0.04, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.5 }),
+    coated({ color: "#C9D9E6", roughness: 0.04, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.5 }),
   );
 
 /** Light lens: emissive behind a clear cover. */
@@ -158,7 +171,7 @@ export const lamp = (color: string, power = 1.4) =>
 /** Injection-moulded plastic (totes, cases). */
 export const plastic = (color: string, rough = 0.5, ribbed = false) =>
   memo(`plastic-${color}-${rough}-${ribbed}`, () => {
-    const m = new THREE.MeshPhysicalMaterial({ color, roughness: rough, clearcoat: 0.15, clearcoatRoughness: 0.5 });
+    const m = coated({ color, roughness: rough, clearcoat: 0.15, clearcoatRoughness: 0.5 });
     if (ribbed) {
       m.normalMap = fineRibs();
       m.normalScale = new THREE.Vector2(0.6, 0.6);
@@ -309,7 +322,7 @@ export const brushed = () => memo("brushed", () => new THREE.MeshStandardMateria
 /** Shrink wrap over a loaded pallet. */
 export const wrap = () =>
   memo("wrap", () =>
-    new THREE.MeshPhysicalMaterial({ color: "#FFFFFF", roughness: 0.18, transmission: 0, transparent: true, opacity: 0.16, clearcoat: 1, depthWrite: false }),
+    coated({ color: "#FFFFFF", roughness: 0.18, transmission: 0, transparent: true, opacity: 0.16, clearcoat: 1, depthWrite: false }),
   );
 
 /* ---------------- Two-colour printed surfaces: signs and the globe ---------------- */

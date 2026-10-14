@@ -20,6 +20,12 @@ export function startSnap(storyEl: HTMLElement) {
   const first = (i: number) => i === 0 || ch[i - 1] !== ch[i];
   const last = (i: number) => i === stops.length - 1 || ch[i + 1] !== ch[i];
 
+  // The scroll range the next rest must fall in: from the chapter before's last stop to the next one's
+  // first. Chrome's snap alone did not hold it: a very fast fling sometimes ran past every live stop
+  // to the top of the page. A scroll past either end is held there, which ends the fling on that stop;
+  // the story's layers are fixed, so the hold itself is never seen.
+  let lo = -Infinity;
+  let hi = Infinity;
   const arm = () => {
     const top = storyEl.getBoundingClientRect().top + window.scrollY;
     const y = window.scrollY;
@@ -34,29 +40,46 @@ export function startSnap(storyEl: HTMLElement) {
     document.querySelectorAll(".editorial, .page-foot").forEach((el) => {
       if (end === el.hasAttribute("data-off")) el.toggleAttribute("data-off", !end);
     });
+    lo = 0;
+    hi = end ? Infinity : document.documentElement.scrollHeight;
     stops.forEach((el, i) => {
       const on = ch[i] === c || (ch[i] === c + 1 && first(i)) || (ch[i] === c - 1 && last(i));
       if (on === el.hasAttribute("data-off")) el.toggleAttribute("data-off", !on);
+      if (ch[i] === c - 1 && last(i)) lo = top + el.offsetTop;
+      if (ch[i] === c + 1 && first(i)) hi = top + el.offsetTop;
     });
   };
 
-  // Safari before 26 has no scrollend: a short quiet after the last scroll event stands in for it.
-  let t = 0;
-  const onScroll = () => {
-    clearTimeout(t);
-    t = window.setTimeout(arm, 140);
+  const hold = () => {
+    // Jumps move the page on purpose (html[data-jump]); so does the page after the story.
+    if (document.documentElement.dataset.jump) return;
+    const y = window.scrollY;
+    if (y < lo - 1) window.scrollTo({ top: lo, behavior: "instant" });
+    else if (y > hi + 1) window.scrollTo({ top: hi, behavior: "instant" });
   };
-  const native = "onscrollend" in window;
-  if (native) window.addEventListener("scrollend", arm);
-  else window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", arm);
+
+  // Re-arm only once the page has truly come to rest. A hold ends the scroll (scrollend) while the
+  // fling still carries on underneath; re-arming there moved the range along with it, chapter by
+  // chapter, and the fling ran to the top of the page. Any scroll or touch restarts the wait.
+  let t = 0;
+  const later = () => {
+    clearTimeout(t);
+    t = window.setTimeout(arm, 150);
+  };
+  const onScroll = () => {
+    hold();
+    later();
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("touchstart", later, { passive: true });
+  window.addEventListener("resize", later);
   armed = arm;
   arm();
   return () => {
     if (armed === arm) armed = null;
     clearTimeout(t);
-    window.removeEventListener("scrollend", arm);
     window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", arm);
+    window.removeEventListener("touchstart", later);
+    window.removeEventListener("resize", later);
   };
 }

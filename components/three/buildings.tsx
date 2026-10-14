@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Person, Walker } from "./people";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GlobeMaterial, SignMaterial, aluminium, brushed, chrome, cladding, clearGlass, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, steel } from "./materials";
+import { GlobeMaterial, SignMaterial, aluminium, brushed, chrome, cladding, clearGlass, coated, concrete, darkGlass, enamel, hazard, lamp, paint, plastic, steel } from "./materials";
 import { Bake, LIVE } from "./Bake";
 import { NEUTRAL } from "./accent";
 import { LoadedPallet, Tote, box, cylY, geo, merge, rbox } from "./parts";
@@ -354,7 +354,7 @@ const rackBands = () => geo("rack-bands", () => merge([-0.21, 0.21].map((x) => r
 let rackGlassMat: THREE.Material | null = null;
 /** Smoked glass door: the servers show through, the studio reflects on top. */
 const rackGlass = () =>
-  (rackGlassMat ??= new THREE.MeshPhysicalMaterial({ color: "#9FB2C4", roughness: 0.04, metalness: 0.2, clearcoat: 1, transparent: true, opacity: 0.22, depthWrite: false }));
+  (rackGlassMat ??= coated({ color: "#9FB2C4", roughness: 0.04, metalness: 0.2, clearcoat: 1, transparent: true, opacity: 0.22, depthWrite: false }));
 
 /** ERP: two 42U cabinets on a raised floor, glass doors over live servers. */
 export function ServerRacks() {

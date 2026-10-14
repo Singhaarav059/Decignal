@@ -7,16 +7,16 @@ import { useEffect } from "react";
 import { TINTS } from "./palette";
 import { Tote } from "./parts";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { concrete, plastic } from "./materials";
+import { coated, concrete, plastic } from "./materials";
 import { Factory, Globe, ServerRacks, Storefront, SupplierTruck, Warehouse } from "./buildings";
 
-const cache = new Map<string, THREE.MeshPhysicalMaterial>();
+const cache = new Map<string, THREE.MeshStandardMaterial>();
 /** Soft satin finish for UI-like objects (cards, chart marks). */
 export function clay(color: string, rough = 0.5) {
   const key = `${color}-${rough}`;
   let m = cache.get(key);
   if (!m) {
-    m = new THREE.MeshPhysicalMaterial({ color, roughness: rough, clearcoat: 0.35, clearcoatRoughness: 0.35 });
+    m = coated({ color, roughness: rough, clearcoat: 0.35, clearcoatRoughness: 0.35 });
     cache.set(key, m);
   }
   return m;

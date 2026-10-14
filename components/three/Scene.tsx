@@ -15,6 +15,8 @@ import { SystemNetwork } from "./SystemNetwork";
 import { canvasQuality } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
+import { isTouch } from "@/lib/pace";
+import { Pacer } from "./Pacer";
 import { prewarm } from "./Warm";
 import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
@@ -631,6 +633,8 @@ function World() {
 
 /** Whether rendering is held: by the warm-up, or because the story is out of sight. */
 const loop = { warming: true, hidden: false };
+/** The story draws nothing while it warms up or is out of sight (the phone Pacer's hold). */
+const storyPaused = () => loop.hidden || loop.warming;
 
 /**
  * Mounted last inside the Suspense, once every model exists. Compiles every shader in the story
@@ -649,9 +653,11 @@ function Warmup() {
     let live = true;
     loop.warming = true;
     // Switching the loop restarts the scene clock from 0: carry the time on, as Pause does.
+    // Touch screens stay on "never" throughout: their Pacer draws, and holds while warming or hidden.
+    const paced = isTouch();
     const run = (on: boolean) => {
       const t = clock.elapsedTime;
-      setFrameloop(on ? "always" : "never");
+      setFrameloop(on && !paced ? "always" : "never");
       clock.elapsedTime = t;
     };
     run(false);
@@ -731,6 +737,7 @@ function Pause() {
       loop.hidden = off;
       if (loop.warming) return;
       if (off) elapsed = clock.elapsedTime;
+      if (isTouch()) return;
       setFrameloop(off ? "never" : "always");
       // Restarting the loop resets the clock to 0, which replayed every entrance (the islands
       // vanished and rose again on the way back up). Carry the time on from where it paused.
@@ -753,8 +760,11 @@ export default function Scene() {
 
 function World3D() {
   const q = useMemo(() => canvasQuality(), []);
+  // Touch screens draw on the phone budget (Pacer, lib/pace.ts).
+  const paced = useMemo(() => isTouch(), []);
   return (
     <Canvas
+      frameloop={paced ? "never" : "always"}
       shadows="percentage"
       // Up to 2x with MSAA on every screen (lib/device.ts): smooth edges at a density a phone's GPU
       // can hold at full frame rate.
@@ -775,6 +785,7 @@ function World3D() {
       }}
     >
       <World />
+      {paced && <Pacer paused={storyPaused} />}
     </Canvas>
   );
 }

@@ -8,7 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CRATE } from "@/lib/scene";
-import { aluminium, chrome, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
+import { aluminium, chrome, coated, rubber, shipLabel, steel, tyre, wood, wrap } from "./materials";
 
 /* ---------------- Geometry helpers ---------------- */
 
@@ -254,7 +254,7 @@ const rimMats = new Map<string, THREE.Material>();
 function rimEnamel(color: string) {
   let m = rimMats.get(color);
   if (!m) {
-    m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.3, metalness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.2 });
+    m = coated({ color, roughness: 0.3, metalness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.2 });
     rimMats.set(color, m);
   }
   return m;

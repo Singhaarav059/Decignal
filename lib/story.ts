@@ -223,7 +223,10 @@ export const scaleSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.scale].
  * SmoothScroll). The story holds its last frame to the end of its track; then, as the sheet rises, the
  * world and the closing copy drift up with it at a slower pace (parallax), never sinking against it.
  */
-export const finalExit = (g: number) => (g >= CHAPTERS.length - 1e-4 ? store.after : 0);
+// The page only slides over once the scroll has passed the story's end, so `after` alone says it; on a
+// phone the story may still be easing into its last frame then (lib/pace.ts), and gating on g held the
+// closing layer still under the sliding page, then jumped it.
+export const finalExit = (g: number) => (g >= CHAPTERS.length - 1e-4 || store.after > 0 ? store.after : 0);
 /** Screen heights the closing layer drifts up while the sheet covers it (the sheet itself travels 1). */
 export const EXIT_DRIFT = 0.42;
 

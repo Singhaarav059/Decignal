@@ -210,6 +210,22 @@
   backdrop-filter: none !important;
 }
 
+/* Phones: glass over the 3D is a fixed frost. A live blur re-ran over the whole card on every frame the
+   world moved behind it, at the phone's own density, on the same GPU the 3D needed (user's choice,
+   2026-10-14). The face turns a little more opaque instead, so the world shows through as softly. */
+@media (max-width: 767px) {
+  :is(.story-card, .application-card, .ind-callout, .final-bar, .hero-tag, .sys-chip, .island-panel,
+    .nav-surface, .nav-cta[data-quiet], .cta-pill, .phone-dock) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  :is(.story-card, .application-card, .ind-callout, .final-bar):not([data-night]) { background-color: rgb(250 251 253 / 0.9); }
+  :is(.hero-tag, .sys-chip:not([aria-pressed="true"]), .island-panel, .nav-surface, .nav-cta[data-quiet], .cta-pill, .phone-dock) {
+    background-color: rgb(238 242 247 / 0.86);
+  }
+  .story-card[data-night] { background-color: rgb(20 21 24 / 0.94); }
+}
+
 /* Readers who ask for less transparency get solid surfaces. */
 @media (prefers-reduced-transparency: reduce) {
   :is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
@@ -303,3 +319,8 @@
 
 /* Panels people read (the nav glances, an opened system) carry more white than the bar they hang from. */
 .nav-peek-body, .island-panel { background-color: rgb(250 251 253 / 0.86); background-image: var(--lg-grain), var(--field-milk); }
+
+/* Phones, over dark sections: the fixed frost of the smoke glass (see the phone frost above). */
+@media (max-width: 767px) {
+  .nav-shell[data-dark] :is(.nav-surface, .nav-cta[data-quiet]), .cta-pill[data-dark] { background-color: rgb(22 23 26 / 0.84); }
+}
