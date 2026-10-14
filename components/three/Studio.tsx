@@ -29,10 +29,9 @@ export const KEY_POS = [6, 10, 7] as const;
 
 /** Key light: neutral white daylight with a crisp, slightly softened shadow, and a cool sky fill. */
 export function KeyLight({ extent = 11 }: { extent?: number }) {
-  // A phone shows the scene at about a third of desktop size, so a 2048 map gives its shadows the same
-  // sharpness per screen pixel that 4096 gives a desktop, at a quarter of the cost per frame. A desktop
-  // window that loads narrow keeps 4096: it may be widened, and the map is sized once.
-  const map = isTouchPhone() ? 2048 : 4096;
+  // A phone shows the scene at a compact screen size, so a 1024 map gives its shadows crisp
+  // sharpness per screen pixel at a fraction of the GPU bandwidth, eliminating scroll stutters.
+  const map = isTouchPhone() ? 1024 : 4096;
   return (
     <>
     <hemisphereLight args={["#E9EEF6", "#E6E9EE", 0.35]} />

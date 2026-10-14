@@ -293,14 +293,16 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   // A card across most of the width (phones, tablets upright): the stage simply ends above it; the
   // strip beside it is too narrow to hold a subject. A tall tablet's card is half the width, but the
   // band above it is far larger than the strip beside it.
-  if (e.x1 - e.x0 > vw * 0.6 || (tall && c !== CH.fragments && c !== CH.final)) {
+  // A card across most of the width (phones, tablets upright): the stage simply ends above it; the
+  // strip beside it is too narrow to hold a subject. A tall tablet's card is half the width, but the
+  // band above it is far larger than the strip beside it. The hero and ending span the height without clamping.
+  if ((e.x1 - e.x0 > vw * 0.6 || tall) && c !== CH.fragments && c !== CH.final) {
     stage.y1 = Math.min(stage.y1, e.y0);
     nEx = 0;
     cardEx = false;
   }
-  // Wide screens show no card in the hero or the ending (StoryCard data-away): their corners and the
-  // closing bar are frames instead.
-  if ((c === CH.fragments || c === CH.final) && mediaWidth(vw) >= 1024) {
+  // The hero and ending show no card (desktop) or have the world span the screen behind the card (phones).
+  if (c === CH.fragments || c === CH.final) {
     nEx = 0;
     cardEx = false;
   }
@@ -430,13 +432,13 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
   let ix = (stage.x0 + stage.x1) / 2;
   const iy = (stage.y0 + stage.y1) / 2;
   if (nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) ix += ((EX[0].x1 + stage.x1) / 2 - ix) * s.open;
-  // The wide hero and the ending are one centre line: the world sits under the headline's middle.
-  const centred = (c === CH.fragments || c === CH.final) && mediaWidth(vw) >= 1024;
+  // The hero and the ending are one centre line: the world sits under the headline's middle on all screens.
+  const centred = c === CH.fragments || c === CH.final;
   if (centred) ix = vw / 2;
   centreLock = centred;
-  // As large as fits, never larger than the shot's own size.
+  // As large as fits, never larger than the shot's own size. In hero (fragments), keep the calibrated size (f = 1).
   let f = 1;
-  if (!place(n, 1, hw, hh, ix, iy)) {
+  if (c !== CH.fragments && !place(n, 1, hw, hh, ix, iy)) {
     let lo = 0.1;
     let hi = 1;
     for (let it = 0; it < 11; it++) {
@@ -449,6 +451,9 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
       spot.x = ix;
       spot.y = iy;
     }
+  } else if (c === CH.fragments) {
+    spot.x = ix;
+    spot.y = iy;
   }
   const qx = spot.x;
   const qy = spot.y;
@@ -703,6 +708,7 @@ function Warmup() {
       loop.warming = false;
       frames.current = 0;
       run(!loop.hidden);
+      window.dispatchEvent(new Event("story-warm-done"));
       // Out of sight (a restored scroll below the story): nothing will draw, so it is ready now.
       if (loop.hidden) ready();
     };
@@ -728,7 +734,7 @@ function Warmup() {
       // Programs are built from this synchronous pass: hidden objects go back before any frame draws.
       for (const o of hidden) o.visible = false;
     }
-    const cap = new Promise((r) => window.setTimeout(r, 2500));
+    const cap = new Promise((r) => window.setTimeout(r, isTouch() ? 600 : 2500));
     Promise.race([pending, cap]).then(done, done);
     return () => {
       live = false;
@@ -736,7 +742,7 @@ function Warmup() {
   }, [gl, scene, camera, setFrameloop, clock]);
   useFrame(() => {
     if (frames.current < 0) return;
-    if (++frames.current === 3) ready();
+    if (++frames.current >= 1) ready();
   });
   return null;
 }

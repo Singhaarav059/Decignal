@@ -155,7 +155,7 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
     }
 
     // Held (out of sight, warming up): no frame is asked for, so a page scrolled past the story can go
-    // idle; a scroll, or a check every few hundred ms (the warm-up ending), starts the loop again.
+    // idle; a scroll, the warm-up ending, or a short check starts the loop again.
     let held = 0;
     const resume = () => {
       if (!held) return;
@@ -163,13 +163,15 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
       held = 0;
       raf = requestAnimationFrame(tick);
     };
+    const onWarm = () => resume();
+    window.addEventListener("story-warm-done", onWarm, { passive: true });
     const tick = (t: number) => {
       if (paused?.() || probe.off3d) {
         last = -1e9;
         // Back in sight (or warmed up): play a moment before the first still.
         wake = true;
         raf = 0;
-        held = window.setTimeout(resume, 300);
+        held = window.setTimeout(resume, 60);
         return;
       }
       raf = requestAnimationFrame(tick);
@@ -224,6 +226,7 @@ export function Pacer({ paused, still, drawnAt }: { paused?: () => boolean; stil
       clearTimeout(held);
       held = 0;
       window.removeEventListener("scroll", resume);
+      window.removeEventListener("story-warm-done", onWarm);
       shot?.remove();
       window.removeEventListener("touchstart", start);
       window.removeEventListener("touchend", down);
