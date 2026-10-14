@@ -228,6 +228,14 @@ export function StoryCard() {
   return (
     <div ref={wrap} className="story-card-wrap intro-fade">
       <section ref={card} className="card card--story story-card" data-lens aria-label={STORY_UI.cardAria}>
+        {/* Phones: the card's glass rim and shadow, painted once in two halves that slide with its edges
+            (liquid-glass.css), so a hand-off that changes the card's height re-rasters none of them. */}
+        <span className="story-card-glass" aria-hidden>
+          <i />
+        </span>
+        <span className="story-card-glass" data-end aria-hidden>
+          <i />
+        </span>
         <div ref={body} className="story-card-body">
           {/* 01 Systems: one line, the six systems, the call to action (narrow screens). The headline sits behind the 3D. */}
           <Pane ch={CH.fragments}>

@@ -232,6 +232,46 @@
   .story-card[data-night] { background-color: rgb(20 21 24 / 0.94); }
 }
 
+/* Phones: the story card's rim and shadow live on two fixed-size glass halves (StoryCard). A hand-off
+   changes the card's height on every frame of the scroll; drawn on the card, its blurred inset rim and
+   soft shadow were re-rastered each of those frames (?perf probe, 2026-10-15: hero→Signal 14 fps,
+   60 with shadows off). Each half is a screen-tall copy of the card's shadows on its own layer, clipped
+   at the card's middle: the top half rides the top edge, the bottom half the bottom edge, and only the
+   clips move. Every edge sits more than 100px from the cut, past the reach of any blur, so the pixels
+   are the card's own. */
+.story-card-glass { display: none; }
+@media (max-width: 767px) {
+  .story-card { isolation: isolate; box-shadow: none; --card-glass: var(--lg-rim), var(--lg-edge), var(--lg-lift); }
+  .story-card[data-night] { box-shadow: none; --card-glass: var(--lg-night-rim), 0 30px 70px -30px rgb(0 0 0 / 0.6); }
+  .story-card-glass {
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top: -80px;
+    left: -80px;
+    right: -80px;
+    height: calc(50% + 80px);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .story-card-glass[data-end] { top: auto; bottom: -80px; }
+  .story-card-glass > i {
+    position: absolute;
+    top: 80px;
+    left: 80px;
+    right: 80px;
+    height: 100lvh;
+    border-radius: 26px;
+    box-shadow: var(--card-glass);
+    transition: box-shadow var(--dur-4) var(--ease);
+    will-change: transform;
+  }
+  .story-card-glass[data-end] > i { top: auto; bottom: 80px; }
+  @supports (corner-shape: squircle) {
+    .story-card-glass > i { corner-shape: squircle; border-radius: 40px; }
+  }
+}
+
 /* Readers who ask for less transparency get solid surfaces. */
 @media (prefers-reduced-transparency: reduce) {
   :is(.nav-links, .nav-surface, .cta-pill, .phone-dock, .nav-peek-body, .island-panel, .story-card, .application-card,
