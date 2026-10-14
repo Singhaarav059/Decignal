@@ -272,24 +272,10 @@ function Outcomes() {
     );
     cards.forEach((c) => io.observe(c));
     if (!root.current || reduced()) return () => io.disconnect();
+    // The graphics draw themselves (decor-art.css .outcome-diagram, on data-on); only the stacking is
+    // tied to the scroll.
     const ctx = gsap.context(() => {
       cards.forEach((card, i) => {
-        const scrollTrigger = { trigger: card, start: "top 70%" };
-        gsap.fromTo(
-          card.querySelectorAll(".outcome-stroke"),
-          { strokeDasharray: 1, strokeDashoffset: 1 },
-          {
-            strokeDashoffset: 0,
-            duration: 1.4,
-            ease: "power2.out",
-            scrollTrigger,
-          },
-        );
-        gsap.fromTo(
-          card.querySelectorAll(".outcome-bar"),
-          { scaleX: 0, transformOrigin: "left" },
-          { scaleX: 1, duration: 1.4, ease: "power2.out", scrollTrigger },
-        );
         // A card steps back as the next one slides over it (the stacked cards of the Koushik reference).
         const next = cards[i + 1];
         if (next) {
