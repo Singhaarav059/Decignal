@@ -9,7 +9,7 @@ export const SERVICE_SECTIONS: ChromeSection[] = [
   { id: "expect", label: "What to expect", short: "Expect" },
   { id: "deliverables", label: "What you get", short: "Get" },
   { id: "how", label: "How it works", short: "How" },
-  { id: "applications", label: "Applications", short: "Apps" },
+  { id: "applications", label: "Solutions", short: "Solutions" },
   { id: "why", label: "Why Decignal", short: "Why" },
   { id: "faq", label: "FAQ" },
   { id: "audit", label: "Free AI audit", short: "Audit" },

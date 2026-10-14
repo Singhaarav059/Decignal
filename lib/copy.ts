@@ -393,7 +393,7 @@ export const SYSTEMS_STRIP = {
 
 /** Applications section and explorer (Editorial.tsx, ApplicationExplorer.tsx). */
 export const APPLICATIONS_COPY = {
-  eyebrow: "Applications",
+  eyebrow: "Solutions",
   headline: ["Eight applications.", "Five business areas."] as Headline,
   intro: "From the first signal to the right action. Follow the decisions as you scroll.",
   chaptersAria: "Application chapters",
@@ -743,8 +743,8 @@ export const FOOTER = {
   navTitle: "Explore",
   /** Section cards (Footer.tsx NAV). Card 05 is dropped (critic §2). */
   nav: [
+    { label: "Platform", href: "#platform", blurb: "What Decignal does, in one sentence and five facts" },
     { label: "Solutions", href: "#applications", blurb: "Eight applications across five business areas" },
-    { label: "Results", href: "#outcomes", blurb: "Three example decisions and what they change" },
     { label: "How it works", href: "#how", blurb: "One decision first, live in weeks" },
     { label: "FAQ", href: "#faq", blurb: "What teams ask before they start" },
   ],
@@ -845,7 +845,7 @@ export const PAGES = {
 export const SERVICE = {
   breadcrumb: "Solutions",
   expect: "What to expect",
-  apps: (area: string) => `Applications in ${area}`,
+  apps: (area: string) => `Solutions in ${area}`,
   get: "What you get",
   how: "How it works",
   why: "Why Decignal",
