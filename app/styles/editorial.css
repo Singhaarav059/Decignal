@@ -310,7 +310,7 @@
 }
 
 /* ---- Footer: headline and CTA, section links, area links, legal row, the wordmark ---- */
-.site-footer { position: relative; z-index: var(--z-editorial); overflow: hidden; --on: #fff; --on-2: rgb(255 255 255 / 0.82); --on-line: rgb(255 255 255 / 0.22); margin-inline: 12px; border-radius: var(--radius-xl) var(--radius-xl) 0 0; color: var(--on); background: var(--color-cobalt); }
+.site-footer { position: relative; z-index: var(--z-editorial); overflow: hidden; --on: #fff; --on-2: rgb(255 255 255 / 0.9); --on-line: rgb(255 255 255 / 0.22); margin-inline: 12px; border-radius: var(--radius-xl) var(--radius-xl) 0 0; color: var(--on); background: var(--color-cobalt); }
 .footer-grid { display: grid; gap: var(--stack-content); padding-top: clamp(56px, 8vw, 112px); }
 .footer-motif { display: block; width: 220px; height: 72px; margin-bottom: var(--stack-lede); }
 .footer-cta { margin-top: var(--stack-actions); }
