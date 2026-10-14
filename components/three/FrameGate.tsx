@@ -43,6 +43,8 @@ const tex = (t: THREE.Texture | null | undefined) => {
   mix(t.version);
   mix(t.offset.x);
   mix(t.offset.y);
+  mix(t.repeat.x);
+  mix(t.repeat.y);
   mix(t.rotation);
 };
 
@@ -88,6 +90,13 @@ function changed(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Came
   mix(gl.toneMappingExposure);
   mix(scene.environment?.id ?? 0);
   mix(scene.background ? 1 : 0);
+  // The fog follows the camera and takes the chapter's sky (Scene.tsx Atmosphere).
+  const fog = scene.fog as THREE.Fog | null;
+  if (fog) {
+    color(fog.color);
+    mix(fog.near);
+    mix(fog.far);
+  }
   scene.traverseVisible((o) => {
     const m = o as THREE.Mesh;
     const light = o as THREE.Light;

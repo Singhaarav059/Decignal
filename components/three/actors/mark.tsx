@@ -11,6 +11,7 @@ import { CH, smootherstep, store, weight } from "@/lib/story";
 import { HUB, ISO } from "@/lib/scene";
 import { clay } from "../kit";
 import { reducedMotion } from "./core";
+import { portraitWide } from "@/lib/device";
 
 /** Bottom to top, as the LogoMark draws them: cobalt, saffron, signal red. */
 const PLATES = ["#2E5BFF", "#FFB21E", "#F2361F"];
@@ -22,7 +23,7 @@ const BASE = 0.5;
 export function FinalMark() {
   const root = useRef<THREE.Group>(null);
   const plates = useRef<(THREE.Group | null)[]>([]);
-  const portrait = useThree((s) => s.size.width < 768 || (s.size.width < 1024 && s.size.height > s.size.width * 1.15));
+  const portrait = useThree((s) => portraitWide(s.size.width, s.size.height));
 
   useFrame(({ clock }) => {
     const g = root.current;

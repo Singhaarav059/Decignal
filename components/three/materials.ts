@@ -1,7 +1,7 @@
 // Real-world materials for the story's models, all generated in code.
 // Each surface reads as what it is: paint, rubber, chrome, aluminium, ribbed steel, plastic, glass, concrete.
 import * as THREE from "three";
-import { isPhone } from "@/lib/device";
+import { isTouchPhone } from "@/lib/device";
 
 const cache = new Map<string, THREE.Material>();
 function memo<T extends THREE.Material>(key: string, make: () => T): T {
@@ -108,7 +108,7 @@ const grain = (key: string, base: number, spread: number) =>
  * choice, 2026-10-14: a little less sparkle on phones). Same colour, roughness, metal and opacity.
  */
 export function coated(p: THREE.MeshPhysicalMaterialParameters): THREE.MeshStandardMaterial {
-  if (!isPhone()) return new THREE.MeshPhysicalMaterial(p);
+  if (!isTouchPhone()) return new THREE.MeshPhysicalMaterial(p);
   // Physical-only settings have no standard counterpart.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { clearcoat, clearcoatRoughness, transmission, thickness, ior, ...rest } = p;

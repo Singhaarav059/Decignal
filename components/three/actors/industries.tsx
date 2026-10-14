@@ -17,6 +17,7 @@ import { Person } from "../people";
 import { aluminium, asphalt, cladding, concrete, enamel, plastic, rubber, steel } from "../materials";
 import { box, cylY, geo, merge, rbox } from "../parts";
 import { reducedMotion } from "./core";
+import { mediaWidth } from "@/lib/device";
 
 /* ---------------- The road: asphalt, paint and a near verge ---------------- */
 
@@ -294,7 +295,7 @@ function placeLeader(camera: THREE.Camera, size: { width: number; height: number
   pin.set(...indPin(k)).project(camera);
   const px = ((pin.x + 1) / 2) * size.width;
   const py = ((1 - pin.y) / 2) * size.height;
-  const beside = size.width >= IND_BESIDE_MIN;
+  const beside = mediaWidth(size.width) >= IND_BESIDE_MIN;
   const ax = beside ? r.right : Math.min(Math.max(px, r.left + 28), r.right - 28);
   const ay = beside ? r.top + 30 : r.bottom;
   const dx = px - ax;

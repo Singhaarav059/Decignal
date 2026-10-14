@@ -13,6 +13,7 @@ import { BearingBed } from "../buildings";
 import { coated, fineRibs } from "../materials";
 import { TOTE_LABEL } from "../parts";
 import { Actor, Rise } from "./core";
+import { portraitWide } from "@/lib/device";
 
 /** The bin label's two lines: the part and plant, then the stock the ERP holds for it. */
 const BIN = [`${EXAMPLE.part.split(" ").pop()} · ${EXAMPLE.plant01.name.toUpperCase()}`, `${EXAMPLE.plant01.onHand} ON HAND`];
@@ -67,7 +68,7 @@ function BinLabel() {
 
 /** The one tote that matters: Bearing X90 at Plant 01. Its number is on its own bin label. */
 export function SignalCrate() {
-  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
+  const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
   // Same moulded, ribbed plastic as every other tote; only its colour changes.
   const mat = useMemo(
     () => coated({ roughness: 0.5, clearcoat: 0.15, clearcoatRoughness: 0.5, normalMap: fineRibs(), normalScale: new THREE.Vector2(0.6, 0.6) }),

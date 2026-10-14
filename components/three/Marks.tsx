@@ -11,6 +11,7 @@ import { SYSTEMS } from "@/components/ui/systems";
 import { concrete } from "./materials";
 import { padGeometry, useDisposeOnUnmount } from "./kit";
 import { islandAccent } from "./actors/islands";
+import { mediaWidth, phoneWide, portraitWide } from "@/lib/device";
 
 type TroikaText = THREE.Mesh & { fillOpacity: number };
 
@@ -52,8 +53,8 @@ const arrow = () =>
 /** Demand curve, safety stock and day scale for the problem chapter. */
 export function ChartMarks() {
   // Phones fit seven columns into 390px, so labels grow and shorten to stay readable.
-  const phone = useThree((st) => st.size.width < 768);
-  const narrow = useThree((st) => st.size.width < 1024);
+  const phone = useThree((st) => phoneWide(st.size.width));
+  const narrow = useThree((st) => mediaWidth(st.size.width) < 1024);
   // The chart's labels scale with it; on short screens the chart is framed smaller, so they grow back.
   const short = useThree((st) => THREE.MathUtils.clamp(900 / st.size.height, 1, 1.35));
   const k = phone ? 1.9 : short;
@@ -258,7 +259,7 @@ export function Threads() {
  */
 export function SignalPing() {
   // Sits on the ground under the crate's Signal pose, sized to the crate, on any screen shape.
-  const portrait = useThree((st) => st.size.width < 768 || (st.size.width < 1024 && st.size.height > st.size.width * 1.15));
+  const portrait = useThree((st) => portraitWide(st.size.width, st.size.height));
   const pose = signalCratePose(CH.signal, 0, portrait)!;
   const k = (pose.s ?? 1) / 1.2;
   const at: [number, number, number] = [pose.p[0], Math.max(0.004, pose.p[1] - 0.416 * k), pose.p[2]];

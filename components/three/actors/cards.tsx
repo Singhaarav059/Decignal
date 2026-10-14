@@ -13,6 +13,7 @@ import { aluminium } from "../materials";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type DecisionMode, type FaceSpec } from "../faces";
 import { reducedMotion, useActor } from "./core";
 import { goToFunction } from "@/components/story/ScaleApps";
+import { phoneWide, portraitWide } from "@/lib/device";
 
 /* ------------------------------------------------------------------ */
 /* Cards: the decision, its layers, functions and the ending's audit   */
@@ -397,8 +398,8 @@ const FACE_BASE = new THREE.Color("#FFFFFF").r;
 function Card({ k }: { k: number }) {
   const ref = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
-  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
-  const phone = useThree((state) => state.size.width < 768);
+  const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
+  const phone = useThree((state) => phoneWide(state.size.width));
   // A function still waiting to be dealt comes into the hand early while it is pointed at on the page.
   const peek = useRef(0);
   useActor(ref, (c, t) => cardPose(k, c, t, portrait, phone, peek.current), k * 0.05, 0.11);
@@ -619,8 +620,8 @@ const tmpDir = new THREE.Vector3();
 function GlassCard() {
   const ref = useRef<THREE.Group>(null);
   const inner = useRef<THREE.Group>(null);
-  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
-  const phone = useThree((state) => state.size.width < 768);
+  const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
+  const phone = useThree((state) => phoneWide(state.size.width));
   useActor(ref, (c, t) => (c === CH.scale && !phone ? handPose(GLASS, t, portrait) : null), 0.2, 0.11);
   const roll = useRef({ v: 0, open: 0, fade: 0 });
   const printMat = useRef<THREE.MeshBasicMaterial>(null);

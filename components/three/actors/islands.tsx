@@ -13,6 +13,7 @@ import { Bake } from "../Bake";
 import { useEased, useStoryAccent } from "../accent";
 import { ScreenTag } from "../ScreenTag";
 import { Actor, Rise } from "./core";
+import { portraitWide } from "@/lib/device";
 
 /* ------------------------------------------------------------------ */
 /* 01 / 02 / 04: the six systems                                        */
@@ -294,7 +295,7 @@ const RING_ENTER = SYSTEMS.map((_, s) => {
 const ENTERS = RING_ENTER.map((w) => (c: number) => (c === CH.context ? w : null));
 
 export function Islands() {
-  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
+  const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
   return (
     <>
       <IslandFocus />

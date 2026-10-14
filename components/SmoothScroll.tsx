@@ -60,8 +60,7 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     let lenis: Lenis | null = null;
     const animate = (t: number) => lenis?.raf(t * 1000);
     let offNative: (() => void) | null = null;
-    if (touch) offNative = trackNative();
-    else if (!reduce) {
+    if (!touch && !reduce) {
       lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
       lenis.on("scroll", (l: Lenis) => {
@@ -73,6 +72,9 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
       gsap.ticker.add(animate);
       gsap.ticker.lagSmoothing(0);
     }
+    // Without Lenis (touch, or reduced motion on a desktop) the native scroll feeds the same readings,
+    // or the hover guards that wait on store.scrollAt would never see the page move.
+    if (!lenis) offNative = trackNative();
     setLenis(lenis);
 
     // Before the story trigger: its first reading goes through the pace.

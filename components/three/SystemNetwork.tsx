@@ -8,6 +8,7 @@ import { CH, store, weight, smoothstep } from "@/lib/story";
 import { HUB as HUB_XZ, islandPose } from "@/lib/scene";
 import { SYSTEMS } from "../ui/systems";
 import { COLORS, TINTS } from "./palette";
+import { portraitWide } from "@/lib/device";
 
 const UP = new THREE.Vector3(0, 1, 0);
 /** Where the threads meet on the ground: the spot the decision card comes to rest at the end. */
@@ -40,7 +41,7 @@ function hubMark(size: number, t: number, r: number) {
  * six resolve into colour at the end, when every system feeds the one decision.
  */
 export function SystemNetwork() {
-  const portrait = useThree((state) => state.size.width < 768 || (state.size.width < 1024 && state.size.height > state.size.width * 1.15));
+  const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
   const root = useRef<THREE.Group>(null);
   const still = useRef(false);
   const packets = useRef<(THREE.Mesh | null)[]>([]);

@@ -12,7 +12,7 @@ import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
-import { canvasQuality } from "@/lib/device";
+import { canvasQuality, mediaWidth, portraitWide } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
 import { isTouch, stillCuts } from "@/lib/pace";
@@ -130,7 +130,7 @@ function measurePanel() {
 
 /** The card where the tokens put it, until the StoryCard reports its own rect. */
 function cardGuess(c: number, vw: number, vh: number, out: Box) {
-  const phone = vw < 768;
+  const phone = mediaWidth(vw) < 768;
   const gutter = gutterOf(vw);
   const edge = edgeOf(vw);
   const w = Math.min(440, vw - 2 * gutter);
@@ -270,7 +270,7 @@ function place(n: number, f: number, hw: number, hh: number, ix: number, iy: num
 
 /** Fills the stage and exclusions for chapter c: the card and the giant headline; an open panel shrinks the stage. */
 function setStage(c: number, vw: number, vh: number, panel: boolean) {
-  const phone = vw < 768;
+  const phone = mediaWidth(vw) < 768;
   // Phones keep the page's gutter at the sides, so the world lines up with the copy: at 10px its
   // buildings and rings ran right up to the screen edge.
   const m = phone ? gutterOf(vw) : 24;
@@ -297,7 +297,7 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   }
   // Wide screens show no card in the hero or the ending (StoryCard data-away): their corners and the
   // closing bar are frames instead.
-  if ((c === CH.fragments || c === CH.final) && vw >= 1024) {
+  if ((c === CH.fragments || c === CH.final) && mediaWidth(vw) >= 1024) {
     nEx = 0;
     cardEx = false;
   }
@@ -309,7 +309,7 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
     hEx.x1 = head.x1 + 16;
     hEx.y1 = head.y1 + (phone ? 12 : 20);
     // A centred headline across the screen, or the hero's centred head: the stage starts under it.
-    if ((hEx.x0 < vw * 0.25 && hEx.x1 > vw * 0.75) || c === CH.fragments || (c === CH.final && vw >= 1024)) {
+    if ((hEx.x0 < vw * 0.25 && hEx.x1 > vw * 0.75) || c === CH.fragments || (c === CH.final && mediaWidth(vw) >= 1024)) {
       stage.y0 = Math.max(stage.y0, hEx.y1);
       nEx--;
     }
@@ -319,7 +319,7 @@ function setStage(c: number, vw: number, vh: number, panel: boolean) {
   // the stage it left two ways round it (move right, or shrink and lift), and the framing swapped
   // between them from one scroll step to the next: the place pumped in and out.
   if (c === CH.industries && page.callout) {
-    if (vw >= IND_BESIDE_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
+    if (mediaWidth(vw) >= IND_BESIDE_MIN) stage.x0 = Math.max(stage.x0, page.callout.x1 + gap);
     else stage.y0 = Math.max(stage.y0, page.callout.y1 + gap);
   }
   for (const f of page.frames[c] ?? []) {
@@ -407,7 +407,7 @@ function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boolean, o
   const iy = (stage.y0 + stage.y1) / 2;
   if (nEx > 0 && cardEx && EX[0].x1 < vw * 0.6) ix += ((EX[0].x1 + stage.x1) / 2 - ix) * s.open;
   // The wide hero and the ending are one centre line: the world sits under the headline's middle.
-  const centred = (c === CH.fragments || c === CH.final) && vw >= 1024;
+  const centred = (c === CH.fragments || c === CH.final) && mediaWidth(vw) >= 1024;
   if (centred) ix = vw / 2;
   centreLock = centred;
   // As large as fits, never larger than the shot's own size.
@@ -506,7 +506,7 @@ function Rig() {
     const { i, j, local, e } = blendAt(store.g);
     const vw = size.width;
     const vh = size.height;
-    const portrait = vw < 768 || (vw < 1024 && vh > vw * 1.15);
+    const portrait = portraitWide(vw, vh);
     const now = performance.now();
     if (now - heightsAt > 300) readCardHeights(now);
     heldNow = e < 0.02 ? i : -1;
