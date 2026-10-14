@@ -53,15 +53,17 @@ function lineWidth(line: HTMLElement) {
 }
 
 /**
- * Wide screens: a head whose longest line would overrun its column steps its type down just enough to
- * fit (--fit, story-heads.css). At 78px the Industries head's "Financial Services." needs 589px where
- * screens 1536px and wider leave it about 510, and its mask cut it off mid-word. Every other head keeps
- * the display size. Measured once the fonts are in, and again whenever a column changes width.
+ * Wide screens: when any head's longest line would overrun its column, every head steps its type down
+ * together, just enough for that line to fit (--fit, story-heads.css), so the chapters keep one display
+ * size. At 78px the Industries head's "Financial Services." needs 589px where screens 1536px and wider
+ * leave it about 510, and its mask cut it off mid-word. Measured once the fonts are in, and again
+ * whenever a column or the viewport changes width.
  */
 function useFitHeads() {
   useLayoutEffect(() => {
     const heads = Array.from(document.querySelectorAll<HTMLElement>(".chapter-head .chapter-h"));
-    const fit = () =>
+    const fit = () => {
+      let k = 1;
       heads.forEach((h) => {
         const room = h.clientWidth;
         if (!room) return;
@@ -73,18 +75,24 @@ function useFitHeads() {
         let need = 0;
         h.querySelectorAll<HTMLElement>(".line-mask > [data-roll]:not(:has(.ind-roll)), .ind-roll > span").forEach((line) => (need = Math.max(need, lineWidth(line))));
         h.style.whiteSpace = "";
-        if (!need) return;
-        const k = Math.min(1, Math.floor(((room - 4) / (need / was)) * 1000) / 1000);
+        if (need) k = Math.min(k, Math.floor(((room - 4) / (need / was)) * 1000) / 1000);
+      });
+      heads.forEach((h) => {
+        const was = parseFloat(h.style.getPropertyValue("--fit")) || 1;
         if (Math.abs(k - was) > 0.002) h.style.setProperty("--fit", String(k));
       });
+    };
     fit();
     let live = true;
     document.fonts?.ready.then(() => live && fit());
     const ro = new ResizeObserver(fit);
     heads.forEach((h) => ro.observe(h));
+    // The type follows the viewport (vw, vh) while a capped column can keep its width: refit on resize too.
+    addEventListener("resize", fit);
     return () => {
       live = false;
       ro.disconnect();
+      removeEventListener("resize", fit);
     };
   }, []);
 }
