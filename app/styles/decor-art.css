@@ -80,6 +80,7 @@
 
   /* The one idle motion in Operations: today's reading breathes, as a live value does. */
   .area-art[data-on] .aa-live { animation: aa-live 2.4s ease-in-out 1.6s infinite; }
+  .area-art[data-far] .aa-live { animation-play-state: paused; }
 }
 @keyframes aa-live { 50% { opacity: 0.4; } }
 

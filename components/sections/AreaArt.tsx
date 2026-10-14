@@ -44,10 +44,26 @@ export function useDrawOn(ref: RefObject<SVGSVGElement | null>) {
   }, [ref]);
 }
 
+/**
+ * Far off screen (more than half a screen away), the drawing's idle loop holds still (data-far,
+ * decor-art.css): the browser otherwise re-styled it every frame for the life of the page, long after
+ * a service page's hero had scrolled away. It resumes where it stopped, out of sight.
+ */
+function useFarHold(ref: RefObject<SVGSVGElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => el.toggleAttribute("data-far", !e.isIntersecting), { rootMargin: "50% 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+}
+
 /** Line art for each business area, drawn in the area's colour on white. */
 export function AreaArt({ area }: { area: string }) {
   const ref = useSvgScale<SVGSVGElement>(360, 150);
   useDrawOn(ref);
+  useFarHold(ref);
   return (
     <svg ref={ref} className="area-art" viewBox="0 0 360 150" aria-hidden>
       {area === "Supply Chain" && <SupplyChain />}
