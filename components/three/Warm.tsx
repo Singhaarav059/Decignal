@@ -12,8 +12,10 @@ import { useEffect } from "react";
 export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, roots?: THREE.Object3D[]) {
   const hidden: THREE.Object3D[] = [];
   const culled: THREE.Object3D[] = [];
-  const walk = (fn: (o: THREE.Object3D) => void) => (roots ? roots.forEach((r) => r.traverse(fn)) : scene.traverse(fn));
-  walk((o) => {
+  const visit = (o: THREE.Object3D) => {
+    // Never drawn on this screen (userData.noWarm, such as the Scale glass on a phone): warming it would
+    // only build programs nothing uses.
+    if (o.userData.noWarm) return;
     // Parts a Bake merged away are never drawn again: leave them hidden.
     if (!o.visible && !o.userData.bakedAway) {
       hidden.push(o);
@@ -23,20 +25,33 @@ export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THR
       culled.push(o);
       o.frustumCulled = false;
     }
-  });
+    for (const c of o.children) visit(c);
+  };
+  (roots ?? [scene]).forEach(visit);
   // Programs as drawn on screen (tone mapping and colour space included), lit by the scene's lights...
   if (roots) roots.forEach((r) => gl.compile(r, camera, scene));
   else gl.compile(scene, camera);
-  // ...then one tiny offscreen draw uploads geometry and textures and builds the shadow depth programs.
-  const target = new THREE.WebGLRenderTarget(2, 2);
+  // ...then one draw uploads geometry and textures and builds the shadow depth programs. It goes to the
+  // canvas, clipped to one pixel: drawn into a render target, every material linked a second program
+  // (no tone mapping, linear output) that nothing on screen uses, each link blocking the page (phone
+  // 108 programs to 66, desktop 124 to 94).
   const previous = gl.getRenderTarget();
-  gl.setRenderTarget(target);
+  const scissorTest = gl.getScissorTest();
+  gl.getScissor(SCISSOR);
+  gl.setRenderTarget(null);
+  gl.setScissorTest(true);
+  gl.setScissor(0, 0, 1, 1);
   gl.render(scene, camera);
-  gl.setRenderTarget(previous);
-  target.dispose();
+  // The renderer goes back as it was: the phone's still story copies whole frames from this canvas.
+  gl.setScissor(SCISSOR);
+  gl.setScissorTest(scissorTest);
   hidden.forEach((o) => (o.visible = false));
   culled.forEach((o) => (o.frustumCulled = true));
+  // A whole frame at once, in the same task, so the clipped one is never shown.
+  gl.render(scene, camera);
+  gl.setRenderTarget(previous);
 }
+const SCISSOR = new THREE.Vector4();
 
 /**
  * Mounted last inside a scene's Suspense: once every model exists, compile its shaders off the main

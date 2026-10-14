@@ -93,7 +93,9 @@ export function Bake({ children, ...props }: React.ComponentProps<"group">) {
       const key = `${mat.uuid}|${m.castShadow}|${m.receiveShadow}|${m.renderOrder}|${m.layers.mask}|${signature(m.geometry)}`;
       let b = buckets.get(key);
       if (!b) buckets.set(key, (b = { mat, cast: m.castShadow, receive: m.receiveShadow, order: m.renderOrder, layers: m.layers.mask, parts: [], meshes: [] }));
-      const part = m.geometry.clone();
+      // A plain copy: clone() first builds a default instance of the geometry's class (a whole rounded
+      // box, a 32-sided cylinder) only to overwrite it.
+      const part = new THREE.BufferGeometry().copy(m.geometry);
       part.clearGroups();
       part.applyMatrix4(rel);
       if (rel.determinant() < 0) flipWinding(part);

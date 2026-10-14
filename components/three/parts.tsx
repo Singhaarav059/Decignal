@@ -25,7 +25,9 @@ export function geo(key: string, make: () => THREE.BufferGeometry) {
 /** Normalises attributes so any set of primitives can be merged into one draw call. */
 export function merge(parts: THREE.BufferGeometry[]) {
   const flat = parts.map((p) => {
-    const g = p.index ? p.toNonIndexed() : p.clone();
+    // A plain copy: clone() first builds a default instance of the part's class (a whole rounded box)
+    // only to overwrite it, 241 wasted boxes at load.
+    const g = p.index ? p.toNonIndexed() : new THREE.BufferGeometry().copy(p);
     for (const name of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(name)) g.deleteAttribute(name);
     if (!g.attributes.uv) g.setAttribute("uv", new THREE.BufferAttribute(new Float32Array((g.attributes.position.count) * 2), 2));
     if (!g.attributes.normal) g.computeVertexNormals();
@@ -38,7 +40,17 @@ export function merge(parts: THREE.BufferGeometry[]) {
 
 export const box = (w: number, h: number, d: number, x = 0, y = 0, z = 0) => new THREE.BoxGeometry(w, h, d).translate(x, y, z);
 export const rbox = (w: number, h: number, d: number, r: number, x = 0, y = 0, z = 0, seg = 3) =>
-  new RoundedBoxGeometry(w, h, d, seg, Math.min(r, w / 2, h / 2, d / 2)).translate(x, y, z);
+  roundedBox(w, h, d, seg, Math.min(r, w / 2, h / 2, d / 2)).translate(x, y, z);
+
+const rounded = new Map<string, THREE.BufferGeometry>();
+/** A rounded box of these exact measures, as a fresh copy: each shape is built once (the build is costly
+ *  and the same few hundred shapes recur at load), every caller gets its own geometry to move or merge. */
+export function roundedBox(w: number, h: number, d: number, seg: number, r: number) {
+  const key = `${w},${h},${d},${seg},${r}`;
+  let g = rounded.get(key);
+  if (!g) rounded.set(key, (g = new RoundedBoxGeometry(w, h, d, seg, r)));
+  return new THREE.BufferGeometry().copy(g);
+}
 /** Cylinder whose axis runs along X. */
 export const cylX = (r: number, len: number, x = 0, y = 0, z = 0, seg = 24) =>
   new THREE.CylinderGeometry(r, r, len, seg).rotateZ(Math.PI / 2).translate(x, y, z);

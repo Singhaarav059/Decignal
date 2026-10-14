@@ -9,8 +9,8 @@ import * as THREE from "three";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LIVE } from "./Bake";
+import { roundedBox } from "./parts";
 
 type Pose = "stand" | "walk" | "sit" | "tablet" | "point" | "wave";
 
@@ -82,7 +82,7 @@ const LITE = 0.34;
 const LITE_PX = 80;
 
 const rb = (w: number, h: number, d: number, r: number, x = 0, y = 0, z = 0) =>
-  new RoundedBoxGeometry(w, h, d, Q < 1 ? 1 : 3, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)).translate(x, y, z);
+  roundedBox(w, h, d, Q < 1 ? 1 : 3, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4)).translate(x, y, z);
 const ball = (r: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 18) => new THREE.SphereGeometry(r, n(seg, 6), n(seg * 0.75, 4)).scale(sx, sy, sz).translate(x, y, z);
 
 /**

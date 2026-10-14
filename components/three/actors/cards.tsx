@@ -696,7 +696,8 @@ function GlassCard() {
   return (
     <>
     <GlassSky glass={ref} />
-    <group ref={ref} visible={false}>
+    {/* Never shown on phones: the warm-up leaves it out (its transmission pass would link programs for nothing). */}
+    <group ref={ref} visible={false} userData={{ noWarm: phone }}>
       <mesh
         ref={(m) => {
           onRestLayer(m);
