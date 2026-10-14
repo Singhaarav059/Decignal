@@ -101,6 +101,11 @@ async function sendWebhook(url: string, data: AuditData, ref: string, submittedA
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`webhook ${res.status}`);
+  // Apps Script (scripts/audit-sheet.gs) always answers 200, so it reports failures as {"ok":false}.
+  if (res.headers.get("content-type")?.includes("application/json")) {
+    const body = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+    if (body?.ok === false) throw new Error(`webhook ${body.error ?? "rejected"}`);
+  }
 }
 
 async function sendEmail(
