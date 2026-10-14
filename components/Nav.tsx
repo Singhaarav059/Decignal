@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type PointerEvent, type RefObject } from "react";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
@@ -16,7 +17,7 @@ import { CTA, FOOTER, NAV, STORY_PEEK } from "@/lib/copy";
 import { toneVars } from "@/lib/tone";
 import { darkAt } from "@/lib/on-dark";
 import { TONE, goToChapter } from "./story/chapters";
-import { NavPeek, type PeekId, type SectionPeek } from "./NavPeek";
+import type { PeekId, SectionPeek } from "./NavPeek";
 
 const PEEK_OF: Record<string, SectionPeek> = { applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
 /** The bar keeps the four links people look for (the audit is the CTA); the other home sections light
@@ -39,12 +40,15 @@ const onWide = (fn: () => void) => {
   m.addEventListener("change", fn);
   return () => m.removeEventListener("change", fn);
 };
-/** The glances open on wide screens only, so narrower ones never build them (after hydration). */
-const useWide = () => useSyncExternalStore(onWide, wide, () => true);
+/** The glances open on wide screens only, so narrower ones never build them. False on the server and
+ *  through hydration: the page ships without them (about a thousand elements, half the HTML of a short
+ *  page) and wide screens mount them right after. */
+const useWide = () => useSyncExternalStore(onWide, wide, () => false);
 
 /** The glances re-render only when their own props change: the bar re-renders on every chapter and
- *  section change, and rebuilding five panels of drawings each time cost a phone dropped frames. */
-const Peek = memo(NavPeek);
+ *  section change, and rebuilding five panels of drawings each time cost a phone dropped frames. Their
+ *  code is its own chunk, fetched only by a wide screen; they open on hover, never at first paint. */
+const Peek = memo(dynamic(() => import("./NavPeek").then((m) => m.NavPeek), { ssr: false }));
 
 /** One value derived from the story position, re-rendering only when it changes. */
 function useStoryValue<T>(select: (g: number) => T, fallback: T): T {
