@@ -19,6 +19,7 @@ import { prewarm } from "./Warm";
 import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
 import { ShadowFloor, ShadowGate } from "./Shadows";
+import { FrameGate } from "./FrameGate";
 
 /* ------------------------------------------------------------------ */
 /* Stage framing: fit each chapter's subject into the screen area the  */
@@ -619,6 +620,7 @@ function World() {
       <ShadowFloor color={COLORS.shadow} opacity={0.16} />
       <Rig />
       <ShadowGate />
+      <FrameGate />
       <Pause />
     </>
   );
@@ -751,8 +753,8 @@ function World3D() {
   return (
     <Canvas
       shadows="percentage"
-      // Always the screen's full pixel density (2x on desktop, up to 3x on a phone): the scene never
-      // trades sharpness for speed.
+      // Up to 2x with MSAA on every screen (lib/device.ts): smooth edges at a density a phone's GPU
+      // can hold at full frame rate.
       dpr={q.dpr}
       // Layout size, not the on-screen rect: the intro scales the stage (1.04) while the canvas mounts,
       // and a measured rect would keep that size after the intro (the framing then ran 4% off).

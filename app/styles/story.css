@@ -1,6 +1,14 @@
 /* Story: the statements behind the 3D world, the one bottom-left StoryCard in front of it, the phone
    decks, and the opened-island panel (components/story). Type comes from the role classes (.t-*). */
 
+/* The scroll track the story is mapped onto: each chapter's length in viewport heights (lib/story.ts).
+   A phone travels 70% of it: the same moves, the same order, in fewer flicks of the thumb (a whole
+   chapter took two to four swipes). */
+#story { height: calc(var(--story-len) * 100svh); }
+@media (max-width: 767px) {
+  #story { height: calc(var(--story-len) * 70svh); }
+}
+
 /* ---- Layers ---- */
 .story-back { z-index: 0; }
 .story-canvas { z-index: var(--z-canvas); }

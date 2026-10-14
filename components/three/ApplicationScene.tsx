@@ -204,7 +204,7 @@ function Ground({ kind, step, motion, active, phone }: { kind: DemoKind; step: n
 }
 
 export default function ApplicationScene(props: Props) {
-  // Full device density on phones too; the shadow maps are sized to the scene's on-screen size.
+  // Up to 2x with MSAA, as the story (lib/device.ts); the shadow maps are sized to the scene's on-screen size.
   const q = useMemo(() => canvasQuality(), []);
   return (
     <Canvas dpr={q.dpr} shadows="percentage" frameloop={props.active && !props.still ? "always" : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}

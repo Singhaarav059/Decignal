@@ -239,7 +239,7 @@ export function Story() {
       <IslandPanel />
 
       {/* The scroll track the story is mapped onto */}
-      <div id="story" style={{ height: `${TOTAL_LEN * 100}svh` }} aria-hidden />
+      <div id="story" style={{ ["--story-len" as string]: TOTAL_LEN }} aria-hidden />
     </>
   );
 }
