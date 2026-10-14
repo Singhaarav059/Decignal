@@ -223,6 +223,21 @@
   .section-title[data-align="center"] { text-align: center; }
   .section-title[data-align="center"] .section-title-label { margin-inline: auto; }
   .section-title[data-align="center"] .section-title-lede { margin-inline: auto; }
+
+  /* ---- Hit areas on touch screens: a control drawn smaller than a fingertip takes taps across 44px
+     (WCAG 2.5.5), invisibly, so it looks the same. Each grows only on its short side and stays clear
+     of its neighbours (wrapped pills meet in their 8px gaps). Not for boxes that clip their overflow
+     (the nav CTA): the clip would cut the area back. ---- */
+  @media (pointer: coarse) {
+    :is(.nav-logo, .application-stepper button, .application-toggle, .ed-link, .footer-area, .footer-legal-links a, .footer-top, .svc-text-link, .svc-crumbs a) {
+      position: relative;
+    }
+    :is(.nav-logo, .application-stepper button, .application-toggle, .seg-item, .ed-link, .footer-area, .footer-legal-links a, .footer-top, .svc-text-link, .svc-crumbs a)::after {
+      content: "";
+      position: absolute;
+      inset: min(0px, (100% - 44px) / 2);
+    }
+  }
 }
 
 /* Section label icons: a small solid disc in ink holding the section's line icon. */

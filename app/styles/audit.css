@@ -220,6 +220,13 @@ textarea.audit-input { resize: none; }
   cursor: pointer;
 }
 .audit-field[data-select] .audit-input:invalid { color: var(--color-ink-soft); }
+/* A one-line control takes taps down to the field's underline (44px tall, WCAG 2.5.5): transparent
+   padding the field's own bottom padding gives back, so nothing moves. The select's chevron keeps its
+   place in the first 33px. */
+:is(input, select).audit-input { padding-bottom: 16px; margin-bottom: -12px; }
+/* Autofill tints the whole box: there it keeps its old size, so the tint does too. */
+input.audit-input:autofill { padding-bottom: 4px; margin-bottom: 0; }
+.audit-field[data-select] .audit-input { background-position: right 4px top 10.5px; }
 .audit-error {
   margin-top: 6px;
   font-size: var(--fs-small);
