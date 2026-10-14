@@ -224,3 +224,9 @@
   .section-title[data-align="center"] .section-title-label { margin-inline: auto; }
   .section-title[data-align="center"] .section-title-lede { margin-inline: auto; }
 }
+
+/* Section label icons: a small solid disc in ink holding the section's line icon. */
+.section-title-icon { display: grid; place-items: center; flex: none; width: 20px; height: 20px; margin-left: -5px; border-radius: 50%; color: #fff; background: var(--color-ink); }
+.night-panel .section-title-icon, .band:is([data-band="night"], [data-band="cobalt"], [data-band="violet"]) .section-title-icon { color: var(--color-night); background: #fff; }
+.section-title-icon .stmt-mark { width: 14px; height: 14px; transform: translateY(1px); }
+.section-title-icon:has(.stmt-mark) { background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-line); }

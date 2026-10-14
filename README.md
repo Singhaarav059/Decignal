@@ -47,7 +47,7 @@ Copy `.env.example` to `.env.local`. Every variable is optional.
 | `NEXT_PUBLIC_SITE_URL` | Public origin for canonical URLs, sitemap, robots and social images. Read at build time. Defaults to `https://decignal.up.railway.app`. Set it when the custom domain goes live |
 | `AUDIT_WEBHOOK_URL` | Audit requests are POSTed here as JSON |
 | `RESEND_API_KEY`, `AUDIT_TO_EMAIL`, `AUDIT_FROM_EMAIL` | Audit requests are emailed through Resend (all three needed) |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | Shows a contact mailto in the footer, error page, privacy notice and the audit form fallback |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Shows a contact mailto in the footer, privacy notice and the audit form fallback |
 
 With no delivery channel configured, `/api/audit` answers 503 and the form offers the downloadable brief instead, so nothing is silently lost.
 

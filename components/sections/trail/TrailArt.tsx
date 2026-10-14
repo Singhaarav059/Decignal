@@ -9,7 +9,7 @@ import { useSvgScale } from "../svgScale";
  * on the floor row at y 98, one stroke weight per role (data 2, outlines 1.25, axes 1). 01, 06 and 07
  * share the same seven-tick axis. The step's --tone colours the data; risk is always signal red.
  *
- * Every part draws from the station's --q (0 to 1, written by Trail.tsx as the rule reaches it):
+ * Every part draws from the station's --q (0 to 1, written by TrailDial.tsx as the hand reaches it):
  * the frame first (--a), then the data (--b), then marks and figures (--c). See decor-trail.css.
  */
 

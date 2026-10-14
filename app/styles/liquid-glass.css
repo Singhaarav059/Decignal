@@ -37,9 +37,6 @@
   --gl-amber: #f5c95a;
   --gl-butter: #f9ea94;
   --gl-orange: #f39a45;
-  --gl-olive: #55681d;
-  --gl-lime: #c9e264;
-  --gl-mist: #dfe4ea;
 
   /* Film grain: one noise, dark where it runs high and light where it runs low, so it reads on any
      tint. Drawn as vector, it stays one device pixel fine at 2x. */
@@ -60,9 +57,6 @@
   /* Amber: butter where the light enters, orange at the foot; ink type. */
   /* rules-check: allow gradient */
   --field-amber: radial-gradient(75% 95% at 0% 0%, var(--gl-butter), rgb(249 234 148 / 0) 100%), radial-gradient(70% 95% at 100% 105%, var(--gl-orange), rgb(243 154 69 / 0) 100%);
-  /* Olive: deep olive at the top left, lime at the foot right; white type at the top left. */
-  /* rules-check: allow gradient */
-  --field-olive: radial-gradient(70% 90% at 0% 0%, #28320b, rgb(40 50 11 / 0) 100%), radial-gradient(80% 100% at 100% 105%, var(--gl-lime), rgb(201 226 100 / 0) 100%);
 }
 
 /* ---- The floating chrome: mist glass, the strongest blur ---- */
@@ -146,9 +140,6 @@
 
 /* Plates on the colour sheets: glass tinted by the sheet behind it, the drawing still on white. */
 .how-plate { background-color: rgb(255 255 255 / 0.78); background-image: var(--lg-grain), var(--field-milk); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-rim), 0 18px 36px -22px rgb(15 18 23 / 0.4); }
-
-/* Tiles that drift (the Also reads wall) keep a solid white face: a moving blur costs every frame. */
-.wall-tile { box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm); }
 
 /* ---- Colour-field cards: the bento's hero facts wear the references' fields ---- */
 /* Slate, white type: the read-only fact. The art's plates turn to white glass, the bar to white. */

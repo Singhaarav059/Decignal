@@ -3,18 +3,16 @@
    colour always uses its -ink token, never a mix with ink (that renders brown). See DESIGN.md. */
 
 @theme static {
-  /* Neutrals. bg-2 and paper are kept as aliases so existing utilities keep working. */
+  /* Neutrals. paper is an alias of surface. */
   /* A cool, faintly blue white (Koushik), so white cards lift off it; night is the graphite of the
      contrast bands (the CreditKarma panels, 2026-10-14: near-black, a breath of the cool hue). */
   --color-bg: #eef1f7;
   --color-night: #0f1012;
-  --color-night-2: #1a1b1e;
   --color-on-night-2: #a7aab1;
   --color-night-line: rgb(255 255 255 / 0.12);
   --color-surface: #ffffff;
   --color-paper: #ffffff;
   --color-sunken: #edeff3;
-  --color-bg-2: #edeff3;
   --color-ink: #0f1217;
   --color-ink-2: #252a33;
   --color-ink-soft: #555d6b;
@@ -51,12 +49,11 @@
   --color-ok-ink: #087a54;
 
   /* Bricolage Grotesque (--font-display, app/fonts) carries headlines (medium, a light second line),
-     numerals and labels; Figtree (--font-text) carries running text. --font-serif and --font-mono stay
-     as aliases. */
+     numerals and labels; Figtree (--font-text) carries running text. --font-serif is an alias
+     (the .font-serif wordmark). */
   --font-heading: var(--font-display), "Helvetica Neue", Arial, sans-serif;
   --font-sans: var(--font-text), "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font-heading);
-  --font-mono: var(--font-heading);
 
   /* Radius: six steps. Nested elements take the next step down. */
   --radius-xs: 6px;
@@ -66,7 +63,6 @@
   --radius-xl: 32px;
   --radius-pill: 999px;
 
-  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
@@ -121,11 +117,6 @@
   --col-gap: clamp(16px, 2vw, 24px);
   --edge: max(var(--gutter), calc((100% - var(--grid-max)) / 2));
   --col: calc((min(100% - 2 * var(--gutter), var(--grid-max)) - 11 * var(--col-gap)) / 12);
-  --span-4: calc(4 * var(--col) + 3 * var(--col-gap));
-  --span-5: calc(5 * var(--col) + 4 * var(--col-gap));
-  --span-6: calc(6 * var(--col) + 5 * var(--col-gap));
-  /* Legacy name for the editorial column; same width as the grid. */
-  --content: var(--grid-max);
 
   /* Spacing: a 4px scale (4 8 12 16 24 32 48 64 96 128 = Tailwind 1 2 3 4 6 8 12 16 24 32). */
   --section-y: clamp(80px, 10vw, 144px);

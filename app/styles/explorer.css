@@ -147,3 +147,24 @@
   .swap-out + .swap-in, .evidence-draw { animation: none; }
   .application-fold, .application-head, .application-toggle svg, .evidence-bar, .application-journey { transition: none; }
 }
+
+/* ---- Wide screens: one stage, not two tones. The tinted floor (bands.css) runs the full width behind
+   the head, the card and the world; the applications index runs along its foot. ---- */
+@media (min-width: 1024px) {
+  .application-head { top: 112px; }
+  .application-card { box-shadow: var(--edge-line), 0 24px 48px -32px rgb(15 18 23 / 0.35); }
+  .application-stepper { display: none; }
+}
+.application-index { display: none; }
+@media (min-width: 1024px) and (min-height: 640px) {
+  .application-index {
+    position: absolute; z-index: 3; right: calc(var(--edge) - 8px); bottom: 32px; left: calc(var(--edge) + var(--card-w) + 48px);
+    display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px;
+  }
+  .application-index button { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 6px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; color: var(--color-ink-2); background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), transform var(--dur-3) var(--ease); }
+  .application-index button .tabular { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; color: var(--color-ink-soft); background: var(--color-sunken); transition: inherit; }
+  .application-index button:hover { transform: translateY(-2px); color: var(--color-ink); }
+  .application-index button[aria-current] { color: var(--tone-on, #fff); background: var(--tone); box-shadow: none; }
+  .application-index button[aria-current] .tabular { color: var(--tone-ink, var(--color-ink)); background: #fff; }
+  .application-index button:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
+}

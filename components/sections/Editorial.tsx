@@ -95,7 +95,7 @@ const two = (h: Headline): [string, string] => [h[0], h[1]];
 
 /** A section head: its index on the page, label, two lines (the second in the accent ink) and an
  *  optional lede. Neutral chrome (D6). The indexes run 01 to 07 down the page, the trail and the audit
- *  included (Trail.tsx, Audit.tsx). */
+ *  included (TrailDial.tsx, Audit.tsx). */
 function Head({
   id,
   index,

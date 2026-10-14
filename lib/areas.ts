@@ -1,4 +1,4 @@
-// The five business areas: one source for the home AreaStack (lead, signal) and the service pages at
+// The five business areas: one source for the home rows (AreaRows: lead, signal) and the service pages at
 // /solutions/{slug} (SP-01, SP-06, COPY-13..18). No "use client" and no three.js, so server components
 // can import it. Rules: no em dashes, no client names, quotes or result figures; examples are labelled
 // "Illustrative example" and use the figures in lib/example.ts. Claims stay within what the product
@@ -23,7 +23,7 @@ export type Area = {
   tone: string;
   /** Position in CATEGORIES, for showArea(i) on the home page. */
   index: number;
-  /** Home AreaStack: one line under the area name, and the live-looking signal in its panel. */
+  /** Home rows: one line under the area name, and the live-looking signal in its open row. */
   lead: string;
   signal: string;
   /** Service hero: two lines, the second is the accent line. */

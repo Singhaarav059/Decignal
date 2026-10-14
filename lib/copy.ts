@@ -28,10 +28,8 @@ export const CTA = {
   primary: "Book a free AI audit",
   /** Nav under 640px and other tight spaces (Nav.tsx, the `sm:hidden` span). */
   compact: "Book audit",
-  /** Sticky phone pill or dock. */
-  pill: "Book a free AI audit · 30 min",
   href: "#audit",
-  /** Secondary text links to the service pages (AreaStack, footer, ScaleApps, apps index). */
+  /** Secondary text links to the service pages (AreaRows, footer, ScaleApps, apps index). */
   explore: (area: string) => `Explore ${area}`,
   /** Final chapter secondary button (FinalEngine / StoryCard). */
   applications: "See the 8 applications",
@@ -68,8 +66,6 @@ export const HERO = {
   eyebrow: "Decision intelligence · India and Africa",
   /** The page h1 (critic §2 "Hero h1"): the visible back-layer line, promoted in place. */
   headline: ["Your operation.", "Seen as a whole."] as Headline,
-  /** The same words as one sentence, wherever the h1 needs plain text. */
-  h1: "Your operation, seen as a whole.",
   /** The hero's right column on wide screens, beside the h1: what Decignal does, in one sentence. */
   lede: "Decignal reads the systems you already run, finds the decision that matters and sends it to the right person to approve.",
   /** The quiet second action beside the CTA: the How it works section. */
@@ -281,11 +277,8 @@ export const STORY_UI = {
 /** 08 Industries (Story.tsx headline, IndustryDetail.tsx card). */
 export const INDUSTRY = {
   title: (name: string) => ["Built for", `${name}.`] as Headline,
-  challenge: "The challenge",
   /** Was "Decisions Decignal makes": Decignal recommends, people decide (COPY-03). */
   decisions: "What Decignal recommends",
-  connects: "Connects",
-  start: "Typical start",
   startLink: (app: string, weeks: string) => `Typical start: ${app} · ${weeks} weeks`,
   indexAria: "Industries",
   /** IndustryCallout: the decision pinned to the place on wide screens. */
@@ -294,7 +287,6 @@ export const INDUSTRY = {
 
 /** 09 Decide (D1 Option A): the 3D world, the giant headline, one line, the CTA pair and the example card. */
 export const FINAL = {
-  label: "09 · Decide",
   headline: ["Turn information", "into decisions."] as Headline,
   sub: "Decignal reads the systems you run, recommends one action and leaves the approval with your team.",
   /** Under the primary CTA. */
@@ -382,31 +374,16 @@ export const NAV = {
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* Editorial sections (Editorial.tsx, SystemsRibbon.tsx, GrowlioSections.tsx) */
+/* Editorial sections (Editorial.tsx and the sections it composes) */
 /* ------------------------------------------------------------------ */
 
 /** The systems strip (E10, COPY-10, D8): system types from CONNECTS in lib/content.ts. */
 export const SYSTEMS_STRIP = {
   eyebrow: "Works with what you run",
   headline: ["Keep your systems.", "We read across them."] as Headline,
-  /** The three promises, folded into one line (COPY-10). */
-  sub: "Read-only to start. No migration, no new data lake.",
   /** The three promises as chips in the glass panel (SystemsRing). */
   promises: ["Read-only to start", "No migration", "No new data lake"],
-  /** One quiet line after the six coloured types; the neutral list is CONNECTS_MORE. */
-  more: "Also reads TMS, CMMS, SCADA, QMS, POS, DMS, service desks, data warehouses and spreadsheets.",
-  /** The label over the drifting strip of those types (SystemsMarquee). */
-  moreLabel: "Also reads",
-  /** The wall's heading, after the label; the count of types follows it. */
-  moreTitle: "Plus the rest of your stack.",
   footnote: "The audit confirms how we connect to the systems you run.",
-  /** The example feed card on the ribbon (COPY-01 3): no live counter. */
-  card: {
-    badge: "Example feed",
-    recommended: "Recommended",
-    decision: T.text,
-    status: "Awaiting approval",
-  },
 } as const;
 
 /** Applications section and explorer (Editorial.tsx, ApplicationExplorer.tsx). */
@@ -414,7 +391,6 @@ export const APPLICATIONS_COPY = {
   eyebrow: "Applications",
   headline: ["Eight applications.", "Five business areas."] as Headline,
   intro: "From the first signal to the right action. Follow the decisions as you scroll.",
-  indexAria: "Jump to a business area",
   chaptersAria: "Application chapters",
   stages: ["Signal", "Evidence", "Action"],
   stageLabels: ["The signal", "Connected evidence", "Recommended action"],
@@ -432,7 +408,6 @@ export const TRAIL = {
   label: "Every application runs the same trail",
   /** The dial's head (TrailDial.tsx, Orvan's process dial). */
   headline: ["One shortage.", "Seven steps to a result."] as Headline,
-  lede: "Scroll to turn the dial. Each step draws its fact from the running example.",
   /** The dial's last turn, from Result back to Signal: the loop closes. */
   loop: { k: "Loop", name: "Next signal", ex: "The result is measured against the plan, and the next signal starts the trail again." },
   aria: "How one decision moves: signal, evidence, context, policy, decision, approval, result",
@@ -645,7 +620,7 @@ export const ALSO_READS = {
   ] as { id: string; label: string; tone: string; items: WheelItem[] }[],
 } as const;
 
-/** The facts band under the outcome card (E05 GlanceList). No "0" figure (NAV-15), no readiness claim (COPY-09). */
+/** The facts band under the outcome card (Statement.tsx). No "0" figure (NAV-15), no readiness claim (COPY-09). */
 export const GLANCE = [
   { n: "Read-only", label: "to start", text: "Decignal reads the ERP, MES, CRM and WMS you already run. Nothing is replaced.", tone: "cobalt" },
   { n: "4 to 8", label: "weeks to a first release", text: "From the catalogue. A custom application takes 6 to 12 weeks.", tone: "emerald" },
@@ -654,7 +629,7 @@ export const GLANCE = [
   { n: "1", label: "named approver per action", text: "Human approval can always be required. You set roles and thresholds.", tone: "tangerine" },
 ] as const;
 
-/** How it works (Editorial.tsx, GrowlioSections.tsx Roadmap). Routes and steps are PATHS in lib/content.ts. */
+/** How it works (Editorial.tsx, HowSteps.tsx). Routes and steps are PATHS in lib/content.ts. */
 export const HOW = {
   eyebrow: "How it works",
   headline: ["One decision first.", "Then build from there."] as Headline,
@@ -663,9 +638,7 @@ export const HOW = {
   /** Each colour sheet's label (HowSteps.tsx): "Step 01". */
   stepWord: "Step",
   youGet: "You get",
-  /** "Days 14 to 30 · 6 to 12 weeks in total" (E07). Takes PATHS[route].total as is and keeps its "N to M weeks". */
-  stepLabel: (when: string, total: string) => `${when} · ${total.match(/^\d+ to \d+ weeks/)?.[0] ?? total} in total`,
-  /** What each step delivers, index-aligned with PATHS[route].steps (GrowlioSections DELIVERS). */
+  /** What each step delivers, index-aligned with PATHS[route].steps (HowSteps.tsx). */
   delivers: {
     custom: [
       ["Decision map", "System inventory", "Constraints and owners"],
@@ -740,7 +713,6 @@ export const AUDIT = {
   continue: "Continue",
   back: "Back",
   toTimes: "Choose your times",
-  edit: "Edit your answers",
   /** Accessible name of the step bars. */
   progressAria: "Progress",
   /** The chosen-times list: "Your times 2 of 3". */
@@ -789,7 +761,7 @@ export const LOADER = {
   positioning: "Decision intelligence for enterprises across India and Africa",
 } as const;
 
-/** app/not-found.tsx and app/error.tsx (COPY-19). */
+/** app/not-found.tsx and the legal pages (COPY-19). */
 export const PAGES = {
   notFound: {
     /** Document title (metadata). */
@@ -799,14 +771,6 @@ export const PAGES = {
     body: "The link may be old or mistyped.",
     home: "Back to the start",
     cta: CTA.primary,
-  },
-  error: {
-    eyebrow: "Error",
-    headline: ["Something went wrong.", "On our side, not yours."] as Headline,
-    body: "Try again in a moment. If it keeps happening, reload the page.",
-    /** When CONTACT_EMAIL is set. */
-    bodyWithEmail: (email: string) => `Try again. If it keeps happening, email ${email}.`,
-    retry: "Try again",
   },
   /** Placeholders until the owner supplies the legal text (D11, PROD-11). */
   privacy: {
@@ -883,7 +847,6 @@ export const SERVICE = {
   example: "Illustrative example",
   exampleNote: "Results are measured against your own baseline.",
   faq: "Questions",
-  seeExample: "See the example",
   seeApps: (n: number) => (n === 1 ? "See the application" : "See the applications"),
   ctaBand: {
     headline: ["Bring one decision.", "Leave with a plan."] as Headline,
@@ -904,8 +867,6 @@ export const FACES = {
   decisionFoot: "Creates a transfer order in your ERP",
   /** faces.ts layer k = 3 (Policy) checklist. */
   policyChecks: ["Max 300 units per transfer", "Plant 02 stays at plan", "Planner approval required"],
-  /** faces.ts customer function face: "14 cases, one cause:" then the part. */
-  casesCause: ["cases, one cause:", EXAMPLE.part],
   /** faces.ts finance function ledger rows: [invoice, amount, held]. */
   ledger: [
     [APP_FACTS.finance.matched[0], inrShort(APP_FACTS.finance.matched[1]), false],
@@ -950,14 +911,12 @@ export const EVIDENCE_LABELS = {
   stages: ["Signal detected", "Evidence connected", "Action prepared"],
   safety: "SAFETY STOCK · 175",
   today: `TODAY · ${P1.onHand}`,
-  arrival: "DAY 2 (ARRIVAL)",
   day6With: `DAY 6 · ${P1.day6With} (RESTORED)`,
   day6Without: `DAY 6 · ${P1.day6Without} (SHORTFALL)`,
   productionOrder: `ORDER ${APP_FACTS.production.order}`,
   tooling: `${APP_FACTS.production.order}: TOOLING CHECKED ON LINE 02`,
   workOrder: `WORK ORDER ${APP_FACTS.maintenance.workOrder}`,
   cases: "14 SERVICE CASES",
-  casesLink: "One part links all 14 service cases",
   /** Ledger rows: [invoice · vendor, amount]. Vendors are numbered, never company names. */
   ledger: APP_FACTS.finance.held.map(([id, vendor, n]) => [`${id} · ${vendor.toUpperCase()}`, inr(n)] as const),
   heldTotal: `${inr(APP_FACTS.finance.heldTotal)} HELD UNTIL GOODS ARRIVE`,

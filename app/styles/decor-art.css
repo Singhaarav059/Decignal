@@ -57,7 +57,7 @@
 
 /* Signal focus: pointing at the area's signal row singles out the part of the drawing it describes. */
 .area-art > * { transition: fill-opacity var(--dur-3) var(--ease), stroke-opacity var(--dur-3) var(--ease); }
-:is(.area-panel:has(.area-ui-signal-card:hover), .svc-hero-card:has(.svc-signal:hover)) .area-art > :not(.aa-sig) { fill-opacity: 0.22; stroke-opacity: 0.22; }
+.svc-hero-card:has(.svc-signal:hover) .area-art > :not(.aa-sig) { fill-opacity: 0.22; stroke-opacity: 0.22; }
 
 /* The home panels carry the drawing at the top of the signal card, under the area's duotone photograph; the service hero card sets it between the photograph and the signal (editorial.css, service.css). */
 

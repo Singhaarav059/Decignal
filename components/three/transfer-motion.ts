@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { BEATS, M, ROAD_Z, TRUCK_X0, TRUCK_X1 } from "@/lib/scene";
-import { clamp01, smoothstep } from "@/lib/story";
+import { M, ROAD_Z, TRUCK_X0, TRUCK_X1 } from "@/lib/scene";
+import { BEATS, clamp01, smoothstep } from "@/lib/story";
 import { FORK, TRUCK } from "./vehicles";
 
 export const PALLETS = 3;

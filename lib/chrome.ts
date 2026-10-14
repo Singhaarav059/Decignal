@@ -206,8 +206,8 @@ export function token(name: string, fallback: number) {
 
 /** Reading: every element holding text, plus these. */
 const GRAPHIC = "svg, canvas, img, video";
-// The redesign's surfaces count as reading too: the pill never floats over a card, a sheet or a row.
-const SOLID = `a, button, input, select, textarea, .card, [data-obstacle], figure, .bento-card, .outcome-figure, .how-sheet, .faq-item, .wall-tile, .orbit-tile, .area-row, .dial, ${GRAPHIC}`;
+// Surfaces count as reading too: the pill never floats over a card, a sheet or a row.
+const SOLID = `a, button, input, select, textarea, .card, [data-obstacle], figure, .bento-card, .outcome-figure, .how-sheet, .faq-item, .orbit-tile, .area-row, .dial, ${GRAPHIC}`;
 /** Clear space kept around the pill or dock. */
 const AIR = 16;
 

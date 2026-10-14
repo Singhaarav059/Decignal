@@ -47,10 +47,6 @@ export const EXAMPLE = {
   line: { name: "Line 02", planPerWeek: 157, capacityPerWeek: 190, perUnit: 2, changeover: "Thursday" },
   lane: { days: 2, status: "Clear", horizonDays: 14, rain: "Low" },
   policy: { maxUnits: 300, approver: "Planner", aboveLimit: "Plant manager", text: "Max 300 units, planner approves" },
-  /** Island record counts, one per system (ERP, CRM, MES, WMS, Suppliers, External). */
-  records: ["2.4M records", "86k accounts", "14 lines", "38k bins", "212 vendors", "6 feeds"],
-  /** The days 0 to 6 of the Problem chart are plant01Stock(0..6). */
-  horizonDays: 6,
 } as const;
 
 /** Plant 01 X90 stock at the end of `day` (0 = today), with or without the transfer landing on day 2. */

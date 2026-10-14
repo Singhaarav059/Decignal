@@ -2,9 +2,7 @@
 // from return null, and the actor scales in or out of the scene during the transition.
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
-import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, industryF, scaleDeal, SCALE_DEAL } from "./story";
-
-export { industryF, BEATS };
+import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, scaleDeal, SCALE_DEAL } from "./story";
 
 export type Vec3 = [number, number, number];
 export type Pose = { p: Vec3; rx?: number; ry?: number; s?: number };

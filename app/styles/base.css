@@ -52,10 +52,10 @@ body {
   color: var(--color-on-ink);
 }
 
-/* Headings: Inter Tight, like everything else.
+/* Headings: the display face (--font-heading).
    The role classes (.t-*) carry their own family; this list covers classes not yet moved to a role. */
 h1, h2, h3, h4, .display, .font-serif, .faq-q-title,
-.peek-side-figure, .peek-case-value, dd.tabular, p.tabular.font-semibold {
+dd.tabular, p.tabular.font-semibold {
   font-family: var(--font-heading);
   font-optical-sizing: auto;
 }
@@ -84,18 +84,6 @@ h1, h2, h3, h4, .display, .font-serif, .faq-q-title,
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-ink-soft);
-}
-
-.diamond {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  background: currentColor;
-  transform: rotate(45deg);
-}
-
-.hairline {
-  border-color: var(--color-line);
 }
 
 .tabular {

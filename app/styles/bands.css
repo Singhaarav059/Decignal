@@ -81,6 +81,27 @@
 .band .ed-link { color: var(--band-fg); text-decoration-color: var(--band-line-strong); }
 .band .ed-link:hover { text-decoration-color: currentColor; }
 
+/* ---- Night band (the areas' deep navy) for the home audit: the ink panel dissolves into it, so the
+   pitch sits straight on the band beside the white request card. ---- */
+.band[data-band="night"] {
+  --band-bg: var(--color-night);
+  --band-fg: var(--color-on-ink);
+  --band-fg-2: rgb(255 255 255 / 0.86);
+  --band-soft: var(--color-on-night-2);
+  --band-line: var(--color-night-line);
+  --band-line-strong: rgb(255 255 255 / 0.3);
+  --band-dot: var(--color-on-ink);
+  --band-accent: #9fb3ff;
+}
+.band[data-band="night"] .audit-panel { background: transparent; padding-inline: 0; }
+.audit-copy .section-title-label { color: var(--color-on-ink); background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px var(--on-ink-line, rgb(255 255 255 / 0.16)); }
+.audit-copy .section-title-index { color: var(--color-on-ink); }
+.band[data-band="night"] .audit-copy .t-title .accent { color: #9fb3ff; }
+
+/* Section label pills on colour bands: a quiet glass-free tint of the band's own text colour. */
+.band .section-title-label { background: color-mix(in srgb, var(--band-fg) 10%, transparent); box-shadow: inset 0 0 0 1px var(--band-line); }
+.band[data-band="mist"] .section-title-label { background: var(--color-surface); box-shadow: var(--edge-line); }
+
 /* White panels inside a band keep their own ink. */
 .band :is(.card, .outcome-figure, .seg) { color: var(--color-ink); }
 
@@ -90,15 +111,6 @@
    states that answer in the element's colour (--tone, --tone-on from lib/tone.ts toneVars). A pale
    solid is the tone mixed with white, never with ink. ---- */
 
-/* The five area panels: each on its own pale colour, rimmed in a deeper step of it. */
-.area-panel {
-  background: color-mix(in srgb, var(--tone) 9%, var(--color-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 26%, var(--color-surface));
-}
-/* Orange at a pale step reads as cream: a deeper step keeps it a clear coral. */
-.area-panel[style*="tangerine"] { background: color-mix(in srgb, var(--tone) 13%, var(--color-surface)); }
-.area-panel .area-ui-signal-card { background: var(--color-surface); box-shadow: var(--edge-line); }
-.area-panel .area-ui-signal { background: var(--color-surface); box-shadow: none; }
 /* An application row lifts, rims in the area's colour and its arrow takes the colour. */
 .area-ui-app { transition: box-shadow var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
 @media (hover: hover) {
@@ -106,10 +118,10 @@
   .area-ui-app:hover > svg { color: var(--tone-ink, var(--color-ink)); }
 }
 
-/* FAQ: a question slides in on hover and its button fills with the question's colour; the open one stays filled. */
+/* FAQ: a question's button fills with the question's colour on hover; the open one stays filled
+   (the row itself lifts, editorial.css). */
 :is(.faq-n, .faq-q-text) { transition: transform var(--dur-3) var(--ease), color var(--dur-2) var(--ease); }
 @media (hover: hover) {
-  .faq-item:hover :is(.faq-n, .faq-q-text) { transform: translateX(6px); }
   .faq-item:hover .faq-plus { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); box-shadow: none; }
 }
 .faq-item[data-open] .faq-plus { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); }
@@ -122,19 +134,20 @@
 .area-index { padding: 4px 10px; border-radius: var(--radius-pill); color: var(--tone-on, var(--color-ink)); background: var(--tone); }
 
 /* ---- Application explorer: the world on a pale stage of the application's colour (--tone eases
-   between applications, explorer.css), and the sources it reads as chips under the title. ---- */
+   between applications, explorer.css), one floor running the full width behind the head, the card
+   and the world; and the sources it reads as chips under the title. ---- */
 .application-floor { display: none; }
 @media (min-width: 1024px) {
   .application-floor {
     display: block;
     position: absolute;
     z-index: 0;
-    top: 84px;
-    right: 16px;
-    bottom: 16px;
-    left: calc(var(--edge) + var(--card-w) + 48px);
+    top: 80px;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
     border-radius: var(--radius-xl);
-    background: color-mix(in srgb, var(--tone) 11%, var(--color-surface));
+    background: color-mix(in srgb, var(--tone) 9%, var(--color-bg));
   }
 }
 .application-reads { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }

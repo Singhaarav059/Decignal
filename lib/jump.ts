@@ -41,7 +41,6 @@ let lenis: Lenis | null = null;
 export const setLenis = (l: Lenis | null) => {
   lenis = l;
 };
-export const getLenis = () => lenis;
 
 let locks = 0;
 /** Holds the page still (the loader, the open menu): Lenis stops where it runs, and on touch screens,
