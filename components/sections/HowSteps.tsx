@@ -14,7 +14,8 @@ const ROUTES = Object.keys(PATHS) as Route[];
  * field is the soft bloom and grain laid over it (fields.css). */
 const SHEETS = [
   { bg: "var(--color-cobalt)", fg: "#fff", tone: "cobalt", field: "cobalt" },
-  { bg: "var(--color-violet)", fg: "#fff", tone: "violet", field: "violet" },
+  // The deeper violet: the sheet's small white labels read at AA on it (tokens.css).
+  { bg: "var(--color-violet-deep)", fg: "#fff", tone: "violet", field: "violet" },
   { bg: "var(--color-saffron)", fg: "var(--color-ink)", tone: "tangerine", field: "saffron" },
   { bg: "var(--color-night)", fg: "#fff", tone: "emerald", field: "night" },
 ];

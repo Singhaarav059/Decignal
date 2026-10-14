@@ -28,6 +28,8 @@
   /* One colour per source system. Signal red is reserved for risk. */
   --color-cobalt: #2e5bff;
   --color-violet: #7c5cff;
+  /* Violet under small white text: white on --color-violet is 4.35:1, under AA for labels; this is 5.1:1. */
+  --color-violet-deep: #6f4ef7;
   --color-emerald: #0fa874;
   --color-saffron: #ffb21e;
   --color-tangerine: #ff7438;

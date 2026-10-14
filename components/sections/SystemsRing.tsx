@@ -205,7 +205,7 @@ export function SystemsRing({ children }: { children: ReactNode }) {
           <span className="orbit-live-stack">
             {CONNECTS.map((c, i) => (
               <span key={c.id} className="orbit-live-item" style={toneVars(c.tone)} data-on={i === 0 || undefined}>
-                <span className="orbit-live-sys">
+                <span className="orbit-live-sys" data-tone={c.tone}>
                   <SystemIcon id={c.id} size={12} />
                   {c.name}
                 </span>
