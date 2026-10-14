@@ -636,11 +636,17 @@ const ACTORS = [Islands, SignalCrate, ChartCrates, Transfer, Cards, IndustriesRo
 
 function World() {
   const [n, setN] = useState(0);
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
   useEffect(() => {
+    // Each actor's programs are requested as soon as it is in, so the browser links them while the
+    // next one builds.
+    if (n > 0) void requestPrograms(gl, scene, camera);
     if (n > ACTORS.length + 1) return;
-    // A fresh task after each commit, so the page gets its turn between actors.
-    return later(() => startTransition(() => setN(n + 1)));
-  }, [n]);
+    // A transition: React renders it in its own short tasks, so the page gets its turn between them.
+    startTransition(() => setN(n + 1));
+  }, [n, gl, scene, camera]);
   return (
     <Sliced value={true}>
       <Hold />
@@ -648,7 +654,7 @@ function World() {
       <Atmosphere />
       <KeyLight />
       <Suspense fallback={null}>
-        {ACTORS.slice(0, n - 1).map((Actor, k) => (
+        {ACTORS.slice(0, Math.max(0, n - 1)).map((Actor, k) => (
           <Actor key={k} />
         ))}
         {n > ACTORS.length + 1 && <Warmup />}
@@ -677,12 +683,6 @@ function Hold() {
     if (loop.warming) setFrameloop("never");
   }, [setFrameloop]);
   return null;
-}
-
-/** Calls fn in a new task; returns its cancel. */
-function later(fn: () => void) {
-  const id = window.setTimeout(fn, 0);
-  return () => window.clearTimeout(id);
 }
 
 /** Whether rendering is held: by the warm-up, or because the story is out of sight. */
@@ -722,45 +722,15 @@ function Warmup() {
       // Out of sight (a restored scroll below the story): nothing will draw, so it is ready now.
       if (loop.hidden) ready();
     };
-    // A subtree never drawn on this screen (userData.noWarm, the Scale glass on a phone) stays hidden,
-    // as Warm.tsx leaves it: compiling it would link programs for nothing.
-    const skip = (o: THREE.Object3D | null) => {
-      for (let x = o; x; x = x.parent) if (x.userData.noWarm) return true;
-      return false;
-    };
-    const roots = pieces(scene);
     const warm = async () => {
       // Bake merges and far bodies first: they are part of what gets uploaded.
       await drained();
-      // Shader programs, a few pieces per task. The browser compiles and links them off the main
-      // thread where it can (KHR_parallel_shader_compile); in one call, building every program's
-      // source took a single long task.
-      const pending: Promise<unknown>[] = [];
-      for (let k = 0; k < roots.length; ) {
-        await yieldTask();
-        if (!live) return;
-        const end = performance.now() + 8;
-        do {
-          const r = roots[k++];
-          const hidden: THREE.Object3D[] = [];
-          r.traverse((o) => {
-            if (!o.visible && !skip(o)) {
-              hidden.push(o);
-              o.visible = true;
-            }
-          });
-          try {
-            pending.push(gl.compileAsync(r, camera, scene));
-          } catch {
-            // compileAsync is missing or failed: the uploads below compile synchronously instead.
-          } finally {
-            // Programs are built from this synchronous pass: hidden objects go back before any frame draws.
-            for (const o of hidden) o.visible = false;
-          }
-        } while (k < roots.length && performance.now() < end);
-      }
-      await Promise.race([Promise.all(pending), new Promise((r) => window.setTimeout(r, 2500))]).catch(() => {});
+      // Programs for anything not requested yet, then wait for the links (capped, as before).
+      await requestPrograms(gl, scene, camera);
       if (!live) return;
+      await Promise.race([Promise.all(linking), new Promise((r) => window.setTimeout(r, 2500))]).catch(() => {});
+      if (!live) return;
+      const roots = pieces(scene.children);
       // Uploads, and the shadow programs compile() does not build: piece by piece, one task each.
       try {
         await upload(gl, scene, camera, roots, () => live);
@@ -781,6 +751,53 @@ function Warmup() {
   return null;
 }
 
+/** A subtree never drawn on this screen (userData.noWarm, the Scale glass on a phone) stays hidden, as
+ *  Warm.tsx leaves it: compiling it would link programs for nothing. */
+const noWarm = (o: THREE.Object3D | null) => {
+  for (let x = o; x; x = x.parent) if (x.userData.noWarm) return true;
+  return false;
+};
+/** Top-level branches whose programs have been requested, and the links under way. */
+const asked = new WeakSet<THREE.Object3D>();
+const linking: Promise<unknown>[] = [];
+let requesting: Promise<void> = Promise.resolve();
+
+/**
+ * Requests the programs of every top-level branch not asked for yet, a few pieces per task. The
+ * browser compiles and links them off the main thread where it can (KHR_parallel_shader_compile); in
+ * one call, building every program's source took a single long task.
+ */
+function requestPrograms(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
+  requesting = requesting.then(async () => {
+    const fresh = scene.children.filter((c) => !asked.has(c));
+    fresh.forEach((c) => asked.add(c));
+    const roots = pieces(fresh);
+    for (let k = 0; k < roots.length; ) {
+      await yieldTask();
+      const end = performance.now() + 8;
+      do {
+        const r = roots[k++];
+        const hidden: THREE.Object3D[] = [];
+        r.traverse((o) => {
+          if (!o.visible && !noWarm(o)) {
+            hidden.push(o);
+            o.visible = true;
+          }
+        });
+        try {
+          linking.push(gl.compileAsync(r, camera, scene).catch(() => {}));
+        } catch {
+          // compileAsync is missing or failed: the uploads compile synchronously instead.
+        } finally {
+          // Programs are built from this synchronous pass: hidden objects go back before any frame draws.
+          for (const o of hidden) o.visible = false;
+        }
+      } while (k < roots.length && performance.now() < end);
+    }
+  });
+  return requesting;
+}
+
 /** Meshes per piece of warm-up work: small enough that one piece's programs or uploads fit a short task. */
 const PIECE = 24;
 const drawable = (o: THREE.Object3D) => {
@@ -788,8 +805,8 @@ const drawable = (o: THREE.Object3D) => {
   return !!(d.isMesh || d.isPoints || d.isLine || d.isSprite);
 };
 
-/** The scene cut into subtrees of at most PIECE drawables (a drawable with children stays whole). */
-function pieces(scene: THREE.Scene) {
+/** Branches cut into subtrees of at most PIECE drawables (a drawable with children stays whole). */
+function pieces(branches: THREE.Object3D[]) {
   const count = new Map<THREE.Object3D, number>();
   const tally = (o: THREE.Object3D): number => {
     let n = drawable(o) ? 1 : 0;
@@ -797,7 +814,7 @@ function pieces(scene: THREE.Scene) {
     count.set(o, n);
     return n;
   };
-  tally(scene);
+  branches.forEach(tally);
   const out: THREE.Object3D[] = [];
   const split = (o: THREE.Object3D) => {
     const n = count.get(o) ?? 0;
@@ -805,11 +822,12 @@ function pieces(scene: THREE.Scene) {
     if (n <= PIECE || drawable(o)) out.push(o);
     else o.children.forEach(split);
   };
-  scene.children.forEach(split);
+  branches.forEach(split);
   return out;
 }
 
 const SOLO = 31;
+const NOOP = () => {};
 const SCISSOR = new THREE.Vector4();
 
 /**
@@ -826,6 +844,8 @@ async function upload(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE
   // Nothing moves while the world warms: one matrix walk serves every piece's draw.
   scene.updateMatrixWorld();
   const auto = scene.matrixWorldAutoUpdate;
+  // ShadowGate's per-render check walks the whole scene; each piece asks for its shadow map itself.
+  const before = scene.onBeforeRender;
   const top = (o: THREE.Object3D) => {
     let t = o;
     while (t.parent && t.parent !== scene) t = t.parent;
@@ -840,6 +860,7 @@ async function upload(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE
     lights.forEach((l) => l.layers.enable(SOLO));
     camera.layers.set(SOLO);
     scene.matrixWorldAutoUpdate = false;
+    scene.onBeforeRender = NOOP;
     // The other branches are left out of the walk altogether (lights stay in).
     const asleep: THREE.Object3D[] = [];
     const branch = top(roots[k]);
@@ -893,6 +914,7 @@ async function upload(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE
     } finally {
       asleep.forEach((c) => (c.visible = true));
       scene.matrixWorldAutoUpdate = auto;
+      scene.onBeforeRender = before;
       camera.layers.mask = mask;
       lights.forEach((l) => l.layers.disable(SOLO));
       gl.setScissor(SCISSOR);
