@@ -19,7 +19,7 @@ import { darkAt } from "@/lib/on-dark";
 import { TONE, goToChapter } from "./story/chapters";
 import type { PeekId, SectionPeek } from "./NavPeek";
 
-const PEEK_OF: Record<string, SectionPeek> = { applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
+const PEEK_OF: Record<string, SectionPeek> = { platform: "platform", applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
 /** The bar keeps the four links people look for (the audit is the CTA); the other home sections light
  *  the link of the part of the page they belong to. */
 const PRIMARY = ["platform", "applications", "how", "faq"];

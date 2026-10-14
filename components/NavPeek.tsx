@@ -5,7 +5,7 @@ import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type R
 import { ArrowRight, UserCheck, CalendarClock, Database, Layers, Lock, type LucideIcon } from "lucide-react";
 import { APPLICATIONS, CATEGORIES, FAQ, FAQ_PEEK, OUTCOMES, PATHS } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
-import { CTA, NAV, STORY_PEEK } from "@/lib/copy";
+import { CTA, GLANCE, NAV, STORY_PEEK } from "@/lib/copy";
 import { CHAPTERS, subscribe } from "@/lib/story";
 import { showOutcome, showQuestion, showStep } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
@@ -17,21 +17,22 @@ import { ChapterArt } from "./ChapterArt";
 import { SectionLink } from "./ui/SectionLink";
 import { AuditLink } from "./CtaPill";
 
-export type PeekId = "apps" | "outcomes" | "how" | "faq" | "story";
+export type PeekId = "platform" | "apps" | "outcomes" | "how" | "faq" | "story";
 export type SectionPeek = Exclude<PeekId, "story">;
 
 const LABEL: Record<string, string> = Object.fromEntries(NAV.sections);
 
 /** What each section is, in one line: the glance's foot and the phone menu both use it. */
 const PEEKS: Record<SectionPeek, { blurb: string; id: string; label: string }> = {
+  platform: { blurb: NAV.blurbs.platform, id: "platform", label: LABEL.platform },
   apps: { blurb: NAV.blurbs.apps, id: "applications", label: LABEL.applications },
   outcomes: { blurb: NAV.blurbs.outcomes, id: "outcomes", label: LABEL.outcomes },
   how: { blurb: NAV.blurbs.how, id: "how", label: LABEL.how },
   faq: { blurb: NAV.blurbs.faq, id: "faq", label: LABEL.faq },
 };
 
-const HOME_ORDER: PeekId[] = ["story", "apps", "outcomes", "how", "faq"];
-const PAGE_ORDER: PeekId[] = ["apps", "outcomes", "how", "faq"];
+const HOME_ORDER: PeekId[] = ["story", "platform", "apps", "outcomes", "how", "faq"];
+const PAGE_ORDER: PeekId[] = ["platform", "apps", "outcomes", "how", "faq"];
 const STEP_TONES = ["cobalt", "violet", "tangerine", "emerald"];
 /** Icons for FAQ_PEEK, in its order: integration, data, security, control, delivery. Neutral (D6). */
 const FAQ_ICONS: LucideIcon[] = [Layers, Database, Lock, UserCheck, CalendarClock];
@@ -138,6 +139,7 @@ export function NavPeek({
           >
             <Fragment key={id === shown ? `${id}-${epoch}` : id}>
               {id === "story" && <StoryPeek act={act} />}
+              {id === "platform" && <PlatformPeek ctx={ctx} />}
               {id === "apps" && <AppsPeek ctx={ctx} />}
               {id === "outcomes" && <OutcomesPeek ctx={ctx} />}
               {id === "how" && <HowPeek ctx={ctx} />}
@@ -184,6 +186,42 @@ function Foot({ id, ctx, figure, label }: { id: SectionPeek; ctx: Ctx; figure: s
         Open section
         <ArrowRight size={14} strokeWidth={2.2} aria-hidden />
       </SectionLink>
+    </div>
+  );
+}
+
+/** The platform in five facts, each a numbered row in its own colour, and what Decignal does
+ *  beside them: the same shape as the FAQ glance. */
+function PlatformPeek({ ctx }: { ctx: Ctx }) {
+  const href = ctx.hrefFor(PEEKS.platform.id);
+  return (
+    <div className="peek-grid">
+      <ul className="peek-list" aria-label={NAV.platformSide.label}>
+        {GLANCE.map((g, k) => (
+          <li key={g.label} style={{ ...toneVars(g.tone), ["--k" as string]: k }}>
+            <SectionLink href={href} className="peek-row peek-fact" onDone={ctx.onDone}>
+              <span className="peek-fact-n tabular" aria-hidden>
+                {String(k + 1).padStart(2, "0")}
+              </span>
+              <span className="peek-row-text">
+                <b>
+                  {g.n} {g.label}
+                </b>
+                <small>{g.text}</small>
+              </span>
+              <ArrowRight className="peek-arrow" size={14} strokeWidth={2.2} aria-hidden />
+            </SectionLink>
+          </li>
+        ))}
+      </ul>
+      <div className="peek-side">
+        <p className="peek-side-label">{NAV.platformSide.label}</p>
+        <p className="peek-side-blurb">{NAV.platformSide.blurb}</p>
+        <SectionLink href={href} className="peek-go" onDone={ctx.onDone}>
+          Open section
+          <ArrowRight size={14} strokeWidth={2.2} aria-hidden />
+        </SectionLink>
+      </div>
     </div>
   );
 }

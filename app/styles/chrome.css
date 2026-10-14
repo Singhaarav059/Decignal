@@ -448,3 +448,8 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
   display: flow-root;
   background: var(--color-bg);
 }
+
+/* The Platform glance (NavPeek PlatformPeek): each fact numbered on a chip in its own colour. */
+.peek-fact-n { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-sm); font: 600 12px/1 var(--font-heading); color: var(--tone-ink, var(--color-ink)); background: var(--color-sunken); transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
+.peek-fact:hover .peek-fact-n, .peek-fact:focus-visible .peek-fact-n { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); }
+.peek-fact .peek-row-text small { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-2); }

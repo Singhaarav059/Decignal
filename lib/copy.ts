@@ -335,11 +335,11 @@ export const NAV = {
   /** Nav.tsx section links: [id, label]. */
   /** One link per home section, in page order; the audit is the CTA. */
   sections: [
-    ["systems", "Systems"],
+    ["systems", "Integrations"],
     ["platform", "Platform"],
-    ["applications", "Applications"],
-    ["trail", "Trail"],
-    ["outcomes", "Outcomes"],
+    ["applications", "Solutions"],
+    ["trail", "Decision trail"],
+    ["outcomes", "Results"],
     ["how", "How it works"],
     ["faq", "FAQ"],
     ["audit", "Free AI audit"],
@@ -366,6 +366,11 @@ export const NAV = {
   /** The outcomes glance eyebrow: its numbers are the example's. */
   outcomesEyebrow: "Example outcomes",
   appsCount: (n: number) => `${n} ${n === 1 ? "app" : "apps"}`,
+  /** The Platform glance's side card: what Decignal does, in one line. */
+  platformSide: {
+    label: "What Decignal does",
+    blurb: "Reads the systems you already run, finds the decision that matters and sends it, with its evidence, for approval.",
+  },
   faqSide: {
     label: "Free AI audit",
     blurb: "Three decisions ranked, in 30 minutes. Free.",

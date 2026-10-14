@@ -47,11 +47,11 @@ type ChromeState = {
 };
 
 export const HOME_SECTIONS: ChromeSection[] = [
-  { id: "systems", label: "Systems", dock: false },
+  { id: "systems", label: "Integrations", dock: false },
   { id: "platform", label: "Platform", dock: false },
-  { id: "applications", label: "Applications", short: "Apps" },
-  { id: "trail", label: "Trail", dock: false },
-  { id: "outcomes", label: "Outcomes" },
+  { id: "applications", label: "Solutions" },
+  { id: "trail", label: "Decision trail", short: "Trail", dock: false },
+  { id: "outcomes", label: "Results" },
   { id: "how", label: "How it works", short: "How" },
   { id: "faq", label: "FAQ" },
   { id: "audit", label: "Free audit", short: "Audit" },
