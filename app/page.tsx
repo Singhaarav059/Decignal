@@ -9,12 +9,12 @@ import { Story } from "@/components/story/Story";
 import { Editorial } from "@/components/sections/Editorial";
 import { Footer } from "@/components/sections/Footer";
 import { PerfProbe } from "@/components/PerfProbe";
-import { OG_BASE, SHARE_DESCRIPTION, SHARE_TITLE } from "@/lib/site";
+import { OG_BASE, SHARE_DESCRIPTION, SHARE_IMAGES, SHARE_TITLE } from "@/lib/site";
 
 // openGraph restated for og:url only (the layout's has none, so the 404 page inherits no URL).
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  openGraph: { ...OG_BASE, title: SHARE_TITLE, description: SHARE_DESCRIPTION, url: "/" },
+  openGraph: { ...OG_BASE, title: SHARE_TITLE, description: SHARE_DESCRIPTION, url: "/", images: SHARE_IMAGES },
 };
 
 // Landmarks: the skip link and the header (Nav), the chrome's own navigation, then the story and the

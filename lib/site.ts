@@ -60,13 +60,14 @@ export const LOGO_ICON_VIEWBOX = "3 -2.1 26 26";
 
 /** The site's share card, drawn by app/opengraph-image.tsx. */
 export const SHARE_IMAGE_ALT = `${SITE_NAME}: ${HERO_LINES.join(" ")} ${OG_FOOTER}`;
-const SHARE_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt: SHARE_IMAGE_ALT, type: "image/png" };
+/** A page that sets openGraph or twitter drops the layout's objects, the card from app/opengraph-image.tsx
+ *  included, so it lists this in both. Not for a route with its own opengraph-image file
+ *  (app/solutions/[slug]): an explicit image wins over the file. */
+export const SHARE_IMAGES = [{ url: "/opengraph-image", width: 1200, height: 630, alt: SHARE_IMAGE_ALT, type: "image/png" }];
 
-/** Restate these in a page's openGraph/twitter, because Next merges metadata objects shallowly: a page that
- *  sets openGraph drops the layout's, the card from app/opengraph-image.tsx included, so the bases carry it.
- *  A route with its own opengraph-image file (app/solutions/[slug]) still shows its own. */
-export const OG_BASE = { type: "website" as const, siteName: SITE_NAME, images: [SHARE_IMAGE] };
-export const TWITTER_BASE = { card: "summary_large_image" as const, images: [SHARE_IMAGE] };
+/** Restate these in a page's openGraph/twitter, because Next merges metadata objects shallowly. */
+export const OG_BASE = { type: "website" as const, siteName: SITE_NAME };
+export const TWITTER_BASE = { card: "summary_large_image" as const };
 
 /** Date the public copy last changed; the sitemap uses it so its output stays deterministic. */
 export const CONTENT_UPDATED = "2026-10-12";

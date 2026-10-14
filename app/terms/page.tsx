@@ -3,7 +3,7 @@ import { Nav } from "@/components/Nav";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { Footer } from "@/components/sections/Footer";
 import { PAGES } from "@/lib/copy";
-import { OG_BASE, TWITTER_BASE } from "@/lib/site";
+import { OG_BASE, SHARE_IMAGES, TWITTER_BASE } from "@/lib/site";
 
 // Placeholder terms until the owner supplies the legal text (D11). For owner review before launch: the
 // legal entity, governing law and how to reach the owner. Nothing here names an entity or address.
@@ -13,8 +13,8 @@ export const metadata: Metadata = {
   title: T.title,
   description: T.lead,
   alternates: { canonical: "/terms" },
-  openGraph: { ...OG_BASE, title: T.title, description: T.lead, url: "/terms" },
-  twitter: { ...TWITTER_BASE, title: T.title, description: T.lead },
+  openGraph: { ...OG_BASE, title: T.title, description: T.lead, url: "/terms", images: SHARE_IMAGES },
+  twitter: { ...TWITTER_BASE, title: T.title, description: T.lead, images: SHARE_IMAGES },
   // A draft stays out of search results; switch indexing on with the owner's final text.
   robots: { index: false, follow: true },
 };

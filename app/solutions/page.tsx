@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AREAS } from "@/lib/areas";
 import { APPLICATIONS_COPY, CTA, NAV, SERVICE } from "@/lib/copy";
-import { OG_BASE, SITE_NAME, TWITTER_BASE } from "@/lib/site";
+import { OG_BASE, SHARE_IMAGES, SITE_NAME, TWITTER_BASE } from "@/lib/site";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { ServiceRuntime } from "@/components/service/ServiceRuntime";
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: "/solutions" },
-  openGraph: { ...OG_BASE, title: `${title} · ${SITE_NAME}`, description, url: "/solutions" },
-  twitter: { ...TWITTER_BASE, title: `${title} · ${SITE_NAME}`, description },
+  openGraph: { ...OG_BASE, title: `${title} · ${SITE_NAME}`, description, url: "/solutions", images: SHARE_IMAGES },
+  twitter: { ...TWITTER_BASE, title: `${title} · ${SITE_NAME}`, description, images: SHARE_IMAGES },
 };
 
 /** /solutions: the five business areas, each linking to its page (the breadcrumb's middle step). */

@@ -3,7 +3,7 @@ import { Nav } from "@/components/Nav";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { Footer } from "@/components/sections/Footer";
 import { PAGES } from "@/lib/copy";
-import { CONTACT_EMAIL, OG_BASE, TWITTER_BASE } from "@/lib/site";
+import { CONTACT_EMAIL, OG_BASE, SHARE_IMAGES, TWITTER_BASE } from "@/lib/site";
 
 // Placeholder notice until the owner supplies the final text (D11, PROD-11). For owner review before
 // launch: the legal entity, registered address, a grievance contact (India DPDP Act), how long requests
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   title: P.title,
   description: P.lead,
   alternates: { canonical: "/privacy" },
-  openGraph: { ...OG_BASE, title: P.title, description: P.lead, url: "/privacy" },
-  twitter: { ...TWITTER_BASE, title: P.title, description: P.lead },
+  openGraph: { ...OG_BASE, title: P.title, description: P.lead, url: "/privacy", images: SHARE_IMAGES },
+  twitter: { ...TWITTER_BASE, title: P.title, description: P.lead, images: SHARE_IMAGES },
   // A draft stays out of search results; switch indexing on with the owner's final text.
   robots: { index: false, follow: true },
 };
