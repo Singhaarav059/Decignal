@@ -109,13 +109,35 @@ function IslandFocus() {
   const ndc = useMemo(() => new THREE.Vector2(), []);
   const lastX = useRef(0);
   const wasLive = useRef(false);
+  const get = useThree((s) => s.get);
+
+  /** The nearest island under a point in page coordinates (-1 for none). */
+  const pick = useMemo(
+    () => (x: number, y: number, camera: THREE.Camera) => {
+      ndc.set(x, y);
+      ray.setFromCamera(ndc, camera);
+      let best = Infinity;
+      let at = -1;
+      islandHits.forEach((m, i) => {
+        if (!m) return;
+        const hit = ray.intersectObject(m, false)[0];
+        if (hit && hit.distance < best) {
+          best = hit.distance;
+          at = i;
+        }
+      });
+      return at;
+    },
+    [ray, ndc],
+  );
 
   useEffect(() => {
     const interactive = (t: EventTarget | null) => t instanceof Element && !!t.closest("a, button, input, select, textarea, label, [role=dialog]");
     const onDown = (e: PointerEvent) => (touch = e.pointerType === "touch");
     const onClick = (e: MouseEvent) => {
       if (!islandsLive() || interactive(e.target)) return;
-      const hit = islandHover;
+      // A finger has no hover (a thumb set down to scroll must not open labels): a tap picks where it lands.
+      const hit = touch ? (tagHover >= 0 ? tagHover : pick((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1), get().camera)) : islandHover;
       // On a touch screen the first tap on an island reads its label; the second opens it.
       if (touch && hit >= 0 && hit !== store.selected && hit !== touchPin) {
         touchPin = hit;
@@ -127,14 +149,16 @@ function IslandFocus() {
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && select(-1);
     window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("pointermove", onDown, { passive: true });
     window.addEventListener("click", onClick);
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onDown);
       window.removeEventListener("click", onClick);
       window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [get, pick]);
 
   const proj = useMemo(() => new THREE.Vector3(), []);
   useFrame(({ camera, size }, dt) => {
@@ -153,19 +177,9 @@ function IslandFocus() {
     }
     const prev = islandHover;
     islandHover = -1;
-    if (live && store.pointerIn) {
-      ndc.set(store.pointer.x, store.pointer.y);
-      ray.setFromCamera(ndc, camera);
-      let best = Infinity;
-      islandHits.forEach((m, i) => {
-        if (!m) return;
-        const hit = ray.intersectObject(m, false)[0];
-        if (hit && hit.distance < best) {
-          best = hit.distance;
-          islandHover = i;
-        }
-      });
-    }
+    // Hover is a mouse's: a finger on the glass while it scrolls opened the island under it, which shut
+    // the chapter's own label, then let go as the scroll began, leaving labels caught half open.
+    if (live && store.pointerIn && !touch) islandHover = pick(store.pointer.x, store.pointer.y, camera);
     // Pointing at an island's own label, or its chip on the page, lifts it too.
     if (islandHover < 0 && live && tagHover >= 0) islandHover = tagHover;
     // The ending's system chips (StoryCard) point at islands too: the island lifts with its thread.
