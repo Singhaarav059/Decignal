@@ -513,7 +513,12 @@ function Pause() {
     };
     let elapsed = 0;
     const paced = isTouch();
+    // Once the page below covers the whole screen, the canvas leaves the compositor too: still shown, its
+    // full-screen layer was composited under the explorer on every frame though nothing of it could be seen.
+    const canvas = gl.domElement;
     return subscribe((g) => {
+      const covered = store.after > 0.999;
+      if (canvas.style.visibility !== (covered ? "hidden" : "")) canvas.style.visibility = covered ? "hidden" : "";
       // Resume as soon as anything shows (opacity above 0), never at the midpoint of a fade.
       const off = g >= CHAPTERS.length - 0.01 || store.after > 0.02 || faded();
       if (off === loop.hidden) return;

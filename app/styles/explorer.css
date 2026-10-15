@@ -34,6 +34,13 @@
 .application-stepper button:not(:disabled):hover { box-shadow: var(--edge-strong); color: var(--color-ink); }
 .application-stepper button:disabled { color: var(--color-ink-muted); box-shadow: none; background: transparent; cursor: default; }
 .application-stepper button:focus-visible { outline: 2px solid var(--color-cobalt); outline-offset: 2px; }
+/* Touch screens: the stepper's glass keeps its fill, grain and rim but not the backdrop blur. It sits over the
+   explorer's canvas, which changes every frame, so a phone re-blurred behind both buttons on every frame
+   (?perf on a Mali-G68: the explorer at 20 fps moving, 27 with blur off). The disabled button (no fill,
+   no rim) had shown only that blur, as a tinted disc. */
+@media (pointer: coarse) and (hover: none) {
+  .application-journey .application-stepper button { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
 .application-count { min-width: 52px; white-space: nowrap; text-align: center; font: 600 var(--fs-label) / 1 var(--font-label); font-variant-numeric: tabular-nums; color: var(--color-ink-2); }
 
 /* ---- Card: stage control, then one number and one sentence, or the evidence in their place ---- */
