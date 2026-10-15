@@ -1,8 +1,8 @@
 # Decignal
 
-Marketing site for Decignal, decision intelligence for enterprises across India and Africa. Decignal reads the systems a business already runs (ERP, CRM, MES, WMS, suppliers, external feeds) and turns what it sees into decisions people approve.
+Marketing site for Decignal, which builds custom AI applications for Indian businesses. Each application reads the records a team already works from (ERP, CRM, email, spreadsheets, documents) and prepares the next step for the person who approves it.
 
-The home page is one scroll-driven 3D story: a connected world of islands that follows a single shortage from signal to decision. After the story come the applications explorer, outcomes, how it works, FAQ and the free AI audit form. Service pages live under `/solutions/{slug}`.
+The home page opens with one scroll-driven 3D story: a connected world of islands that follows a single supplier change from the first message to the order it leaves short. After the story come the applications explorer, how we build, industries, worked examples, the systems we read, how we work, what we measure, about, FAQ and the request-a-call form. Function pages live under `/solutions/{slug}`.
 
 Live: https://decignal.up.railway.app
 
