@@ -34,6 +34,7 @@ const SHAPES = [
   { name: "laptop-1280", w: 1280, h: 720 },
   { name: "desktop-1440", w: 1440, h: 900 },
   { name: "desktop-1920", w: 1920, h: 1080 },
+  { name: "desktop-2560", w: 2560, h: 1440 },
 ];
 
 const ROOT = new URL("..", import.meta.url).pathname;

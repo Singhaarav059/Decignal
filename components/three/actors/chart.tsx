@@ -79,6 +79,25 @@ const WAREHOUSE: Vec3 | null = islandPose(WMS, CH.context)?.p ?? null;
 const toWarehouse = (c: number): Vec3 | null => (c === CH.problem ? WAREHOUSE : null);
 
 export function ChartCrates() {
+  return (
+    <>
+      <DayTag />
+      {POSES.map((_, k) => {
+        const { d, l } = chartSlot(k);
+        // Stock lands column by column, today first, each stack from the bottom up.
+        return (
+          <Actor key={k} track={TRACKS[k]} delay={d * 0.05 + l * 0.015} arrive="drop" exit={toWarehouse}>
+            <ChartCrate k={k} />
+          </Actor>
+        );
+      })}
+    </>
+  );
+}
+
+/** The day pointed at, and its label pinned to the top of its column. Its own state: a new day
+ *  re-renders the label, not every crate of the chart. */
+function DayTag() {
   const [day, setDay] = useState(-1);
   // The last day pointed at stays on the label while it closes.
   const [d, setShown] = useState(-1);
@@ -91,16 +110,6 @@ export function ChartCrates() {
   return (
     <>
       <ChartFocus onDay={onDay} />
-      {POSES.map((_, k) => {
-        const { d, l } = chartSlot(k);
-        // Stock lands column by column, today first, each stack from the bottom up.
-        return (
-          <Actor key={k} track={TRACKS[k]} delay={d * 0.05 + l * 0.015} arrive="drop" exit={toWarehouse}>
-            <ChartCrate k={k} />
-          </Actor>
-        );
-      })}
-      {/* The day's label pins to the top of its column. */}
       <group position={[DAY_X(Math.max(d, 0)), (DAYS[Math.max(d, 0)] + 0.9) * STEP_Y + 0.1, 0]}>
         <ScreenTag
           title={d <= 0 ? "Today" : `Day ${d}`}

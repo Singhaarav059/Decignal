@@ -2,12 +2,15 @@
 
 // Story tags as page text. A tag is a pin on its object (a small tone dot) that opens into a label
 // when it is the chapter's subject or the reader points at it. The label is real HTML placed on whole
-// pixels at the projected 3D anchor, so it is crisp at any pixel density and the same size on screen
-// however far away the camera is. One label is open at a time: the next opens once the last has closed.
+// device pixels at the projected 3D anchor, so it is crisp at any pixel density and the same size on
+// screen however far away the camera is. One label is open at a time: the next opens once the last has
+// closed. Nothing here reads the layout while the page scrolls: on a phone each read laid out the whole
+// page, a hitch several times a second through every chapter with a label open.
 
 import * as THREE from "three";
 import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
+import { store } from "@/lib/story";
 
 type ScreenTagProps = {
   title: string;
@@ -58,6 +61,16 @@ let frame = 0;
 let reduced = false;
 /** Labels stay clear of the fixed nav bar. */
 const TOP_SAFE = 76;
+/** The page counts as scrolling this long after its last scroll frame (ms): the copy is re-read after. */
+const SCROLL_QUIET = 200;
+let dpr = 1;
+/**
+ * A CSS length on whole device pixels. Whole CSS pixels are not whole device pixels at 2.625x (a
+ * Realme 11 Pro) or 3x: each label's layer then sat between device pixels and was resampled, and its
+ * text read soft on the phone while it was sharp on a 2x screen.
+ */
+const snap = (n: number) => Math.round(n * dpr) / dpr;
+let blocksRead = false;
 
 // Flat: white, a hairline, a tone dot. No shadows, no blur.
 const CARD_CSS =
@@ -156,9 +169,9 @@ const GAP = 13;
 /** The label's top-left corner in page pixels for a side of its pin at (x, y); above and below, it
  *  slides along the pin to stay on screen. */
 function place(side: Side, x: number, y: number, e: Entry, size: { width: number }): [number, number] {
-  if (side === "right") return [x + GAP, y - Math.round(e.h / 2)];
-  if (side === "left") return [x - GAP - e.w, y - Math.round(e.h / 2)];
-  const left = x + Math.round(THREE.MathUtils.clamp(-e.w / 2, 8 - x, size.width - 8 - x - e.w));
+  if (side === "right") return [x + GAP, y - snap(e.h / 2)];
+  if (side === "left") return [x - GAP - e.w, y - snap(e.h / 2)];
+  const left = x + snap(THREE.MathUtils.clamp(-e.w / 2, 8 - x, size.width - 8 - x - e.w));
   return [left, side === "up" ? y - GAP - e.h : y + GAP];
 }
 
@@ -173,11 +186,22 @@ const visibleChain = (o: THREE.Object3D | null) => {
   return true;
 };
 
-function tick(t: number) {
-  const dt = Math.min(Math.max((t - prevT) / 1000, 0), 1 / 30);
+/** The longest step one update damps by (s): a phone at rest updates 8 times a second (Pacer). */
+const MAX_DT = 0.15;
+
+function tick() {
+  // Real time, not the loop's timestamp: on a touch screen the Pacer advances R3F with the scene clock
+  // in seconds, which read as milliseconds slowed every fade a thousandfold. The labels crept open over
+  // minutes and old ones never quite left: half-clear ghosts on the phone, never seen on a desktop.
+  const t = performance.now();
+  const dt = Math.min(Math.max((t - prevT) / 1000, 0), MAX_DT);
   prevT = t;
-  // Refresh the copy's footprint a few times a second, only while a label wants to open.
-  if (frame++ % 12 === 0 && [...entries].some((e) => e.props.current.open())) readBlocks();
+  // Refresh the copy's footprint a few times a second, only while a label wants to open, and only while
+  // the page rests (the copy hardly moves under a label mid-scroll; the next rest corrects it).
+  if (frame++ % 12 === 0 && (!blocksRead || t - store.scrollAt > SCROLL_QUIET) && [...entries].some((e) => e.props.current.open())) {
+    readBlocks();
+    blocksRead = true;
+  }
 
   // The most open label other than each tag, per world: a tag opens only once the previous one in its
   // own canvas has closed (the explorer's labels below the story never hold the story's shut).
@@ -212,13 +236,8 @@ function tick(t: number) {
     }
     a.getWorldPosition(v).project(camera);
     const behind = v.z > 1;
-    const x = Math.round((v.x * 0.5 + 0.5) * size.width);
-    const y = Math.round((-v.y * 0.5 + 0.5) * size.height);
-
-    if (!e.w) {
-      e.w = card.offsetWidth;
-      e.h = card.offsetHeight;
-    }
+    const x = snap((v.x * 0.5 + 0.5) * size.width);
+    const y = snap((-v.y * 0.5 + 0.5) * size.height);
     // Where the label goes: above its pin by default; beside it, or below it, when the page's copy
     // (or the nav) is in the way; if every side is taken it stays shut. Chosen while it is closed.
     if (e.k < 0.02) e.side = SIDES.find((side) => !hits(place(side, x, y, e, size), e, size)) ?? "up";
@@ -229,7 +248,8 @@ function tick(t: number) {
 
     const near = most.get(camera);
     const others = !near ? 0 : e === near.top ? near.second : near.first;
-    const want = P.open() && show > 0.5 && !behind && !e.blocked;
+    // Measured (its ResizeObserver) before it may open: unmeasured, it would be placed as if empty.
+    const want = P.open() && show > 0.5 && !behind && !e.blocked && e.w > 0;
     e.k = damp(e.k, want && (others < 0.08 || e.k > 0.02) ? 1 : 0, want ? 14 : 18, dt);
     if (e.k < 0.002) e.k = 0;
     if (e.k > 0.998) e.k = 1;
@@ -254,7 +274,7 @@ function tick(t: number) {
     // Opening: a short slide out from the pin; fully open it sits on whole pixels with no transform.
     const [dx, dy] = SLIDE[e.side];
     const m = reduced ? 0 : 1 - e.k;
-    put(e, card, "c.tf", "transform", e.k === 1 || reduced ? "none" : `translate3d(${Math.round(dx * m)}px, ${Math.round(dy * m)}px, 0) scale(${(0.96 + 0.04 * e.k).toFixed(4)})`);
+    put(e, card, "c.tf", "transform", e.k === 1 || reduced ? "none" : `translate3d(${snap(dx * m)}px, ${snap(dy * m)}px, 0) scale(${(0.96 + 0.04 * e.k).toFixed(4)})`);
     const takes = !!P.onHover && e.p > 0.5;
     put(e, card, "c.pe", "pointer-events", takes && e.k > 0.5 ? "auto" : "none");
     put(e, dot, "d.pe", "pointer-events", takes && rest === "dot" ? "auto" : "none");
@@ -278,6 +298,7 @@ export function ScreenTag(props: ScreenTagProps) {
 
   useLayoutEffect(() => {
     reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    dpr = window.devicePixelRatio || 1;
     const built = build(layerFor(gl.domElement), () => entry.current);
     els.current = built;
     const e: Entry = { anchor, props: latest, get, els: built, p: 0, k: 0, pop: 0, w: 0, h: 0, blocked: false, side: "up", last: {} };
@@ -287,13 +308,16 @@ export function ScreenTag(props: ScreenTagProps) {
       prevT = performance.now();
       stop = addAfterEffect(tick);
     }
-    // Web fonts change the label's width once they arrive.
-    let live = true;
-    document.fonts?.ready.then(() => {
-      if (live) e.w = 0;
+    // The label's size, as the browser lays it out (new text, the web fonts arriving): reported after its
+    // own layout, never read in a frame. Snapped to device pixels, as everything placed from it.
+    const ro = new ResizeObserver(([en]) => {
+      const b = en.borderBoxSize?.[0];
+      e.w = snap(b ? b.inlineSize : built.card.offsetWidth);
+      e.h = snap(b ? b.blockSize : built.card.offsetHeight);
     });
+    ro.observe(built.card);
     return () => {
-      live = false;
+      ro.disconnect();
       entries.delete(e);
       built.root.remove();
       entry.current = null;
@@ -317,7 +341,6 @@ export function ScreenTag(props: ScreenTagProps) {
     el.value.style.color = alert ? "var(--color-signal-ink)" : "var(--color-ink-soft)";
     el.dot.style.background = tone;
     el.chip.style.background = tone;
-    e.w = 0;
     if (changed) e.pop = 1;
   }, [title, value, tone, alert]);
 

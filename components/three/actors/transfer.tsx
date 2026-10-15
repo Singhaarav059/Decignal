@@ -3,7 +3,7 @@
 // 05 Decision: the yard, both plants, the forklift loading 240 units and the truck taking them across.
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { BEATS, CH, activePin, blendAt, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
 import { M, PLANT_01, PLANT_02, PLANT_FRONT, ROAD_LENGTH, ROAD_Z, transferredUnits, truckX, type Pose } from "@/lib/scene";
 import { TINTS } from "../palette";
@@ -135,6 +135,31 @@ const PLANT_02_POSE: Pose = { p: PLANT_02, s: M };
 const PLANT_01_POSE: Pose = { p: PLANT_01, s: M };
 const YARD_POSE: Pose = { p: [0, 0, 0] };
 
+/** The yard's words as they change frame by frame: the units sent, the truck's status, Plant 01's day. */
+type Live = { sent: number; order: string; arrived: boolean };
+
+/**
+ * A tag whose words follow the yard: only the tag re-renders when they change. Held in the yard's own
+ * state, every unit loaded (nearly every scroll frame through the loading) re-rendered both plants and
+ * their crews, the truck and the forklifts: a phone's frames through Decision went to React.
+ */
+function LiveTag({ title, read, open }: { title: string; read: () => readonly [string, string]; open: () => boolean }) {
+  const [[value, tone], set] = useState(read);
+  const cur = useRef<readonly [string, string]>([value, tone]);
+  useFrame(() => {
+    const next = read();
+    if (next[0] !== cur.current[0] || next[1] !== cur.current[1]) set((cur.current = next));
+  });
+  return <ScreenTag title={title} value={value} tone={tone} rest="none" show={tagShown} open={open} />;
+}
+
+const plant02Text = (l: Live) => [`${620 - l.sent} units · ${l.sent} sent`, TINTS.saffron] as const;
+const plant01Text = (l: Live) => (l.arrived ? (["Day 6 · 380 projected", TINTS.emerald] as const) : (["Day 6 · 140 projected", TINTS.cobalt] as const));
+const truckText = (l: Live) => [l.order, TINTS.emerald] as const;
+const openPlant02 = pinned("plant02");
+const openPlant01 = pinned("plant01");
+const openTruck = pinned("truck");
+
 export function Transfer() {
   const truck = useRef<THREE.Group>(null);
   const fork = useRef<THREE.Group>(null);
@@ -142,13 +167,17 @@ export function Transfer() {
   const lift = useMemo<Lift>(() => ({ x: 0, z: 0, yaw: 0, h: 0, trip: -1, carry: false, pitch: 0, roll: 0 }), []);
   const lift2 = useMemo<Lift>(() => ({ x: 0, z: 0, yaw: 0, h: 0, trip: -1, carry: false, pitch: 0, roll: 0 }), []);
   const height2 = useRef(0.06);
+  // Where each pallet is: changes a dozen times through the chapter, so it stays React state.
   const [states, setStates] = useState<number[]>([0, 0, 0]);
   const statesRef = useRef(states);
-  const [arrived, setArrived] = useState(false);
-  const [order, setOrder] = useState("Approved · loading next");
-  // Units on their way, counted exactly as the page's "Plant 02 left" figure counts them.
-  const [sent, setSent] = useState(0);
-  const last = useRef({ sent: 0, arrived: false, order: "Approved · loading next" });
+  // Units on their way (counted exactly as the page's "Plant 02 left" figure counts them), the truck's
+  // status and Plant 01's arrival: read by the tags (LiveTag), never re-rendering the yard.
+  const live = useMemo<Live>(() => ({ sent: 0, arrived: false, order: "Approved · loading next" }), []);
+  const read02 = useCallback(() => plant02Text(live), [live]);
+  const read01 = useCallback(() => plant01Text(live), [live]);
+  const readTruck = useCallback(() => truckText(live), [live]);
+  const lift1H = useCallback(() => height.current, []);
+  const lift2H = useCallback(() => height2.current, []);
   // The transfer's cargo: emerald, the colour of the moving order.
   const tote = useMemo(() => plastic(TINTS.emerald, 0.5, true), []);
   const height = useRef(0.06);
@@ -168,8 +197,7 @@ export function Transfer() {
     unloadAt(t, lift2);
     height.current = lift.h;
     height2.current = lift2.h;
-    const units = Math.round(transferredUnits(store.g >= CH.decision + 1 ? 1 : localIn(CH.decision, store.g)));
-    if (units !== last.current.sent) setSent((last.current.sent = units));
+    live.sent = Math.round(transferredUnits(store.g >= CH.decision + 1 ? 1 : localIn(CH.decision, store.g)));
     if (truck.current) {
       const inX = (1 - inK) * (1 - inK) * 9;
       truck.current.visible = here && (inK > 0.002 || exit > 0);
@@ -204,7 +232,7 @@ export function Transfer() {
     }
     const done = t > BEATS.unload[1] - 0.02;
     const atPlant = t > BEATS.drive[1] - 0.02;
-    if (done !== last.current.arrived) setArrived((last.current.arrived = done));
+    live.arrived = done;
     // The truck's own status, in step with the transfer order panel on the page.
     let onDeck = 0;
     for (const v of next) if (v === 2) onDeck++;
@@ -217,34 +245,47 @@ export function Transfer() {
         : t >= BEATS.load[0]
           ? `Loading · ${onDeck} of ${PALLETS} pallets`
           : "Approved · loading next";
-    if (status !== last.current.order) setOrder((last.current.order = status));
+    live.order = status;
   });
+
+  // Built once: a pallet moving re-renders the pallets, not the plants, their crews or the road.
+  const fixed = useMemo(
+    () => ({
+      road: <StoryRoad />,
+      plant02: (
+        <Actor track={inDecision(PLANT_02_POSE)} arrive="build" leave="build">
+          <Plant accent={TINTS.saffron} name="PLANT 02" ground={APRON_TOP / M} neutral />
+          <group position={[0, 7.8, 0]}>
+            <LiveTag title="Plant 02" read={read02} open={openPlant02} />
+          </group>
+        </Actor>
+      ),
+      plant01: (
+        <Actor track={inDecision(PLANT_01_POSE)} delay={0.08} arrive="build" leave="build">
+          <Plant accent={TINTS.cobalt} name="PLANT 01" ground={APRON_TOP / M} neutral />
+          <group position={[0, 7.8, 0]}>
+            <LiveTag title="Plant 01" read={read01} open={openPlant01} />
+          </group>
+        </Actor>
+      ),
+      pads: <YardPads />,
+      truckTag: (
+        <group position={[6.2, 4.6, 0]}>
+          <LiveTag title="TRF-0240" read={readTruck} open={openTruck} />
+        </group>
+      ),
+    }),
+    [read02, read01, readTruck],
+  );
 
   return (
     <>
-      <StoryRoad />
+      {fixed.road}
       {/* The plants go up from the ground as the yard assembles, and back down as it leaves. */}
-      <Actor track={inDecision(PLANT_02_POSE)} arrive="build" leave="build">
-        <Plant accent={TINTS.saffron} name="PLANT 02" ground={APRON_TOP / M} neutral />
-        <group position={[0, 7.8, 0]}>
-          <ScreenTag title="Plant 02" value={`${620 - sent} units · ${sent} sent`} tone={TINTS.saffron} rest="none" show={tagShown} open={pinned("plant02")} />
-        </group>
-      </Actor>
-      <Actor track={inDecision(PLANT_01_POSE)} delay={0.08} arrive="build" leave="build">
-        <Plant accent={TINTS.cobalt} name="PLANT 01" ground={APRON_TOP / M} neutral />
-        <group position={[0, 7.8, 0]}>
-          <ScreenTag
-            title="Plant 01"
-            value={arrived ? "Day 6 · 380 projected" : "Day 6 · 140 projected"}
-            tone={arrived ? TINTS.emerald : TINTS.cobalt}
-            rest="none"
-            show={tagShown}
-            open={pinned("plant01")}
-          />
-        </group>
-      </Actor>
+      {fixed.plant02}
+      {fixed.plant01}
       <Actor track={inDecision(YARD_POSE)} delay={0.04} arrive="build" leave="build">
-        <YardPads />
+        {fixed.pads}
         {/* Pallets waiting in the yard */}
         {SLOT_X.map((x, n) =>
           states[n] === 0 ? (
@@ -263,9 +304,7 @@ export function Transfer() {
         )}
       </Actor>
       <group ref={truck} visible={false}>
-        <group position={[6.2, 4.6, 0]}>
-          <ScreenTag title="TRF-0240" value={order} tone={TINTS.emerald} rest="none" show={tagShown} open={pinned("truck")} />
-        </group>
+        {fixed.truckTag}
         <SemiTruck accent={TINTS.emerald}>
           {TRUCK.slots.map((x, n) =>
             states[n] === 2 ? (
@@ -277,7 +316,7 @@ export function Transfer() {
         </SemiTruck>
       </group>
       <group ref={fork2} visible={false}>
-        <Forklift color={TINTS.cobalt} lift={() => height2.current}>
+        <Forklift color={TINTS.cobalt} lift={lift2H}>
           {states.some((v) => v === 4) && (
             <group rotation-y={Math.PI / 2}>
               <LoadedPallet tote={tote} />
@@ -286,7 +325,7 @@ export function Transfer() {
         </Forklift>
       </group>
       <group ref={fork} visible={false}>
-        <Forklift color={TINTS.saffron} lift={() => height.current}>
+        <Forklift color={TINTS.saffron} lift={lift1H}>
           {states.some((v) => v === 1) && (
             <group rotation-y={Math.PI / 2}>
               <LoadedPallet tote={tote} />
