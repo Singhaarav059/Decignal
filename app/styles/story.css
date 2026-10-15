@@ -237,6 +237,11 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
   margin-top: 14px;
 }
 .story-chips .sys-chip { width: 100%; padding: 0 10px; }
+/* Phones: the hero card keeps its line and its CTA; the six systems are the discs above the headline,
+   and the room goes to the world, whose six islands draw about a quarter larger. */
+@media (max-width: 767px) {
+  .story-chips { display: none; }
+}
 .sys-chip {
   display: inline-flex;
   align-items: center;

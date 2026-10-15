@@ -47,9 +47,12 @@ const HERO_LAYOUT: [number, number, number][] = [
   [-1.7, -4.2, 0.2],
   [1.7, -4.2, -0.2],
 ];
+// Portrait (phones, upright tablets): a tidy two by three grid, every pad square to the viewer and the
+// columns close, so the six fill a phone's tall stage larger. Each turned its own way, the six read as
+// scattered on a phone, and their wide footprint kept them small.
 const PORTRAIT_LAYOUT: [number, number, number][] = [
-  [-1.5, -4.5, 0.25], [1.5, -4.5, -0.3], [-1.5, -1.2, 0.1],
-  [1.5, -1.2, -0.25], [-1.5, 2.1, 0.4], [1.5, 2.1, -0.45],
+  [-1.25, -4.9, ISO.az], [1.25, -4.9, ISO.az], [-1.25, -1.2, ISO.az],
+  [1.25, -1.2, ISO.az], [-1.25, 2.5, ISO.az], [1.25, 2.5, ISO.az],
 ];
 const aboutHub = (l: [number, number, number][]) =>
   l.map(([x, z, ry]) => [...isoXZ(x - HUB[0], z - HUB[1], HUB[0], HUB[1]), ry] as [number, number, number]);
