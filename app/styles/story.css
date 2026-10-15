@@ -681,7 +681,7 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 @media (hover: hover) { .final-cta:hover { color: #fff; } .final-cta:hover::before { transform: none; } }
 .story-card[data-night] .story-link { color: #fff; text-decoration-color: rgb(255 255 255 / 0.4); }
 .final-note { margin-top: 10px; max-width: 46ch; color: var(--color-ink-soft); }
-.story-card[data-night] .final-note { color: rgb(255 255 255 / 0.6); }
+.story-card[data-night] .final-note { color: rgb(255 255 255 / 0.86); }
 @media (max-width: 767px) {
   /* Phones: each result on its own row (dot, figure, what it means); the world keeps the room above
      (the systems are read on the islands themselves, the headline carries the line). */
@@ -952,8 +952,6 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
     -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.7), 0 10px 24px -16px rgb(15 18 23 / 0.35);
   }
-  .hero-offer { color: var(--color-ink); font-weight: 600; }
-  .hero-offer::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; vertical-align: 0.12em; background: var(--color-cobalt-ink); }
   .hero-cue { display: inline-flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--color-ink-2); }
   /* An opened system's panel stands at the right edge: the corners step back with the h1. */
   .story-back[data-dim] :is(.hero-aside, .hero-meta) { opacity: 0.12; pointer-events: none; }
@@ -968,4 +966,8 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 }
 
 /* The hero's illustrative caption under the offer line (handoff home.hero visual caption). */
+/* The offer line, in the corner card on wide screens and the story card on phones: ink, led by a cobalt dot. */
+.hero-offer { color: var(--color-ink); font-weight: 600; }
+.story-body .hero-offer { display: block; margin-top: 8px; }
+.hero-offer::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; vertical-align: 0.12em; background: var(--color-cobalt-ink); }
 .hero-caption { display: block; padding-top: 8px; border-top: 1px solid var(--color-line); color: var(--color-ink-2); font-weight: 500; }

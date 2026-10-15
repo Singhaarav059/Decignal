@@ -111,7 +111,7 @@ function Process() {
       <Floor />
       <Doc x={44} y={26} w={52} h={54} dashed />
       <path d="M62 44l16 16m0-16-16 16" className="tg-line is-risk" pathLength={1} />
-      <text x="0" y={LABEL} className="tg-al">HEAT TREATMENT</text>
+      <text x="0" y={LABEL} className="tg-al">HEAT TREAT</text>
       <text x={W} y={LABEL} textAnchor="end" className="tg-risk">NOT FOUND</text>
     </>
   );

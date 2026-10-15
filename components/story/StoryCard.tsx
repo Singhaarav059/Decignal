@@ -288,7 +288,7 @@ export function ChapterBody({ ch }: { ch: number }) {
       <Label ch={CH.fragments} />
       <Rest>
         <p className="t-body story-body">
-          {HERO.audience} {HERO.card}
+          {HERO.audience} <span className="hero-offer">{HERO.card}</span>
         </p>
         <SystemChips className="story-chips" />
         <div className="story-actions">
