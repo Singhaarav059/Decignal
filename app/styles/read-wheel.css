@@ -36,9 +36,9 @@
   .rw-copy { max-width: min(620px, 46vw); }
   .rw-title { font-size: clamp(34px, min(3.4vw, 6vh), 52px); }
 
-  .rw-tabs { display: flex; gap: 8px; margin-top: 22px; }
+  .rw-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
   .rw-tab {
-    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 12px; border-radius: var(--radius-pill);
+    display: inline-flex; flex: none; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 12px; border-radius: var(--radius-pill); white-space: nowrap;
     font-size: 14px; font-weight: 600; color: var(--color-ink-2); background: rgb(255 255 255 / 0.66);
     box-shadow: inset 0 0 0 1px var(--color-line);
     transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);

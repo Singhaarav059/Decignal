@@ -86,7 +86,11 @@ export function ReadWheel() {
       const vh = window.innerHeight;
       // The dome's crown sits a little under the middle of the screen and its rim leaves the screen just
       // past both edges: the radius follows from that chord.
-      const crown = Math.max(vh * 0.46, 320);
+      // It never rises into the phase tabs: the crown's pill (34px over the rim, scaled up) keeps clear of them.
+      const tabs = el.querySelector<HTMLElement>(".rw-tabs");
+      const stage = el.querySelector<HTMLElement>(".rw-stage");
+      const under = tabs && stage ? tabs.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 72 : 0;
+      const crown = Math.max(vh * 0.46, 320, under);
       const c = vw / 2 + 60;
       const h = vh - crown + 80;
       R = (c * c + h * h) / (2 * h);
