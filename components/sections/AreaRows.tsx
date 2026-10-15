@@ -42,7 +42,7 @@ export function AreaRows() {
     return () => io.disconnect();
   }, []);
 
-  // A preview of the hovered row's place follows the pointer, easing after it (fine pointers only).
+  // A preview of the hovered row's place rides with the pointer in the thumbnail column, easing after it (fine pointers only).
   const [hover, setHover] = useState(-1);
   const preview = useRef<HTMLDivElement>(null);
   const target = useRef({ x: 0, y: 0 });
@@ -73,7 +73,9 @@ export function AreaRows() {
     };
     const move = (e: PointerEvent) => {
       const r = box.getBoundingClientRect();
-      target.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+      // Held in the thumbnail column (its right edge on the thumbnail's), riding only up and down with
+      // the pointer: following it sideways laid the photo over the row's own lead text.
+      target.current = { x: r.width - 76 - el.offsetWidth, y: e.clientY - r.top };
       if (!raf) raf = requestAnimationFrame(tick);
     };
     box.addEventListener("pointermove", move);

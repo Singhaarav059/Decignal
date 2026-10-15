@@ -8,6 +8,7 @@ import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { ServiceRuntime } from "@/components/service/ServiceRuntime";
 import { AreaLinks } from "@/components/service/AreaLinks";
+import { AreaPhoto } from "@/components/sections/AreaPhoto";
 import { SectionLink } from "@/components/ui/SectionLink";
 import { Arrow } from "@/components/ui/Arrow";
 import SectionTitle from "@/components/ui/SectionTitle";
@@ -34,16 +35,29 @@ export default function SolutionsPage() {
       <main id="main" tabIndex={-1} className="svc svc-index">
         <section className="svc-hero page-wrap" aria-labelledby="svc-title">
           <p className="t-label svc-crumbs-label">{SOLUTIONS_INDEX.eyebrow}</p>
-          <h1 id="svc-title" className="t-display svc-hero-title">
-            {SOLUTIONS_INDEX.headline[0]} <span className="accent">{SOLUTIONS_INDEX.headline[1]}</span>
-          </h1>
-          <p className="t-lede svc-hero-lede">{SOLUTIONS_INDEX.body}</p>
-          <p className="t-small svc-status">{SOLUTIONS_INDEX.status}</p>
-          <div className="svc-actions">
-            <SectionLink href={CTA.href} className="btn btn-primary" data-cta="svc-index">
-              {CTA.primary}
-              <Arrow />
-            </SectionLink>
+          <div className="svc-hero-row">
+            <div className="svc-hero-copy">
+              <h1 id="svc-title" className="t-display svc-hero-title">
+                {SOLUTIONS_INDEX.headline[0]} <span className="accent">{SOLUTIONS_INDEX.headline[1]}</span>
+              </h1>
+              <p className="t-lede svc-hero-lede">{SOLUTIONS_INDEX.body}</p>
+              <p className="t-small svc-status">{SOLUTIONS_INDEX.status}</p>
+              <div className="svc-actions">
+                <SectionLink href={CTA.href} className="btn btn-primary" data-cta="svc-index">
+                  {CTA.primary}
+                  <Arrow />
+                </SectionLink>
+              </div>
+            </div>
+            {/* The five functions' places, each in its own colour, in a strip under the headline. */}
+            <ul className="idx-hero-art" aria-hidden>
+              {AREAS.map((a, i) => (
+                <li key={a.slug} style={{ ...toneVars(a.tone), ["--i" as string]: i }}>
+                  <AreaPhoto area={a} sizes="(min-width: 900px) 20vw, 45vw" eager={i < 2} />
+                  <span className="idx-hero-name">{a.name}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

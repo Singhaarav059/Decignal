@@ -37,6 +37,7 @@ import { Arrow } from "../ui/Arrow";
 import { SystemsRing } from "./SystemsRing";
 import { Statement } from "./Statement";
 import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
+import { MeasureArt } from "./MeasureArt";
 import { AreaPhoto } from "./AreaPhoto";
 import { AREAS } from "@/lib/areas";
 import { AreaRows } from "./AreaRows";
@@ -387,8 +388,9 @@ function Measure() {
           </div>
         </div>
         <ul className="record-groups measure-list">
-          {OUTCOMES_COPY.measures.map((m) => (
+          {OUTCOMES_COPY.measures.map((m, i) => (
             <li key={m.k} data-reveal className="record-group" style={toneVars(m.tone)}>
+              <MeasureArt k={i} />
               <p className="record-group-k t-label">
                 <i aria-hidden />
                 {m.k}

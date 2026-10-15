@@ -408,12 +408,21 @@ const DECISION_Y = 1092;
 
 /** A hand card's decision, set from a fixed top, over a footer drawn by `foot` above the bottom margin. */
 function handText(c: C, text: string, fg: string, foot: (y: number) => void) {
-  foot(PH - HAND_PAD - 26);
-  const size = 102;
-  font(c, size, 650);
-  c.letterSpacing = `${-size * 0.025}px`;
+  const footY = PH - HAND_PAD - 26;
+  foot(footY);
+  // Largest size whose last line still clears the status pill (its top is 76 above footY) by a gap:
+  // a four-line decision at 102 ran under the pill.
+  const room = footY - 76 - 44;
+  let size = 102;
+  let ls: string[] = [];
+  for (; size >= 60; size -= 4) {
+    font(c, size, 650);
+    c.letterSpacing = `${-size * 0.025}px`;
+    ls = lines(c, text, PW - HAND_PAD * 2);
+    if (DECISION_Y + (ls.length - 1) * size * 1.08 + size * 0.22 <= room) break;
+  }
   c.fillStyle = fg;
-  lines(c, text, PW - HAND_PAD * 2).forEach((l, i) => c.fillText(l, HAND_PAD - 2, DECISION_Y + i * size * 1.08));
+  ls.forEach((l, i) => c.fillText(l, HAND_PAD - 2, DECISION_Y + i * size * 1.08));
   c.letterSpacing = "0px";
 }
 

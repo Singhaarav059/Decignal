@@ -20,7 +20,10 @@
 .svc-crumbs a { color: var(--color-ink-soft); text-decoration: none; transition: color var(--dur-2) var(--ease); }
 .svc-crumbs a:hover { color: var(--color-ink); }
 .svc-crumbs [aria-current] { color: var(--color-ink); }
-.svc-hero-title { margin-top: var(--stack-label); max-width: 24ch; }
+.svc-hero-title { margin-top: var(--stack-label); max-width: 24ch; text-wrap: balance; }
+/* Phones: these titles run to eight words, so a step under the display size keeps them to four even
+   lines instead of five with "needed" and "review" each alone. */
+@media (max-width: 599px) { .svc-hero-title { font-size: clamp(32px, 9vw, 38px); } }
 .svc-hero-row { display: grid; gap: 40px; margin-top: clamp(24px, 4.5vh, 48px); }
 .svc-hero-lede { max-width: 62ch; }
 .svc-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: var(--stack-actions); }
@@ -137,8 +140,11 @@
 .svc-split { display: grid; gap: var(--stack-content); }
 @media (min-width: 1024px) {
   .svc-split { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
-  .svc-split > .svc-split-head { grid-column: 1 / span 4; position: sticky; top: 112px; }
-  .svc-split > :last-child { grid-column: 6 / span 7; }
+  .svc-split > .svc-split-head { grid-column: 1 / span 5; position: sticky; top: 112px; }
+  .svc-split > :last-child { grid-column: 7 / span 6; }
+  /* A head in a side column is set a step smaller, so it holds two or three lines: at the page's
+     title size in four columns "What a scoped application would prepare" ran to five. */
+  .svc-split-head :is(h2, .t-title) { font-size: clamp(32px, 3vw, 44px); text-wrap: balance; }
 }
 
 .svc-checks { display: grid; border-top: 1px solid var(--color-line-strong); }
@@ -226,7 +232,8 @@
   .svc-questions .svc-faq-help { order: 1; margin-top: 0; padding-top: 0; border-top: 0; }
 }
 /* The audit block (Audit.tsx) is its own .section; the area links follow it without a second gap. */
-.svc-others { padding-top: 0; padding-bottom: var(--section-y); }
+/* Its label keeps clear of the audit card above (at no top padding the two touched). */
+.svc-others { padding-top: clamp(40px, 5vw, 72px); padding-bottom: var(--section-y); }
 
 /* ---- Area links: cards (other areas) or index rows (hub, 404) ---- */
 .svc-others h2 { margin-bottom: 20px; }
@@ -293,3 +300,21 @@
 @media (min-width: 1024px) {
   .svc-closing { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
 }
+
+/* ---- Solutions hub: the five functions' places in a strip under the headline, staggered up and down,
+   each photo a duotone in its function's colour with the name on a chip. They rise in one after
+   another; with a fine pointer the one pointed at lifts. Beside the headline they pushed it to five
+   lines, so they run under it. ---- */
+.idx-audience { margin-top: clamp(28px, 3vw, 48px); }
+.idx-hero-art { display: none; }
+@media (min-width: 900px) {
+  .svc-index .svc-hero-copy, .idx-hero-art { grid-column: 1 / -1; }
+  .idx-hero-art { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-top: clamp(8px, 2vh, 24px); padding-bottom: 32px; }
+  .idx-hero-art li { position: relative; animation: idx-rise 900ms var(--ease-out-expo) calc(260ms + var(--i) * 90ms) both; transition: translate var(--dur-3) var(--ease); }
+  .idx-hero-art li:nth-child(even) { top: 32px; }
+  .idx-hero-art .area-photo-frame { aspect-ratio: 4 / 3; border-radius: var(--radius-lg); }
+  .idx-hero-name { position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px); padding: 5px 11px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--color-ink); background: #fff; }
+  @media (hover: hover) and (pointer: fine) { .idx-hero-art li:hover { translate: 0 -6px; } }
+}
+@keyframes idx-rise { from { opacity: 0; transform: translateY(24px); } }
+@media (prefers-reduced-motion: reduce) { .idx-hero-art li { animation: none; } }
