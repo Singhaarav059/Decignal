@@ -19,7 +19,7 @@ export const PLACEHOLDER = {
     role: "Founder & CEO",
     experience:
       "Founded Demaze Technologies in Ahmedabad, where a team of 35+ has delivered 45+ AI and software projects over six years.",
-    linkedin: "https://www.linkedin.com/in/krupalchaudhary",
+    linkedin: "https://www.linkedin.com/in/krupalchaudhary-ai",
     /** The portrait is assets/photos/founder.jpg, from the same page. */
     photoAlt: "Portrait of Krupal Chaudhary",
   },
