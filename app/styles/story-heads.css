@@ -187,7 +187,9 @@
 .ind-callout-item[data-at="past"] { opacity: 0; transform: translate3d(0, -8px, 0); }
 .ind-callout-item[data-at="next"] { opacity: 0; transform: translate3d(0, 8px, 0); }
 .ind-callout-item[data-at="on"] { transition: transform var(--dur-3) var(--ease) var(--dur-1), opacity var(--dur-2) var(--ease) var(--dur-1); }
-.ind-callout-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* A long industry name and the status share a line when they fit, and the status drops under it
+   when they do not, so neither runs past the card. */
+.ind-callout-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; }
 .ind-callout-chip {
   display: inline-flex;
   align-items: center;

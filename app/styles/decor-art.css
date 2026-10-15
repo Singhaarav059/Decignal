@@ -97,10 +97,11 @@
 .outcome-diagram .og-sent { fill: var(--color-track); stroke: var(--color-line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
 .outcome-diagram .og-link { fill: none; stroke: color-mix(in srgb, var(--tone) 34%, white); stroke-width: 1; }
 .outcome-diagram .og-ring { fill: var(--color-surface); stroke: currentColor; stroke-width: 2; }
-.outcome-diagram .og-check { fill: none; stroke: var(--color-on-ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.outcome-diagram .og-check { fill: none; stroke: var(--tone-on, var(--color-on-ink)); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 /* Text on a filled record (the audience drawings): white, and a softer white for its second line. */
-.outcome-diagram .og-on { fill: var(--color-on-ink); }
-.outcome-diagram .og-on-soft { fill: color-mix(in srgb, var(--color-on-ink) 74%, transparent); }
+/* Print on a solid of the tone takes the tone's own on-colour: ink on the bright tones, white on the deep. */
+.outcome-diagram .og-on { fill: var(--tone-on, var(--color-on-ink)); }
+.outcome-diagram .og-on-soft { fill: var(--tone-on, var(--color-on-ink)); }
 /* An open question on a filled record: a white pill with a signal-red rim. */
 .outcome-diagram .og-flag { fill: var(--color-surface); stroke: var(--color-signal); stroke-width: 1.5; }
 

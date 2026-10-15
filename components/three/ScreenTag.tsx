@@ -182,18 +182,22 @@ const ORIGIN: Record<Side, string> = { up: "50% 100%", down: "50% 0", right: "0 
 const SLIDE: Record<Side, [number, number]> = { up: [0, 6], down: [0, -6], right: [-6, 0], left: [6, 0] };
 const GAP = 13;
 
+/** The clear margin a label keeps from the canvas's edges: the canvas runs under the rounded panels'
+ *  insets, so a label at 8px read as hanging off the panel. */
+const EDGE = 28;
+
 /** The label's top-left corner in page pixels for a side of its pin at (x, y); above and below, it
  *  slides along the pin to stay on screen. */
 function place(side: Side, x: number, y: number, e: Entry, size: { width: number }): [number, number] {
   if (side === "right") return [x + GAP, y - snap(e.h / 2)];
   if (side === "left") return [x - GAP - e.w, y - snap(e.h / 2)];
-  const left = x + snap(THREE.MathUtils.clamp(-e.w / 2, 8 - x, size.width - 8 - x - e.w));
+  const left = x + snap(THREE.MathUtils.clamp(-e.w / 2, EDGE - x, size.width - EDGE - x - e.w));
   return [left, side === "up" ? y - GAP - e.h : y + GAP];
 }
 
 /** The label at [left, top] would leave the screen, slip under the nav, or sit on the copy. */
 function hits([l, t]: [number, number], e: Entry, size: { width: number; height: number }) {
-  if (t < TOP_SAFE || t + e.h > size.height - 8 || l < 8 || l + e.w > size.width - 8) return true;
+  if (t < TOP_SAFE || t + e.h > size.height - EDGE || l < EDGE || l + e.w > size.width - EDGE) return true;
   return blocks.some((b) => l < b.right + 8 && l + e.w > b.left - 8 && t < b.bottom + 8 && t + e.h > b.top - 8);
 }
 

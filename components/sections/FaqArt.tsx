@@ -44,7 +44,7 @@ const check = (x: number, y: number) => `M${x - 4.5} ${y}l3.2 3.2 6.3-6.6`;
 const EVIDENCE: [string, string][] = [
   ["cobalt", `Line ${L.n} · heat ${L.heat}`],
   ["tangerine", `Certificate · heat ${C.heat}`],
-  ["saffron", "Process certificate not found"],
+  ["saffron", "No process certificate"],
 ];
 
 /* ---------------------------------------------------------------- figures */

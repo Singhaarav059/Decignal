@@ -196,14 +196,17 @@
   .svc-hero-card:hover .area-photo-img { transform: scale(1.045); }
 }
 @media (prefers-reduced-motion: reduce) { .area-photo-img { transition: none; } }
-/* The warm tones turn the duotone over (all three photo treatments: area rows, systems ring, bento).
-   A pale saffron or tangerine multiplied onto grey lands in the dark warm range and reads brown, so
-   their photograph is screened over a solid of the tone instead: the tone in the shadows, white in
-   the light. The figure says its tone in data-tone. */
+/* The warm tones get a split duotone (all three photo treatments: area rows, systems ring, bento).
+   A saffron or tangerine darkened on its own reads brown, and screened over the tone the picture
+   washes out, so the shadows go to a deep cobalt ink and the light to a pale wash of the tone: the
+   two are near complements, so the mid-tones fall to a clean grey, the subject reads, and the tone
+   stays in the highlights. Photo multiplied onto the pale tone, then the ink lightens the darks.
+   The figure says its tone in data-tone. */
+:is(.orbit-photo, .bento-figure):is([data-tone="saffron"], [data-tone="tangerine"]),
+.area-photo:is([data-tone="saffron"], [data-tone="tangerine"]) .area-photo-move { background: color-mix(in srgb, var(--tone) 52%, white); }
+:is(.orbit-photo, .area-photo, .bento-figure):is([data-tone="saffron"], [data-tone="tangerine"]) img { mix-blend-mode: multiply; filter: grayscale(1) contrast(1.1) brightness(1.12); }
 :is(.orbit-photo, .bento-figure):is([data-tone="saffron"], [data-tone="tangerine"])::after,
-.area-photo:is([data-tone="saffron"], [data-tone="tangerine"]) .area-photo-move::before { display: none; }
-.area-photo:is([data-tone="saffron"], [data-tone="tangerine"]) .area-photo-move { background: var(--tone); }
-:is(.orbit-photo, .area-photo, .bento-figure):is([data-tone="saffron"], [data-tone="tangerine"]) img { mix-blend-mode: screen; filter: grayscale(1) contrast(1.05) brightness(1); }
+.area-photo:is([data-tone="saffron"], [data-tone="tangerine"]) .area-photo-move::before { background: #2b3772; mix-blend-mode: lighten; }
 
 /* Area line art: drawn in the area's colour on white. Labels hold 11px on screen (F-10). */
 .area-art { display: block; width: 100%; max-width: 420px; height: auto; overflow: visible; }
@@ -328,7 +331,7 @@
 }
 
 /* ---- Footer: headline and CTA, section links, area links, legal row, the wordmark ---- */
-.site-footer { position: relative; z-index: var(--z-editorial); overflow: hidden; --on: #fff; --on-2: rgb(255 255 255 / 0.9); --on-line: rgb(255 255 255 / 0.22); margin-inline: 12px; border-radius: var(--radius-xl) var(--radius-xl) 0 0; color: var(--on); background: var(--color-cobalt); }
+.site-footer { position: relative; z-index: var(--z-editorial); overflow: hidden; --on: #fff; --on-2: rgb(255 255 255 / 0.94); --on-line: rgb(255 255 255 / 0.22); margin-inline: 12px; border-radius: var(--radius-xl) var(--radius-xl) 0 0; color: var(--on); background: var(--color-cobalt); }
 .footer-grid { display: grid; gap: var(--stack-content); padding-top: clamp(56px, 8vw, 112px); }
 .footer-motif { display: block; width: 220px; height: 72px; margin-bottom: var(--stack-lede); }
 .footer-cta { margin-top: var(--stack-actions); }
@@ -383,7 +386,7 @@
    pills, and the giant wordmark in white across the foot. No six-colour strip: the colour
    is the band itself. ---- */
 @media (max-width: 599px) { .site-footer { margin-inline: 6px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; } }
-.site-footer .t-label { color: var(--on-2); }
+.site-footer .t-label, .site-footer .t-lede { color: var(--on-2); }
 .site-footer .t-title { color: var(--on); }
 .site-footer .ed-title .accent { --accent-ink: rgb(255 255 255 / 0.72); }
 .site-footer .footer-cta { color: var(--color-ink); background: var(--color-surface); }
@@ -551,6 +554,8 @@
 .night-panel :is(.t-title, .t-title-card) { color: #fff; }
 .night-panel .ed-title .accent { --accent-ink: #9fb3ff; }
 .night-panel .t-lede { color: var(--color-on-night-2); }
+.night-panel .ed-link { color: #fff; text-decoration-color: var(--color-night-line); }
+.night-panel .ed-link:hover { text-decoration-color: currentColor; }
 
 /* ---- Areas (components/sections/AreaRows.tsx): numbered rows, one open at a time ---- */
 .area-rows { margin-top: var(--ed-gap, 56px); border-top: 1px solid var(--color-night-line); }
@@ -815,6 +820,7 @@
 
 /* The workflows head's honesty note and its link to the directory. */
 .apps-note { margin-top: 14px; max-width: 48ch; color: var(--on-ink-soft, var(--color-ink-soft)); }
+.night-panel .apps-note { color: var(--color-on-night-2); }
 .apps-note .ed-link { margin-top: 8px; }
 
 /* Audience cards: the segment's workflows under its example, then the link. */
@@ -825,19 +831,33 @@
 .segment-flows .ed-link { justify-self: start; text-transform: none; letter-spacing: 0; }
 .outcome-copy .outcome-number { text-wrap: balance; }
 
-/* About: the place, then the second paragraph, the founder card and the call to action. */
-.about-grid { display: grid; gap: 28px; margin-top: var(--ed-gap); }
+/* About: one pair of columns for the whole section, so the lede sits over the second paragraph and
+   the founder card: head beside the lede, then the place beside the paragraph, founder and call. */
+.about-grid { display: grid; gap: 28px; }
+.about-lede { max-width: 44ch; }
+.about-photo { margin-top: 12px; }
 .about-photo .area-photo { height: 100%; }
-.about-side { display: grid; gap: 20px; align-content: start; }
+.about-side { display: grid; gap: 24px; align-content: start; }
 .about-second { max-width: 46ch; color: var(--color-ink-2); }
-.about-founder { gap: 6px; }
+.about-founder { grid-template-columns: 112px minmax(0, 1fr); grid-template-rows: none; gap: 20px; align-items: start; min-height: 0; }
+.about-founder-photo { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--edge-line); }
+.about-founder-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; transform: scale(1.5); transform-origin: 50% 24%; }
+.about-founder-body { display: grid; gap: 6px; align-content: start; }
 .about-founder-name { margin-top: 6px; color: var(--color-ink); }
 .about-founder-role { color: var(--color-ink-soft); }
 .about-founder-text { margin-top: 6px; color: var(--color-ink-2); }
 .about-founder-link { margin-top: 10px; justify-self: start; }
 .about-cta { justify-self: start; }
+@media (max-width: 479px) {
+  .about-founder { grid-template-columns: 1fr; }
+  .about-founder-photo { width: 120px; }
+}
 @media (min-width: 900px) {
-  .about-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; align-items: stretch; }
+  .about-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); column-gap: clamp(40px, 4.5vw, 64px); row-gap: var(--ed-gap); align-items: end; }
+  .about-photo { margin-top: 0; align-self: stretch; }
+  .about-photo .area-photo-frame { height: 100%; min-height: 420px; aspect-ratio: auto; }
+  .about-side { align-self: start; }
+  .about-founder { grid-template-columns: clamp(108px, 30%, 168px) minmax(0, 1fr); gap: clamp(20px, 2vw, 28px); }
 }
 
 /* The problem's lead line and closing, around the sentence that sharpens as it scrolls. */
