@@ -14,7 +14,7 @@ import type { ProbeLog } from "@/components/PerfProbe";
 
 type Config = { name: string; css?: string; off3d?: boolean; dpr?: number };
 
-const HIDE_3D = ".story-canvas canvas, .application-world canvas { visibility: hidden !important; }";
+const HIDE_3D = ".story-canvas canvas, .pflow-gl canvas, .application-world canvas { visibility: hidden !important; }";
 const NO_EFFECTS =
   "*, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background-image: none !important; box-shadow: none !important; filter: none !important; }";
 const NO_BLUR = "*, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }";
@@ -153,7 +153,13 @@ function device(log: ProbeLog) {
 function places() {
   const story = document.getElementById("story");
   const top = story ? story.getBoundingClientRect().top + window.scrollY : 0;
-  const at = (g: number) => (story ? top + gToProgress(g) * (story.offsetHeight - window.innerHeight) : 0);
+  // The flowing phone story (components/story/PhoneFlow.tsx): a chapter's section, its window in view.
+  const section = (ch: number) => document.querySelector(`[data-flow-ch="${ch}"]`);
+  const at = (g: number) => {
+    const s = section(Math.floor(g));
+    if (s) return s.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.15;
+    return story ? top + gToProgress(g) * (story.offsetHeight - window.innerHeight) : 0;
+  };
   const apps = document.querySelector(".application-journey");
   const list: [string, number][] = [
     // Swayed about a point past the nav's compact line (48px), so the hero is measured, not the nav's flip.
@@ -161,6 +167,7 @@ function places() {
     // The heaviest 3D hold since revision 3: the function hand, dealt.
     ["functions", at(CH.scale + 0.415)],
   ];
+  if (section(CH.decision)) list.push(["follow-up", at(CH.decision)], ["industries", at(CH.industries)]);
   if (apps) list.push(["apps", apps.getBoundingClientRect().top + window.scrollY + window.innerHeight * 0.6]);
   return list;
 }

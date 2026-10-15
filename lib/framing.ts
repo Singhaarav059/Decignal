@@ -4,6 +4,7 @@
 import { CHAPTERS, CH, EXIT_DRIFT, store } from "./story";
 import { IND_BESIDE_MIN, ISO_DIR, ISO_R, ISO_U, indLayout, type Shot } from "./scene";
 import { mediaWidth } from "./device";
+import { flow } from "./flow";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 /* ------------------------------------------------------------------ */
@@ -257,8 +258,25 @@ function place(n: number, f: number, hw: number, hh: number, ix: number, iy: num
   return false;
 }
 
+/** The phone flow's window margins (px): sides, top (a pin's label) and foot. */
+const FLOW_SIDE = 16;
+const FLOW_TOP = 40;
+const FLOW_FOOT = 10;
+
 /** Fills the stage and exclusions for chapter c: the card and the giant headline; an open panel shrinks the stage. */
 function setStage(c: number, vw: number, vh: number, panel: boolean) {
+  // The flowing phone story: the canvas is the chapter's own window, with nothing over it. The subject
+  // fills it inside the page's gutter, under room for a pin's label at the top.
+  if (flow.on) {
+    stage.x0 = FLOW_SIDE;
+    stage.x1 = vw - FLOW_SIDE;
+    stage.y0 = FLOW_TOP;
+    stage.y1 = vh - FLOW_FOOT;
+    nEx = 0;
+    cardEx = false;
+    indLayout.under = false;
+    return;
+  }
   const phone = mediaWidth(vw) < 768;
   // Phones keep the page's gutter at the sides, so the world lines up with the copy: at 10px its
   // buildings and rings ran right up to the screen edge.

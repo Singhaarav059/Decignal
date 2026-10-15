@@ -661,11 +661,11 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 
 /* ---- 09 Decide: the card turns night, like the audit band it leads to; the example's results and
    the six systems behind them. ---- */
-.story-card[data-night] { color: #fff; background: var(--color-night); box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.5); }
-.story-card[data-night] .story-progress li { background: rgb(255 255 255 / 0.12); }
-.story-card[data-night] .story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 70%, var(--color-night)); }
-.story-card[data-night] .story-progress li[data-on] { background: #fff; }
-.story-card[data-night] :is(.story-label-name, .story-label) { color: #fff; }
+:is(.story-card, .pflow-card)[data-night] { color: #fff; background: var(--color-night); box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.5); }
+:is(.story-card, .pflow-card)[data-night] .story-progress li { background: rgb(255 255 255 / 0.12); }
+:is(.story-card, .pflow-card)[data-night] .story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 70%, var(--color-night)); }
+:is(.story-card, .pflow-card)[data-night] .story-progress li[data-on] { background: #fff; }
+:is(.story-card, .pflow-card)[data-night] :is(.story-label-name, .story-label) { color: #fff; }
 .final-lead { margin-top: 14px; font-size: clamp(19px, 1.6vw, 23px); font-weight: 500; line-height: 1.25; letter-spacing: -0.01em; color: #fff; text-wrap: balance; }
 .final-card-title { margin-top: 18px; color: rgb(255 255 255 / 0.6); }
 .final-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
@@ -687,9 +687,9 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 .final-cta { color: var(--color-ink); background: #fff; }
 .final-cta::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--color-cobalt); transform: translateY(101%); transition: transform var(--dur-4) var(--ease-out-expo); }
 @media (hover: hover) { .final-cta:hover { color: #fff; } .final-cta:hover::before { transform: none; } }
-.story-card[data-night] .story-link { color: #fff; text-decoration-color: rgb(255 255 255 / 0.4); }
+:is(.story-card, .pflow-card)[data-night] .story-link { color: #fff; text-decoration-color: rgb(255 255 255 / 0.4); }
 .final-note { margin-top: 10px; max-width: 46ch; color: var(--color-ink-soft); }
-.story-card[data-night] .final-note { color: rgb(255 255 255 / 0.86); }
+:is(.story-card, .pflow-card)[data-night] .final-note { color: rgb(255 255 255 / 0.86); }
 @media (max-width: 767px) {
   /* Phones: each result on its own row (dot, figure, what it means); the world keeps the room above
      (the systems are read on the islands themselves, the headline carries the line). */

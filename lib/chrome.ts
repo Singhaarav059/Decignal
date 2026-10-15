@@ -4,6 +4,7 @@
 
 import { useSyncExternalStore } from "react";
 import { blendAt, store as story, subscribe as onStory } from "./story";
+import { storyTrack } from "./flow";
 import { pageBox, viewTop } from "./offsets";
 
 export type ChromeSection = {
@@ -154,7 +155,7 @@ let refs: Refs | null = null;
 
 function getRefs(): Refs {
   if (refs) return refs;
-  const story = document.getElementById("story");
+  const story = storyTrack();
   return (refs = {
     story,
     hero: story ? null : (document.getElementById("main")?.firstElementChild ?? null),
@@ -297,7 +298,7 @@ function collect() {
   if (!main || !io) return;
   const found = new Set<Element>();
   for (const root of main.children) {
-    if (root.id === "story" || getComputedStyle(root).position === "fixed") continue;
+    if (root.id === "story" || root.id === "story-flow" || getComputedStyle(root).position === "fixed") continue;
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       const at = n.parentElement;

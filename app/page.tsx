@@ -5,7 +5,7 @@ import { PhoneDock } from "@/components/PhoneDock";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { Loader } from "@/components/Loader";
 import { Backdrop } from "@/components/Backdrop";
-import { Story } from "@/components/story/Story";
+import { StoryRoot } from "@/components/story/Story";
 import { Editorial } from "@/components/sections/Editorial";
 import { Footer } from "@/components/sections/Footer";
 import { PerfProbe } from "@/components/PerfProbe";
@@ -29,7 +29,7 @@ export default function Home() {
       <CtaPill />
       <PhoneDock />
       <main id="main">
-        <Story />
+        <StoryRoot />
         <Editorial />
       </main>
       <div className="page-foot">

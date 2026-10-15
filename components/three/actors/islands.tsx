@@ -14,6 +14,7 @@ import { Bake } from "../Bake";
 import { useEased, useStoryAccent } from "../accent";
 import { ScreenTag } from "../ScreenTag";
 import { Actor, Rise } from "./core";
+import { flow } from "@/lib/flow";
 import { portraitWide } from "@/lib/device";
 
 /* ------------------------------------------------------------------ */
@@ -141,8 +142,12 @@ function IslandFocus() {
     const onDown = (e: PointerEvent) => (touch = e.pointerType === "touch");
     const onClick = (e: MouseEvent) => {
       if (!islandsLive() || interactive(e.target)) return;
+      // The canvas spans the screen, or (the flowing phone story) one chapter's window: a tap outside
+      // that window is the page's, not the world's.
+      const r = flow.on ? get().gl.domElement.getBoundingClientRect() : { left: 0, top: 0, width: innerWidth, height: innerHeight };
+      if (flow.on && (e.clientX < r.left || e.clientX > r.left + r.width || e.clientY < r.top || e.clientY > r.top + r.height)) return;
       // A finger has no hover (a thumb set down to scroll must not open labels): a tap picks where it lands.
-      const hit = touch ? (tagHover >= 0 ? tagHover : pick((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1), get().camera)) : islandHover;
+      const hit = touch ? (tagHover >= 0 ? tagHover : pick(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1), get().camera)) : islandHover;
       // On a touch screen the first tap on an island reads its label; the second opens it.
       if (touch && hit >= 0 && hit !== store.selected && hit !== touchPin) {
         touchPin = hit;
@@ -166,14 +171,16 @@ function IslandFocus() {
   }, [get, pick]);
 
   const proj = useMemo(() => new THREE.Vector3(), []);
-  useFrame(({ camera, size }, dt) => {
+  useFrame(({ camera, size, gl }, dt) => {
     const live = islandsLive();
     if (store.selected >= 0 && islandWorld(store.selected, proj)) {
-      // The island's deck, a little above its base, in page pixels.
+      // The island's deck, a little above its base, in page pixels (from the window's corner in the
+      // flowing phone story; read only while an island is open).
       proj.y += 0.55;
       proj.project(camera);
-      store.anchor.x = (proj.x * 0.5 + 0.5) * size.width;
-      store.anchor.y = (-proj.y * 0.5 + 0.5) * size.height;
+      const r = flow.on ? gl.domElement.getBoundingClientRect() : null;
+      store.anchor.x = (proj.x * 0.5 + 0.5) * size.width + (r?.left ?? 0);
+      store.anchor.y = (-proj.y * 0.5 + 0.5) * size.height + (r?.top ?? 0);
     }
     // Scrolling on to the next chapter closes whatever was open.
     if (!live) {

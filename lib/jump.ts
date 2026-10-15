@@ -6,6 +6,7 @@
 import type Lenis from "lenis";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { progressToG } from "./story";
+import { flow } from "./flow";
 import { getChrome, setChrome, token } from "./chrome";
 
 /* ---------------- Section events ---------------- */
@@ -112,6 +113,8 @@ function resolve(target: JumpTarget): { y: number; el: HTMLElement | null } | nu
 
 /** Where y sits in the story, as g, or null outside it. */
 function storyG(y: number) {
+  // The flowing phone story is plain page: distances there count in screens.
+  if (flow.on) return null;
   const el = document.getElementById("story");
   if (!el) return null;
   const start = el.getBoundingClientRect().top + window.scrollY;

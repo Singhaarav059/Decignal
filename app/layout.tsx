@@ -12,6 +12,7 @@ import {
   TWITTER_BASE,
 } from "@/lib/site";
 import { LiquidLens } from "@/components/LiquidLens";
+import { FLOW_JS } from "@/lib/flow";
 import "./globals.css";
 
 // Two families, both variable and self-hosted from app/fonts (no font request leaves the site, and the
@@ -95,6 +96,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${display.variable} ${text.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_JS }} />
+        {/* An upright phone reads the story as a flowing page (lib/flow.ts): decided before the first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: FLOW_JS }} />
         <noscript dangerouslySetInnerHTML={{ __html: `<style>${NOSCRIPT_CSS}</style>` }} />
       </head>
       <body>

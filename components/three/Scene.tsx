@@ -23,6 +23,7 @@ import { ShadowFloor, ShadowGate } from "./Shadows";
 import { FrameGate, lastDraw } from "./FrameGate";
 import { Governor, useGovernedDpr } from "./Governor";
 import { heroHandoff } from "@/lib/hero-video";
+import { flow } from "@/lib/flow";
 import { Sliced, drained, yieldTask } from "./slices";
 import { whenStill } from "@/lib/idle";
 import { DX, DY, DZ, FOV, box, cardSeen, frameShot, framed, heightsAt, measurePage, measurePanel, readCardHeights, setHeldNow, setTall, type Framed } from "@/lib/framing";
@@ -42,6 +43,8 @@ function Rig() {
   // Frames left to place the camera exactly on its goal after the page moved at once (a veil cut).
   const snap = useRef(0);
   const shots = useMemo(() => [makeShot(), makeShot()], []);
+  // The flowing phone story moved the canvas to another chapter's window: land there at once.
+  const cutSeen = useRef(flow.cut);
   const fr = useMemo(() => [framed(), framed(), framed(), framed()], []);
   useEffect(() => onJumpCut(() => (snap.current = 3)), []);
   // The panel's height (phones) once its content for the opened system has rendered.
@@ -62,6 +65,10 @@ function Rig() {
   }, [size.width, size.height]);
 
   useFrame((_, dt) => {
+    if (flow.cut !== cutSeen.current) {
+      cutSeen.current = flow.cut;
+      snap.current = 3;
+    }
     const { i, j, local, e } = blendAt(store.g);
     const vw = size.width;
     const vh = size.height;
@@ -83,7 +90,8 @@ function Rig() {
     const still = reduced.current;
     // Reduced motion: the camera cuts at the midpoint and settles.
     const k = still ? (e < 0.5 ? 0 : 1) : e;
-    lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
+    // The flowing phone story keeps its window's framing: the panel opens over the page, not the window.
+    lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 && !flow.on ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
     // A tall tablet reads the problem chart's labels in a legend too (Marks ChartMarks).
     const a = shotAt(i, local, portrait || (tall && i === CH.problem), shots[0]);
     frameShot(a, i, vw, vh, false, fr[0]);
@@ -110,8 +118,10 @@ function Rig() {
     goal.t.set(F.x, F.y, F.z);
     goal.p.set(F.x + DX * F.d, F.y + DY * F.d, F.z + DZ * F.d);
     // A few centimetres of parallax: confirms the space is real, nothing more.
-    goal.p.x += store.pointer.x * 0.16;
-    goal.p.y += store.pointer.y * 0.09;
+    if (!flow.on) {
+      goal.p.x += store.pointer.x * 0.16;
+      goal.p.y += store.pointer.y * 0.09;
+    }
 
     const delta = Math.min(dt, 1 / 30);
     const side = e < 0.5 ? i : i + 1;
@@ -228,6 +238,7 @@ function World() {
       <ShadowGate />
       <FrameGate />
       <Pause />
+      <FlowSnap />
     </Sliced>
   );
 }
@@ -245,7 +256,7 @@ function Hold() {
 /** Whether rendering is held: by the warm-up, or because the story is out of sight. */
 const loop = { warming: true, hidden: false };
 /** The story draws nothing while it warms up or is out of sight (the phone Pacer's hold). */
-const storyPaused = () => loop.hidden || loop.warming || store.after > 0.02 || store.g >= CHAPTERS.length - 0.01;
+const storyPaused = () => loop.hidden || loop.warming || store.after > 0.02 || store.g >= CHAPTERS.length - 0.01 || (flow.on && !flow.live);
 
 /**
  * Mounted last inside the Suspense, once every model exists. Compiles every shader in the story
@@ -496,6 +507,25 @@ function ready() {
   readySent = true;
   setSceneReady(true);
   markSceneReady();
+}
+
+/** The flowing phone story copies a window's last picture before the canvas moves on (lib/flow.ts snap):
+ *  the picture is drawn again here, in the same task, since the canvas keeps no buffer once shown. */
+function FlowSnap() {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    flow.snap = () => {
+      if (loop.warming) return null;
+      gl.render(scene, camera);
+      return gl.domElement;
+    };
+    return () => {
+      flow.snap = null;
+    };
+  }, [gl, scene, camera]);
+  return null;
 }
 
 /** Stops rendering while the story is out of sight: scrolled past its end, or the canvas faded out. */

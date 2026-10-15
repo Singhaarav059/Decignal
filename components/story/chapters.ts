@@ -1,6 +1,7 @@
 import { CH, CHAPTERS, INDUSTRY_TONE, gToProgress, industryF, localIn, store } from "@/lib/story";
 import type { Tone } from "@/lib/tone";
 import { jumpTo } from "@/lib/jump";
+import { flowSeek } from "@/lib/flow";
 
 /**
  * Chapter accent: the colour of what each chapter is about (critic §2, S14). Red only where the
@@ -14,6 +15,7 @@ export const industryAt = (g = store.g) => Math.round(industryF(localIn(CH.indus
 
 /** Scrolls to the point where a chapter has settled, before it starts handing over to the next. */
 export function goToChapter(i: number) {
+  if (flowSeek(i, null)) return;
   const el = document.getElementById("story");
   if (!el) return;
   const start = el.getBoundingClientRect().top + window.scrollY;
@@ -24,6 +26,7 @@ export function goToChapter(i: number) {
 
 /** Scrolls to local progress `local` inside chapter i (a story moment, e.g. one industry's hold). */
 export function goToStory(i: number, local: number) {
+  if (flowSeek(i, local)) return;
   const el = document.getElementById("story");
   if (!el) return;
   const start = el.getBoundingClientRect().top + window.scrollY;

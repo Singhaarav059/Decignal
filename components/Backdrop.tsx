@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { SKY_KEYS, bgAt, skyWeights } from "@/lib/scene";
 import { store, subscribe } from "@/lib/story";
+import { flow, onSky, skyG } from "@/lib/flow";
 
 const rgb = (g: number) => `rgb(${bgAt(g).join(" ")})`;
 
@@ -31,8 +32,14 @@ export function Backdrop() {
         f.style.visibility = o > 0 ? "visible" : "hidden";
       }
     };
-    paint(store.g);
-    return subscribe(paint);
+    // The flowing phone story paints the sky from its own blended position (lib/flow.ts setSky).
+    paint(flow.on ? skyG() : store.g);
+    const offStory = subscribe((g) => !flow.on && paint(g));
+    const offSky = onSky((g) => flow.on && paint(g));
+    return () => {
+      offStory();
+      offSky();
+    };
   }, []);
   const start = skyWeights(0);
   return (

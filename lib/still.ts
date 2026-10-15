@@ -6,6 +6,8 @@
 // story has scrolled away. The site has no SMIL: its clock could not be paused (resumed after a long
 // pause, Chrome replayed every missed loop at once and froze the page), so every loop is CSS.
 
+import { storyTrack } from "./flow";
+
 /** The blocks watched: each section's top-level parts (a tall section holds several), and the footer's; and
  *  the looping drawings themselves, as one block can be several screens tall (the statement's head and
  *  its bento grid: at the head, the bento's charts below the fold kept restyling every frame). */
@@ -33,7 +35,7 @@ export function startStill() {
   const watched = new Set<Element>();
   const scan = () => {
     const found = [...document.querySelectorAll(SCOPES)];
-    const story = document.getElementById("story");
+    const story = storyTrack();
     if (story) found.push(story);
     for (const el of found) {
       if (watched.has(el)) continue;

@@ -9,6 +9,7 @@ import { storyCut, storyTo } from "@/lib/pace";
 import { jumpTo, onJumpCut, setLenis } from "@/lib/jump";
 import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
+import { flowMode, onFlowMode } from "@/lib/flow";
 import { dropEmptyRafLoops } from "@/lib/idle-raf";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -75,32 +76,55 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
     }
     setLenis(null);
 
-    // The story's track: its scroll position drives the story (g) on every screen.
-    const storyEl = document.getElementById("story");
-    // A jump that moves the page at once lands the story there too, without easing in.
-    const offCut = storyEl ? onJumpCut(() => storyCut()) : () => {};
-    const st = storyEl
-      ? ScrollTrigger.create({
-          trigger: storyEl,
-          start: "top top",
-          end: "bottom bottom",
-          onUpdate: (self) => storyTo(progressToG(self.progress)),
-          onRefresh: (self) => {
-            storyCut(progressToG(self.progress));
-          },
-        })
-      : null;
-    // The page below sliding over the finished story: the closing layer drifts up with it (finalExit).
-    const after = storyEl
-      ? ScrollTrigger.create({
-          trigger: storyEl,
-          start: "bottom bottom",
-          end: "bottom top",
-          onUpdate: (self) => setAfter(self.progress),
-          onRefresh: (self) => setAfter(self.progress),
-        })
-      : null;
-
+    // The story's track: its scroll position drives the story (g) on every screen but an upright phone,
+    // whose flowing story (components/story/PhoneFlow.tsx) sets g from its own sections. Set up again when
+    // the screen turns between the two (the page swaps its story then).
+    let st: ScrollTrigger | null = null;
+    let after: ScrollTrigger | null = null;
+    let offCut = () => {};
+    const storyOff = () => {
+      offCut();
+      st?.kill();
+      after?.kill();
+      st = after = null;
+      offCut = () => {};
+    };
+    const storyOn = () => {
+      storyOff();
+      const storyEl = flowMode() === "phone" ? null : document.getElementById("story");
+      if (!storyEl) return;
+      // A jump that moves the page at once lands the story there too, without easing in.
+      offCut = onJumpCut(() => storyCut());
+      st = ScrollTrigger.create({
+        trigger: storyEl,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => storyTo(progressToG(self.progress)),
+        onRefresh: (self) => {
+          storyCut(progressToG(self.progress));
+        },
+      });
+      // The page below sliding over the finished story: the closing layer drifts up with it (finalExit).
+      after = ScrollTrigger.create({
+        trigger: storyEl,
+        start: "bottom bottom",
+        end: "bottom top",
+        onUpdate: (self) => setAfter(self.progress),
+        onRefresh: (self) => setAfter(self.progress),
+      });
+    };
+    storyOn();
+    let modeTimer = 0;
+    const offMode = onFlowMode(() => {
+      storyOff();
+      setAfter(0);
+      // After React has swapped the story for the new mode.
+      clearTimeout(modeTimer);
+      modeTimer = window.setTimeout(() => {
+        storyOn();
+        ScrollTrigger.refresh();
+      }, 80);
+    });
 
     let px = NaN;
     let py = NaN;
@@ -130,21 +154,24 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
       };
       w.__jump = jumpTo;
       w.__chrome = getChrome;
-      if (st) {
-        w.__storyY = (g: number) => st.start + gToProgress(g) * (st.end - st.start);
-        w.__goto = (g: number) => {
-          const y = st.start + gToProgress(g) * (st.end - st.start);
-          if (lenis) lenis.scrollTo(y, { immediate: true });
-          else window.scrollTo(0, y);
-        };
-      }
+      // Read at call time: the trigger is set up again when the screen turns (none on an upright phone).
+      const track = () => st as ScrollTrigger | null;
+      w.__storyY = (g: number) => {
+        const t = track();
+        return t ? t.start + gToProgress(g) * (t.end - t.start) : 0;
+      };
+      w.__goto = (g: number) => {
+        const y = w.__storyY!(g);
+        if (lenis) lenis.scrollTo(y, { immediate: true });
+        else window.scrollTo(0, y);
+      };
     }
 
     return () => {
       gone = true;
-      offCut();
-      st?.kill();
-      after?.kill();
+      storyOff();
+      offMode();
+      clearTimeout(modeTimer);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       document.documentElement.removeEventListener("pointerleave", onLeave);

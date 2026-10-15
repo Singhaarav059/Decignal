@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
 import { store } from "@/lib/story";
+import { flow } from "@/lib/flow";
 
 type ScreenTagProps = {
   title: string;
@@ -157,6 +158,8 @@ let blocks: DOMRect[] = [];
 let range: Range;
 function readBlocks() {
   blocks = [];
+  // The flowing phone story: the canvas has a window of its own, which no copy overlaps.
+  if (flow.on) return;
   range ??= document.createRange();
   const seen = new Set<Element>();
   document.querySelectorAll<HTMLElement>("[data-ch], [data-ind]").forEach((ch) => {
@@ -194,19 +197,25 @@ const GAP = 13;
 /** The clear margin a label keeps from the canvas's edges: the canvas runs under the rounded panels'
  *  insets, so a label at 8px read as hanging off the panel. */
 const EDGE = 28;
+/** The same margin in a phone's story window, which spans the screen (the page's gutter). */
+const FLOW_EDGE = 14;
 
 /** The label's top-left corner in page pixels for a side of its pin at (x, y); above and below, it
  *  slides along the pin to stay on screen. */
 function place(side: Side, x: number, y: number, e: Entry, size: { width: number }): [number, number] {
   if (side === "right") return [x + GAP, y - snap(e.h / 2)];
   if (side === "left") return [x - GAP - e.w, y - snap(e.h / 2)];
-  const left = x + snap(THREE.MathUtils.clamp(-e.w / 2, EDGE - x, size.width - EDGE - x - e.w));
+  const edge = flow.on ? FLOW_EDGE : EDGE;
+  const left = x + snap(THREE.MathUtils.clamp(-e.w / 2, edge - x, size.width - edge - x - e.w));
   return [left, side === "up" ? y - GAP - e.h : y + GAP];
 }
 
 /** The label at [left, top] would leave the screen, slip under the nav, or sit on the copy. */
 function hits([l, t]: [number, number], e: Entry, size: { width: number; height: number }) {
-  if (t < TOP_SAFE || t + e.h > size.height - EDGE || l < EDGE || l + e.w > size.width - EDGE) return true;
+  // In the flowing phone story the canvas is a window of the page, under no nav and beside no panel.
+  const top = flow.on ? FLOW_EDGE : TOP_SAFE;
+  const edge = flow.on ? FLOW_EDGE : EDGE;
+  if (t < top || t + e.h > size.height - edge || l < edge || l + e.w > size.width - edge) return true;
   return blocks.some((b) => l < b.right + 8 && l + e.w > b.left - 8 && t < b.bottom + 8 && t + e.h > b.top - 8);
 }
 

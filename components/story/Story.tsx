@@ -20,6 +20,8 @@ import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { HeroVideo } from "./HeroVideo";
 import { TONE } from "./chapters";
+import { PhoneFlow } from "./PhoneFlow";
+import { flowMode, onFlowMode } from "@/lib/flow";
 
 /** The eyebrow's two halves: one line on wide screens, two beside the systems on phones. */
 const [EYEBROW_A, EYEBROW_B] = HERO.eyebrow.split(" · ");
@@ -36,9 +38,26 @@ const noop = () => () => {};
  * pauses in the scroll (Scene.tsx), with the hero's film (HeroVideo) showing the world meanwhile.
  */
 function ClientScene() {
-  // False while hydrating (the server's render), true after: both first renders agree.
-  const client = useSyncExternalStore(noop, () => true, () => false);
+  // False while hydrating (the server's render), true after: both first renders agree. Never on an
+  // upright phone, whose story is the flowing one (PhoneFlow) with its own canvas.
+  const client = useSyncExternalStore(noop, () => flowMode() !== "phone", () => false);
   return client ? <Scene /> : null;
+}
+
+/**
+ * The page's story for the screen in use: the pinned story, or on an upright phone the flowing one
+ * (lib/flow.ts). The server renders both and the CSS shows the right one from the first paint
+ * (html[data-flow], set before it); once hydrated, only that one stays mounted. Turning the phone
+ * swaps them.
+ */
+export function StoryRoot() {
+  const mode = useSyncExternalStore(onFlowMode, flowMode, () => "both" as const);
+  return (
+    <>
+      {mode !== "phone" && <Story />}
+      {mode !== "wide" && <PhoneFlow live={mode === "phone"} />}
+    </>
+  );
 }
 
 // A statement leaves before the next chapter arrives: the gap between them belongs to the object moving.
