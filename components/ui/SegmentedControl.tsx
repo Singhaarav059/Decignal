@@ -71,21 +71,39 @@ export default function SegmentedControl<V extends string>({
         ? active
         : Math.max(0, items.findIndex((it) => !it.disabled));
 
-  const measure = useCallback(() => {
-    const el = target >= 0 ? refs.current[target] : null;
-    setBox((b) => (el ? { x: el.offsetLeft, w: el.offsetWidth, on: true } : b && { ...b, on: false }));
-  }, [target]);
+  // Every item's place, read together and kept: a new target (the explorer's stages change as the page
+  // scrolls) only looks its place up. Reading offsets as each change committed forced a layout mid-scroll.
+  const boxes = useRef<{ x: number; w: number }[] | null>(null);
+  const readAll = useCallback(() => {
+    boxes.current = refs.current.map((el) => (el ? { x: el.offsetLeft, w: el.offsetWidth } : { x: 0, w: 0 }));
+  }, []);
+  const targetRef = useRef(target);
+  const place = useCallback(() => {
+    const t = targetRef.current;
+    const at = t >= 0 && refs.current[t] ? boxes.current?.[t] : undefined;
+    setBox((b) => (at ? (b && b.on && b.x === at.x && b.w === at.w ? b : { ...at, on: true }) : b && { ...b, on: false }));
+  }, []);
 
-  useLayoutEffect(measure, [measure, items.length]);
+  useLayoutEffect(() => {
+    targetRef.current = target;
+    if (!boxes.current || boxes.current.length !== items.length) readAll();
+    place();
+  }, [target, items.length, readAll, place]);
 
-  // Remeasure when the control or its labels change size (web fonts, viewport).
+  // Remeasure when the control or its labels change size (web fonts, viewport, new labels). The observer reports
+  // after layout, so its reads cost nothing extra.
   useLayoutEffect(() => {
     const el = root.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => measure());
+    const ro = new ResizeObserver(() => {
+      readAll();
+      place();
+    });
     ro.observe(el);
+    // Each item too: a label that changes width moves the pill's place without resizing the control.
+    refs.current.forEach((item) => item && ro.observe(item));
     return () => ro.disconnect();
-  }, [measure]);
+  }, [readAll, place, items.length]);
 
   // The first placement jumps; later moves glide.
   useLayoutEffect(() => {
