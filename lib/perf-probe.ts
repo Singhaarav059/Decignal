@@ -29,6 +29,8 @@ const CONFIGS: Config[] = [
   { name: "Shadows off", css: NO_SHADOWS },
   { name: "3D off", off3d: true, css: HIDE_3D },
   { name: "All off", off3d: true, css: HIDE_3D + NO_EFFECTS },
+  // The first row can still carry load work; this one, after everything has settled, is the true "as is".
+  { name: "Normal again" },
 ];
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -68,6 +70,24 @@ function drew(before: Map<string, GlTally>, ms: number) {
     );
   }
   return out.join(", ") || "no 3D drawn";
+}
+
+/** Waits until the page draws steadily again (8 frames in a row under 25 ms), at most `max` ms, and says
+ *  how long that took. A config's CSS change re-styles and re-rasters the whole page, and the first
+ *  place measured after it read as lag (the hero's rest at 3-13 fps) though it was only that catch-up. */
+function settle(max = 5000) {
+  return new Promise<number>((done) => {
+    const t0 = performance.now();
+    let last = t0;
+    let run = 0;
+    const f = (t: number) => {
+      run = t - last < 25 ? run + 1 : 0;
+      last = t;
+      if (run >= 8 || t - t0 > max) done(Math.round(t - t0));
+      else requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  });
 }
 
 const fps = (d: number[]) => (d.length ? Math.round(1000 / (d.reduce((a, b) => a + b, 0) / d.length)) : 0);
@@ -149,7 +169,7 @@ export function startProbe(log: ProbeLog) {
   box.setAttribute("style", "position:fixed;left:8px;right:8px;top:72px;z-index:2147483647;font:11px/1.35 ui-monospace,Menlo,monospace;color:#fff;background:rgb(0 0 0/.85);border-radius:12px;padding:10px;pointer-events:auto;max-height:72vh;overflow:auto;white-space:pre-wrap;word-break:break-word");
   const meterEl = document.createElement("div");
   const line = document.createElement("div");
-  line.textContent = "Wait for the page to settle, then Run test: about 70 seconds, keep the phone still and the screen on";
+  line.textContent = "Run test: about 2 minutes, keep the phone still and the screen on";
   const out = document.createElement("div");
   const bar = document.createElement("div");
   bar.setAttribute("style", "display:flex;gap:8px;margin-top:8px");
@@ -199,11 +219,20 @@ export function startProbe(log: ProbeLog) {
     // Snapping and the chapter guard step aside, as for a jump.
     html.dataset.jump = "probe";
     const quality = canvasQuality();
+    // One unmeasured pass over the places first: the 3D at each is built and its shaders compiled
+    // before anything is timed (the first Normal row had carried that load work).
+    for (const [name, y] of places()) {
+      line.textContent = `warming up: ${name}…`;
+      window.scrollTo({ top: y, behavior: "instant" });
+      await wait(1500);
+      await settle();
+    }
     window.scrollTo({ top: 0, behavior: "instant" });
     await wait(1200);
+    await settle();
     const i0 = performance.now();
     const idle = fps(await frames(1500));
-    const head = `${device(log)}\nidle at top ${idle} fps (${work(log, i0, performance.now())} ms/s)\nper place rest/move fps, then main-thread ms per second:`;
+    const head = `${device(log)}\nidle at top ${idle} fps (${work(log, i0, performance.now())} ms/s)\nper place rest/move fps (the page's own frame rate, not the 3D's draws), ms the page took to settle after the config's change, then main-thread ms per second in long frames:`;
     const rows: string[] = [];
     const draws: string[] = [];
     try {
@@ -213,23 +242,26 @@ export function startProbe(log: ProbeLog) {
         probe.off3d = !!cfg.off3d;
         probe.dprSetters.forEach((set) => set(cfg.dpr ?? quality.dpr));
         const cells: string[] = [];
+        // Settled after the CSS change before anything is timed; the wait itself is reported.
+        const calm = await settle();
         const a = performance.now();
         for (const [name, y] of places()) {
           line.textContent = `testing ${c + 1}/${CONFIGS.length} ${cfg.name}: ${name}… keep the phone still`;
           window.scrollTo({ top: y, behavior: "instant" });
           // Rest is measured once the page and the scene have settled.
           await wait(900);
+          await settle();
           const rest = await frames(1200);
           const before = snap();
           const m0 = performance.now();
           const move = await frames(1500, y);
           cells.push(`${name} ${fps(rest)}/${fps(move)}`);
           // The 3D's share of a moving second, for the configs that draw it.
-          if (!cfg.off3d && !cfg.css) draws.push(`  ${cfg.name} ${name} moving: ${drew(before, performance.now() - m0)}`);
+          if (!cfg.off3d && !cfg.css && !cfg.dpr) draws.push(`  ${cfg.name} ${name} moving: ${drew(before, performance.now() - m0)}`);
         }
         // Long-frame entries arrive a little after their frame.
         await wait(150);
-        rows.push(`${cfg.name.padEnd(11)} ${cells.join(" · ")} | ${work(log, a, performance.now())}`);
+        rows.push(`${cfg.name.padEnd(12)} ${cells.join(" · ")} | settle ${calm} | ${work(log, a, performance.now())}`);
         show(`${head}\n${rows.join("\n")}${draws.length ? `\n3D per moving second (renders, ms in render(), per render: draw calls, triangles, density):\n${draws.join("\n")}` : ""}`);
       }
     } finally {
