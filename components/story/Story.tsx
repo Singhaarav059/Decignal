@@ -200,7 +200,7 @@ export function Story() {
           </div>
           <div className="hero-meta intro-fade" data-frame>
             <p className="t-small hero-meta-text">
-              {HERO.card} <span className="hero-caption">{HERO.caption}</span>
+              <span className="hero-offer">{HERO.card}</span> <span className="hero-caption">{HERO.caption}</span>
             </p>
             <span className="hero-cue t-label" aria-hidden>
               <span className="story-cue-mouse">

@@ -768,7 +768,7 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 /* The glass layer: smoked slate glass over the functions, their colours frosted through it, its print white. */
 .phone-hand-card[data-glass] {
   background-color: rgb(65 114 143 / 0.62);
-  background-image: var(--lg-grain-strong);
+ 
   -webkit-backdrop-filter: blur(7px) saturate(1.25);
   backdrop-filter: blur(7px) saturate(1.25);
   box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.45), inset 0 0 0 0.75px rgb(255 255 255 / 0.22), inset 0 0 22px -8px rgb(255 255 255 / 0.35), -10px 2px 18px -12px rgb(15 18 23 / 0.5), 0 16px 28px -18px rgb(33 63 83 / 0.6);
@@ -940,12 +940,20 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
   .hero-aside, .hero-meta { position: absolute; bottom: var(--card-b); display: grid; pointer-events: auto; text-align: left; transition: opacity var(--dur-4) var(--ease); }
   /* Narrow corners leave the middle third to the world, so it can sit large on the centre line. */
   .hero-aside { left: var(--edge); width: min(310px, 24vw); user-select: text; }
-  .hero-meta { right: var(--edge); width: min(210px, 16vw); justify-items: end; text-align: right; }
+  .hero-meta { right: var(--edge); width: min(250px, 19vw); justify-items: end; text-align: right; }
   .hero-lede { --d: 520ms; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
   .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 20px; --d: 620ms; }
   .hero-link { margin-top: 0; font-size: var(--fs-body); }
   .hero-meta { --d: 700ms; }
-  .hero-meta-text { color: var(--color-ink-soft); text-wrap: balance; }
+  /* The offer and its caption on a small frosted white glass card, so they read over the coloured field. */
+  .hero-meta-text {
+    display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--radius-md); text-wrap: balance;
+    background-color: rgb(255 255 255 / 0.72);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.7), 0 10px 24px -16px rgb(15 18 23 / 0.35);
+  }
+  .hero-offer { color: var(--color-ink); font-weight: 600; }
+  .hero-offer::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; vertical-align: 0.12em; background: var(--color-cobalt-ink); }
   .hero-cue { display: inline-flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--color-ink-2); }
   /* An opened system's panel stands at the right edge: the corners step back with the h1. */
   .story-back[data-dim] :is(.hero-aside, .hero-meta) { opacity: 0.12; pointer-events: none; }
@@ -960,4 +968,4 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 }
 
 /* The hero's illustrative caption under the offer line (handoff home.hero visual caption). */
-.hero-caption { display: block; margin-top: 4px; color: var(--color-ink-soft); }
+.hero-caption { display: block; padding-top: 8px; border-top: 1px solid var(--color-line); color: var(--color-ink-2); font-weight: 500; }
