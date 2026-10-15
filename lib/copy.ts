@@ -831,7 +831,6 @@ export const ABOUT = {
   second: "Our ambition is to help businesses put AI to work across departments, with each application grounded in how the company operates.",
   cta: CTA.primary,
   founder: PLACEHOLDER.founder,
-  founderLabel: "Founder",
   linkedin: "LinkedIn profile",
 } as const;
 

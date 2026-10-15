@@ -442,7 +442,6 @@ function About() {
                   <Image src={founderPhoto} alt={f.photoAlt} sizes="180px" />
                 </div>
                 <div className="about-founder-id">
-                  <p className="bento-k t-label">{ABOUT.founderLabel}</p>
                   <p className="t-subtitle about-founder-name">{f.name}</p>
                   <p className="t-small about-founder-role">{f.role}</p>
                 </div>
