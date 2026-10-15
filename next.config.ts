@@ -41,6 +41,8 @@ const security = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Zoho Catalyst doesn't serve /_next/image, so photos load straight from /_next/static/media.
+  images: { unoptimized: true },
   async headers() {
     return [
       { source: "/:path*", headers: security },
