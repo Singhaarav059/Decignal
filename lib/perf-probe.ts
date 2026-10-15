@@ -6,6 +6,7 @@
 // to style and layout on the main thread. It also says whether the 3D runs at all, and why not: the
 // errors and lost contexts since the page loaded. The result is text to copy or screenshot.
 import { probe, type GlTally } from "./pace";
+import { jumpTo } from "./jump";
 import { gToProgress } from "./story";
 import { canvasQuality } from "./device";
 import { deviceTier } from "./tier";
@@ -216,18 +217,20 @@ export function startProbe(log: ProbeLog) {
     run.disabled = true;
     const style = document.createElement("style");
     document.head.appendChild(style);
-    // Snapping and the chapter guard step aside, as for a jump.
+    // Snapping and the chapter guard step aside, as for a jump. Places are reached as an immediate jump: a
+    // plain scrollTo left the touch story easing toward the new place at its top speed for seconds, and
+    // that catch-up ran during the next place's measurement.
     html.dataset.jump = "probe";
     const quality = canvasQuality();
     // One unmeasured pass over the places first: the 3D at each is built and its shaders compiled
     // before anything is timed (the first Normal row had carried that load work).
     for (const [name, y] of places()) {
       line.textContent = `warming up: ${name}…`;
-      window.scrollTo({ top: y, behavior: "instant" });
+      await jumpTo(y, { immediate: true, focus: false });
       await wait(1500);
       await settle();
     }
-    window.scrollTo({ top: 0, behavior: "instant" });
+    await jumpTo(0, { immediate: true, focus: false });
     await wait(1200);
     await settle();
     const i0 = performance.now();
@@ -247,7 +250,7 @@ export function startProbe(log: ProbeLog) {
         const a = performance.now();
         for (const [name, y] of places()) {
           line.textContent = `testing ${c + 1}/${CONFIGS.length} ${cfg.name}: ${name}… keep the phone still`;
-          window.scrollTo({ top: y, behavior: "instant" });
+          await jumpTo(y, { immediate: true, focus: false });
           // Rest is measured once the page and the scene have settled.
           await wait(900);
           await settle();
