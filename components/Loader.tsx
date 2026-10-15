@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { hashOffset, holdVeil, landOnHash, lockScroll, token } from "@/lib/jump";
-import { filmReady, whenSceneReady } from "@/lib/chrome";
+import { whenSceneReady } from "@/lib/chrome";
 import { LOADER } from "@/lib/copy";
 import { Logo } from "./ui/Logo";
 
@@ -127,9 +127,9 @@ export function Loader() {
       bump(60);
       loadedAt = performance.now();
     });
-    // The hero's film (HeroVideo) stands in for the world, so its first frame is enough: the live
-    // scene starts only after the curtain lifts.
-    const scene = Promise.race([whenSceneReady(), filmReady]).then(() => bump(100));
+    // The scene starts under the curtain, which covers its heaviest seconds; past the cap the hero's
+    // film (HeroVideo) shows the world until the scene takes over.
+    const scene = whenSceneReady().then(() => bump(100));
 
     let lifted = false;
     const go = async () => {

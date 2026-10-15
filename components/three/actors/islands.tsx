@@ -280,10 +280,12 @@ function SystemIsland({ s }: { s: number }) {
           <Bake>
             <Model />
           </Bake>
-          <group position-y={TAG_Y[s]}>
-            <IslandTag s={s} tone={tone} />
-          </group>
         </Hover>
+        {/* The pin stands still while its model lifts and rocks: riding the knock, the dot swung out
+            from under the pointer, the island dropped, the dot swung back and knocked it again. */}
+        <group position-y={TAG_Y[s]}>
+          <IslandTag s={s} tone={tone} />
+        </group>
       </Island>
       <mesh
         ref={(m) => {

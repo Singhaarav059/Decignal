@@ -122,12 +122,6 @@ if (typeof window !== "undefined")
     document.documentElement.classList.add("scene-ready", "scene-live");
   });
 
-let filmShown: () => void = () => {};
-/** Resolves once the hero's film (components/story/HeroVideo.tsx) has a frame to show: the loader
- *  lifts on it rather than on the scene, which then starts after the curtain. */
-export const filmReady = new Promise<void>((r) => (filmShown = r));
-export const markFilmReady = () => filmShown();
-
 /** Resolves once the scene has drawn, or at once if it already has. */
 export function whenSceneReady() {
   return new Promise<void>((resolve) => {

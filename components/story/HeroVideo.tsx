@@ -2,14 +2,14 @@
 
 // The hero's film (lib/hero-video.ts): the world rising in and living, played the moment the page shows,
 // placed by the same framing the live camera uses (lib/framing.ts) so each island sits where the live
-// one will. The live scene starts at the first pause (Story) and, once warmed up, fades in over the
+// one will. The live scene warms up meanwhile (its actors and uploads at pauses) and then fades in over the
 // film from its very frame; the film then goes. Scrolling on before that, the film fades out and the
 // world arrives as it always did.
 import { useEffect, useRef } from "react";
 import { store, subscribe } from "@/lib/story";
 import { filmPlan, filmTransform, hero, heroFraming } from "@/lib/hero-video";
 import { mediaWidth } from "@/lib/device";
-import { markFilmReady, whenSceneReady } from "@/lib/chrome";
+import { whenSceneReady } from "@/lib/chrome";
 
 /** The live canvas's fade over the film (app/styles/story.css html.hero-film .intro-stage), ms. */
 const HANDOFF = 450;
@@ -94,7 +94,6 @@ export function HeroVideo() {
     const onData = () => {
       if (!alive || hero.state !== "on") return;
       v.setAttribute("data-on", "");
-      markFilmReady();
       play();
     };
     // Plays once the page is showing (the loader lifted: html.ready), so the islands rise in view.

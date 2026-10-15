@@ -332,6 +332,8 @@ export default function ApplicationScene(props: Props) {
     <Canvas dpr={dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {
+        // As the story (Scene.tsx): no synchronous wait on each program's link in production.
+        gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 0.95;
       }}>

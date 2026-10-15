@@ -29,7 +29,7 @@ type ScreenTagProps = {
   onHover?: (on: boolean) => void;
 };
 
-type Els = { root: HTMLDivElement; dot: HTMLSpanElement; stem: HTMLSpanElement; card: HTMLDivElement; title: HTMLSpanElement; value: HTMLSpanElement };
+type Els = { root: HTMLDivElement; dot: HTMLSpanElement; pad: HTMLSpanElement; stem: HTMLSpanElement; card: HTMLDivElement; title: HTMLSpanElement; value: HTMLSpanElement };
 
 type Entry = {
   anchor: React.RefObject<THREE.Group | null>;
@@ -79,6 +79,12 @@ const CARD_CSS =
   "font-family:var(--font-sans);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;transform-origin:50% 100%;opacity:0;pointer-events:none";
 const DOT_CSS =
   "position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 3px var(--color-line-strong);pointer-events:none";
+/** The dot's hit area: 10px was a target the pointer slid off; this one is a finger's or a cursor's size. */
+const PAD = 32;
+const PAD_CSS = `position:absolute;left:${-PAD / 2}px;top:${-PAD / 2}px;width:${PAD}px;height:${PAD}px;border-radius:50%;pointer-events:none`;
+/** Leaving the dot or the label lets go after this long (ms): a pointer crossing the gap between them,
+ *  or grazing the edge, does not drop the island and lift it again. */
+const LEAVE = 120;
 const STEM_CSS = "position:absolute;left:0;bottom:5px;width:1px;height:8px;background:var(--color-line-strong);opacity:0";
 
 /** One layer of tags per canvas, over the canvas and under the story copy. */
@@ -106,6 +112,8 @@ function build(layer: HTMLDivElement, entry: () => Entry | null) {
   dot.style.cssText = DOT_CSS;
   const stem = document.createElement("span");
   stem.style.cssText = STEM_CSS;
+  const pad = document.createElement("span");
+  pad.style.cssText = PAD_CSS;
   const card = document.createElement("div");
   card.style.cssText = CARD_CSS;
   const head = document.createElement("span");
@@ -117,15 +125,23 @@ function build(layer: HTMLDivElement, entry: () => Entry | null) {
   const value = document.createElement("span");
   value.style.cssText = "padding-left:12px;font-size:12px;line-height:15px;font-weight:500;color:var(--color-ink-soft)";
   card.append(head, value);
-  root.append(stem, dot, card);
+  root.append(stem, dot, pad, card);
   layer.appendChild(root);
   // Pointing at the dot or the label counts as pointing at the object.
-  const hover = (on: boolean) => () => entry()?.props.current.onHover?.(on);
-  for (const el of [dot, card]) {
-    el.addEventListener("pointerenter", hover(true));
-    el.addEventListener("pointerleave", hover(false));
+  let leave = 0;
+  const enter = () => {
+    clearTimeout(leave);
+    entry()?.props.current.onHover?.(true);
+  };
+  const out = () => {
+    clearTimeout(leave);
+    leave = window.setTimeout(() => entry()?.props.current.onHover?.(false), LEAVE);
+  };
+  for (const el of [pad, card]) {
+    el.addEventListener("pointerenter", enter);
+    el.addEventListener("pointerleave", out);
   }
-  return { root, dot, stem, card, title, value, chip };
+  return { root, dot, pad, stem, card, title, value, chip };
 }
 
 const put = (e: Entry, el: HTMLElement, key: string, prop: string, value: string) => {
@@ -225,7 +241,7 @@ function tick() {
     const P = e.props.current;
     const a = e.anchor.current;
     const { camera, size } = e.get();
-    const { root, dot, stem, card } = e.els;
+    const { root, dot, pad, stem, card } = e.els;
     const show = a && visibleChain(a) ? THREE.MathUtils.clamp(P.show(), 0, 1) : 0;
     e.p = damp(e.p, show, 10, dt);
     if (!a || (e.p < 0.004 && e.k < 0.004 && show === 0)) {
@@ -277,9 +293,9 @@ function tick() {
     put(e, card, "c.tf", "transform", e.k === 1 || reduced ? "none" : `translate3d(${snap(dx * m)}px, ${snap(dy * m)}px, 0) scale(${(0.96 + 0.04 * e.k).toFixed(4)})`);
     const takes = !!P.onHover && e.p > 0.5;
     put(e, card, "c.pe", "pointer-events", takes && e.k > 0.5 ? "auto" : "none");
-    put(e, dot, "d.pe", "pointer-events", takes && rest === "dot" ? "auto" : "none");
+    put(e, pad, "p.pe", "pointer-events", takes && rest === "dot" && dotO > 0.5 ? "auto" : "none");
     put(e, card, "c.cur", "cursor", takes ? "pointer" : "");
-    put(e, dot, "d.cur", "cursor", takes ? "pointer" : "");
+    put(e, pad, "p.cur", "cursor", takes ? "pointer" : "");
   }
 }
 

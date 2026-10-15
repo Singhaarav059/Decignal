@@ -9,6 +9,9 @@ import * as THREE from "three";
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { KEY_POS } from "./Studio";
+import { isTouch, resting } from "@/lib/pace";
+import { oweDraw } from "./FrameGate";
+import { store } from "@/lib/story";
 
 const SLOT = 24;
 
@@ -109,15 +112,24 @@ export function ShadowGate() {
     sm.autoUpdate = false;
     sm.needsUpdate = true;
     gate.n = -1;
+    // A touch screen mid-swipe redraws the map every other frame: the whole scene a second time on each
+    // frame was the phone's largest share of a scrolling frame, and a shadow a frame behind its caster
+    // is not seen while the world moves under the thumb. At rest, every frame again.
+    const touch = isTouch();
+    let pending = false;
+    let odd = false;
     const before = scene.onBeforeRender;
     scene.onBeforeRender = (...args) => {
       before.apply(scene, args);
       // Only the view itself decides; any other render of the scene (a contact-shadow pass) reuses the map.
       if (args[2] !== camera) return;
-      if (worldMoved(scene, gate)) {
+      if (worldMoved(scene, gate)) pending = true;
+      odd = !odd;
+      if (pending && (!touch || odd || resting() || store.g < 0.02)) {
+        pending = false;
         sm.needsUpdate = true;
         gate.floorAt = -1;
-      }
+      } else if (pending) oweDraw(scene);
     };
     const restored = () => {
       gate.n = -1;

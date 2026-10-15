@@ -24,6 +24,7 @@ import { FrameGate, lastDraw } from "./FrameGate";
 import { Governor, useGovernedDpr } from "./Governor";
 import { heroHandoff } from "@/lib/hero-video";
 import { Sliced, drained, yieldTask } from "./slices";
+import { whenStill } from "@/lib/idle";
 import { DX, DY, DZ, FOV, box, cardSeen, frameShot, framed, heightsAt, measurePage, measurePanel, readCardHeights, setHeldNow, setTall, type Framed } from "@/lib/framing";
 
 
@@ -169,6 +170,24 @@ function Atmosphere() {
  *  part built in a single synchronous pass); each is now its own low-priority render, which React
  *  splits into short slices, and its own commit. Nothing draws until all are in and warm. */
 const ACTORS = [Islands, SignalCrate, ChartCrates, Transfer, Cards, IndustriesRoad, FinalMark, ChartMarks];
+/** The longest an actor waits for a pause in the scroll before it builds anyway (ms). */
+const MOUNT_LATEST = 3000;
+/** The warm-up's uploads wait for the scroll to rest this long (ms), and at most WARM_WAIT each. */
+const WARM_QUIET = 400;
+const WARM_WAIT = 1500;
+
+/**
+ * Resolves once a touch screen's scroll has rested WARM_QUIET (or after WARM_WAIT). The uploads draw
+ * each piece and its shadow map: on a phone that GPU work shares one process with the page's own
+ * frames, and a swipe in the first seconds stuttered under it.
+ */
+async function scrollRest() {
+  if (!isTouch()) return;
+  const t0 = performance.now();
+  while (performance.now() - store.scrollAt < WARM_QUIET && performance.now() - t0 < WARM_WAIT) {
+    await new Promise((r) => window.setTimeout(r, WARM_QUIET - (performance.now() - store.scrollAt) + 10));
+  }
+}
 
 function World() {
   const [n, setN] = useState(0);
@@ -181,7 +200,9 @@ function World() {
     if (n > 0) void requestPrograms(gl, scene, camera);
     if (n > ACTORS.length + 1) return;
     // A transition: React renders it in its own short tasks, so the page gets its turn between them.
-    startTransition(() => setN(n + 1));
+    // Each at a pause in the scroll (never later than MOUNT_LATEST): building an actor mid-swipe was a
+    // phone's heaviest moment of the first seconds.
+    return whenStill(() => startTransition(() => setN(n + 1)), MOUNT_LATEST);
   }, [n, gl, scene, camera]);
   return (
     <Sliced value={true}>
@@ -391,6 +412,7 @@ async function upload(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE
     return t;
   };
   for (let k = 0; k < roots.length; ) {
+    await scrollRest();
     await yieldTask();
     if (!live()) return;
     const end = performance.now() + 8;
@@ -546,6 +568,9 @@ function World3D() {
       style={{ pointerEvents: "none" }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl, scene, camera, clock }) => {
+        // three checks each program's link status and log as it is first used: a synchronous wait on
+        // the GPU that undid the parallel compile (a tenth of a second of a phone's first swipe).
+        gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
         if (process.env.NODE_ENV !== "production") Object.assign(window, { __three: { gl, scene, camera, clock }, __story: store });
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 0.95;

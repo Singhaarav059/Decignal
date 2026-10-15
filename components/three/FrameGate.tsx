@@ -143,6 +143,10 @@ function changed(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Came
   return diff;
 }
 
+/** Scenes owed one more draw though nothing in the picture moved (a shadow map left a frame behind). */
+const owed = new WeakSet<THREE.Scene>();
+export const oweDraw = (scene: THREE.Scene) => void owed.add(scene);
+
 let drawnAt = 0;
 /** performance.now() of the story's last draw: the touch Pacer slows its updates once the world rests. */
 export const lastDraw = () => drawnAt;
@@ -171,7 +175,8 @@ export function FrameGate({ drawn }: { drawn?: (t: number) => void } = {}) {
     if (camera.parent === null && camera.matrixWorldAutoUpdate) camera.updateMatrixWorld();
     const diff = changed(gl, scene, camera, seen.current);
     if (settle.current > 0) settle.current--;
-    else if (!diff) return;
+    else if (!diff && !owed.has(scene)) return;
+    owed.delete(scene);
     const t = performance.now();
     if (drawn) drawn(t);
     else drawnAt = t;

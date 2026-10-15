@@ -1,7 +1,7 @@
 // The hero's video stand-in (components/story/HeroVideo.tsx; rendered by scripts/render-hero.mjs). As
 // on morphowater.com and studiomirage.io, the first screen plays a recorded film of the world the moment
-// it paints, on any device; here the live 3D then starts at the first pause and takes over on the very
-// frame the film shows: its clock set to the film's, its islands as far risen. Shared with the scene,
+// it paints, on any device; here the live 3D, warming up meanwhile (its actors and uploads at pauses in
+// the scroll), takes over on the very frame the film shows: its clock set to the film's, its islands as far risen. Shared with the scene,
 // so nothing here loads three.js.
 import shapes from "./hero-shapes.json";
 import { CH } from "./story";

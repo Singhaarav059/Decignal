@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { CH, EXIT_DRIFT, TOTAL_LEN, blendAt, clamp01, finalExit, onSelect, smoothstep, store, subscribe, weight } from "@/lib/story";
 import { CTA, FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
@@ -19,8 +19,6 @@ import { LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { HeroVideo } from "./HeroVideo";
-import { filmPlan } from "@/lib/hero-video";
-import { whenStill } from "@/lib/idle";
 import { TONE } from "./chapters";
 
 /** The eyebrow's two halves: one line on wide screens, two beside the systems on phones. */
@@ -28,43 +26,19 @@ const [EYEBROW_A, EYEBROW_B] = HERO.eyebrow.split(" · ");
 
 const Scene = dynamic(() => import("../three/Scene"), { ssr: false });
 
-/** The longest the 3D waits for a pause once the page shows (ms): a reader scrolling on and on still gets it. */
-const BOOT_LATEST = 8000;
-
-/**
- * The 3D world, started when it costs the reader nothing. With the hero's film showing (HeroVideo) it
- * waits for the page to show and then for the first pause: its download, build and shader work (the
- * longest tasks of a phone's load) no longer land on the first paint or a first swipe. Without a film
- * it starts at once, as the hero has nothing else to show.
- */
 const noop = () => () => {};
 
-function LazyScene() {
+/**
+ * The 3D world, started as soon as the page has hydrated. Started at the first pause instead, it began
+ * just as a reader's thumb did: the canvas, its WebGL context and the first render of the world landed
+ * on the first swipe. Now that start falls under the loader on a first visit (which waits for the scene
+ * again) and before a thumb moves on a later one; the heavy rest (each actor, the uploads) waits for
+ * pauses in the scroll (Scene.tsx), with the hero's film (HeroVideo) showing the world meanwhile.
+ */
+function ClientScene() {
   // False while hydrating (the server's render), true after: both first renders agree.
   const client = useSyncExternalStore(noop, () => true, () => false);
-  const [started, setStarted] = useState(false);
-  const boot = client && (started || !filmPlan());
-  useEffect(() => {
-    if (!client || boot) return;
-    const html = document.documentElement;
-    let cancel = () => {};
-    const go = () => (cancel = whenStill(() => setStarted(true), BOOT_LATEST));
-    if (html.classList.contains("ready")) {
-      go();
-      return () => cancel();
-    }
-    const watch = new MutationObserver(() => {
-      if (!html.classList.contains("ready")) return;
-      watch.disconnect();
-      go();
-    });
-    watch.observe(html, { attributes: true, attributeFilter: ["class"] });
-    return () => {
-      watch.disconnect();
-      cancel();
-    };
-  }, [client, boot]);
-  return boot ? <Scene /> : null;
+  return client ? <Scene /> : null;
 }
 
 // A statement leaves before the next chapter arrives: the gap between them belongs to the object moving.
@@ -243,7 +217,7 @@ export function Story() {
         <HeroVideo />
         <div className="intro-stage size-full">
           <SceneBoundary story label="Drawing of the story's scene: six business systems and one stock transfer">
-            <LazyScene />
+            <ClientScene />
           </SceneBoundary>
         </div>
       </div>
