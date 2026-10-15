@@ -20,12 +20,13 @@ type TroikaText = THREE.Mesh & { fillOpacity: number };
 const arrivedY = (d: number) => unitsY(ARRIVED[d]);
 /** The day the rest arrives (where the line steps up). */
 const REST_DAY = ARRIVED.findIndex((u) => u >= PROMISED_UNITS);
-/** A column's figure sits on its top, or just over the delivery line where the line, drawn in front of
- *  the columns (so it reads about Z/2 lower), would cross the figure. */
-const figureY = (d: number, n: number) => {
-  const top = Math.min(n, NEED[d] / CRATE_UNITS) * STEP_Y + 0.08;
-  const line = arrivedY(d) - Z * 0.5;
-  return line > top - 0.05 && line < top + 0.3 ? line + 0.1 : top;
+/** A column's figure sits on its top, or just over the delivery line or the dashed promise where either,
+ *  drawn in front of the columns (so it reads about Z/2 lower), would cross the figure. */
+const figureY = (d: number, n: number, k: number) => {
+  // Larger figures (phones, short screens) stand a little higher off their column, clear of the line.
+  const top = Math.min(n, NEED[d] / CRATE_UNITS) * STEP_Y + 0.08 * k;
+  const crossing = [arrivedY(d), PROMISED_Y].map((y) => y - Z * 0.5).filter((line) => line > top - 0.05 && line < top + 0.3);
+  return crossing.length ? Math.max(...crossing) + 0.1 : top;
 };
 
 /** Labels stand square to the story's one camera azimuth. */
@@ -37,8 +38,9 @@ const SUPPLY = TINTS.pink;
 const short = (d: number) => NEED[d] > ARRIVED[d];
 const DAY3 = DAY_NAMES.map((n) => n.slice(0, 3).toUpperCase());
 
-/** Top of the narrow-screen legend under the axis: on phones the day names stand taller, so it sits lower. */
-const LEGEND_Y = (k: number, phone: boolean) => (phone ? -0.66 : -0.3) * k;
+/** Top of the narrow-screen legend under the axis: below the day names, which step down to the right, so
+ *  its longest line clears Saturday's; on phones the day names stand taller, so it sits lower still. */
+const LEGEND_Y = (k: number, phone: boolean) => (phone ? -0.66 : -0.62) * k;
 
 /** The original promise, the revised delivery as a stepped line, and the day scale for the problem chapter. */
 export function ChartMarks() {
@@ -127,9 +129,9 @@ export function ChartMarks() {
       <Text {...text} rotation={FACE_CAMERA} color={SUPPLY} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "top" : "middle"} material-depthTest={false} renderOrder={5} position={narrow ? [DAY_X(0) - 0.3, LEGEND_Y(k, phone) - 0.2 * k, Z + 0.15] : [tube.start.x - 0.12, tube.start.y, Z]}>
         {narrow ? `— NOW ${ARRIVED[0]} ${DAY3[0]}` : `NOW ${ARRIVED[0]} ${DAY3[0]}`}
       </Text>
-      {/* Where the rest lands: beside the step, inside the chart. Phones have no room beside Tuesday's
-          figure, so the step line and the legend carry it there. */}
-      {!phone && <Text {...text} rotation={FACE_CAMERA} color={SUPPLY} anchorX="right" anchorY="bottom" position={[tube.riser.x - 0.08, tube.riser.y + 0.06, Z]}>
+      {/* Where the rest lands: just under the top of the step, clear of the dashed promise it meets there.
+          Phones have no room beside the step, so the step line and the legend carry it there. */}
+      {!phone && <Text {...text} rotation={FACE_CAMERA} color={SUPPLY} anchorX="left" anchorY="top" position={[tube.riser.x + 0.08, tube.riser.y - 0.12 * k, Z]}>
         {`+${PROMISED_UNITS - ARRIVED[0]} ${DAY3[REST_DAY]}`}
       </Text>}
       {/* What the orders need by each day, read off the top of every column */}
@@ -143,7 +145,7 @@ export function ChartMarks() {
           userData={{ alpha: short(d) ? 1 : 0.75 }}
           anchorX="center"
           anchorY="bottom"
-          position={[DAY_X(d), figureY(d, n), 0]}
+          position={[DAY_X(d), figureY(d, n, k), 0]}
         >
           {d === 0 && !phone ? `${dayUnits(d)} NEEDED` : String(dayUnits(d))}
         </Text>
@@ -166,9 +168,10 @@ export function ChartMarks() {
           {DAY3[d]}
         </Text>
       ))}
-      {/* The gap the changed promise opens: the order it leaves short, under its days */}
-      <Text {...text} rotation={FACE_CAMERA} fontSize={0.12 * k} color={COLORS.signal} anchorX="left" anchorY="top" material-depthTest={false} renderOrder={5} position={[DAY_X(GAP_DAY) - 0.4, -0.3 * k, Z + 0.15]}>
-        {phone ? `${STORY.short.order} −${gap}` : `${STORY.short.order} SHORT ${gap}`}
+      {/* The gap the changed promise opens: the order it leaves short, centred under its day. The day
+          names step down to the right, so a long line would run into the next one: it takes two. */}
+      <Text {...text} rotation={FACE_CAMERA} fontSize={0.12 * k} color={COLORS.signal} anchorX="center" textAlign="center" anchorY="top" lineHeight={1.3} material-depthTest={false} renderOrder={5} position={[DAY_X(GAP_DAY), -0.3 * k, Z + 0.15]}>
+        {phone ? `${STORY.short.order}\n−${gap}` : `${STORY.short.order}\nSHORT ${gap}`}
       </Text>
     </group>
   );

@@ -192,7 +192,7 @@ export function Story() {
                 {CTA.primary}
                 <Arrow />
               </SectionLink>
-              <SectionLink href={HERO.secondaryHref} className="story-link hero-link">
+              <SectionLink href={HERO.secondaryHref} className="btn btn-ghost">
                 {HERO.secondary}
                 <Arrow />
               </SectionLink>

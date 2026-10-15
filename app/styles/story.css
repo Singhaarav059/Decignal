@@ -958,8 +958,9 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
   .hero-meta { right: var(--edge); width: min(250px, 19vw); justify-items: end; text-align: right; }
   .hero-lede { --d: 520ms; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
   .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 20px; --d: 620ms; }
-  /* The link always sits under the button here: inset by the button's padding, so the two labels share a left edge. */
-  .hero-link { margin-top: 0; padding-left: 20px; font-size: var(--fs-body); }
+  /* The second action is a glass pill under the button: the two boxes and, through the shared padding,
+     the two labels share a left edge. */
+  .hero-actions { flex-direction: column; align-items: flex-start; gap: 10px; }
   .hero-meta { --d: 700ms; }
   /* The offer and its caption on a small frosted white glass card, so they read over the coloured field. */
   .hero-meta-text {
