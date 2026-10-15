@@ -5,6 +5,7 @@
 import { Environment, Lightformer } from "@react-three/drei";
 import { COLORS } from "./palette";
 import { isTouchPhone } from "@/lib/device";
+import { deviceTier } from "@/lib/tier";
 
 export function Studio({ resolution = 1024 }: { resolution?: number }) {
   return (
@@ -32,7 +33,8 @@ export function KeyLight({ extent = 11 }: { extent?: number }) {
   // A phone shows the scene at about a third of desktop size, so a 2048 map gives its shadows the same
   // sharpness per screen pixel that 4096 gives a desktop, at a quarter of the cost per frame. A desktop
   // window that loads narrow keeps 4096: it may be widened, and the map is sized once.
-  const map = isTouchPhone() ? 2048 : 4096;
+  // A weak device (lib/tier.ts) draws it at half that again: its GPU cannot spare the fill.
+  const map = (isTouchPhone() ? 2048 : 4096) / (deviceTier() === "low" ? 2 : 1);
   return (
     <>
     <hemisphereLight args={["#E9EEF6", "#E6E9EE", 0.35]} />

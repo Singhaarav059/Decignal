@@ -8,6 +8,7 @@
 import { probe } from "./pace";
 import { gToProgress } from "./story";
 import { canvasQuality } from "./device";
+import { deviceTier } from "./tier";
 import type { ProbeLog } from "@/components/PerfProbe";
 
 type Config = { name: string; css?: string; off3d?: boolean; dpr?: number };
@@ -103,7 +104,7 @@ function device(log: ProbeLog) {
   const mem = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
   return [
     `${gpu} | ${ua} | DPR ${window.devicePixelRatio} | ${window.innerWidth}x${window.innerHeight} | cores ${navigator.hardwareConcurrency} | mem ${nav.deviceMemory ?? "?"}${mem ? ` | heap ${Math.round(mem.usedJSHeapSize / 1048576)}MB` : ""}`,
-    `3D: ${webgl}, ${fallback ? "FALLBACK drawing shown" : "canvas running"}, canvases ${canvases.join(" ") || "none"}, lost ${log.lost} restored ${log.restored}`,
+    `3D: ${webgl}, tier ${deviceTier()}, ${fallback ? "FALLBACK drawing shown" : "canvas running"}, canvases ${canvases.join(" ") || "none"}, lost ${log.lost} restored ${log.restored}`,
     `errors: ${log.errors.length ? log.errors.join(" || ") : "none"}`,
     `long frames since load: ${log.loaf.length}${log.loaf.length ? `; top: ${topScripts(log)}` : ""}`,
   ].join("\n");

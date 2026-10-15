@@ -21,6 +21,7 @@ import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
 import { ShadowFloor, ShadowGate } from "./Shadows";
 import { FrameGate, lastDraw } from "./FrameGate";
+import { Governor, useGovernedDpr } from "./Governor";
 import { Sliced, drained, yieldTask } from "./slices";
 
 /* ------------------------------------------------------------------ */
@@ -987,13 +988,17 @@ function World3D() {
   const q = useMemo(() => canvasQuality(), []);
   // Touch screens draw on the phone budget (Pacer, lib/pace.ts).
   const paced = useMemo(() => isTouch(), []);
+  // A weak device's density follows its frame time (Governor); a capable one keeps q.dpr.
+  const { dpr, govern } = useGovernedDpr(q.dpr);
+  // Held, so a density change re-renders the canvas and not the whole world inside it.
+  const world = useMemo(() => <World />, []);
   return (
     <Canvas
       frameloop={paced ? "never" : "always"}
       shadows="percentage"
       // Up to 2x with MSAA on every screen (lib/device.ts): smooth edges at a density a phone's GPU
       // can hold at full frame rate.
-      dpr={q.dpr}
+      dpr={dpr}
       // Layout size, not the on-screen rect: the intro scales the stage (1.04) while the canvas mounts,
       // and a measured rect would keep that size after the intro (the framing then ran 4% off).
       resize={{ offsetSize: true }}
@@ -1009,8 +1014,9 @@ function World3D() {
         gl.setClearColor(0x000000, 0);
       }}
     >
-      <World />
+      {world}
       {paced && <Pacer paused={storyPaused} drawnAt={lastDraw} />}
+      {govern && <Governor at={dpr} set={govern} />}
     </Canvas>
   );
 }

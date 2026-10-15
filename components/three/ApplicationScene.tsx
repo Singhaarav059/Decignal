@@ -16,6 +16,8 @@ import { Warm } from "./Warm";
 import { ShadowGate } from "./Shadows";
 import { FrameGate } from "./FrameGate";
 import { canvasQuality } from "@/lib/device";
+import { deviceTier } from "@/lib/tier";
+import { Governor, useGovernedDpr } from "./Governor";
 import { whenStill } from "@/lib/idle";
 
 /** The part of the canvas the page's copy leaves free, as insets in CSS px from each edge. */
@@ -205,13 +207,13 @@ const SETTLED = 0.8;
  * other update: the depth pass draws the whole scene a second time, and a phone's swipe moves the
  * world on every frame. They follow at full rate again as the scroll stops, so no stale shadow stays.
  */
-function Ground({ kind, step, motion, active, phone, touch }: { kind: DemoKind; step: number; motion: Motion; active: boolean; phone: boolean; touch: boolean }) {
+function Ground({ kind, step, motion, active, phone, low, touch }: { kind: DemoKind; step: number; motion: Motion; active: boolean; phone: boolean; low: boolean; touch: boolean }) {
   const scene = useThree((s) => s.scene);
   const gl = useThree((s) => s.gl);
   const group = useRef<THREE.Group>(null);
   const plane = useRef<THREE.MeshBasicMaterial>(null);
   const cam = useRef<THREE.OrthographicCamera>(null);
-  const resolution = phone ? 128 : 512;
+  const resolution = phone ? 128 : low ? 256 : 512;
   const { scale, blur, far, opacity } = CONTACT;
   const parts = useMemo(() => {
     const target = new THREE.WebGLRenderTarget(resolution, resolution);
@@ -315,6 +317,9 @@ function Ground({ kind, step, motion, active, phone, touch }: { kind: DemoKind; 
 export default function ApplicationScene(props: Props) {
   // Up to 2x with MSAA, as the story (lib/device.ts); the shadow maps are sized to the scene's on-screen size.
   const q = useMemo(() => canvasQuality(), []);
+  // A weak device's density follows its frame time, and its shadow maps are half the size (lib/tier.ts).
+  const { dpr, govern } = useGovernedDpr(q.dpr);
+  const low = useMemo(() => deviceTier() === "low", []);
   // While it plays, touch screens draw on the phone budget (Pacer, lib/pace.ts).
   const paced = useMemo(() => isTouch(), []);
   const playing = props.active && !props.still;
@@ -324,7 +329,7 @@ export default function ApplicationScene(props: Props) {
   const mark = useCallback((t: number) => void (drawn.current = t), []);
   const drawnAt = useCallback(() => drawn.current, []);
   return (
-    <Canvas dpr={q.dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
+    <Canvas dpr={dpr} shadows="percentage" frameloop={playing ? (paced ? "never" : "always") : "demand"} orthographic camera={{ position: [4.6, 5.4, 8.5], zoom: 80, near: 0.1, far: 50 }}
       gl={{ antialias: q.antialias, alpha: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.NeutralToneMapping;
@@ -333,10 +338,10 @@ export default function ApplicationScene(props: Props) {
       <Suspense fallback={null}>
         <Studio resolution={q.phone ? 256 : 512} />
         <Camera kind={props.kind} motion={props.motion} still={props.still} frame={props.frame} />
-        <directionalLight position={[4, 9, 6]} intensity={1.5} castShadow shadow-mapSize={q.phone ? [512, 512] : [2048, 2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7} />
+        <directionalLight position={[4, 9, 6]} intensity={1.5} castShadow shadow-mapSize={q.phone ? [512, 512] : low ? [1024, 1024] : [2048, 2048]} shadow-normalBias={0.012} shadow-camera-left={-7} shadow-camera-right={7} shadow-camera-top={7} shadow-camera-bottom={-7} />
         <Stages {...props} />
         <mesh rotation-x={-Math.PI / 2} position-y={-0.065} receiveShadow><planeGeometry args={[30, 30]} /><shadowMaterial color={COLORS.shadow} opacity={0.12} /></mesh>
-        <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} touch={paced} />
+        <Ground kind={props.kind} step={props.step} motion={props.motion} active={props.active} phone={q.phone} low={low} touch={paced} />
         {/* The light's map is drawn by the view alone, and only after a caster moved: the contact pass
             re-rendered the scene with the light on, drawing the map a second time every moving frame. */}
         <ShadowGate />
@@ -345,6 +350,7 @@ export default function ApplicationScene(props: Props) {
         <FrameGate drawn={mark} />
       </Suspense>
       {playing && paced && <Pacer paused={paused} drawnAt={drawnAt} />}
+      {playing && govern && <Governor at={dpr} set={govern} />}
     </Canvas>
   );
 }
