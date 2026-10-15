@@ -193,9 +193,17 @@ function Systems() {
             </li>
           ))}
         </ul>
-        <p data-reveal className="t-small record-groups-note">
-          {SYSTEMS_STRIP.note}
-        </p>
+        {/* The ask: a panel of its own so it isn't read as a footnote. */}
+        <div data-reveal className="record-groups-note">
+          <Database size={18} strokeWidth={2} aria-hidden className="record-groups-note-icon" />
+          <p className="t-body">
+            <strong>{SYSTEMS_STRIP.note.lead}</strong> {SYSTEMS_STRIP.note.text}
+          </p>
+          <SectionLink href="#audit" className="ed-link record-groups-note-link">
+            {SYSTEMS_STRIP.note.link}
+            <Arrow />
+          </SectionLink>
+        </div>
       </div>
       {/* The records the applications read, on a dial the scroll turns. */}
       <ReadWheel />

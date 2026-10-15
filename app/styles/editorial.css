@@ -835,7 +835,21 @@
 .record-group-k { display: flex; align-items: center; gap: 9px; color: var(--color-ink); }
 .record-group-k i { width: 8px; height: 8px; flex: none; border-radius: var(--radius-pill); background: var(--tone); }
 .record-group-text { margin-top: 10px; max-width: 46ch; color: var(--color-ink-2); }
-.record-groups-note { margin-top: 18px; max-width: 60ch; color: var(--color-ink-soft); }
+.record-groups-note {
+  display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 12px 14px;
+  margin-top: 28px; padding: 20px 22px;
+  border: 1px solid var(--color-line); border-left: 3px solid var(--color-cobalt);
+  border-radius: var(--radius-md); background: var(--color-surface);
+}
+.record-groups-note-icon { margin-top: 3px; color: var(--color-cobalt); }
+.record-groups-note p { max-width: 62ch; color: var(--color-ink-2); }
+.record-groups-note strong { font-weight: 600; color: var(--color-ink); }
+.record-groups-note-link { grid-column: 2; justify-self: start; font-weight: 600; }
+@media (min-width: 900px) {
+  .record-groups-note { grid-template-columns: auto 1fr auto; align-items: center; padding: 22px 28px; }
+  .record-groups-note-icon { margin-top: 0; }
+  .record-groups-note-link { grid-column: 3; white-space: nowrap; }
+}
 @media (min-width: 900px) {
   .record-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 40px; border-bottom: 1px solid var(--color-line); }
   .record-group { border-bottom: 0; padding: 28px 0 30px; }
@@ -1026,6 +1040,51 @@
 .demo-checks > div { display: flex; justify-content: space-between; gap: 12px; }
 .demo-checks dd { color: var(--color-ink); font-weight: 600; }
 .demo-checks dd[data-k="ok"]::before { content: "✓ "; color: var(--color-emerald-ink); }
+/* The panel draws in when it reaches the viewport, and again on each tab change (copy and art remount):
+   the copy rises line by line, the order's lines drop into the grid in reading order and settle into their
+   three kinds, the commitment's bars wipe in from the left, the handover's cards stack up. */
+@media (prefers-reduced-motion: no-preference) {
+  .demo { transition: box-shadow var(--dur-4) var(--ease); }
+  .demo:not([data-in]) :is(.demo-copy > *, .demo-rows > div, .demo-figure > *, .demo-grid span, .demo-bar span) { opacity: 0; }
+  .demo[data-in] :is(.demo-copy > *, .demo-rows > div) { animation: demo-rise 800ms var(--ease-out-expo) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+  .demo[data-in] .demo-rows > div { animation-delay: calc(var(--i, 0) * 70ms); }
+  .demo[data-in] .demo-rows { border-top-color: transparent; }
+  .demo[data-in] .demo-rows::before { content: ""; display: block; height: 1px; margin-top: -1px; background: var(--color-line); transform-origin: 0 50%; animation: demo-draw 900ms var(--ease-out-expo) 120ms backwards; }
+  .demo-rows dt { transition: color var(--dur-3) var(--ease), translate var(--dur-3) var(--ease); }
+  .demo-rows > div:hover dt { translate: 4px 0; }
+
+  .demo[data-in] .demo-figure { animation: demo-rise 900ms var(--ease-out-expo) 80ms backwards; }
+  .demo[data-in] .demo-grid span { animation: demo-cell 620ms var(--ease-out-expo) backwards; animation-delay: calc(200ms + var(--i, 0) * 14ms); }
+  .demo[data-in] .demo-grid span[data-k="item"],
+  .demo[data-in] .demo-grid span[data-k="unit"] { animation-name: demo-cell, demo-settle; animation-duration: 620ms, 700ms; animation-delay: calc(200ms + var(--i, 0) * 14ms), 900ms; animation-timing-function: var(--ease-out-expo), var(--ease); }
+  .demo[data-in] :is(.demo-legend, .demo-chip, .demo-bars .demo-bar-row > .t-label) { animation: demo-rise 700ms var(--ease-out-expo) 760ms backwards; }
+  .demo[data-in] .demo-chip { animation-delay: 980ms; }
+  .demo[data-in] .demo-bars .demo-bar-row > .t-label { animation-delay: 120ms; }
+  .demo[data-in] .demo-bar span { animation: demo-wipe 1000ms var(--ease-out-expo) backwards; animation-delay: calc(220ms + var(--i, 0) * 260ms); }
+  .demo[data-in] .demo-handover > * { animation: demo-rise 800ms var(--ease-out-expo) backwards; }
+  .demo[data-in] .demo-handover > :nth-child(2) { animation-delay: 220ms; }
+  .demo[data-in] .demo-handover > :nth-child(3) { animation-delay: 440ms; }
+  .demo[data-in] .demo-checks dd[data-k="ok"]::before { display: inline-block; animation: demo-cell 500ms var(--ease-out-expo) 520ms backwards; }
+
+  /* Hover: a cell lifts; a legend entry picks out its own lines. */
+  .demo-grid span { transition: scale var(--dur-3) var(--ease-out-expo), opacity var(--dur-3) var(--ease); }
+  .demo-grid span:hover { scale: 1.14; }
+  .demo-legend li { cursor: default; transition: opacity var(--dur-3) var(--ease); }
+  .demo-figure:has(.demo-legend li:hover) .demo-legend li:not(:hover) { opacity: 0.45; }
+  .demo-figure:has(.demo-legend [data-k="ok"]:hover) .demo-grid span:not([data-k="ok"]),
+  .demo-figure:has(.demo-legend [data-k="item"]:hover) .demo-grid span:not([data-k="item"]),
+  .demo-figure:has(.demo-legend [data-k="unit"]:hover) .demo-grid span:not([data-k="unit"]) { opacity: 0.18; }
+  .demo-bar span { transition: translate var(--dur-3) var(--ease-out-expo); }
+  .demo-bar span:hover { translate: 0 -2px; }
+  .demo-doc, .demo-task { transition: translate var(--dur-3) var(--ease-out-expo), box-shadow var(--dur-3) var(--ease); }
+  .demo-doc:hover, .demo-task:hover { translate: 0 -2px; }
+}
+@keyframes demo-rise { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@keyframes demo-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes demo-cell { from { opacity: 0; scale: 0.3; } to { opacity: 1; scale: 1; } }
+/* The open lines arrive as matched, then fall back to what they need. */
+@keyframes demo-settle { from { background: var(--tone); box-shadow: none; } }
+@keyframes demo-wipe { from { opacity: 0; clip-path: inset(0 100% 0 0 round 8px); } 30% { opacity: 1; } to { opacity: 1; clip-path: inset(0 0 0 0 round 8px); } }
 /* Phones: the three example labels scroll sideways rather than squeeze. */
 .demos-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .demos-tabs::-webkit-scrollbar { display: none; }

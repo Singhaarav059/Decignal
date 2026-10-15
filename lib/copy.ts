@@ -585,7 +585,11 @@ export const SYSTEMS_STRIP = {
   eyebrow: "Your systems",
   headline: ["Build around the systems", "you already use"] as Headline,
   intro: "Your ERP, accounting software, CRM and service tools hold important records. Email, spreadsheets and documents often hold the rest. We agree how the application will use those sources and where its output belongs.",
-  note: "Tell us the software and versions you use. We confirm access, supported formats and integration scope during discovery.",
+  note: {
+    lead: "Tell us the software and versions you use.",
+    text: "We confirm access, supported formats and integration scope during discovery.",
+    link: "List your systems",
+  },
 } as const;
 
 /**
