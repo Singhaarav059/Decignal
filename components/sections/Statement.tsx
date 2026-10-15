@@ -4,8 +4,9 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPROACH, STATEMENT } from "@/lib/copy";
-import { EXAMPLE } from "@/lib/example";
+import { APPROACH_COPY, STATEMENT } from "@/lib/copy";
+import { APPROACH } from "@/lib/content";
+import { APP_FACTS } from "@/lib/example";
 import SectionTitle from "../ui/SectionTitle";
 import { Compass } from "lucide-react";
 import { AREAS, appsOf } from "@/lib/areas";
@@ -19,12 +20,12 @@ gsap.registerPlugin(ScrollTrigger);
 
 const FLOW = [
   { id: "erp", name: "ERP", tone: "cobalt", y: 30 },
-  { id: "crm", name: "Customer", tone: "violet", y: 100 },
-  { id: "mes", name: "Quality", tone: "emerald", y: 170 },
-  { id: "sup", name: "Suppliers", tone: "tangerine", y: 240 },
+  { id: "crm", name: "Email", tone: "pink", y: 100 },
+  { id: "mes", name: "Reports", tone: "emerald", y: 170 },
+  { id: "sup", name: "Sheets", tone: "tangerine", y: 240 },
 ];
 
-/** The sentence, drawn: records from four sources come together, and one review goes to the person who decides.
+/** The sentence, drawn: records from four places come together, and the next step goes to the person who acts.
  *  The threads draw in turn as the section arrives (data-on), then a pulse keeps travelling them: a
  *  round-capped dash of no length (a dot) run along the thread by a CSS animation, which holds still
  *  off screen. SMIL motion re-laid out the drawing on every frame of the page and could not be paused. */
@@ -78,17 +79,17 @@ function FlowArt() {
         <circle cx="400" cy="135" r="14" />
         <path d="M393 135 l5 5 9-10" />
         <text x="424" y="132">
-          For review
+          Next step
         </text>
         <text className="flow-sub" x="424" y="148">
-          Quality · 2 questions
+          With its owner
         </text>
       </g>
     </svg>
   );
 }
 
-/** Look at a real example: four record plates read under one bar; nothing is written back. */
+/** Bring the records together: four record plates read under one bar, each with its source. */
 function ReadArt() {
   return (
     <svg className="bento-art" viewBox="0 0 220 90" aria-hidden>
@@ -116,9 +117,9 @@ function ReadArt() {
   );
 }
 
-/** Define the scope: inputs on the left, the one output in the middle, the reviewer on the right. */
+/** Define how your business works: aliases, units and limits become the rules, which reach the owner. */
 function ScopeArt() {
-  const ins = ["Checklist", "Lines", "Certs"];
+  const ins = ["Aliases", "Units", "Limits"];
   return (
     <svg className="bento-art" viewBox="0 0 220 90" aria-hidden>
       {ins.map((k, i) => (
@@ -132,7 +133,7 @@ function ScopeArt() {
       ))}
       <rect className="ba-bar" x="104" y="30" width="58" height="28" rx="9" />
       <text className="ba-k" x="133" y="48">
-        Pack
+        Rules
       </text>
       <path className="ba-span" d="M162 44 H 184" />
       <circle className="ba-dot" cx="200" cy="44" r="12" />
@@ -140,39 +141,39 @@ function ScopeArt() {
   );
 }
 
-/** Test against the current process: the flagged line waiting on one reviewer; the press lands on a loop. */
+/** Put the result into the workflow: a draft waiting on the person who approves it; the press lands on a loop. */
 function ApproveArt() {
   return (
     <svg className="bento-art ba-approve" viewBox="0 0 260 96" aria-hidden>
       <rect className="ba-card" x="1" y="1" width="258" height="94" rx="14" />
       <text className="ba-t" x="16" y="28">
-        Line {EXAMPLE.line.n} · {EXAMPLE.line.heat} against {EXAMPLE.cert.heat}
+        Draft order {APP_FACTS.order.po} · {APP_FACTS.order.lines} lines
       </text>
       <text className="ba-s" x="16" y="46">
-        Source records attached · for review
+        Sources attached · {APP_FACTS.order.item + APP_FACTS.order.unit} lines to confirm
       </text>
       <circle className="ba-face" cx="28" cy="72" r="10" />
       <text className="ba-s" x="46" y="76">
-        Quality reviewer
+        Order desk
       </text>
       <g className="ba-btn">
         <rect x="150" y="58" width="94" height="28" rx="14" />
         <text x="197" y="77">
-          Request
+          Approve
         </text>
       </g>
       <g className="ba-done">
         <rect x="150" y="58" width="94" height="28" rx="14" />
         <path d="M168 72 l5 5 9-10" />
         <text x="208" y="77">
-          Asked
+          Approved
         </text>
       </g>
     </svg>
   );
 }
 
-/** Five functions: how the six proposed workflows spread across them, a bar per function in its colour. */
+/** Five functions: the application examples in each, a bar per function in its colour. */
 function AreasArt() {
   const counts = AREAS.map((a) => appsOf(a).length);
   return (
@@ -191,13 +192,13 @@ function AreasArt() {
   );
 }
 
-/** Rules and people: an exact match is marked supported, anything else goes to the reviewer. */
+/** Rules and people: an approved match is ready, anything uncertain goes to your team. */
 function ThresholdArt() {
   return (
     <svg className="bento-art ba-ladder" viewBox="0 0 300 92" aria-hidden>
       {[
-        { y: 4, k: "Exact match", who: "Supported", on: true },
-        { y: 50, k: "Missing or conflicting", who: "Reviewer", on: false },
+        { y: 4, k: "Approved reference", who: "Ready", on: true },
+        { y: 50, k: "Uncertain or missing", who: "Your team", on: false },
       ].map((r, i) => (
         <g key={r.k} className="ba-rung" data-on={r.on || undefined} style={{ ["--i" as string]: i } as CSSProperties}>
           <rect x="1" y={r.y} width="298" height="38" rx="12" />
@@ -211,8 +212,8 @@ function ThresholdArt() {
   );
 }
 
-/** Agree responsibility: the four things someone owns after launch, lit one after another. */
-const OWNS = ["Formats", "Rules", "Support", "Review"];
+/** Keep it useful after launch: the four things someone owns, lit one after another. */
+const OWNS = ["Measure", "Errors", "Changes", "Support"];
 function AppsArt() {
   return (
     <svg className="bento-art" viewBox="0 0 220 90" aria-hidden>
@@ -229,10 +230,10 @@ function AppsArt() {
 }
 
 /**
- * The problem, then our approach (handoff home.problem and home.approach). The problem's sentences come
- * up word by word as they scroll through the screen; the approach sits in a bento of glass cards (two
- * wear the references' slate and amber fields), one per step, with the reviewer's photograph as a
- * duotone among them and the five functions last.
+ * The problem, then how we build (handoff §5 problem and approach). The problem's sentences come up word
+ * by word as they scroll through the screen; the approach sits in a bento of glass cards (two wear the
+ * references' slate and amber fields), one per item: records, rules, the application (with the
+ * photograph as a duotone) and ownership, and the five functions last.
  */
 export function Statement() {
   const root = useRef<HTMLDivElement>(null);
@@ -277,7 +278,7 @@ export function Statement() {
     };
   }, []);
 
-  const [look, define, test, agree] = APPROACH.items;
+  const [look, define, test, agree] = APPROACH.map((a, i) => ({ ...a, k: APPROACH_COPY.steps[i], tone: APPROACH_COPY.tones[i] }));
   const words = STATEMENT.text.split(" ");
 
   return (
@@ -314,9 +315,9 @@ export function Statement() {
           <SectionTitle
             icon={<Compass size={13} strokeWidth={2.2} />}
             id="approach-title"
-            label={APPROACH.eyebrow}
-            lines={[APPROACH.headline[0], APPROACH.headline[1]]}
-            lede={APPROACH.intro}
+            label={APPROACH_COPY.eyebrow}
+            lines={[APPROACH_COPY.headline[0], APPROACH_COPY.headline[1]]}
+            lede={APPROACH_COPY.intro}
             tone="ink"
             reveal="lines"
             className="ed-title"
@@ -336,7 +337,7 @@ export function Statement() {
                 <figure className="bento-figure" data-tone={test.tone}>
                   <Image
                     src={decide}
-                    alt={STATEMENT.reviewerAlt}
+                    alt=""
                     sizes="(min-width: 1024px) 360px, 90vw"
                     className="bento-img"
                   />
@@ -345,15 +346,6 @@ export function Statement() {
                 <p className="bento-text t-small">{test.text}</p>
                 <ApproveArt />
                 <ThresholdArt />
-                {/* The trail a review leaves: what was assembled, what was flagged, who has it now. */}
-                <ol className="bento-log">
-                  {STATEMENT.log.map((l, i) => (
-                    <li key={l.t} style={{ ...toneVars(l.tone), ["--i" as string]: i } as CSSProperties}>
-                      <span className="tabular">{l.t}</span>
-                      {l.text}
-                    </li>
-                  ))}
-                </ol>
                 <p className="bento-n">{test.k}</p>
               </li>
               <li className="bento-card" data-field="amber" style={toneVars(agree.tone)}>
@@ -363,8 +355,8 @@ export function Statement() {
                 <p className="bento-n">{agree.k}</p>
               </li>
               <li className="bento-card" style={toneVars("violet")}>
-                <p className="bento-k t-label">{APPROACH.functions}</p>
-                <ul className="bento-areas" aria-label={APPROACH.functions}>
+                <p className="bento-k t-label">{APPROACH_COPY.functions}</p>
+                <ul className="bento-areas" aria-label={APPROACH_COPY.functions}>
                   {AREAS.map((a) => (
                     <li key={a.slug} style={toneVars(a.tone)}>
                       <i aria-hidden />
@@ -372,7 +364,7 @@ export function Statement() {
                     </li>
                   ))}
                 </ul>
-                <p className="bento-text t-small">{APPROACH.functionsText}</p>
+                <p className="bento-text t-small">{APPROACH_COPY.functionsText}</p>
                 <AreasArt />
               </li>
             </ul>

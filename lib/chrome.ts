@@ -57,7 +57,7 @@ export const HOME_SECTIONS: ChromeSection[] = [
   { id: "outcomes", label: "What we measure", dock: false },
   { id: "about", label: "About", dock: false },
   { id: "faq", label: "Questions", short: "FAQ" },
-  { id: "audit", label: "Workflow review", short: "Review" },
+  { id: "audit", label: "Talk to Decignal", short: "Talk" },
 ];
 
 const INITIAL: ChromeState = {

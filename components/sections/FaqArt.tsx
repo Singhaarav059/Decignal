@@ -2,30 +2,27 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { CONNECTS, FAQ_TOPICS } from "@/lib/content";
-import { EXAMPLE } from "@/lib/example";
+import { APP_FACTS } from "@/lib/example";
+import { ORDER_COUNTS } from "@/lib/demonstrations";
 import { toneVars } from "@/lib/tone";
 import { useSvgScale } from "./svgScale";
 
 /**
  * Answer figures for the home FAQ: one schematic per question, drawn from what its answer says, in
- * the worked dispatch example's own figures. Desktop shows the figure beside the list (the open
+ * the order-intake example's own figures. Desktop shows the figure beside the list (the open
  * question, or the one under the pointer or keyboard focus); phones show it inside the opened answer.
  * Index-aligned with FAQ and FAQ_TOPICS (lib/content.ts).
  */
 
 /** The one line under each figure: what the drawing shows, in plain words. */
 const LINES = [
-  "Your ERP keeps the transaction. What remains is the evidence work around it, prepared for review.",
-  "Manufacturers, distributors and service businesses each start with the workflow that fits them.",
-  "A proposed workflow: source records, explicit checks and a named reviewer who decides.",
-  "Your systems stay responsible for their records. The application prepares work for your team.",
-  "Configuration, a specialist product or a custom build: compared on your own records first.",
-  "We start from approved exports and sample files, and confirm any live connection before proposing it.",
-  "Every item is supported, missing or conflicting, with its source. Your reviewer resolves the rest.",
-  "Sources and languages are tested on real samples. Private chats and portals are never assumed.",
-  "Access, storage, model providers and retention are agreed before any project data is shared.",
-  "The first call is free. Assessment, build and support are each scoped in a written proposal.",
-  "The project agreement names what is yours, what is licensed and who maintains it.",
+  "Each application is scoped to your process, your data and your approval rules.",
+  "Our examples span four industries. The process you want to improve comes first.",
+  "Your systems keep their records. Access and integration are agreed during discovery.",
+  "Routine lines go through; uncertain ones go to the person who approves them.",
+  "Channels, languages and documents are tested on authorised samples first.",
+  "Access, providers, hosting and retention are agreed before systems are connected.",
+  "The first conversation is free. Assessment, build and support are scoped separately.",
   "Every example on this site is illustrative. Customer results will be identified separately.",
 ];
 
@@ -34,58 +31,19 @@ const H = 220;
 /** Hover intent: sweeping the pointer down the list does not flick through every figure. */
 const INTENT_MS = 120;
 
-const L = EXAMPLE.line;
-const C = EXAMPLE.cert;
+const O = APP_FACTS.order;
 const at = (i: number) => ({ ["--i" as string]: i }) as CSSProperties;
 const tone = (t: string, i?: number) => ({ ...toneVars(t), ...(i === undefined ? null : at(i)) }) as CSSProperties;
 const check = (x: number, y: number) => `M${x - 4.5} ${y}l3.2 3.2 6.3-6.6`;
 
-/** The source records behind the review, each in the colour of the source it came from. */
+/** The records behind the order example, each in the colour of the source it came from. */
 const EVIDENCE: [string, string][] = [
-  ["cobalt", `Line ${L.n} · heat ${L.heat}`],
-  ["tangerine", `Certificate · heat ${C.heat}`],
-  ["saffron", "No process certificate"],
+  ["cobalt", `Customer order · ${O.lines} lines`],
+  ["violet", "Approved item mappings"],
+  ["saffron", "Pack-unit rules"],
 ];
 
 /* ---------------------------------------------------------------- figures */
-
-function ExistingSoftware() {
-  return (
-    <>
-      {/* Your ERP: the transaction is recorded and stops there. */}
-      <rect x="0.5" y="8.5" width="160" height="203" rx="12" className="fa-well" />
-      <text x="16" y="32">YOUR ERP</text>
-      {[84, 116, 148].map((y) => <path key={y} d={`M16 ${y}H144`} className="fa-grid" />)}
-      <path d="M16 176H144" className="fa-axis" />
-      {[64, 96, 128].map((y, i) => (
-        <g key={y}>
-          <rect x="16" y={y} width="96" height="14" rx="4" className="fa-past-dot" opacity={0.5 - i * 0.12} />
-          <path d={check(130, y + 7)} className="fa-check" />
-        </g>
-      ))}
-      <text x="16" y="198">RECORDED</text>
-      {/* The work that remains, prepared for a person. */}
-      <path d="M111 124H177" className="fa-link fa-draw" pathLength={1} style={at(3)} />
-      <path d="M172 119.5l5 4.5-5 4.5" className="fa-link fa-rise" style={at(5)} />
-      <rect x="180.5" y="8.5" width="179" height="203" rx="12" className="fa-sheet" />
-      <text x="196" y="32">WHAT REMAINS</text>
-      <text x="196" y="54" className="fa-v">{`Line ${L.n} to check`}</text>
-      <text x="196" y="71" className="fa-s">{`Shipment ${EXAMPLE.shipment.id}`}</text>
-      <path d="M196 84H344" className="fa-hair" />
-      <text x="196" y="102">SOURCE RECORDS</text>
-      {EVIDENCE.map(([t, text], i) => (
-        <g key={text} className="fa-rise" style={tone(t, 4 + i)}>
-          <circle cx="200" cy={117 + i * 18} r="3.5" className="fa-dot" />
-          <text x="210" y={121 + i * 18} className="fa-s">{text}</text>
-        </g>
-      ))}
-      <g className="fa-rise" style={at(8)}>
-        <rect x="196" y="171" width="92" height="22" rx="11" className="fa-ink" />
-        <text x="242" y="186.2" textAnchor="middle" className="fa-v fa-on-ink">For review</text>
-      </g>
-    </>
-  );
-}
 
 const SYSTEMS = CONNECTS.map((c) => ({ name: c.name, tone: c.tone }));
 
@@ -108,26 +66,26 @@ function Systems() {
         );
       })}
       <rect x="262" y="66" width="98" height="88" rx="14" className="fa-ink" />
-      <text x="311" y="106" textAnchor="middle" className="fa-v fa-on-ink">Review</text>
-      <text x="311" y="126" textAnchor="middle" className="fa-on-ink">EXPORTS FIRST</text>
+      <text x="311" y="106" textAnchor="middle" className="fa-v fa-on-ink">Discovery</text>
+      <text x="311" y="126" textAnchor="middle" className="fa-on-ink">ACCESS AGREED</text>
     </>
   );
 }
 
 const FIELDS = [
-  { sys: "ERP", tone: "cobalt", field: `Line ${L.n} · ${L.heat}`, state: "ok" },
-  { sys: "Supplier", tone: "tangerine", field: `Certificate · ${C.heat}`, state: "conflict" },
-  { sys: "Quality", tone: "emerald", field: "Dimensional report", state: "ok" },
-  { sys: "Job work", tone: "saffron", field: "Heat treatment", state: "missing" },
-  { sys: "Customer", tone: "violet", field: `Checklist ${EXAMPLE.checklist.rev}`, state: "ok" },
+  { sys: "Line 1", tone: "cobalt", field: "Switch 16A · matched", state: "ok" },
+  { sys: "Line 7", tone: "violet", field: "Old item code", state: "conflict" },
+  { sys: "Line 9", tone: "emerald", field: "Price list · current", state: "ok" },
+  { sys: "Line 12", tone: "saffron", field: "Box or piece?", state: "missing" },
+  { sys: "Terms", tone: "tangerine", field: "Unchanged", state: "ok" },
 ] as const;
 
 function Exceptions() {
   return (
     <>
       <rect x="0" y="0" width="196" height="32" rx="16" className="fa-ink" />
-      <text x="16" y="21" className="fa-v fa-on-ink">{`Pack ${EXAMPLE.shipment.id}`}</text>
-      <text x="208" y="20.5">EVERY ITEM, A STATUS</text>
+      <text x="16" y="21" className="fa-v fa-on-ink">{`Order ${O.po}`}</text>
+      <text x="208" y="20.5">ROUTINE OR REVIEW</text>
       <path d="M12 32V164" className="fa-link fa-draw" pathLength={1} />
       {FIELDS.map((f, i) => {
         const y = 48 + i * 34;
@@ -145,7 +103,7 @@ function Exceptions() {
               {open && (
                 <>
                   <circle cx="262" cy={cy} r="3.5" className="fa-risk" />
-                  <text x="346" y={cy + 4} textAnchor="end" className="fa-risk-text">{f.state === "missing" ? "MISSING" : "CONFLICT"}</text>
+                  <text x="346" y={cy + 4} textAnchor="end" className="fa-risk-text">{f.state === "missing" ? "CLARIFY" : "CONFIRM"}</text>
                 </>
               )}
             </g>
@@ -220,15 +178,14 @@ const DataHandling = () => (
   />
 );
 
-/** A proposed workflow as a card: its records, its checks and the person who reviews it. */
+/** An application as a card: its records, its checks and the person who approves its work. */
 function Workflow({ stamp }: { stamp: string }) {
-  const counts = EXAMPLE.checklist.items.filter((i) => i.status === "supported").length;
-  const total = EXAMPLE.checklist.items.length;
-  const fill = 164 * (counts / total);
+  const { matched, total, item, unit } = ORDER_COUNTS;
+  const fill = 164 * (matched / total);
   return (
     <>
-      <text x="0" y="18" className="fa-v">Dispatch document pack review</text>
-      <text x="0" y="37" className="fa-s">{`Shipment ${EXAMPLE.shipment.id}`}</text>
+      <text x="0" y="18" className="fa-v">Customer order intake</text>
+      <text x="0" y="37" className="fa-s">{`Order ${O.po}`}</text>
       <text x="360" y="18" textAnchor="end">{stamp}</text>
       <path d="M0 54H360" className="fa-hair" />
       <text x="0" y="80">SOURCE RECORDS</text>
@@ -238,17 +195,17 @@ function Workflow({ stamp }: { stamp: string }) {
           <text x="14" y={108 + i * 22} className="fa-s">{text}</text>
         </g>
       ))}
-      <text x="196" y="80">CHECKLIST</text>
+      <text x="196" y="80">ORDER LINES</text>
       <rect x="196" y="100" width="164" height="8" rx="4" className="fa-track" />
       <rect x="196" y="100" width={fill} height="8" rx="4" className="fa-ok fa-grow" style={at(3)} />
-      <text x="196" y="130" className="fa-s">{`${counts} of ${total} supported`}</text>
+      <text x="196" y="130" className="fa-s">{`${matched} of ${total} matched`}</text>
       <g className="fa-rise" style={at(5)}>
         <circle cx="201" cy="148" r="3.5" className="fa-risk" />
-        <text x="214" y="152" className="fa-s">2 left for review</text>
+        <text x="214" y="152" className="fa-s">{`${item + unit} for the order desk`}</text>
       </g>
       <path d="M0 168H360" className="fa-hair" />
-      <text x="0" y="190">REVIEWED BY</text>
-      <text x="0" y="209" className="fa-v">{EXAMPLE.reviewer}</text>
+      <text x="0" y="190">APPROVED BY</text>
+      <text x="0" y="209" className="fa-v">Order desk</text>
       <g className="fa-rise" style={at(7)}>
         <rect x="270" y="188" width="90" height="22" rx="11" className="fa-sheet" />
         <text x="315" y="203" textAnchor="middle" className="fa-v">Draft</text>
@@ -256,40 +213,8 @@ function Workflow({ stamp }: { stamp: string }) {
     </>
   );
 }
-const Building = () => <Workflow stamp="PROPOSED WORKFLOW" />;
+const Building = () => <Workflow stamp="SCOPED FOR YOU" />;
 const Examples = () => <Workflow stamp="ILLUSTRATIVE EXAMPLE" />;
-
-/** Three routes compared on the same records: configure, buy, or build only for a gap. */
-function Routes() {
-  const rows = [
-    { label: "CONFIGURE YOUR SOFTWARE", value: "Check first", w: 0.42 },
-    { label: "SPECIALIST PRODUCT", value: "Compare", w: 0.64 },
-    { label: "CUSTOM APPLICATION", value: "Only for a gap", w: 0.86 },
-  ];
-  return (
-    <>
-      {rows.map((r, i) => {
-        const y = 22 + i * 58;
-        const cy = y + 22;
-        return (
-          <g key={r.label}>
-            <text x="8" y={y}>{r.label}</text>
-            <text x="352" y={y} textAnchor="end" className="fa-v">{r.value}</text>
-            <path d={`M8 ${cy}H352`} className="fa-hair" />
-            <circle cx="8" cy={cy} r="3" className="fa-ink" />
-            <rect x="8" y={cy - 6} width={344 * r.w} height="12" rx="6" className={i === 2 ? "fa-ok fa-grow" : "fa-track fa-grow"} style={at(1 + i * 2)} />
-          </g>
-        );
-      })}
-      <path d="M8 194H352" className="fa-axis" />
-      {["COST", "SUPPORT", "RESULTS ON YOUR RECORDS"].map((k, i) => (
-        <text key={k} x={i === 0 ? 8 : i === 1 ? 120 : 352} y="214" textAnchor={i === 2 ? "end" : "start"} className="fa-num">
-          {k}
-        </text>
-      ))}
-    </>
-  );
-}
 
 /** A written agreement: who owns or runs each part. */
 function Agreement({ title, rows }: { title: string; rows: { name: string; owner: string; detail: string }[] }) {
@@ -327,26 +252,16 @@ const Cost = () => (
     rows={[
       { name: "First call", detail: "30 minutes", owner: "Free" },
       { name: "Assessment", detail: "Scoped separately", owner: "Scoped" },
-      { name: "Build, support", detail: "Fees and timing", owner: "Proposal" },
+      { name: "Build, support", detail: "Scope and timing", owner: "Proposal" },
     ]}
   />
 );
-const Ownership = () => (
-  <Agreement
-    title="PROJECT AGREEMENT"
-    rows={[
-      { name: "Custom work", detail: "Ownership or licence", owner: "Agreed" },
-      { name: "Your data", detail: "Access and deletion", owner: "Yours" },
-      { name: "Maintenance", detail: "Handover and support", owner: "Agreed" },
-    ]}
-  />
-);
-
-/** Customer segments, each placed by how document-heavy and how frequent its first workflow is. */
+/** The four industries in our examples, each placed by how much of its work crosses systems and how often. */
 const CANDIDATES = [
-  { rank: 1, name: "Dispatch packs", tone: "emerald", x: 326, y: 68, end: true },
-  { rank: 2, name: "RFQ clarification", tone: "tangerine", x: 336, y: 134, end: true },
-  { rank: 3, name: "Service follow-ups", tone: "pink", x: 60, y: 160, end: false },
+  { rank: 1, name: "Distribution", tone: "violet", x: 326, y: 60, end: true },
+  { rank: 2, name: "Manufacturing", tone: "emerald", x: 300, y: 92, end: true },
+  { rank: 3, name: "Logistics", tone: "tangerine", x: 336, y: 140, end: true },
+  { rank: 4, name: "B2B services", tone: "pink", x: 60, y: 160, end: false },
 ];
 
 function Segments() {
@@ -357,15 +272,14 @@ function Segments() {
       <path d="M24 184V22" className="fa-axis" />
       <path d="M24 184H350" className="fa-axis" />
       <path d="M19.5 26l4.5-5 4.5 5M346 179.5l5 4.5-5 4.5" className="fa-axis" />
-      <text x="34" y="26">DOCUMENT-HEAVY</text>
+      <text x="34" y="26">ACROSS SYSTEMS</text>
       <text x="352" y="208" textAnchor="end">HOW OFTEN</text>
-      <text x="340" y="42" textAnchor="end" className="fa-rise" style={at(1)}>START HERE</text>
+      <text x="340" y="42" textAnchor="end" className="fa-rise" style={at(1)}>GOOD STARTS</text>
       {CANDIDATES.map((c) => (
         <g key={c.name} className="fa-rise" style={tone(c.tone, c.rank * 2 - 1)}>
-          <circle cx={c.x} cy={c.y} r={c.rank === 1 ? 7 : 5} className="fa-dot" />
+          <circle cx={c.x} cy={c.y} r={5} className="fa-dot" />
           <text x={c.end ? c.x - 14 : c.x + 12} y={c.y + 4} textAnchor={c.end ? "end" : "start"} className="fa-s">
-            <tspan className="fa-rank">{c.rank}</tspan>
-            {`  ${c.name}`}
+            {c.name}
           </text>
         </g>
       ))}
@@ -373,7 +287,7 @@ function Segments() {
   );
 }
 
-const FIGURES = [ExistingSoftware, Segments, Building, Systems, Routes, Systems, Exceptions, Sources, DataHandling, Cost, Ownership, Examples];
+const FIGURES = [Building, Segments, Systems, Exceptions, Sources, DataHandling, Cost, Examples];
 
 /* ---------------------------------------------------------------- pieces */
 
@@ -443,7 +357,7 @@ export function FaqFigure({ index }: { index: number }) {
         {FIGURES.map((_, i) => <FaqArt key={i} index={i} on={seen && i === index} />)}
       </div>
       <figcaption className="faq-fig-cap">
-        <span className="faq-fig-ex t-label">{EXAMPLE.label}</span>
+        <span className="faq-fig-ex t-label">Illustrative example</span>
         <span className="faq-fig-lines">
           {LINES.map((line, i) => (
             <span key={i} className="faq-fig-line" data-on={i === index || undefined} aria-hidden={i !== index}>

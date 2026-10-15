@@ -4,11 +4,10 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { easing } from "maath";
-import { CHAPTERS, CH, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
+import { CHAPTERS, blendAt, onSelect, setSceneReady, smoothstep, store, subscribe } from "@/lib/story";
 import { bgAt, makeShot, shotAt } from "@/lib/scene";
-import { Cards, ChartCrates, Islands, SignalCrate, Transfer } from "./Actors";
+import { Cards, Islands } from "./Actors";
 import { IndustriesRoad } from "./actors/industries";
-import { ChartMarks, SignalPing, Threads } from "./Marks";
 import { COLORS } from "./palette";
 import { KeyLight, Studio } from "./Studio";
 import { SystemNetwork } from "./SystemNetwork";
@@ -84,8 +83,7 @@ function Rig() {
     // Reduced motion: the camera cuts at the midpoint and settles.
     const k = still ? (e < 0.5 ? 0 : 1) : e;
     lean.current = THREE.MathUtils.damp(lean.current, store.selected >= 0 ? 1 : 0, 3.2, Math.min(dt, 1 / 30));
-    // A tall tablet reads the problem chart's labels in a legend too (Marks ChartMarks).
-    const a = shotAt(i, local, portrait || (tall && i === CH.problem), shots[0]);
+    const a = shotAt(i, local, portrait, shots[0]);
     frameShot(a, i, vw, vh, false, fr[0]);
     let A = fr[0];
     if (lean.current > 0.001) {
@@ -95,7 +93,7 @@ function Rig() {
     }
     let F = A;
     if (k > 0 && j !== i) {
-      const b = shotAt(j, 0, portrait || (tall && j === CH.problem), shots[1]);
+      const b = shotAt(j, 0, portrait, shots[1]);
       frameShot(b, j, vw, vh, false, fr[1]);
       // Pulling back to a bigger subject, the camera leads, so the next scene assembles in its own
       // frame; pushing in on a smaller one, it holds back while the scene folds into it (partly, so
@@ -169,7 +167,7 @@ function Atmosphere() {
  *  meets them (the hero's islands first). Rendered at once they were one 1-2 s task on a phone (every building, person and merged
  *  part built in a single synchronous pass); each is now its own low-priority render, which React
  *  splits into short slices, and its own commit. Nothing draws until all are in and warm. */
-const ACTORS = [Islands, SignalCrate, ChartCrates, Transfer, Cards, IndustriesRoad, FinalMark, ChartMarks];
+const ACTORS = [Islands, Cards, IndustriesRoad, FinalMark];
 /** The longest an actor waits for a pause in the scroll before it builds anyway (ms). */
 const MOUNT_LATEST = 3000;
 /** The warm-up's uploads wait for the scroll to rest this long (ms), and at most WARM_WAIT each. */
@@ -218,9 +216,7 @@ function World() {
       </Suspense>
       {n > 0 && (
         <>
-          <Threads />
           <SystemNetwork />
-          <SignalPing />
         </>
       )}
       <ShadowFloor color={COLORS.shadow} opacity={0.16} />

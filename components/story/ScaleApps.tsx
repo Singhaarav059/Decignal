@@ -2,9 +2,8 @@
 
 import { useLayoutEffect, useState } from "react";
 import { CH, FUNCTIONS, localIn, scaleBeat, scaleSettle, setPinHint, store, subscribe, weight } from "@/lib/story";
-import { APPLICATION_DEMOS } from "@/lib/application-demos";
 import { APPLICATIONS, CATEGORY_TONE, type Category } from "@/lib/content";
-import { areaHref, areaOf } from "@/lib/areas";
+import { appHref, areaHref, areaOf } from "@/lib/areas";
 import { SCALE, STORY_UI } from "@/lib/copy";
 import { goToStory } from "./chapters";
 import { StoryPills } from "./StoryPills";
@@ -22,13 +21,12 @@ const FN = FUNCTIONS.map((f) => {
     category,
     tone: CATEGORY_TONE[category],
     apps,
-    systems: [...new Set(apps.flatMap((a) => APPLICATION_DEMOS[APPLICATIONS.indexOf(a)].sources.split(" · ")))].slice(0, 4),
     area: areaOf(category),
   };
 });
 
 /**
- * 07 Scale, inside the story card: the five functions as one selector, then the proposed workflows in
+ * Scale, inside the story card: the five functions as one selector, then the application examples in
  * the selected one. The selection is the 3D card being read: the card under the pointer,
  * else the one the scroll brings forward. Pointing at a pill brings its card forward; clicking scrolls to it.
  */
@@ -81,17 +79,15 @@ export function ScaleCard() {
             <div key={f.name} id={`scale-fn-${k}`} role="tabpanel" className="story-stack-item scale-fn" data-on={k === at || undefined}>
               <p className="t-label">{SCALE.apps(f.apps.length)}</p>
               <ul className="story-rows scale-rows">
-                {f.apps.map((a) => {
-                  const [name, status] = SCALE.appRow(a.name, a.status).split(" · ");
-                  return (
-                    <li key={a.name}>
-                      <span className="scale-app">{name}</span>
-                      <span>{status}</span>
-                    </li>
-                  );
-                })}
+                {f.apps.map((a) => (
+                  <li key={a.name}>
+                    <a className="scale-app" href={appHref(a)}>
+                      {SCALE.appRow(a.name)}
+                    </a>
+                  </li>
+                ))}
               </ul>
-              <p className="t-small scale-systems">{f.systems.join(" · ")}</p>
+              <p className="t-small scale-systems">{f.area.lead}</p>
               <SectionLink href={areaHref(f.category)} className="story-link t-small">
                 {link}
                 <Arrow />

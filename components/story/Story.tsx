@@ -15,7 +15,6 @@ import { StoryCard } from "./StoryCard";
 import { ChapterHeads } from "./ChapterHeads";
 import { FinalBar } from "./FinalCard";
 import { IslandPanel } from "./IslandPanel";
-import { LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { HeroVideo } from "./HeroVideo";
@@ -65,7 +64,7 @@ function rollOf(p: number, k: number, n: number) {
 /**
  * The story: one live 3D world and one info card. Behind the world, the two statement headlines (the hero's,
  * the page's h1, and the final one). In front, the StoryCard (bottom-left, every chapter) and, on phones,
- * the decks that stand in for the 3D cards in Control and Scale.
+ * the deck that stands in for the 3D cards in Scale.
  */
 export function Story() {
   const back = useRef<HTMLDivElement>(null);
@@ -200,7 +199,7 @@ export function Story() {
           </div>
           <div className="hero-meta intro-fade" data-frame>
             <p className="t-small hero-meta-text">
-              <span className="hero-offer">{HERO.card}</span> <span className="hero-caption">{HERO.caption}</span>
+              <span className="hero-offer">{HERO.card}</span>
             </p>
             <span className="hero-cue t-label" aria-hidden>
               <span className="story-cue-mouse">
@@ -218,7 +217,7 @@ export function Story() {
       <div className="story-canvas pointer-events-none fixed inset-0" aria-hidden>
         <HeroVideo />
         <div className="intro-stage size-full">
-          <SceneBoundary story label="Drawing of the story's scene: six business systems and one stock transfer">
+          <SceneBoundary story label="Drawing of the story's scene: business records, five functions and four industries">
             <ClientScene />
           </SceneBoundary>
         </div>
@@ -227,9 +226,6 @@ export function Story() {
       {/* In front of the world: the one card, and on phones the decks above it */}
       <div ref={front} className="story-overlay pointer-events-none fixed inset-0">
         <StoryCard />
-        <div data-ch={CH.control} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.control})` }}>
-          <LayerReadout />
-        </div>
         <div data-ch={CH.scale} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.scale})` }}>
           <ScalePhone />
         </div>

@@ -38,74 +38,36 @@ html[data-jump] .nav-shell {
   outline: none;
 }
 
-/* ---------------- Loader ---------------- */
+/* ---------------- Loader: six dots under the hero while the 3D builds (Loader.tsx) ----------------
+   Non-blocking: no curtain and no scroll lock. The dots sit low over the canvas, under the hero's text
+   and actions, and leave as the scene fades in (html.scene-ready). */
 .loader {
   position: fixed;
-  inset: 0;
-  z-index: var(--z-loader, 70);
+  left: 50%;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  z-index: var(--z-canvas, 10);
   display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  clip-path: inset(0 0 0 0);
-  transition: clip-path var(--dur-4, 600ms) var(--ease-in-out-quart, cubic-bezier(0.76, 0, 0.24, 1));
+  gap: 8px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity var(--dur-4, 600ms) var(--ease, ease);
 }
-.loader[data-phase="leave"] {
-  clip-path: inset(0 0 100% 0);
+html.scene-ready .loader {
+  opacity: 0;
 }
-/* Repeat visits: html.intro-seen (set before paint, or once the intro has played) keeps the server
-   markup from ever showing. Without JavaScript the layout's noscript style hides it. */
-.intro-seen .loader[data-phase="load"] {
+.intro-seen .loader {
   display: none;
 }
-.loader-mark {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-}
 .loader-dot {
-  width: 14px;
-  height: 14px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
-  animation: loaderDot 800ms var(--ease-out-expo) both;
+  animation: loaderDot 1400ms var(--ease-in-out-quart, ease-in-out) infinite alternate both;
 }
 @keyframes loaderDot {
   from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.4);
-  }
-}
-.loader .logo .logo-mark {
-  width: 29px;
-  height: 29px;
-  transform: translateY(4px);
-}
-.loader-foot {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 0 24px 28px;
-}
-.loader-count {
-  font-size: clamp(48px, 7vw, 96px);
-  line-height: 0.8;
-  letter-spacing: -0.011em;
-}
-/* Progress, as a hairline: its scaleX is the same real progress as the count. */
-.loader-bar {
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 2px;
-  background: var(--color-ink);
-  transform: scaleX(0);
-  transform-origin: left;
-}
-@media (min-width: 768px) {
-  .loader-foot {
-    padding: 0 40px 36px;
+    opacity: 0.25;
+    transform: translateY(3px) scale(0.7);
   }
 }
 

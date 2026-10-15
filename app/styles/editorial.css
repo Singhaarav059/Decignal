@@ -924,3 +924,102 @@
   .review-table tr { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--color-line); }
   .review-table td { padding: 0; border: 0; }
 }
+
+/* ---- Featured applications (FeaturedApps.tsx): six equal cards on the night band, each a link to its
+   record. The whole card takes the click (the title's link stretches over it); flat, no glow. ---- */
+.feature-cards { display: grid; gap: 12px; margin-top: var(--ed-gap, 56px); }
+@media (min-width: 700px) { .feature-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .feature-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.feature-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
+  min-height: 220px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.04);
+  box-shadow: inset 0 0 0 1px var(--color-night-line);
+  transition: background var(--dur-2, 200ms) var(--ease), box-shadow var(--dur-2, 200ms) var(--ease);
+}
+.feature-card:hover { background: rgb(255 255 255 / 0.07); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22); }
+.feature-card:focus-within { box-shadow: inset 0 0 0 2px #fff; }
+.feature-card-k { display: flex; align-items: center; gap: 9px; color: var(--color-on-night-2); }
+.feature-card-k i { width: 8px; height: 8px; flex: none; border-radius: var(--radius-pill); background: var(--tone); }
+.feature-card-title { color: #fff; }
+.feature-card-link { color: inherit; outline: none; }
+.feature-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.feature-card-text { color: var(--color-on-night-2); max-width: 44ch; }
+.feature-card-go { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-weight: 600; }
+
+/* Industries: the invitation under the cards. */
+.audience-other { margin-top: 32px; max-width: 60ch; color: var(--color-ink-2); }
+.audience-other .ed-link { margin-left: 4px; }
+.segment-flows li a { color: inherit; text-decoration: underline; text-decoration-color: var(--color-line-strong); text-underline-offset: 3px; }
+.segment-flows li a:hover { text-decoration-color: currentColor; }
+
+/* ---- Demonstrations (Demonstrations.tsx, #example): three labelled tabs, one example open. The copy
+   on the left, its interface state on the right; stacked on phones. ---- */
+.demos { padding-block: var(--section-y); }
+.demos-tabs { margin-top: var(--ed-gap, 56px); }
+.demo {
+  display: grid;
+  gap: 32px;
+  margin-top: 20px;
+  padding: var(--panel-pad, 28px);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--edge-line);
+}
+@media (min-width: 960px) { .demo { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; align-items: center; } }
+.demo-copy { display: grid; gap: 16px; align-content: start; }
+.demo-badge { display: inline-flex; align-items: center; gap: 8px; color: var(--color-ink-soft); }
+.demo-badge::before { content: ""; width: 7px; height: 7px; border-radius: var(--radius-pill); background: var(--tone); }
+.demo-rows { display: grid; border-top: 1px solid var(--color-line); }
+.demo-rows > div { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--color-line); }
+@media (min-width: 640px) { .demo-rows > div { grid-template-columns: 9rem minmax(0, 1fr); gap: 16px; } }
+.demo-rows dt { color: var(--tone-ink, var(--color-ink)); }
+.demo-rows dd { color: var(--color-ink-2); }
+.demo-link { justify-self: start; }
+
+.demo-figure { display: grid; gap: 16px; padding: 22px; border-radius: var(--radius-md); background: var(--color-sunken); }
+.demo-chip { justify-self: start; padding: 6px 12px; border-radius: var(--radius-pill); color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); }
+.demo-grid { display: grid; grid-template-columns: repeat(var(--cols, 10), minmax(0, 1fr)); gap: 6px; }
+.demo-grid span { aspect-ratio: 1; border-radius: 5px; background: var(--tone); }
+.demo-grid span[data-k="item"] { background: color-mix(in srgb, var(--tone) 32%, var(--color-surface)); }
+.demo-grid span[data-k="unit"] { background: var(--color-surface); box-shadow: inset 0 0 0 1.5px var(--color-signal); }
+.demo-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--color-ink-2); }
+.demo-legend li { display: inline-flex; align-items: center; gap: 7px; }
+.demo-legend i { width: 10px; height: 10px; border-radius: 3px; background: var(--tone); }
+.demo-legend [data-k="item"] i { background: color-mix(in srgb, var(--tone) 32%, var(--color-surface)); }
+.demo-legend [data-k="unit"] i { background: var(--color-surface); box-shadow: inset 0 0 0 1.5px var(--color-signal); }
+.demo-legend b { color: var(--color-ink); font-weight: 650; }
+.demo-bars { display: grid; gap: 14px; }
+.demo-bar-row { display: grid; gap: 6px; }
+.demo-bar-row > .t-label { color: var(--color-ink-soft); }
+.demo-bar { display: flex; gap: 4px; }
+.demo-bar span {
+  flex: var(--w, 1) 0 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: var(--fs-small);
+  color: #fff;
+  background: var(--tone);
+  white-space: nowrap;
+}
+.demo-bar span[data-k="before"] { color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); }
+.demo-bar span[data-k="late"] { color: var(--color-ink); background: var(--color-surface); box-shadow: inset 0 0 0 1.5px var(--color-signal); }
+.demo-bar b { font-weight: 650; }
+.demo-handover { gap: 12px; }
+.demo-doc, .demo-task { display: grid; gap: 6px; padding: 14px 16px; border-radius: 10px; background: var(--color-surface); box-shadow: var(--edge-line); }
+.demo-doc-line { color: var(--color-ink); }
+.demo-task { box-shadow: inset 0 0 0 1.5px var(--tone); }
+.demo-task .t-label { color: var(--tone-ink, var(--color-ink)); }
+.demo-checks { display: grid; gap: 6px; padding-inline: 16px; color: var(--color-ink-2); }
+.demo-checks > div { display: flex; justify-content: space-between; gap: 12px; }
+.demo-checks dd { color: var(--color-ink); font-weight: 600; }
+.demo-checks dd[data-k="ok"]::before { content: "✓ "; color: var(--color-emerald-ink); }
+/* Phones: the three example labels scroll sideways rather than squeeze. */
+.demos-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.demos-tabs::-webkit-scrollbar { display: none; }

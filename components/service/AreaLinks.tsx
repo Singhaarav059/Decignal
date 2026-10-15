@@ -6,7 +6,7 @@ import { AreaArt } from "../sections/AreaArt";
 import { SectionLink } from "../ui/SectionLink";
 
 /**
- * The business functions as real links to their pages: tone dot, name, proposed-workflow line and lead.
+ * The business functions as real links to their pages: tone dot, name, example count and summary.
  * With `art` (the /solutions hub) each card leads with the function's drawing, and the first takes a
  * wide card with its drawing beside the copy.
  */

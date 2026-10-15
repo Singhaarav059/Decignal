@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, CircleAlert, IndianRupee, Layers, Plug, Users, type LucideIcon } from "lucide-react";
-import { APPLICATIONS, AUDIENCE, CATEGORIES, FAQ, FAQ_PEEK, PATHS } from "@/lib/content";
+import { APPLICATIONS, APPROACH, AUDIENCE, CATEGORIES, FAQ, FAQ_PEEK, PATHS } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
-import { APPROACH, AUDIENCE_COPY, CTA, HOW, NAV, STORY_PEEK } from "@/lib/copy";
+import { APPROACH_COPY, AUDIENCE_COPY, CTA, HOW, NAV, STORY_PEEK } from "@/lib/copy";
 import { CHAPTERS, subscribe } from "@/lib/story";
 import { showOutcome, showQuestion, showStep } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
@@ -197,8 +197,8 @@ function PlatformPeek({ ctx }: { ctx: Ctx }) {
   return (
     <div className="peek-grid">
       <ul className="peek-list" aria-label={NAV.platformSide.label}>
-        {APPROACH.items.map((g, k) => (
-          <li key={g.k} style={{ ...toneVars(g.tone), ["--k" as string]: k }}>
+        {APPROACH.map((g, k) => (
+          <li key={g.title} style={{ ...toneVars(APPROACH_COPY.tones[k]), ["--k" as string]: k }}>
             <SectionLink href={href} className="peek-row peek-fact" onDone={ctx.onDone}>
               <span className="peek-row-text">
                 <b>{g.title}</b>
@@ -236,7 +236,7 @@ function AppsPeek({ ctx }: { ctx: Ctx }) {
                   <b>{c}</b>
                   <span className="peek-tile-chip tabular">{NAV.appsCount(apps.length)}</span>
                 </span>
-                <small className="peek-tile-hint">{areaOf(c).signal}</small>
+                <small className="peek-tile-hint">{areaOf(c).lead}</small>
               </Link>
             </li>
           );
@@ -247,7 +247,7 @@ function AppsPeek({ ctx }: { ctx: Ctx }) {
   );
 }
 
-/** The three customer segments, each with the drawing of its example. */
+/** The four industries, each with the drawing of its example. */
 function OutcomesPeek({ ctx }: { ctx: Ctx }) {
   return (
     <div className="peek-visual">
@@ -265,7 +265,7 @@ function OutcomesPeek({ ctx }: { ctx: Ctx }) {
           </li>
         ))}
       </ul>
-      <Foot id="outcomes" ctx={ctx} figure="3" label="customer segments" />
+      <Foot id="outcomes" ctx={ctx} figure={NAV.foot.outcomes.figure} label={NAV.foot.outcomes.label} />
     </div>
   );
 }

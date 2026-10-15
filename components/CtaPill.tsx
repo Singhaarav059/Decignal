@@ -33,7 +33,7 @@ function auditFocus(): HTMLElement | true {
   return Array.from(fields).find((el) => el.offsetParent !== null && !el.closest("[aria-hidden=true]")) ?? true;
 }
 
-/** Every "Book a workflow review" in the chrome: a real link to /#audit that jumps there and puts focus
+/** Every "Talk to Decignal" in the chrome: a real link to /#audit that jumps there and puts focus
  *  in the form (see auditFocus). Pages without the form (a solution page's #audit is only a closing call
  *  to action) go to the home page's. */
 export function AuditLink({ onDone, onClick, ...rest }: Omit<ComponentProps<typeof SectionLink>, "href" | "focus">) {

@@ -8,11 +8,10 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { CH, blendAt, industryF, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
-import { IND, IND_BESIDE_MIN, IND_ROAD, indLayout, indPin, indX, industryTrack } from "@/lib/scene";
+import { IND, IND_BESIDE_MIN, IND_N, IND_ROAD, indLayout, indPin, indX, industryTrack } from "@/lib/scene";
 import { TINTS } from "../palette";
 import { Factory, Warehouse } from "../buildings";
 import { SemiTruck, TRUCK } from "../vehicles";
-import { Substation } from "../substation";
 import { Person } from "../people";
 import { asphalt, concrete, enamel, plastic, steel } from "../materials";
 import { box, cylX, cylY, cylZ, geo, merge, rbox } from "../parts";
@@ -34,7 +33,7 @@ function aprons() {
   const front = IND.siteZ + 0.5 * S; // apron front edge
   const edge = IND.roadZ - IND.roadW / 2; // road's far edge
   const parts: THREE.BufferGeometry[] = [];
-  for (let k = 0; k < 6; k++) {
+  for (let k = 0; k < IND_N; k++) {
     parts.push(box(1.36 * S, 0.012, 1.0 * S, indX(k), 0.006, IND.siteZ));
     parts.push(box(0.36 * S, 0.008, edge - front + 0.02, indX(k) + 0.3 * S, 0.004, (front + edge) / 2));
   }
@@ -138,55 +137,6 @@ function CoilTruck() {
   );
 }
 
-/** Industrial machinery: a machining centre on its assembly plinth under a light bay gantry: bed,
- *  table, column and spindle head; the control pendant in the industry's tone, an engineer beside it
- *  checking the build against the specification. */
-function MachineBay() {
-  const frame = geo("ind-gantry", () =>
-    merge([
-      ...[-0.55, 0.55].flatMap((x) => [box(0.026, 0.52, 0.026, x, 0.26, -0.24), box(0.026, 0.52, 0.026, x, 0.26, 0.24), box(0.026, 0.026, 0.5, x, 0.52, 0)]),
-      box(1.12, 0.034, 0.04, 0, 0.535, -0.06),
-    ]),
-  );
-  const hoist = geo("ind-hoist", () => merge([rbox(0.07, 0.05, 0.06, 0.01, 0.26, 0.5, -0.06), box(0.005, 0.1, 0.005, 0.26, 0.42, -0.06), rbox(0.035, 0.025, 0.025, 0.006, 0.26, 0.365, -0.06)]));
-  const bed = geo("ind-mc-bed", () => merge([rbox(0.62, 0.12, 0.36, 0.02, 0, 0.1, 0.02), box(0.44, 0.025, 0.26, 0, 0.172, 0.05)]));
-  const column = geo("ind-mc-col", () =>
-    merge([rbox(0.18, 0.34, 0.14, 0.02, -0.02, 0.33, -0.11), rbox(0.16, 0.1, 0.22, 0.02, -0.02, 0.42, -0.01), cylY(0.022, 0.08, -0.02, 0.33, 0.06, 20)]),
-  );
-  const ways = geo("ind-mc-ways", () => merge([-0.08, 0.08].map((z) => box(0.5, 0.012, 0.02, 0, 0.162, 0.05 + z))));
-  return (
-    <>
-      <mesh position={[0, 0.02, 0]} material={concrete("#D6DAE0")} receiveShadow castShadow>
-        <boxGeometry args={[1.3, 0.016, 0.9]} />
-      </mesh>
-      <mesh position={[0, 0.034, 0.02]} material={enamel("#E9ECF0", 0.5)} receiveShadow castShadow>
-        <boxGeometry args={[0.8, 0.028, 0.5]} />
-      </mesh>
-      <group position={[0, 0.02, 0]}>
-        <mesh geometry={bed} material={enamel("#C9CED6", 0.45)} castShadow receiveShadow />
-        <mesh geometry={ways} material={steel("#8A929D", 0.3)} />
-        <mesh geometry={column} material={enamel("#DDE1E6", 0.45)} castShadow receiveShadow />
-        {/* The part on the table */}
-        <mesh position={[-0.02, 0.21, 0.06]} material={steel("#B9C0C9", 0.3)} castShadow>
-          <boxGeometry args={[0.12, 0.05, 0.1]} />
-        </mesh>
-        <mesh geometry={frame} material={steel("#6B727C", 0.5)} castShadow />
-        <mesh geometry={hoist} material={enamel("#2E3238", 0.5)} castShadow />
-        {/* The control pendant: the part the specification question is about */}
-        <mesh position={[0.36, 0.2, 0.12]} material={enamel("#2E3238", 0.5)} castShadow>
-          <boxGeometry args={[0.02, 0.2, 0.02]} />
-        </mesh>
-        <mesh position={[0.36, 0.33, 0.12]} rotation-y={-0.5} material={plastic(TINTS.pink, 0.45)} castShadow>
-          <boxGeometry args={[0.1, 0.09, 0.03]} />
-        </mesh>
-      </group>
-      <group position={[0.5, 0.028, 0.3]} rotation-y={-2.4} scale={0.13}>
-        <Person look="planner" pose="tablet" seed={4.4} />
-      </group>
-    </>
-  );
-}
-
 /** Equipment service: a pump set on its skid at a customer's site, the coupling and seal housing in the
  *  industry's tone, the service technician writing up the visit. */
 function PumpService() {
@@ -233,20 +183,19 @@ function PumpService() {
   );
 }
 
+/** One place per industry, in INDUSTRIES order: manufacturing, distribution, logistics, services. */
 const SITES: (() => React.ReactNode)[] = [
   () => (
     <group position={[0.06, 0.012, -0.02]}>
       <Factory />
     </group>
   ),
-  () => <CoilTruck />,
-  () => <MachineBay />,
-  () => <Substation />,
   () => (
     <group position={[-0.05, 0.012, 0]} scale={0.95}>
-      <Warehouse accent={TINTS.violet} name="STOCKIST" />
+      <Warehouse accent={TINTS.violet} name="DISTRIBUTOR" />
     </group>
   ),
+  () => <CoilTruck />,
   () => <PumpService />,
 ];
 
@@ -320,7 +269,7 @@ export function IndustriesRoad() {
     const p = presence.current;
     // The road: draws out from the first stop as Scale hands over, fades once the camera has
     // pulled back for the ending.
-    p.from = j === CH.industries && i !== j ? indX(0) : indX(5);
+    p.from = j === CH.industries && i !== j ? indX(0) : indX(IND_N - 1);
     p.len = i === CH.industries ? 1 : j === CH.industries ? (still ? (e < 0.5 ? 0 : 1) : smootherstep(0.2, 0.75, e)) : 0;
     p.alpha = i === CH.industries && j === CH.final ? 1 - (still ? (e < 0.5 ? 0 : 1) : smoothstep(0.45, 0.9, e)) : 1;
     // The places go up out of the ground with the chapter and back down as it leaves.

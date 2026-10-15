@@ -11,19 +11,11 @@ import { Footer } from "@/components/sections/Footer";
 import { ServiceRuntime } from "@/components/service/ServiceRuntime";
 import { SERVICE_SECTIONS } from "@/components/service/sections";
 import { ServiceHero } from "@/components/service/ServiceHero";
-import {
-  ServiceApps,
-  ServiceClosing,
-  ServiceExpect,
-  ServiceGet,
-  ServiceProcess,
-  ServiceQuestions,
-  ServiceWhy,
-} from "@/components/service/ServiceSections";
+import { ServiceApps, ServiceClosing, ServiceExample, ServiceOutcomes, ServiceQuestions } from "@/components/service/ServiceSections";
 import { AreaLinks } from "@/components/service/AreaLinks";
 
-// The phone dock's section links: the four a visitor jumps between, then the review.
-const DOCK_IDS = ["deliverables", "how", "applications", "faq", "audit"];
+// The phone dock's section links: the four a visitor jumps between, then the call.
+const DOCK_IDS = ["outcomes", "applications", "example", "faq", "audit"];
 const DOCK_SECTIONS = SERVICE_SECTIONS.filter((s) => DOCK_IDS.includes(s.id));
 
 // The five functions are the only pages here: any other slug is the root not-found page (notFound below).
@@ -91,12 +83,10 @@ export default async function ServicePage({ params }: PageProps<"/solutions/[slu
       <PhoneDock sections={DOCK_SECTIONS} />
       <main id="main" tabIndex={-1} className="svc" style={{ ...toneVars(area.tone), ...accentVars(area.tone) }}>
         <ServiceHero area={area} />
-        <ServiceExpect area={area} />
-        <ServiceGet area={area} />
-        <ServiceProcess area={area} />
-        {/* Below the process, so its 3D mounts on approach rather than with the first screen. */}
+        <ServiceOutcomes area={area} />
         <ServiceApps area={area} />
-        <ServiceWhy area={area} />
+        {/* Below the records, so its 3D mounts on approach rather than with the first screen. */}
+        <ServiceExample area={area} />
         <ServiceQuestions area={area} />
         <ServiceClosing area={area} />
         <section className="svc-section svc-others page-wrap" aria-labelledby="svc-others">

@@ -2,10 +2,9 @@
 
 import { useLayoutEffect, useState } from "react";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE, industryF, subscribe } from "@/lib/story";
-import { areaHref } from "@/lib/areas";
-import { APPLICATIONS, FEATURED } from "@/lib/content";
+import { appHref } from "@/lib/areas";
+import { appById } from "@/lib/content";
 import { CHAPTER_COPY, INDUSTRY } from "@/lib/copy";
-import { showApplication } from "@/lib/jump";
 import { accentVars, toneVars } from "@/lib/tone";
 import { TONE, goToStory, industryAt } from "./chapters";
 import { StoryPills } from "./StoryPills";
@@ -70,9 +69,9 @@ export function IndustryTitle() {
 }
 
 /**
- * 08, inside the story card: every industry as one selector (click turns the board to it), then the
- * industry's challenge, what Decignal recommends there and how to start. The card never fades
- * between industries; the text swaps in place.
+ * Industries, inside the story card: every industry as one selector (click turns the road to it), then
+ * who it is for, its three application examples (each a link to its record) and its filtered examples.
+ * The card never fades between industries; the text swaps in place.
  */
 export function IndustryCard() {
   const at = useIndustryAt();
@@ -86,41 +85,29 @@ export function IndustryCard() {
         onChange={goToIndustry}
       />
       <div className="story-stack">
-        {INDUSTRIES.map((ind, k) => {
-          const app = APPLICATIONS.findIndex((a) => a.name === ind.start);
-          // The three featured workflows open in the explorer; the others on the directory.
-          const here = (FEATURED as readonly number[]).includes(app);
-          return (
-            <div key={ind.name} id={`ind-${k}`} role="tabpanel" className="story-stack-item ind-block" data-on={k === at || undefined} style={toneVars(INDUSTRY_TONE[k])}>
-              <p className="t-body ind-challenge">{ind.challenge}</p>
-              <p className="t-label ind-label">{INDUSTRY.decisions}</p>
-              <ul className="ind-rows">
-                {ind.decisions.map((d) => (
-                  <li key={d} className="t-small">
+        {INDUSTRIES.map((ind, k) => (
+          <div key={ind.name} id={`ind-${k}`} role="tabpanel" className="story-stack-item ind-block" data-on={k === at || undefined} style={toneVars(INDUSTRY_TONE[k])}>
+            <p className="t-body ind-challenge">{ind.challenge}</p>
+            <p className="t-label ind-label">{INDUSTRY.decisions}</p>
+            <ul className="ind-rows">
+              {ind.apps.map((id) => {
+                const app = appById(id)!;
+                return (
+                  <li key={id} className="t-small">
                     <svg width="16" height="16" viewBox="0 0 16 16" className="ind-check" aria-hidden>
                       <path d="M4.6 8.3l2.2 2.2 4.6-4.8" />
                     </svg>
-                    {d}
+                    <a href={appHref(app)}>{app.name}</a>
                   </li>
-                ))}
-              </ul>
-              {app >= 0 && (
-                <a
-                  href={here ? `#application-${APPLICATIONS[app].id}` : `${areaHref(APPLICATIONS[app].category)}#workflow-${APPLICATIONS[app].id}`}
-                  className="story-link t-small"
-                  onClick={(e) => {
-                    if (!here || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                    e.preventDefault();
-                    showApplication(app);
-                  }}
-                >
-                  {INDUSTRY.startLink(ind.start)}
-                  <Arrow />
-                </a>
-              )}
-            </div>
-          );
-        })}
+                );
+              })}
+            </ul>
+            <a href={ind.href} className="story-link t-small">
+              {INDUSTRY.startLink}
+              <Arrow />
+            </a>
+          </div>
+        ))}
       </div>
     </div>
   );

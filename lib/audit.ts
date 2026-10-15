@@ -8,7 +8,7 @@ export const LIMITS = {
   name: [2, 120],
   email: 254,
   company: [2, 160],
-  workflow: [10, 1200],
+  workflow: [3, 1200],
   systems: 200,
   source: 200,
 } as const;
@@ -61,10 +61,10 @@ export type AuditResponse =
 
 /** Field messages (handoff §8). Shown under the field; plain sentences, no codes. */
 const AUDIT_MESSAGES = {
-  name: "Enter your name.",
+  name: "Please complete this field.",
   email: "Enter a valid email address.",
-  company: "Enter your company name.",
-  workflow: "Tell us briefly about the workflow.",
+  company: "Please complete this field.",
+  workflow: "Please complete this field.",
   tooLong: (max: number) => `Keep this to ${max.toLocaleString("en-IN")} characters or fewer.`,
 } as const;
 
@@ -75,12 +75,12 @@ export const AUDIT_COPY = {
   invalid: "Some answers need a look. Check the highlighted fields.",
   rate_limited: "Too many requests. Try again in a few minutes.",
   not_configured: "We cannot take requests online yet. Download your answers and email them to us.",
-  errorHeading: "We could not send your request",
+  errorHeading: "Your request could not be sent",
   errorBody: (email: string) => `Please try again. If the problem continues, email ${email}.`,
   retry: "Try again",
   download: "Download your answers",
   successHeading: "Your request has been received",
-  successBody: "We will contact you by email to arrange a time. Your call is not booked until we confirm it.",
+  successBody: "We will contact you by email to arrange a time.",
   reference: (ref: string) => `Reference ${ref}`,
 } as const;
 
@@ -168,7 +168,7 @@ export function isLikelyBot(input: unknown): boolean {
  * the form. Accepts partial data for the fallback.
  */
 export function auditBrief(d: Partial<AuditData>, meta: { ref?: string; submittedAt?: Date } = {}): string {
-  const out = ["DECIGNAL · WORKFLOW REVIEW REQUEST"];
+  const out = ["DECIGNAL · ENQUIRY"];
   if (meta.ref) out.push(`Reference: ${meta.ref}`);
   if (meta.submittedAt) out.push(`Submitted: ${meta.submittedAt.toISOString().slice(0, 16).replace("T", " ")} UTC`);
   out.push(

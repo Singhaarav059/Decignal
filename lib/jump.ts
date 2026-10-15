@@ -30,7 +30,7 @@ export const showQuestion = (i: number) => send("faq-jump", i);
 export const onQuestion = (fn: (i: number) => void) => listen("faq-jump", fn);
 
 
-/** Cut the application explorer to one application (by APPLICATIONS index). */
+/** Cut the application explorer to one application (by FEATURED index). */
 export const showApplication = (i: number) => send("application-jump", i);
 export const onApplication = (fn: (i: number) => void) => listen("application-jump", fn);
 

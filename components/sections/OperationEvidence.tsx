@@ -3,13 +3,13 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { APPLICATION_DEMOS, DEMO_PINS, type DemoKind } from "@/lib/application-demos";
 import { EVIDENCE_LABELS } from "@/lib/copy";
-import { APP_FACTS, DOC_STATUS, EXAMPLE, inr } from "@/lib/example";
+import { APP_FACTS, inr } from "@/lib/example";
 import { toneVars, type Tone } from "@/lib/tone";
 import { CountUp } from "../ui/CountUp";
 
-/** The colour of each workflow's function (the same accent as its 3D scene). */
+/** The colour of each application's function (the same accent as its 3D scene). */
 const ACCENT: Record<DemoKind, Tone> = {
-  inventory: "saffron",
+  inventory: "cobalt",
   production: "emerald",
   maintenance: "pink",
   risk: "cobalt",
@@ -56,81 +56,77 @@ function Tick({ x, y, ok }: { x: number; y: number; ok: boolean }) {
   );
 }
 
-/* ---- Dispatch: the customer checklist, one row per required document, with its status ---- */
-function Dispatch({ step }: { step: number }) {
-  const items = EXAMPLE.checklist.items;
-  return (
-    <>
-      <text x={0} y={12}>{`CHECKLIST ${EXAMPLE.checklist.rev.toUpperCase()}`}</text>
-      <text x={W} y={12} textAnchor="end">{`LINE ${EXAMPLE.line.n} · ${EXAMPLE.line.heat}`}</text>
-      <line x1={0} y1={20} x2={W} y2={20} className="chart-grid" />
-      {items.map((it, row) => {
-        // The situation shows the line; the source records reveal each document's status.
-        const shown = step >= 1 || it.status !== "supported";
-        const ok = it.status === "supported";
-        return (
-          <g key={it.name} transform={`translate(0 ${26 + row * 17})`}>
-            <text x={0} y={11} fill={INK}>{it.name.toUpperCase()}</text>
-            {shown && <Tick x={262} y={7} ok={ok} />}
-            <text x={W} y={11} textAnchor="end" fill={ok ? SOFT : RISK_INK}>
-              {shown ? DOC_STATUS[it.status].toUpperCase() : "CHECKING"}
-            </text>
-          </g>
-        );
-      })}
-      <text x={0} y={142} fill={step === 2 ? INK : SOFT}>{step === 2 ? "2 QUESTIONS FOR THE QUALITY REVIEWER" : `${EXAMPLE.files} FILES SUPPLIED`}</text>
-    </>
-  );
-}
-
-/* ---- Job work: sent, returned, rejected and the pieces still to explain, on one 1,000-piece bar ---- */
-function Jobwork({ step }: { step: number }) {
-  const j = APP_FACTS.jobwork;
-  const x0 = 0;
-  const w = W;
-  const k = w / j.sent;
-  const ret = j.returned * k;
-  const rej = j.rejected * k;
-  return (
-    <>
-      <text x={0} y={14} fill={INK}>{`CHALLAN ${j.challan} · ${j.process.toUpperCase()}`}</text>
-      <text x={W} y={14} textAnchor="end">{`${j.sent.toLocaleString("en-IN")} SENT`}</text>
-      <rect x={x0} y={28} width={w} height={22} rx={4} fill="var(--color-track)" />
-      <rect x={x0} y={28} width={ret} height={22} rx={4} fill="var(--tone)" className="evidence-bar" />
-      {step >= 1 && <rect x={x0 + ret} y={28} width={rej} height={22} fill={LINE} className="evidence-bar" />}
-      <rect x={x0 + ret + (step >= 1 ? rej : 0)} y={25} width={w - ret - (step >= 1 ? rej : 0)} height={28} rx={3} fill={RISK} fillOpacity="0.12" stroke={RISK} strokeWidth="1" strokeDasharray="2 2" />
-      <text x={0} y={74} fill={INK}>{`${j.returned} RETURNED`}</text>
-      {step >= 1 && <text x={200} y={74} textAnchor="middle">{`${j.rejected} REJECTIONS ON RECORD`}</text>}
-      <text x={W} y={74} textAnchor="end" fill={RISK_INK}>{`${step >= 1 ? j.open : j.sent - j.returned} TO EXPLAIN`}</text>
-      <text x={0} y={104} fill={step === 2 ? INK : SOFT}>{step === 2 ? `FOLLOW-UP FOR ${j.worker.toUpperCase()} · NOT DECLARED LOST` : "RETURN RECORDS LINKED TO THE CHALLAN"}</text>
-    </>
-  );
-}
-
-/* ---- RFQ: the customer requirement against the supplier offer, line by line ---- */
-function Rfq({ step }: { step: number }) {
-  const r = APP_FACTS.rfq;
+/* ---- Daily brief: this week's orders and the three open questions, each with its owner ---- */
+function Brief({ step }: { step: number }) {
+  const b = APP_FACTS.brief;
   const rows: [string, string, string, boolean][] = [
-    ["WETTED PARTS", r.required, r.offered, false],
-    ["SIZE", "DN50", "DN50", true],
-    ["PRESSURE CLASS", "PN40", "PN40", true],
-    ["END CONNECTION", "FLANGED", "FLANGED", true],
+    ["ORDER BOOK", "THIS WEEK", "LINKED", true],
+    ["SUPPLIER DELAY", b.order, "BUYER", false],
+    ["STOCK ALLOCATION", "NOT CONFIRMED", "STORES", false],
+    ["DELIVERY HOLD", b.hold, "DISPATCH", false],
   ];
   return (
     <>
-      <text x={0} y={14}>{r.line.toUpperCase()}</text>
-      <text x={210} y={14} textAnchor="middle">ENQUIRY</text>
-      <text x={300} y={14} textAnchor="middle">OFFER</text>
-      <line x1={0} y1={22} x2={W} y2={22} className="chart-grid" />
-      {rows.map(([k, need, offer, ok], row) => (
-        <g key={k} transform={`translate(0 ${30 + row * 22})`}>
+      <text x={0} y={12}>ISSUE</text>
+      <text x={W} y={12} textAnchor="end">OWNER</text>
+      <line x1={0} y1={20} x2={W} y2={20} className="chart-grid" />
+      {rows.map(([k, ref, owner, ok], row) => (
+        <g key={k} transform={`translate(0 ${26 + row * 22})`}>
           <text x={0} y={13} fill={INK}>{k}</text>
-          <text x={210} y={13} textAnchor="middle" fill={INK}>{need}</text>
-          <text x={300} y={13} textAnchor="middle" fill={step >= 1 && !ok ? RISK_INK : INK}>{step >= 1 ? offer : "·"}</text>
-          {step >= 1 && <Tick x={378} y={9} ok={ok} />}
+          <text x={190} y={13} fill={SOFT}>{step >= 1 || ok ? ref : "·"}</text>
+          {step >= 1 && <Tick x={300} y={9} ok={ok} />}
+          <text x={W} y={13} textAnchor="end" fill={step >= 1 && !ok ? RISK_INK : SOFT}>{step >= 1 ? owner : "·"}</text>
         </g>
       ))}
-      <text x={0} y={128} fill={step === 2 ? INK : SOFT}>{step === 2 ? "CLARIFICATION DRAFTED · NO SUBSTITUTE CHOSEN" : r.item.toUpperCase()}</text>
+      <text x={0} y={128} fill={step === 2 ? INK : SOFT}>{step === 2 ? `BRIEF · ${b.open} OPEN QUESTIONS WITH OWNERS` : "ORDERS DUE THIS WEEK"}</text>
+    </>
+  );
+}
+
+/* ---- Quotations: three suppliers' terms side by side, put on one basis ---- */
+function Quotes({ step }: { step: number }) {
+  const q = APP_FACTS.quote;
+  const rows: [string, string, string, string, boolean][] = [
+    [q.a, "PER BOX", "PER PIECE", "UNIT CONVERTED", true],
+    [q.b, "NO FREIGHT", "FREIGHT ASKED", "TO CONFIRM", false],
+    [q.c, "LATER DATE", "DATE KEPT", "VISIBLE", false],
+  ];
+  return (
+    <>
+      <text x={0} y={14} fill={INK}>{`${q.pr} · ${q.suppliers} QUOTATIONS`}</text>
+      <text x={W} y={14} textAnchor="end">{step >= 1 ? "ONE BASIS" : "AS RECEIVED"}</text>
+      <line x1={0} y1={22} x2={W} y2={22} className="chart-grid" />
+      {rows.map(([name, raw, basis, state, ok], row) => (
+        <g key={name} transform={`translate(0 ${30 + row * 24})`}>
+          <text x={0} y={14} fill={INK}>{name.toUpperCase()}</text>
+          <text x={170} y={14} fill={step >= 1 ? INK : SOFT}>{step >= 1 ? basis : raw}</text>
+          {step >= 1 && <Tick x={300} y={9} ok={ok} />}
+          <text x={W} y={14} textAnchor="end" fill={step >= 1 && !ok ? RISK_INK : SOFT}>{step >= 1 ? state : "·"}</text>
+        </g>
+      ))}
+      <text x={0} y={118} fill={step === 2 ? INK : SOFT}>{step === 2 ? "COMPARISON SHEET FOR THE BUYER" : "SAME PURCHASE REQUEST"}</text>
+    </>
+  );
+}
+
+/* ---- Order intake: the order's lines on one bar, matched and open ---- */
+function Order({ step }: { step: number }) {
+  const o = APP_FACTS.order;
+  const k = W / o.lines;
+  const m = o.matched * k;
+  const it = o.item * k;
+  return (
+    <>
+      <text x={0} y={14} fill={INK}>{`CUSTOMER ORDER ${o.po}`}</text>
+      <text x={W} y={14} textAnchor="end">{`${o.lines} LINES`}</text>
+      <rect x={0} y={28} width={W} height={22} rx={4} fill="var(--color-track)" />
+      {step >= 1 && <rect x={0} y={28} width={m} height={22} rx={4} fill="var(--tone)" className="evidence-bar" />}
+      {step >= 1 && <rect x={m} y={28} width={it} height={22} fill={LINE} className="evidence-bar" />}
+      {step >= 1 && <rect x={m + it} y={25} width={W - m - it} height={28} rx={3} fill={RISK} fillOpacity="0.12" stroke={RISK} strokeWidth="1" strokeDasharray="2 2" />}
+      <text x={0} y={74} fill={INK}>{step >= 1 ? `${o.matched} MATCHED` : o.alias.toUpperCase()}</text>
+      {step >= 1 && <text x={250} y={74} textAnchor="middle">{`${o.item} ITEMS TO CONFIRM`}</text>}
+      <text x={W} y={74} textAnchor="end" fill={RISK_INK}>{step >= 1 ? `${o.unit} UNITS TO CLARIFY` : o.pack.toUpperCase()}</text>
+      <text x={0} y={104} fill={step === 2 ? INK : SOFT}>{step === 2 ? "DRAFT FOR THE ORDER DESK TO APPROVE" : "APPROVED ITEM MAPPINGS AND UNIT RULES"}</text>
     </>
   );
 }
@@ -138,7 +134,10 @@ function Rfq({ step }: { step: number }) {
 /* ---- Service: the report's recommendation and the equipment records it could belong to ---- */
 function Service({ step }: { step: number }) {
   const sv = APP_FACTS.service;
-  const candidates = ["PX-4107", "PX-4117"];
+  const found: [string, string][] = [
+    [sv.equipment.toUpperCase(), "FOUND"],
+    ["OPEN QUOTE", "NONE"],
+  ];
   return (
     <>
       <rect x={0} y={4} width={170} height={74} rx={6} fill="var(--color-surface)" stroke={LINE} />
@@ -146,18 +145,18 @@ function Service({ step }: { step: number }) {
       <line x1={12} y1={34} x2={150} y2={34} className="chart-grid" />
       <line x1={12} y1={46} x2={158} y2={46} stroke="var(--tone)" strokeWidth="2.2" className="evidence-draw" />
       <line x1={12} y1={58} x2={128} y2={58} className="chart-grid" />
-      <text x={12} y={72} fill={RISK_INK}>{`SERIAL ${sv.serial}`}</text>
+      <text x={12} y={72} fill={SOFT}>RECOMMENDATION</text>
       {step >= 1 &&
-        candidates.map((c, i) => (
+        found.map(([c, v], i) => (
           <g key={c} transform={`translate(214 ${8 + i * 34})`}>
             <path d={`M-40 ${30 - i * 34} C -20 ${30 - i * 34}, -20 14, 0 14`} stroke="var(--tone)" strokeOpacity="0.5" strokeDasharray="2 3" fill="none" />
-            <rect width={120} height={28} rx={5} fill="var(--color-surface)" stroke={LINE} />
+            <rect width={170} height={28} rx={5} fill="var(--color-surface)" stroke={LINE} />
             <text x={10} y={18} fill={INK}>{c}</text>
-            <text x={110} y={18} textAnchor="end" fill={SOFT}>MATCH?</text>
+            <text x={160} y={18} textAnchor="end" fill={SOFT}>{v}</text>
           </g>
         ))}
       <text x={0} y={100} fill={INK}>{`${sv.part.toUpperCase()} · ${sv.when.toUpperCase()}`}</text>
-      <text x={W} y={100} textAnchor="end" fill={step === 2 ? INK : SOFT}>{step === 2 ? "FOLLOW-UP FOR THE OWNER" : "NO OWNER YET"}</text>
+      <text x={W} y={100} textAnchor="end" fill={step === 2 ? INK : SOFT}>{step === 2 ? "ASSIGNED TO THE SERVICE OWNER" : "NO OWNER YET"}</text>
     </>
   );
 }
@@ -195,7 +194,7 @@ function Deduction({ step }: { step: number }) {
   const rows: [string, string, boolean][] = [
     ["INVOICE", d.invoice, true],
     ["DELIVERY ACKNOWLEDGEMENT", d.ack, true],
-    ["RECEIVER NOTE", "AMBIGUOUS", false],
+    ["RECEIVER NOTE", "UNCLEAR", false],
   ];
   return (
     <>
@@ -216,16 +215,16 @@ function Deduction({ step }: { step: number }) {
 }
 
 const CHARTS: Record<DemoKind, { h: number; draw: (p: { step: number }) => ReactNode }> = {
-  production: { h: 148, draw: Dispatch },
-  inventory: { h: 110, draw: Jobwork },
-  sales: { h: 134, draw: Rfq },
+  production: { h: 134, draw: Brief },
+  inventory: { h: 124, draw: Quotes },
+  sales: { h: 110, draw: Order },
   maintenance: { h: 106, draw: Service },
   risk: { h: 130, draw: Supplier },
   finance: { h: 124, draw: Deduction },
 };
 
 /**
- * The source records behind a workflow's review, shown in the explorer card's drawer: one chart,
+ * The records behind an application's example, shown in the explorer card's drawer: one chart,
  * three readings and the tab's conclusion. Flat fills only. Pointing at a reading opens the pin
  * of its object in the 3D scene (onPin).
  */

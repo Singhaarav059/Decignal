@@ -1,32 +1,21 @@
 "use client";
 
-import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import {
-  BEATS,
   CH,
   CHAPTERS,
-  CONTEXT_PINS,
   EXIT_DRIFT,
-  activePin,
   blendAt,
-  clamp01,
   smoothstep,
   finalExit,
-  localIn,
-  select,
   setCardRect,
-  setPinHint,
   store,
   subscribe,
 } from "@/lib/story";
-import { transferredUnits } from "@/lib/scene";
-import { CHAPTER_COPY, CTA, EVIDENCE_CHECKS, EXAMPLE_LABEL, HERO, SIGNAL_ARIA, STEPPER, STORY_UI, type Headline } from "@/lib/copy";
-import { EXAMPLE } from "@/lib/example";
+import { CHAPTER_COPY, CTA, EXAMPLE_LABEL, HERO, STORY_UI, type Headline } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
 import { TONE } from "./chapters";
 import { SystemChips } from "./SystemChips";
-import { DecisionControls } from "./DecisionControls";
-import { LayerPicker } from "./LayerPicker";
 import { ScaleCard } from "./ScaleApps";
 import { IndustryCard, IndustryTitle } from "./IndustryDetail";
 import { FinalCard } from "./FinalCard";
@@ -53,12 +42,10 @@ export function StoryCard() {
     const overlay = outer?.parentElement;
     if (!frame || !inner || !outer || !overlay) return;
     const panes = Array.from(inner.querySelectorAll<HTMLElement>(":scope > [data-ch]"));
-    const stock = inner.querySelector<HTMLElement>("[data-stock]");
     const heights = panes.map((p) => p.offsetHeight);
     // The body clips the incoming pane while the card eases; its padding keeps focus rings unclipped.
     const pad = parseFloat(getComputedStyle(inner).paddingTop) + parseFloat(getComputedStyle(inner).paddingBottom);
     let chrome = frame.offsetHeight - inner.offsetHeight;
-    let lastStock = "";
     let lastRect = "";
     let left = false;
     // Wide screens: the hero carries its own line and CTA in its corners, so the card waits for 02; the
@@ -172,16 +159,6 @@ export function StoryCard() {
         left = !left;
         report();
       }
-
-      // The pallets loaded at the bay count up as each goes onto the truck.
-      if (stock) {
-        const t = g >= CH.decision + 1 ? 1 : localIn(CH.decision, g);
-        const v = `${transferredUnits(t) / 80} of 3`;
-        if (v !== lastStock) {
-          stock.textContent = v;
-          lastStock = v;
-        }
-      }
     });
 
     // Hidden only once the page below has covered the story completely.
@@ -243,25 +220,10 @@ export function StoryCard() {
             <ChapterBody ch={CH.fragments} />
           </Pane>
           {/* 02 Signal: pointing at the card lifts the crate */}
-          <Pane ch={CH.signal} hint="signal">
-            <ChapterBody ch={CH.signal} />
-          </Pane>
           {/* 03 Problem */}
-          <Pane ch={CH.problem}>
-            <ChapterBody ch={CH.problem} />
-          </Pane>
           {/* 04 Context: each check opens the island it came from */}
-          <Pane ch={CH.context}>
-            <ChapterBody ch={CH.context} />
-          </Pane>
           {/* 05 Decision: the transfer order, step by step with the forklift and the truck */}
-          <Pane ch={CH.decision}>
-            <ChapterBody ch={CH.decision} />
-          </Pane>
           {/* 06 Control: the approval panel, linked to the 3D decision card */}
-          <Pane ch={CH.control}>
-            <ChapterBody ch={CH.control} />
-          </Pane>
           {/* 07 Scale: the five functions, linked both ways to the 3D cards */}
           <Pane ch={CH.scale}>
             <ChapterBody ch={CH.scale} />
@@ -306,58 +268,6 @@ export function ChapterBody({ ch }: { ch: number }) {
       </Rest>
         </>
       );
-    case CH.signal:
-      return (
-        <>
-      <Head ch={CH.signal} />
-      <Rest>
-        <Body ch={CH.signal} />
-        <Readout ch={CH.signal} details={<SignalDetails />} />
-      </Rest>
-        </>
-      );
-    case CH.problem:
-      return (
-        <>
-      <Head ch={CH.problem} />
-      <Rest>
-        <Body ch={CH.problem} />
-        <Readout ch={CH.problem} details={<DetailRows ch={CH.problem} />} />
-      </Rest>
-        </>
-      );
-    case CH.context:
-      return (
-        <>
-      <Head ch={CH.context} />
-      <Rest>
-        <Body ch={CH.context} />
-        <EvidenceChecks />
-      </Rest>
-        </>
-      );
-    case CH.decision:
-      return (
-        <>
-      <Head ch={CH.decision} />
-      <Rest>
-        <Body ch={CH.decision} />
-        <Stepper />
-        <Readout ch={CH.decision} details={<DecisionDetails />} />
-      </Rest>
-        </>
-      );
-    case CH.control:
-      return (
-        <>
-      <Head ch={CH.control} />
-      <Rest>
-        <Body ch={CH.control} optional />
-        <LayerPicker />
-        <DecisionControls />
-      </Rest>
-        </>
-      );
     case CH.scale:
       return (
         <>
@@ -393,11 +303,10 @@ export function ChapterBody({ ch }: { ch: number }) {
   }
 }
 
-/** One chapter's content. `hint="signal"` makes pointing at it lift the signal crate. */
-function Pane({ ch, hint, children }: { ch: number; hint?: "signal"; children: ReactNode }) {
-  const on = (v: boolean) => (hint === "signal" ? () => (store.signalHint = v) : undefined);
+/** One chapter's content. */
+function Pane({ ch, children }: { ch: number; children: ReactNode }) {
   return (
-    <div data-ch={ch} className="story-pane" onPointerEnter={on(true)} onPointerLeave={on(false)} onFocus={on(true)} onBlur={on(false)}>
+    <div data-ch={ch} className="story-pane">
       {children}
       {/* The whole card is an obstacle for the 3D labels, not only its text (ScreenTag). */}
       <i data-obstacle className="story-card-hit" aria-hidden />
@@ -455,231 +364,6 @@ function Body({ ch, optional }: { ch: number; optional?: boolean }) {
       {copy.body}
     </p>
   ) : null;
-}
-
-/**
- * One number and what it counts, with a Details disclosure for the figures behind it. Details open
- * on hover with a mouse and on click or tap; a click keeps them open until the next click.
- */
-function Readout({ ch, details }: { ch: number; details?: ReactNode }) {
-  const id = useId();
-  const [open, setOpen] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const r = CHAPTER_COPY[ch]?.readout;
-  const fine = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  return (
-    <div
-      className="story-readout"
-      onPointerLeave={() => {
-        if (!pinned) setOpen(false);
-      }}
-    >
-      <div className="story-readout-row">
-        {r && (
-          <p className="story-readout-figure">
-            <strong className="t-num-md" data-risk={r.risk || undefined}>
-              {r.value}
-            </strong>
-            <span className="t-small">{r.label}</span>
-          </p>
-        )}
-        {details && (
-          <button
-            type="button"
-            className="story-details-btn t-small"
-            aria-expanded={open}
-            aria-controls={id}
-            onPointerEnter={() => {
-              if (fine()) setOpen(true);
-            }}
-            onClick={() => {
-              const next = !(open && pinned);
-              setOpen(next);
-              setPinned(next);
-            }}
-          >
-            {STORY_UI.details}
-            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
-              <path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
-      </div>
-      {details && (
-        <div id={id} className="story-details" hidden={!open}>
-          {details}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Detail rows from the copy deck: label and figure, red where the figure is the risk. */
-function DetailRows({ ch, skip = [] as string[] }: { ch: number; skip?: string[] }) {
-  return (
-    <dl className="story-rows">
-      {(CHAPTER_COPY[ch]?.details ?? [])
-        .filter((d) => !skip.includes(d.label))
-        .map((d) => (
-          <div key={d.label}>
-            <dt>{d.label}</dt>
-            <dd className="tabular" data-risk={d.risk || undefined}>
-              {d.value}
-            </dd>
-          </div>
-        ))}
-    </dl>
-  );
-}
-
-/** 02: the shipment's figures and the six documents its checklist asks for, the open ones in red. */
-function SignalDetails() {
-  return (
-    <div className="signal-detail" role="group" aria-label={SIGNAL_ARIA}>
-      <DetailRows ch={CH.signal} />
-      <ol className="signal-days" aria-hidden>
-        {EXAMPLE.checklist.items.map((it, i) => (
-          <li key={it.name} data-risk={it.status !== "supported" ? "" : undefined} style={{ ["--i" as string]: i }}>
-            <span />
-            <small>{it.name.split(" ")[0].slice(0, 4)}</small>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-/** 05: the pallets loaded at the bay (live, as they load) and the checklist's statuses. */
-function DecisionDetails() {
-  const rows = CHAPTER_COPY[CH.decision]?.details ?? [];
-  const left = { label: "Pallets loaded, held", value: "0 of 3" };
-  const rest = rows;
-  return (
-    <dl className="story-rows">
-      {left && (
-        <div onPointerEnter={() => setPinHint("truck")} onPointerLeave={() => setPinHint(null)}>
-          <dt>{left.label}</dt>
-          <dd className="tabular" data-stock="">
-            {left.value}
-          </dd>
-        </div>
-      )}
-      {rest.map((d) => (
-        <div key={d.label}>
-          <dt>{d.label}</dt>
-          <dd className="tabular">{d.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-/** 04: each check names the system it came from. Pointing lifts that island and opens its pin; clicking opens its evidence. */
-function EvidenceChecks() {
-  const root = useRef<HTMLUListElement>(null);
-  // The row whose island pin is open: the timeline's beat, or the row being pointed at.
-  const mark = useRef(() => {});
-  useLayoutEffect(() => {
-    const rows = Array.from(root.current?.querySelectorAll<HTMLElement>("[data-island]") ?? []);
-    let last = "";
-    mark.current = () => {
-      const pin = activePin();
-      const v = pin?.startsWith("island:") ? pin.slice(7) : "";
-      if (v === last) return;
-      last = v;
-      rows.forEach((r) => r.toggleAttribute("data-active", r.dataset.island === v));
-    };
-    return subscribe(() => mark.current());
-  }, []);
-  const point = (sys: number) => () => {
-    store.islandHint = sys;
-    setPinHint(`island:${sys}`);
-    mark.current();
-  };
-  const leave = () => {
-    store.islandHint = -1;
-    setPinHint(null);
-    mark.current();
-  };
-  return (
-    <ul ref={root} className="evidence-checks" aria-label={EVIDENCE_CHECKS.aria}>
-      {EVIDENCE_CHECKS.rows.map((r) => (
-        <li key={r.label}>
-          <button
-            type="button"
-            data-island={r.island}
-            aria-label={EVIDENCE_CHECKS.rowAria(r.label, r.value, r.system)}
-            onPointerEnter={point(r.island)}
-            onPointerLeave={leave}
-            onFocus={point(r.island)}
-            onBlur={leave}
-            onClick={() => select(store.selected === r.island ? -1 : r.island)}
-            style={toneVars(r.tone)}
-          >
-            <span className="evidence-check-dot" aria-hidden />
-            <span>{r.label}</span>
-            <strong className="tabular">{r.value}</strong>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// Keep the card's evidence order and the timeline's pins in step.
-if (process.env.NODE_ENV !== "production" && EVIDENCE_CHECKS.rows.some((r, i) => r.island !== CONTEXT_PINS[i])) {
-  console.warn("StoryCard: EVIDENCE_CHECKS order differs from CONTEXT_PINS");
-}
-
-/** 05: the transfer order's progress, driven by the same beats as the forklift and the truck. */
-// Received once Plant 01 has the pallets off the trailer, not when the truck pulls up.
-const STEP_AT = [0, BEATS.load[0], BEATS.load[1], BEATS.drive[0], BEATS.unload[1] - 0.02];
-
-function Stepper() {
-  const root = useRef<HTMLOListElement>(null);
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const items = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
-    const fills = Array.from(el.querySelectorAll<HTMLElement>("[data-fill]"));
-    const label = el.parentElement?.querySelector<HTMLElement>("[data-step-now]");
-    let lastAt = -1;
-    return subscribe((g) => {
-      const t = g >= CH.decision + 1 ? 1 : g < CH.decision ? 0 : localIn(CH.decision, g);
-      let at = 0;
-      STEP_AT.forEach((s, i) => {
-        if (t >= s) at = i;
-      });
-      // Each connector fills as the work between two steps happens.
-      fills.forEach((f, i) => {
-        f.style.transform = `scaleX(${clamp01((t - STEP_AT[i]) / (STEP_AT[i + 1] - STEP_AT[i]))})`;
-      });
-      if (at !== lastAt) {
-        lastAt = at;
-        items.forEach((it, i) => (it.dataset.state = i < at ? "done" : i === at ? "now" : "next"));
-        if (label) label.textContent = `${EXAMPLE.shipment.id}: ${STEPPER[at]}`;
-      }
-    });
-  }, []);
-  return (
-    <div className="stepper-wrap">
-      <ol ref={root} className="stepper" aria-label={`Review of shipment ${EXAMPLE.shipment.id}`}>
-        {STEPPER.map((name, i) => (
-          <li key={name} data-step data-state="next" className="stepper-step">
-            <span className="stepper-dot" aria-hidden />
-            <span className="stepper-label">{name}</span>
-            {i < STEPPER.length - 1 && (
-              <span className="stepper-line" aria-hidden>
-                <span data-fill className="stepper-fill" />
-              </span>
-            )}
-          </li>
-        ))}
-      </ol>
-      {/* The current step for screen readers, only while this chapter is the active one (inert otherwise). */}
-      <p className="sr-only" aria-live="polite" data-step-now />
-    </div>
-  );
 }
 
 /** A small mouse with a wheel that keeps rolling down. */

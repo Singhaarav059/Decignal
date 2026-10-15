@@ -32,7 +32,7 @@ import SectionTitle from "../ui/SectionTitle";
 import { CalendarCheck } from "lucide-react";
 import { Arrow } from "../ui/Arrow";
 
-// The workflow review enquiry (handoff §8): the introduction on the ink panel and one short request
+// The enquiry (handoff §8): the introduction on the ink panel and one short request
 // card beside it (after it on phones). It asks for a call, not a booking, so nothing here claims a
 // confirmed time or a sent email without the server's success. Requests go to /api/audit
 // (lib/audit.ts has the contract).
@@ -261,6 +261,7 @@ export function Audit({ source }: { source?: string }) {
                     <h3 data-audit-heading tabIndex={-1} className="audit-head-title">
                       {AUDIT.cardTitle}
                     </h3>
+                    <p className="t-small audit-helper">{AUDIT.helper}</p>
                   </div>
 
                   {tried && errors.length > 0 && (
@@ -381,7 +382,6 @@ export function Audit({ source }: { source?: string }) {
                       {AUDIT.privacyLink}
                       <span className="sr-only"> {AUDIT.newTab}</span>
                     </Link>
-                    .
                   </p>
                 </form>
               )}

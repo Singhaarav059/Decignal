@@ -1,61 +1,64 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { APP_FACTS, EXAMPLE } from "@/lib/example";
+import { APP_FACTS } from "@/lib/example";
 import { useDrawOn } from "./AreaArt";
 import { useSvgScale } from "./svgScale";
 
-/**
- * Each audience card's colour is the function its main example sits in: dispatch documentation for
- * manufacturers (emerald), RFQ review for distributors (tangerine), service follow-up for service
- * businesses (pink). Index-aligned with AUDIENCE (lib/content.ts). Use with toneVars.
- */
-export const OUTCOME_TONE = ["emerald", "tangerine", "pink"] as const;
+/** Each industry card's colour, index-aligned with AUDIENCE (lib/content.ts) and INDUSTRY_TONE. */
+export const OUTCOME_TONE = ["emerald", "violet", "tangerine", "pink"] as const;
 
-const L = EXAMPLE.line;
-const C = EXAMPLE.cert;
-const R = APP_FACTS.rfq;
+const O = APP_FACTS.order;
 const S = APP_FACTS.service;
 
 const LABELS = [
-  `Delivery line ${L.n}, heat ${L.heat}, linked to its documents: the dimensional report matches, the certificate says ${C.heat} and is flagged, the process certificate is missing.`,
-  `An enquiry line asks for ${R.required}; the supplier offer lists ${R.offered}. The difference is flagged and a clarification question drafted.`,
-  `A service report recommends a ${S.part.toLowerCase()} at the ${S.when.toLowerCase()}. An internal follow-up is prepared with the incomplete serial left open.`,
+  "An RFQ with a bill of quantities and two datasheets: the requirements are linked and a conflicting motor specification is marked for the estimator.",
+  "A customer order uses an old item code. The approved mapping finds the catalogue item and the pack unit is left for the order desk to confirm.",
+  "A shipment with three delivery records: one proof of delivery is linked, one has no order reference and one records a shortage; each gets its own follow-up.",
+  `A service report recommends a ${S.part.toLowerCase()} at the ${S.when.toLowerCase()}. A follow-up is assigned with the open questions attached.`,
 ];
 
 /** Where an element enters the drawing's build: --t in ms, --i its place in a stagger. */
 const at = (t: number, i = 0) => ({ ["--t" as string]: t, ["--i" as string]: i }) as CSSProperties;
 
 /**
- * The picture beside each audience card, on white: the record in the card's colour (currentColor, which
- * .outcome-diagram sets from --tone), hairlines and labels neutral, a conflict in signal red. Every
- * figure comes from lib/example.ts. Used by the audience cards and the nav's glance of them. It builds
- * each time it shows (app/styles/decor-art.css).
+ * The picture beside each industry card, on white: the record in the card's colour (currentColor, which
+ * .outcome-diagram sets from --tone), hairlines and labels neutral, a conflict in signal red. Used by
+ * the industry cards and the nav's glance of them. It builds each time it shows
+ * (app/styles/decor-art.css).
  */
 export function OutcomeGraphic({ index }: { index: number }) {
   const ref = useSvgScale<SVGSVGElement>(300, 100);
   useDrawOn(ref);
   return (
     <svg ref={ref} className="outcome-diagram" viewBox="0 0 300 100" role="img" aria-label={LABELS[index]}>
-      {index === 0 ? <Pack /> : index === 1 ? <Compare /> : <Handover />}
+      {index === 0 ? <Pack head="RFQ · BOQ" docs={RFQ_DOCS} /> : index === 1 ? <Compare /> : index === 2 ? <Pack head="TRIP 0614" docs={POD_DOCS} /> : <Handover />}
     </svg>
   );
 }
 
-/* ---- Manufacturers: one delivery line, three documents, each with its status ---- */
+/* ---- A record and the three documents linked to it, each with its status ---- */
 
-const DOCS = [
-  { y: 8, name: "DIMENSIONAL", state: "ok" },
-  { y: 38, name: `CERT · ${C.heat}`, state: "risk" },
-  { y: 68, name: "HEAT TREAT", state: "missing" },
-] as const;
+type Doc = { y: number; name: string; state: "ok" | "risk" | "missing" };
+/** Manufacturing: an RFQ's requirements, one specification in conflict. */
+const RFQ_DOCS: Doc[] = [
+  { y: 8, name: "DATASHEET R2", state: "ok" },
+  { y: 38, name: "MOTOR SPEC", state: "risk" },
+  { y: 68, name: "BOQ LINES", state: "ok" },
+];
+/** Logistics: a trip's delivery records, one without a reference and one shortage. */
+const POD_DOCS: Doc[] = [
+  { y: 8, name: "POD · LINKED", state: "ok" },
+  { y: 38, name: "SHORTAGE NOTE", state: "risk" },
+  { y: 68, name: "POD · NO REF", state: "missing" },
+];
 
-function Pack() {
+function Pack({ head, docs }: { head: string; docs: Doc[] }) {
   return (
     <>
       <rect x="0" y="34" width="86" height="30" rx="7" fill="currentColor" className="og-rise" style={at(0)} />
-      <text x="43" y="53" textAnchor="middle" className="og-on og-rise" style={at(60)}>{`L${L.n} · ${L.heat}`}</text>
-      {DOCS.map((d, i) => (
+      <text x="43" y="53" textAnchor="middle" className="og-on og-rise" style={at(60)}>{head}</text>
+      {docs.map((d, i) => (
         <g key={d.name}>
           <path
             d={`M86 49C120 49 120 ${d.y + 11} 150 ${d.y + 11}`}
@@ -89,27 +92,27 @@ function Pack() {
   );
 }
 
-/* ---- Distributors: the requirement and the offer, side by side, one difference flagged ---- */
+/* ---- Distribution: the customer's code and the catalogue item, one unit left to confirm ---- */
 
 function Compare() {
   return (
     <>
-      <text x="0" y="12">ENQUIRY</text>
-      <text x="300" y="12" textAnchor="end">OFFER</text>
+      <text x="0" y="12">{`CUSTOMER ${O.po}`}</text>
+      <text x="300" y="12" textAnchor="end">CATALOGUE</text>
       <rect x="0" y="22" width="118" height="34" rx="7" fill="currentColor" className="og-rise" style={at(0)} />
-      <text x="59" y="44" textAnchor="middle" className="og-on og-rise" style={at(60)}>{R.required}</text>
+      <text x="59" y="44" textAnchor="middle" className="og-on og-rise" style={at(60)}>OLD CODE</text>
       <rect x="182" y="22" width="118" height="34" rx="7" className="og-ring og-rise" style={at(160)} />
-      <text x="241" y="44" textAnchor="middle" className="og-strong og-rise" style={at(200)}>{R.offered}</text>
+      <text x="241" y="44" textAnchor="middle" className="og-strong og-rise" style={at(200)}>SWITCH 16A</text>
       <path className="outcome-stroke og-safety" pathLength="1" d="M122 39H178" style={at(360)} />
       <circle cx="150" cy="39" r="9" className="og-risk og-rise" style={at(620)} />
       <path d="M146 36.5h8m-8 5h8" className="og-check og-rise" style={at(660)} />
       <rect x="62" y="70" width="176" height="22" rx="11" className="og-sent og-rise" style={at(820)} />
-      <text x="150" y="85" textAnchor="middle" className="og-num og-rise" style={at(880)}>CLARIFY FIRST</text>
+      <text x="150" y="85" textAnchor="middle" className="og-num og-rise" style={at(880)}>CONFIRM UNIT</text>
     </>
   );
 }
 
-/* ---- Service businesses: a report's recommendation becomes an internal follow-up ---- */
+/* ---- Equipment and B2B services: a report's recommendation becomes an assigned follow-up ---- */
 
 function Handover() {
   return (
@@ -126,7 +129,7 @@ function Handover() {
       <text x="196" y="56" className="og-on-soft og-rise" style={at(860)}>SEAL</text>
       <rect x="196" y="61" width="72" height="11" rx="5.5" className="og-flag og-rise" style={at(960)} />
       <text x="0" y="98">{S.equipment.toUpperCase()}</text>
-      <text x="300" y="98" textAnchor="end" className="og-risk-ink">SERIAL INCOMPLETE</text>
+      <text x="300" y="98" textAnchor="end">NO OPEN QUOTE</text>
     </>
   );
 }

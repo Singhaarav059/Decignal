@@ -9,25 +9,21 @@ type Chapter = {
   ts: number; // fraction of the chapter where the transition to the next one begins
 };
 
-// Story length budget (viewport heights): 16.7 in all. Scale holds one function per step (S69-04),
-// then one more for the glass layer card that lands on the fan;
-// the final chapter is short and ends in an exit (S69-07).
+// Story length budget (viewport heights): 7.3 in all (handoff revision 3: the offer comes sooner). The
+// hero hands over straight to the five functions; Scale holds one function per step, then one more for
+// the glass layer card that lands on the fan; the final chapter is short and ends in an exit (S69-07).
 export const CHAPTERS: Chapter[] = [
   // The hero hands off almost at once (ts 0.12): a long hold read as the page sticking, then the camera
   // and the folding islands rushed through half the distance (a flash). Now the move starts with the
   // first scroll and spreads over nearly the whole chapter.
-  { id: "fragments", label: "Records", len: 1.3, ts: 0.12 },
-  { id: "signal", label: "Shipment", len: 1.3, ts: 0.5 },
-  { id: "problem", label: "Mismatch", len: 1.5, ts: 0.55 },
-  { id: "context", label: "Sources", len: 1.5, ts: 0.55 },
-  { id: "decision", label: "Flag", len: 2.7, ts: 0.9 },
-  { id: "control", label: "Reviewer", len: 1.7, ts: 0.62 },
-  { id: "scale", label: "Functions", len: 2.5, ts: 0.75 },
-  { id: "industries", label: "Industries", len: 3.2, ts: 0.85 },
+  { id: "fragments", label: "Overview", len: 1.3, ts: 0.12 },
+  { id: "scale", label: "Functions", len: 2.6, ts: 0.75 },
+  { id: "industries", label: "Industries", len: 2.4, ts: 0.85 },
   { id: "final", label: "Start", len: 1, ts: 1 },
 ];
 
-export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<string, number>;
+/** Chapter index by id. */
+export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<"fragments" | "scale" | "industries" | "final", number>;
 export const TOTAL_LEN = CHAPTERS.reduce((s, c) => s + c.len, 0);
 
 /** How long the scroll must rest before hover effects wake (ms). */
@@ -52,12 +48,8 @@ export const store = {
   focus: -1,
   /** A card the page asks to bring forward (the approval panel points at the decision card). */
   focusHint: -1,
-  /** Control's fan on desktop: the card the reviewer tabs play forward when nobody points at one, or -1. */
-  deckAt: -1,
   /** performance.now() of the last frame the pointer read a card in 3D (pauses the tabs' autoplay). */
   hoverAt: -1e9,
-  /** The page points at the signal crate (hovering its readout), so it lifts and glows. */
-  signalHint: false,
   /** The system island opened for a closer look (click), or -1. */
   selected: -1,
   /** A system the page points at (hovering its chip), lifted as if under the pointer. */
@@ -72,14 +64,11 @@ export const store = {
   cardRect: null as CardRect | null,
   /** The story canvas has drawn its first frames (shaders compiled). */
   sceneReady: false,
-  /** The reader's choice in the Control panel (written by DecisionControls), drawn on the 3D decision card. */
-  decision: { mode: "idle", qty: 240 } as StoryDecision,
   selectListeners: new Set<(i: number) => void>(),
   listeners: new Set<(g: number) => void>(),
 };
 
 type CardRect = { x: number; y: number; w: number; h: number };
-type StoryDecision = { mode: "idle" | "approved" | "rejected"; qty: number };
 
 /** StoryCard reports its viewport rect (ResizeObserver plus resize); null when it is gone. */
 export function setCardRect(r: CardRect | null) {
@@ -180,7 +169,7 @@ export function localIn(c: number, g: number) {
 /* Beats: what each chapter points at as it plays                       */
 /* ------------------------------------------------------------------ */
 
-/** Decision chapter beats, as local progress through the chapter. */
+/** The yard scene's beats (the application explorer's quotation scene), as local progress. */
 export const BEATS = {
   load: [0.05, 0.4] as const, // three forklift trips at Plant 02
   drive: [0.43, 0.6] as const,
@@ -188,10 +177,6 @@ export const BEATS = {
   unload: [0.63, 0.88] as const,
 };
 
-/** Context steps through the evidence one system at a time, in the card's order: WMS, Suppliers, External. */
-export const CONTEXT_PINS = [3, 4, 5] as const;
-/** Which evidence step (0..2) Context shows at local t: its hold (0.05 to 0.55) in three equal beats. */
-const contextBeat = (t: number) => Math.min(2, Math.max(0, Math.floor((t - 0.05) / (0.5 / 3))));
 
 /**
  * Steps through `count` items over local progress a..a+u: equal holds, each followed by a turn that
@@ -242,18 +227,13 @@ export function setAfter(p: number) {
 }
 
 /**
- * The one 3D pin open at g, by chapter and beat. Ids: "island:<system>" (Context), "plant02",
- * "truck", "plant01" (Decision), "fn:<k>" (Scale), "industry:<k>" (Industries). Hero, Signal,
- * Problem, Control and Final pin nothing by default; between chapters nothing is pinned.
+ * The one 3D pin open at g, by chapter and beat. Ids: "fn:<k>" (Scale), "industry:<k>" (Industries).
+ * Hero and Final pin nothing by default; between chapters nothing is pinned.
  */
 function pinAt(g: number): string | null {
   const { i, local, e } = blendAt(g);
   if (e > 0.4) return null;
   switch (i) {
-    case CH.context:
-      return `island:${CONTEXT_PINS[contextBeat(local)]}`;
-    case CH.decision:
-      return local < BEATS.drive[0] ? "plant02" : local < BEATS.drive[1] - 0.05 ? "truck" : "plant01";
     case CH.scale:
       return `fn:${scaleBeat(local)}`;
     case CH.industries:
@@ -267,87 +247,62 @@ function pinAt(g: number): string | null {
 /* Product truth: one running example, used everywhere.                 */
 /* ------------------------------------------------------------------ */
 
-export const SYSTEMS = ["ERP", "CUSTOMER", "QUALITY", "JOB WORK", "SUPPLIERS", "FILES"] as const;
+export const SYSTEMS = ["ERP", "CRM", "SERVICE", "SHEETS", "DOCUMENTS", "MESSAGES"] as const;
 
 // Figures follow the fact sheet in lib/example.ts; section and chapter strings live in lib/copy.ts.
 
-/** The layers behind the review (LayerReadout): what each one contributes. */
-export const LAYERS = [
-  { name: "Situation", text: "Line 12 recorded against heat H241" },
-  { name: "Sources", text: "Certificate says H214; process certificate not found" },
-  { name: "Checklist", text: "Checklist Rev C: six documents per shipment" },
-  { name: "Rules", text: "Exact heat numbers only, nothing edited" },
-  { name: "For review", text: "Request the correct certificate, keep line 12 open" },
-];
-
-/** The five functions in Scale's hand, each with its illustrative "for review" line (handoff global.areas). */
+/** The five functions in Scale's hand, each with one illustrative line (handoff revision 3, §5 and §6). */
 export const FUNCTIONS = [
-  { name: "Supplier coordination", decision: "60 Friday, 40 Wednesday: revised schedule for review" },
-  { name: "Dispatch documentation", decision: "Line 12: H241 against H214, kept for review" },
-  { name: "RFQ review", decision: "SS316 required, SS304 offered: clarification drafted" },
-  { name: "Service follow-up", decision: "Seal at next shutdown: follow-up for the service owner" },
-  { name: "Deduction review", decision: "₹75,000 deduction: evidence packet for finance" },
+  { name: "Sales and order management", decision: "40-line order: 27 matched, 13 for the order desk" },
+  { name: "Procurement and supply chain", decision: "100 contactors: 60 on Friday, 40 on Wednesday" },
+  { name: "Operations and delivery", decision: "Daily brief: each open question with its owner" },
+  { name: "Finance and receivables", decision: "₹75,000 deduction: a case for finance to review" },
+  { name: "Service and support", decision: "Seal at next shutdown: a follow-up with an owner" },
 ];
 
 /**
- * The industries in focus (handoff §1 industry focus and customer segments), one per place on the road.
- * Proposed workflows only: no delivery times, no claims of customers in any of them.
+ * The four industries (handoff §5 home.industries), one per place on the road. Example contexts, not
+ * claims of customers in any of them. `apps` are APPLICATIONS ids (lib/content.ts).
  */
 export const INDUSTRIES = [
   {
-    name: "Engineering components",
-    decision: "Link line 12 to the certificate for heat H241",
-    system: "ERP · Quality · Suppliers",
-    challenge: "Machined parts and castings ship with customer-specific certificates, heat references and external-process reports.",
-    decisions: ["Flag a heat number that does not match", "Find a missing heat-treatment certificate", "Explain 40 pieces missing from a coating return"],
-    start: "Dispatch document pack review",
+    name: "Manufacturing",
+    decision: "An RFQ worksheet with the open questions marked",
+    system: "Enquiries · Supplier updates · Shift sheets",
+    challenge: "For engineering, electrical, packaging, plastics and other manufacturing teams handling enquiries, supplier commitments and production records.",
+    apps: ["rfq-preparation", "supplier-commitment-tracking", "production-record-capture"],
+    href: "/solutions?industry=manufacturing",
   },
   {
-    name: "Metal products",
-    decision: "Reconcile a job-work return by challan",
-    system: "ERP · Job work · Challans",
-    challenge: "Material goes out for processing in kilograms and comes back in pieces, with scrap and rejections on separate records.",
-    decisions: ["Reconcile a challan against its returns", "Keep kilogram and piece quantities apart", "Draft a question for the job worker"],
-    start: "Job work discrepancy review",
+    name: "Distribution and wholesale",
+    decision: "A customer order drafted, uncertain units kept aside",
+    system: "Orders · Price files · Remittances",
+    challenge: "For businesses managing large item catalogues, customer orders, changing supplier prices and payment follow-up.",
+    apps: ["sales-order-intake", "supplier-price-updates", "payment-advice-matching"],
+    href: "/solutions?industry=distribution",
   },
   {
-    name: "Industrial machinery",
-    decision: "Show a supplier’s split delivery against the PO",
-    system: "ERP · Suppliers · Customer orders",
-    challenge: "One late part can hold a machine build, and supplier changes often arrive by email rather than in the schedule.",
-    decisions: ["Split a changed promise into schedule lines", "Show the customer order it touches", "Clarify a specification before quoting"],
-    start: "Supplier promise change review",
+    name: "Logistics and transport",
+    decision: "A missing POD and a shortage, followed up separately",
+    system: "Lorry receipts · PODs · Freight bills",
+    challenge: "For shippers and service providers coordinating delivery records, transporter bills and operational follow-up.",
+    apps: ["delivery-document-followup", "freight-bill-review", "operational-exception-brief"],
+    href: "/solutions?industry=logistics",
   },
   {
-    name: "Electrical equipment",
-    decision: "Flag 415 V against 440 V before the quote",
-    system: "Enquiries · Datasheets · Offers",
-    challenge: "Enquiries arrive with schedules, specifications and revisions that do not always agree with each other.",
-    decisions: ["Flag a voltage conflict in an enquiry", "Link a revised specification to its line", "Prepare evidence for a customer deduction"],
-    start: "RFQ clarification pack",
-  },
-  {
-    name: "Industrial supplies",
-    decision: "Compare SS316 required with SS304 offered",
-    system: "Enquiries · Supplier offers · Invoices",
-    challenge: "Distributors match customer requirements to supplier offers and answer deductions from a few large buyers.",
-    decisions: ["Compare a requirement with a supplier offer", "Assemble the evidence behind a deduction", "Review a supplier’s changed delivery"],
-    start: "RFQ clarification pack",
-  },
-  {
-    name: "Equipment service",
-    decision: "Turn a seal recommendation into a follow-up",
-    system: "Service reports · Installed base · Quotes",
-    challenge: "Recommendations sit in technicians’ and partners’ reports, and the next owner has to find the equipment again.",
-    decisions: ["Find a recommendation in a service report", "Leave an incomplete serial visible", "Check for an existing quote first"],
-    start: "Service to quote handover",
+    name: "Equipment and B2B services",
+    decision: "A seal recommendation assigned to an owner",
+    system: "Service reports · Assets · Manuals",
+    challenge: "For equipment dealers, installation teams and service businesses handling requests, reports and technical knowledge.",
+    apps: ["service-case-intake", "service-report-followup", "service-knowledge-assistant"],
+    href: "/solutions?industry=services",
   },
 ];
 
 /** Each industry's accent: its chip, its callout and the pin on its place. */
-export const INDUSTRY_TONE = ["emerald", "cobalt", "pink", "tangerine", "violet", "saffron"] as const;
+export const INDUSTRY_TONE = ["emerald", "violet", "tangerine", "pink"] as const;
 
-/* Industries: six equal holds with a half turn between each, over local 0.02..0.83; the last hold
+/* Industries: four equal holds with a half turn between each, over local 0.02..0.83; the last hold
    ends where the chapter starts its exit (ts 0.85). */
 const IND = [0.02, 0.81, 0.55] as const;
 

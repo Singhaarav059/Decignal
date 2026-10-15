@@ -490,3 +490,7 @@ input.audit-input:autofill { padding-bottom: 4px; margin-bottom: 0; }
   .audit-spin { animation: none; }
   .audit-check circle, .audit-check path { animation: none; stroke-dashoffset: 0; }
 }
+
+/* The helper under the form's title (handoff §8): a brief description is enough. */
+.audit-head { flex-wrap: wrap; row-gap: 6px; }
+.audit-helper { flex-basis: 100%; max-width: 52ch; color: var(--color-ink-soft); }

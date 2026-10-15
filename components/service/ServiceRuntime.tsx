@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { landOnHash } from "@/lib/jump";
+import { LEGACY_ANCHORS } from "@/lib/content";
 import { SmoothScroll } from "../SmoothScroll";
 import { SERVICE_SECTIONS } from "./sections";
 
@@ -15,8 +16,14 @@ gsap.registerPlugin(ScrollTrigger);
  * page). No story canvas, Loader or Backdrop: those mount only on the home page.
  */
 export function ServiceRuntime() {
-  // Child effects run first, so SmoothScroll has registered Lenis by now.
+  // Child effects run first, so SmoothScroll has registered Lenis by now. Old record links
+  // (#workflow-{id}, #application-{id}, the earlier workflow ids) land on the record that replaced them.
   useEffect(() => {
+    const m = /^#(?:workflow-|application-)?(.+)$/.exec(window.location.hash);
+    if (m && !document.getElementById(m[1])) {
+      const id = LEGACY_ANCHORS[m[1]] ?? m[1];
+      if (document.getElementById(id)) history.replaceState(history.state, "", `#${id}`);
+    }
     void landOnHash();
   }, []);
 

@@ -14,7 +14,7 @@ import { M, ROAD_Z, truckX } from "@/lib/scene";
 import { Bolts, Box, Floor, Pin, Route, phase, type Motion, type PinRef, type Vec } from "./SceneKit";
 import { COLORS, TINTS } from "./palette";
 import { DEMO_PINS } from "@/lib/application-demos";
-import { APP_FACTS, EXAMPLE, inr } from "@/lib/example";
+import { APP_FACTS, inr } from "@/lib/example";
 
 /** pin: the object the reader points at in the card (its tag opens instead of the stage's subject). */
 export type SceneProps = { motion: Motion; step: number; still: boolean; pin?: PinRef; visible?: boolean };
@@ -29,16 +29,15 @@ export type SceneProps = { motion: Motion; step: number; still: boolean; pin?: P
 const TRIM = "#5E6675";
 /** A pin on a neutral object. */
 const DOT = "#8A909A";
-const J = APP_FACTS.jobwork;
+const O = APP_FACTS.order;
+const Q = APP_FACTS.quote;
+const B = APP_FACTS.brief;
 const S = APP_FACTS.service;
 const U = APP_FACTS.supplier;
-const R = APP_FACTS.rfq;
 const DED = APP_FACTS.deduction;
-/** The returned pieces the truck carries in the job-work scene, per pallet (three pallets). */
-const PER_PALLET = Math.round(J.returned / 3);
 
 /* ------------------------------------------------------------------ */
-/* 01. JOB WORK: the job worker loads the return, your plant receives it */
+/* 01. QUOTATIONS: a supplier's delivery, priced three ways          */
 /* ------------------------------------------------------------------ */
 export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
   const truck = useRef<THREE.Group>(null);
@@ -152,13 +151,12 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
     }
   });
 
-  const loaded = Math.min(J.returned, states.filter((v) => v === 2).length * PER_PALLET);
 
   return (
     <group dispose={null}>
       <Yard roadLength={8.9} />
       <group position={[-2.55, 0, -1.6]} scale={M}>
-        <Plant accent={TRIM} name="JOB WORKER" />
+        <Plant accent={TRIM} name="SUPPLIER A" />
       </group>
       <group position={[2.55, 0, -1.6]} scale={M}>
         <Plant accent={TRIM} name="YOUR PLANT" />
@@ -192,7 +190,7 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
           )}
         </SemiTruck>
         {/* The return challan's tag rides on the truck */}
-        <Pin id="truck" at={[0, 4.4, 0]} title={`RETURN · ${J.challan}`} value={delivered >= 2 ? `${J.returned} pieces received` : arrived ? "Unloading at your plant" : loaded > 0 ? `${loaded} of ${J.returned} pieces loaded` : `${J.returned} pieces to return`} tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
+        <Pin id="truck" at={[0, 4.4, 0]} title={`FREIGHT / ${Q.b.toUpperCase()}`} value={delivered >= 2 ? "Freight to confirm" : arrived ? "Excluded from the quotation" : "Freight not in the price"} tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
       </group>
 
       {/* Loading forklift at Plant 02 */}
@@ -227,12 +225,12 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
         </Forklift>
       </group>
 
-      <Pin id="plant02" at={[-2.55, 1.45, -1.6]} title={`${J.worker.toUpperCase()} / ${J.process.toUpperCase()}`} value={`${J.sent.toLocaleString("en-IN")} sent · ${J.rejected} rejections on record`} tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
+      <Pin id="plant02" at={[-2.55, 1.45, -1.6]} title={`${Q.a.toUpperCase()} / QUOTATION`} value="Priced per box" tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
       <Pin
         id="plant01"
         at={[2.55, 1.45, -1.6]}
-        title={`YOUR PLANT / ${J.challan}`}
-        value={step === 2 ? `${J.open} pieces prepared for review` : `${J.sent - J.returned - J.rejected} pieces not yet explained`}
+        title={`YOUR BUYER / ${Q.pr}`}
+        value={step === 2 ? "Comparison sheet for review" : `${Q.c} offers a later date`}
         tone={COLORS.signal}
         alert
         motion={motion}
@@ -244,7 +242,7 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 02. DISPATCH: the shipment line, its certificate and the pack       */
+/* 02. DAILY BRIEF: the orders due, a delay, an allocation and a hold  */
 /* ------------------------------------------------------------------ */
 function Conveyor({ x, z, length = 4.9, active = true }: { x: number; z: number; length?: number; active?: boolean }) {
   const beltProgress = useRef(0);
@@ -440,9 +438,9 @@ export function Production({ motion, step, pin, visible = true }: SceneProps) {
       <group position={[-3.1, 0, 1.55]} rotation-y={-0.6} scale={0.5}>
         <Person look="planner" pose="tablet" seed={4.1} />
       </group>
-      <Pin id="line03" at={[2.05, 1.62, 0.8]} title={`LINE ${EXAMPLE.line.n} / ${EXAMPLE.line.item.toUpperCase()}`} value={`Heat ${EXAMPLE.line.heat} on record`} tone={DOT} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
-      <Pin id="line02" at={[2.05, 1.62, -0.8]} title={`CERTIFICATE / ${EXAMPLE.cert.source.toUpperCase()}`} value={`Heat ${EXAMPLE.cert.heat} · conflicting`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
-      <Pin id="order" at={[-1.4, 0.95, 0.8]} title={`SHIPMENT ${EXAMPLE.shipment.id}`} value={step === 2 ? "For review · 2 questions" : `Checklist ${EXAMPLE.checklist.rev} · 6 documents`} tone={TINTS.emerald} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
+      <Pin id="line03" at={[2.05, 1.62, 0.8]} title={`ORDER ${B.order} / DUE THIS WEEK`} value="Supplier delay linked" tone={DOT} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
+      <Pin id="line02" at={[2.05, 1.62, -0.8]} title="STOCK ALLOCATION / STORES" value="Not yet confirmed" tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
+      <Pin id="order" at={[-1.4, 0.95, 0.8]} title={`DISPATCH HOLD / ${B.hold}`} value={step === 2 ? `Brief · ${B.open} open questions` : "Owner: dispatch"} tone={TINTS.emerald} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
     </group>
   );
 }
@@ -717,7 +715,7 @@ export function SupplyRisk({ motion, step, pin, visible = true }: SceneProps) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 05. RFQ: the offer and the enquiry meet at the sales desk; no stock moves */
+/* 05. ORDER INTAKE: the order and the catalogue meet at the order desk  */
 /* ------------------------------------------------------------------ */
 /** A document on the move: a white sheet, its header band in its source's colour, two lines of text. */
 function DocSheet({ band }: { band: string }) {
@@ -763,8 +761,8 @@ export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps)
           <Pin
             id={["east", "central", "west"][i]}
             at={[0, 1.45, 0]}
-            title={i === 0 ? "SUPPLIER OFFER" : i === 1 ? "SALES DESK" : `CUSTOMER / ${R.enquiry}`}
-            value={i === 2 ? `${R.required} wetted parts required` : i === 0 ? `${R.offered} listed in the offer` : step === 2 ? "Clarification drafted" : atDesk ? "Both documents in review" : "Lines matched to the enquiry"}
+            title={i === 0 ? "ITEM CATALOGUE" : i === 1 ? "ORDER DESK" : `CUSTOMER / ${O.po}`}
+            value={i === 2 ? `${O.lines} lines · old item codes` : i === 0 ? `${O.matched} lines matched` : step === 2 ? "Draft for approval" : atDesk ? `${O.item + O.unit} lines to confirm` : "Lines matched to the catalogue"}
             tone={i === 2 ? COLORS.signal : i === 0 ? tone : DOT}
             alert={i === 2}
             motion={motion}
@@ -929,12 +927,12 @@ export function Maintenance(props: SceneProps) {
       <group position={[0, -0.22, 0]}>
         <Motor {...props} />
       </group>
-      <Pin id="motor" at={[-0.85, 1.85, 0]} title={`${S.equipment.toUpperCase()} / ${S.report}`} value={`Serial ${S.serial} · incomplete`} tone={COLORS.signal} alert={props.step === 0} motion={props.motion} pin={props.pin} subject={DEMO_PINS.maintenance.steps[props.step]} />
+      <Pin id="motor" at={[-0.85, 1.85, 0]} title={`${S.equipment.toUpperCase()} / ${S.report}`} value="Equipment record found" tone={COLORS.signal} alert={props.step === 0} motion={props.motion} pin={props.pin} subject={DEMO_PINS.maintenance.steps[props.step]} />
       <Pin
         id="bearing"
         at={[2.25, 1.2, -0.65]}
         title={S.part.toUpperCase()}
-        value={props.step === 2 ? "Follow-up for the service owner" : `Replace at the ${S.when.toLowerCase()}`}
+        value={props.step === 2 ? "Assigned to the service owner" : `Replace at the ${S.when.toLowerCase()}`}
         tone={TINTS.pink}
         motion={props.motion}
         pin={props.pin}
@@ -982,7 +980,7 @@ export function Finance({ step, motion, pin, visible = true }: SceneProps) {
         {Array.from({ length: 4 }, (_, i) => (
           <Box key={i} at={[0, 0.022, -0.45 + i * 0.14]} size={[1.2, 0.004, 0.02]} color="#C3C8D0" />
         ))}
-        <Pin id="grn" at={[0, 0.3, -0.95]} title="RECEIVER NOTE" value={`${DED.ack} · ambiguous`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.finance.steps[step]} />
+        <Pin id="grn" at={[0, 0.3, -0.95]} title="RECEIVER NOTE" value={`${DED.ack} · unclear`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.finance.steps[step]} />
       </group>
 
       {/* Document 3 (Right Stack): 3 SUPPLIER INVOICES (FANNED PACK) */}
@@ -1011,7 +1009,7 @@ export function Finance({ step, motion, pin, visible = true }: SceneProps) {
         id="invoices"
         at={[2.15, 0.35, -1.35]}
         title={`DEBIT NOTE ${DED.debit}`}
-        value={isHeld ? `${inr(DED.amount)} · packet for finance` : `${inr(DED.amount)} · ${DED.reason.toLowerCase()}`}
+        value={isHeld ? `${inr(DED.amount)} · case for finance` : `${inr(DED.amount)} · ${DED.reason.toLowerCase()}`}
         tone={TINTS.violet}
         motion={motion}
         pin={pin}

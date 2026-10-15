@@ -270,7 +270,7 @@ export const hazard = () =>
     return new THREE.MeshStandardMaterial({ map, roughness: 0.6 });
   });
 
-/** A printed shipping label: shipment number, line and heat, contents and a barcode. */
+/** A printed shipping label: order number, lines, contents and a barcode. */
 export const shipLabel = () =>
   memo("shiplabel", () => {
     const map = canvasTex("shiplabel", 256, 176, (c) => {
@@ -278,10 +278,10 @@ export const shipLabel = () =>
       c.fillRect(0, 0, 256, 176);
       c.fillStyle = "#16171A";
       c.font = "700 22px Arial, sans-serif";
-      c.fillText("SHP-0612", 14, 32);
+      c.fillText("PO-7731", 14, 32);
       c.font = "500 14px Arial, sans-serif";
-      c.fillText("LINE 12 · HEAT H241", 14, 54);
-      c.fillText("FLANGE F-80 · 40 PCS", 14, 74);
+      c.fillText("40 LINES · ORDER INTAKE", 14, 54);
+      c.fillText("SWITCH 16A · 20 BOXES", 14, 74);
       c.fillRect(14, 84, 228, 2);
       let x = 16;
       let k = 3;

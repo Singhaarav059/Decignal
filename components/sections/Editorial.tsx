@@ -3,13 +3,9 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   Building2,
-  ChartNoAxesCombined,
   Database,
-  FileCheck2,
-  FolderOpen,
   LayoutGrid,
   MessageCircleQuestion,
-  ShieldCheck,
   Users,
   Workflow,
 } from "lucide-react";
@@ -17,7 +13,7 @@ import Image from "next/image";
 import founderPhoto from "@/assets/photos/founder.jpg";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, AUDIENCE, FAQ, FAQ_TOPICS, FEATURED, LEGACY_ANCHORS } from "@/lib/content";
+import { AUDIENCE, FAQ, FAQ_TOPICS, FEATURED, LEGACY_ANCHORS, SOURCE_GROUPS, appById } from "@/lib/content";
 import {
   ABOUT,
   APPLICATIONS_COPY,
@@ -25,7 +21,6 @@ import {
   CTA,
   FAQ_COPY,
   HOW,
-  OUTCOMES_COPY,
   SYSTEMS_STRIP,
   type Headline,
 } from "@/lib/copy";
@@ -37,12 +32,11 @@ import { Arrow } from "../ui/Arrow";
 import { SystemsRing } from "./SystemsRing";
 import { Statement } from "./Statement";
 import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
-import { MeasureArt } from "./MeasureArt";
 import { AreaPhoto } from "./AreaPhoto";
-import { AREAS } from "@/lib/areas";
-import { AreaRows } from "./AreaRows";
+import { AREAS, appHref } from "@/lib/areas";
+import { FeaturedApps } from "./FeaturedApps";
 import { LiquidShapes } from "../ui/LiquidShapes";
-import { TrailDial } from "./TrailDial";
+import { Demonstrations } from "./Demonstrations";
 import { HowSteps } from "./HowSteps";
 import { FaqList } from "./FaqList";
 import { FaqFigure, useFaqFigure } from "./FaqArt";
@@ -100,9 +94,8 @@ function useReveal() {
 
 const two = (h: Headline): [string, string] => [h[0], h[1]];
 
-/** A section head: its index on the page, label, two lines (the second in the accent ink) and an
- *  optional lede. Neutral chrome (D6). The indexes run 01 to 07 down the page, the trail and the audit
- *  included (TrailDial.tsx, Audit.tsx). */
+/** A section head: label, two lines (the second in the accent ink) and an optional lede. Neutral
+ *  chrome (D6). */
 function Head({
   id,
   label,
@@ -135,18 +128,19 @@ function Head({
   );
 }
 
-/** Everything below the story, as one sheet over it. The page renders <Footer /> after <main>. */
+/** Everything below the story, as one sheet over it, in the handoff's order (§11): applications,
+ *  problem, how we build, industries, examples, systems, delivery, about, questions and the enquiry.
+ *  The page renders <Footer /> after <main>. */
 export function Editorial() {
   const ref = useReveal();
   return (
     <div ref={ref} className="editorial relative bg-bg">
-      <Audience />
-      <Statement />
       <Applications />
-      <TrailDial />
+      <Statement />
+      <Audience />
+      <Demonstrations />
       <Systems />
       <HowItWorks />
-      <Measure />
       <About />
       <Faq />
       <Audit />
@@ -157,7 +151,7 @@ export function Editorial() {
 /* ------------------------------------------------------------------ */
 
 function Systems() {
-  // The six systems travel round the head as a ring of photographs; the other types follow on a dial.
+  // The six kinds of record travel round the head as a ring of photographs; the three groups follow.
   return (
     <section
       id="systems"
@@ -172,26 +166,14 @@ function Systems() {
           headline={SYSTEMS_STRIP.headline}
           align="center"
         />
-        {/* The three promises, each with its sign. */}
-        <ul data-reveal className="orbit-promises">
-          {SYSTEMS_STRIP.promises.map((p, i) => {
-            const Icon = [FolderOpen, FileCheck2, ShieldCheck][i];
-            return (
-              <li key={p}>
-                <Icon size={15} strokeWidth={2.1} aria-hidden />
-                {p}
-              </li>
-            );
-          })}
-        </ul>
         <p data-reveal className="t-small works-with-note">
-          {SYSTEMS_STRIP.footnote}
+          {SYSTEMS_STRIP.intro}
         </p>
       </SystemsRing>
-      {/* The three groups of records the proposed workflows use (handoff home.systems). */}
+      {/* The three source groups (handoff §5 systems): simple labels, no live integration implied. */}
       <div className="page-wrap">
         <ul className="record-groups">
-          {SYSTEMS_STRIP.groups.map((g) => (
+          {SOURCE_GROUPS.map((g) => (
             <li key={g.name} data-reveal className="record-group" style={toneVars(g.tone)}>
               <p className="record-group-k t-label">
                 <i aria-hidden />
@@ -211,14 +193,26 @@ function Systems() {
 
 /* ------------------------------------------------------------------ */
 
+/** Old #application-{id} links (the earlier workflows and scene kinds) open the record that replaced
+ *  them on its function page (handoff §4 "Preserve old links"). */
+function useLegacyApplicationLinks() {
+  useEffect(() => {
+    const m = /^#application-(.+)$/.exec(window.location.hash);
+    if (!m) return;
+    const app = appById(LEGACY_ANCHORS[m[1]] ?? m[1]);
+    if (app) window.location.replace(appHref(app));
+  }, []);
+}
+
 function Applications() {
+  useLegacyApplicationLinks();
   return (
     <section
       id="applications"
       className="apps"
       aria-labelledby="applications-title"
     >
-      {/* The night band: the head, then the five functions as numbered rows. */}
+      {/* The night band: the head, then the six featured applications as equal cards. */}
       <div className="night-panel">
         <div className="page-wrap apps-head">
           <Head
@@ -232,7 +226,6 @@ function Applications() {
               {APPLICATIONS_COPY.intro}
             </p>
             <p data-reveal className="t-small apps-note">
-              {APPLICATIONS_COPY.note}{" "}
               <SectionLink href="/solutions" className="ed-link">
                 {APPLICATIONS_COPY.all}
                 <Arrow />
@@ -241,32 +234,18 @@ function Applications() {
           </div>
         </div>
         <div className="page-wrap">
-          <AreaRows />
+          <FeaturedApps />
         </div>
       </div>
-      {/* The explorer shows one workflow at a time; this list gives readers and crawlers all six (the
-          function rows link to each entry). Old #application-{kind} links land on the workflow that
-          replaced them (handoff legacy anchor mapping). */}
-      <ol className="sr-only" aria-label={APPLICATIONS_COPY.listAria}>
-        {APPLICATIONS.map((a) => (
-          <li key={a.id} id={`application-${a.id}`} tabIndex={-1}>
-            {Object.entries(LEGACY_ANCHORS)
-              .filter(([, to]) => to === a.id)
-              .map(([from]) => (
-                <span key={from} id={`application-${from}`} />
-              ))}
-            {a.name}, {a.status.toLowerCase()} in {a.category.toLowerCase()}. {a.text} {APPLICATIONS_COPY.labels.fit}: {a.fit}
-          </li>
-        ))}
-      </ol>
-      <ApplicationExplorer apps={[...FEATURED]} />
+      {/* The same six, one at a time in 3D. */}
+      <ApplicationExplorer apps={FEATURED.map((_, i) => i)} />
     </section>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
-/** The three customer segments as cards that stack as the page scrolls, each over the last. */
+/** The four industries as cards that stack as the page scrolls, each over the last. */
 function Audience() {
   const root = useRef<HTMLElement>(null);
   // The nav's audience glance brings its card to the front of the stack.
@@ -329,7 +308,8 @@ function Audience() {
               >
                 <figure className="outcome-figure" aria-labelledby={`seg-${i}`}>
                   <p className="outcome-top t-label">
-                    <span>{seg.industries}</span>
+                    {/* The functions its three examples come from. */}
+                    <span>{[...new Set(seg.apps.map((id) => appById(id)!.category.split(" ")[0]))].join(" · ")}</span>
                   </p>
                   <div className="outcome-visual">
                     <OutcomeGraphic index={i} />
@@ -339,13 +319,16 @@ function Audience() {
                       {seg.name}
                     </h3>
                     <p className="outcome-label t-subtitle">{seg.text}</p>
-                    <p className="outcome-description t-body">{seg.example}</p>
                     <figcaption className="t-label segment-flows">
-                      <span>{AUDIENCE_COPY.workflows}</span>
+                      <span>{AUDIENCE_COPY.examples}</span>
                       <ul>
-                        {seg.workflows.map((id) => {
-                          const w = APPLICATIONS.find((x) => x.id === id)!;
-                          return <li key={id}>{w.name}</li>;
+                        {seg.apps.map((id) => {
+                          const w = appById(id)!;
+                          return (
+                            <li key={id}>
+                              <a href={appHref(w)}>{w.name}</a>
+                            </li>
+                          );
                         })}
                       </ul>
                       <SectionLink href={seg.href} className="ed-link">
@@ -359,6 +342,13 @@ function Audience() {
             ))}
           </ol>
         </div>
+        <p data-reveal className="t-body audience-other">
+          {AUDIENCE_COPY.closing}{" "}
+          <SectionLink href={CTA.href} className="ed-link">
+            {AUDIENCE_COPY.closingLink}
+            <Arrow />
+          </SectionLink>
+        </p>
       </div>
     </section>
   );
@@ -366,50 +356,12 @@ function Audience() {
 
 /* ------------------------------------------------------------------ */
 
-/** What to measure (handoff home.delivery.measurement), kept at #outcomes for old links. */
-function Measure() {
-  return (
-    <section id="outcomes" className="results measure" aria-labelledby="outcomes-title">
-      <div className="page-wrap">
-        <div className="results-head">
-          <Head
-            icon={<ChartNoAxesCombined size={13} strokeWidth={2.2} />}
-            id="outcomes-title"
-            label={OUTCOMES_COPY.eyebrow}
-            headline={OUTCOMES_COPY.headline}
-          />
-          <div className="results-head-side">
-            <p data-reveal className="t-lede">
-              {OUTCOMES_COPY.intro}
-            </p>
-            <p data-reveal className="t-small results-note">
-              {OUTCOMES_COPY.note}
-            </p>
-          </div>
-        </div>
-        <ul className="record-groups measure-list">
-          {OUTCOMES_COPY.measures.map((m, i) => (
-            <li key={m.k} data-reveal className="record-group" style={toneVars(m.tone)}>
-              <MeasureArt k={i} />
-              <p className="record-group-k t-label">
-                <i aria-hidden />
-                {m.k}
-              </p>
-              <p className="t-body record-group-text">{m.text}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 
-/** About (handoff home.about): head and lede, then the place beside the second paragraph, the founder and the call to action, on one pair of columns. */
+/** About (handoff §5 about): head and lede, then the place beside the second paragraph, the founder and the call to action, on one pair of columns. */
 function About() {
   const f = ABOUT.founder;
-  const area = AREAS[1];
+  const area = AREAS[2];
   return (
     <section id="about" className="results about band" data-band="mist" aria-labelledby="about-title">
       <div className="page-wrap">
@@ -463,6 +415,8 @@ function About() {
 function HowItWorks() {
   return (
     <section id="how" className="how" aria-labelledby="how-title">
+      {/* Old links to the measurement section land on the delivery process (handoff §4). */}
+      <span id="outcomes" aria-hidden />
       <HowSteps
         head={
           <Head

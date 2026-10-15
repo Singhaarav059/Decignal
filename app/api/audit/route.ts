@@ -3,7 +3,7 @@ import { auditBrief, isLikelyBot, validateAudit, type AuditData, type AuditRespo
 import { clientIp, createLimiter } from "@/lib/rate-limit";
 import { SITE_URL } from "@/lib/site";
 
-// Workflow review requests (handoff §8). Delivery is configured by env, any channel may be set:
+// Enquiries from the homepage form (handoff §8). Delivery is configured by env, any channel may be set:
 //   AUDIT_WEBHOOK_URL                                  POST JSON (Slack, Make, Zapier, n8n, CRM hook)
 //   RESEND_API_KEY + AUDIT_TO_EMAIL + AUDIT_FROM_EMAIL  email through the Resend REST API
 // With none set the route answers 503 not_configured and the form offers the brief download.
@@ -131,7 +131,7 @@ async function sendEmail(
       from: cfg.from,
       to: cfg.to,
       reply_to: data.email,
-      subject: `Workflow review request: ${data.company} (${ref})`,
+      subject: `Decignal enquiry: ${data.company} (${ref})`,
       text: brief,
     }),
     signal: AbortSignal.timeout(TIMEOUT),

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
-import { APPLICATIONS, CATEGORY_TONE } from "@/lib/content";
+import { CATEGORY_TONE, FEATURED } from "@/lib/content";
 import { APPLICATION_DEMOS, DEMO_PINS } from "@/lib/application-demos";
 import { APPLICATIONS_COPY } from "@/lib/copy";
 import { jumpTo, onApplication } from "@/lib/jump";
@@ -21,12 +21,12 @@ import { whenStill } from "@/lib/idle";
 import { usePhone } from "@/lib/device";
 
 gsap.registerPlugin(ScrollTrigger);
-// Viewport heights per workflow, by APPLICATIONS index: every tab (situation, source records, for review)
-// gets its own stretch of scroll. Job work keeps the most for its truck.
-const CHAPTER_LENGTHS = [1.1, 0.95, 1.2, 1.35, 0.95, 1.1];
+// Viewport heights per application, by FEATURED index: every tab (situation, records, next step) gets
+// its own stretch of scroll. The quotation scene keeps the most for its truck.
+const CHAPTER_LENGTHS = [0.85, 1.05, 0.95, 0.9, 0.85, 0.9];
 /** Where each stage sits inside its chapter (a click on Signal, Evidence or Action lands here). */
 const STAGE_AT = [0.18, 0.48, 0.84];
-const ALL = APPLICATIONS.map((_, i) => i);
+const ALL = FEATURED.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 
 /**
@@ -59,7 +59,7 @@ const headline = (t: string) => {
 };
 
 type Props = {
-  /** APPLICATIONS indices to show, in order. Default: all six. */
+  /** FEATURED indices to show, in order. Default: all six. */
   apps?: number[];
   /** Older name for `apps`. */
   indices?: number[];
@@ -101,7 +101,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
   const sentenceId = `${ids}-stage`;
 
   const selected = list[frame.chapter];
-  const app = APPLICATIONS[selected];
+  const app = FEATURED[selected];
   const demo = APPLICATION_DEMOS[selected];
   const tone = CATEGORY_TONE[app.category];
   const done = frame.step === 2;
@@ -125,7 +125,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     pin.current = id ?? (sheet.current ? "" : null);
   }, []);
 
-  // The area panels ask for an application by its APPLICATIONS index.
+  // The page asks for an application by its FEATURED index.
   useEffect(() => onApplication((i) => {
     const n = list.indexOf(i);
     if (n >= 0) jump(n);
@@ -305,7 +305,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
     [sentenceId, drawerId],
   );
   const moved = DEMO_PINS[demo.kind].moved;
-  const name = (n: number) => APPLICATIONS[list[n]].name;
+  const name = (n: number) => FEATURED[list[n]].name;
 
   return (
     <div
@@ -367,7 +367,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
               {list.map((k, n) => (
                 <li key={k}>
                   <button type="button" aria-current={n === frame.chapter ? "step" : undefined} onClick={() => jump(n)}>
-                    {APPLICATIONS[k].name}
+                    {FEATURED[k].name}
                   </button>
                 </li>
               ))}
@@ -401,7 +401,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
                   {(open || drawer) && (
                     <>
                       <OperationEvidence kind={demo.kind} step={frame.step} onPin={setPin} />
-                      {/* The shared workflow record (handoff §7): what it needs, prepares and leaves to people. */}
+                      {/* The shared application record (handoff §7). */}
                       <dl className="application-record t-small">
                         {(
                           [
@@ -410,7 +410,6 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
                             [APPLICATIONS_COPY.labels.owner, app.reviewer],
                             [APPLICATIONS_COPY.labels.measure, app.measure],
                             [APPLICATIONS_COPY.labels.fit, app.fit],
-                            [APPLICATIONS_COPY.labels.limitation, app.example.limitation],
                           ] as const
                         ).map(([k, v]) => (
                           <div key={k}>
@@ -419,7 +418,6 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
                           </div>
                         ))}
                       </dl>
-                      <p className="application-asset t-label">{app.status}</p>
                     </>
                   )}
                 </div>

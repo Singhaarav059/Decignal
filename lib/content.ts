@@ -1,322 +1,439 @@
-// Product content: the six proposed workflows, the three customer segments, the delivery process, the
-// FAQ and the record sources the workflows use (handoff 15 October 2026, §3 to §7).
-// Section and chapter strings live in lib/copy.ts, the worked dispatch example in lib/example.ts.
+// Product content: the fifteen application examples, the four industries, the delivery process, the
+// FAQ and the record sources (handoff revision 3, 15 October 2026, §5 to §8).
+// Section and chapter strings live in lib/copy.ts, the three demonstrations in lib/demonstrations.ts.
 //
 // Style rules, for every string on the site:
-// (a) Every workflow is a proposed workflow. Never "available", "live", "approved" or a delivered result.
+// (a) These are application examples for custom builds: "Application examples" names the catalogue,
+//     "Illustrative example" marks a fictional scenario. Never "available", "shipped", "proposed" or a result.
 // (b) No fixed delivery times, counts of products, connector promises or outcome figures.
 // (c) Money is ₹ with Indian digit grouping ("₹75,000"); say INR in prose only when clarity needs it.
-// (d) The workflow prepares; a named person reviews and decides. Nothing is approved, sent or posted.
+// (d) We design and build; the application prepares; your team approves.
 // (e) Indian English: catalogue, organisation, fulfilment. Curly apostrophes. No em dashes.
 
-/** The five business functions (handoff global.areas). Slugs in lib/areas.ts keep the old routes. */
+/** The five business functions (handoff §4). Slugs in lib/areas.ts keep the old routes. */
 export const CATEGORIES = [
-  "Supplier coordination",
-  "Dispatch documentation",
-  "RFQ review",
-  "Service follow-up",
-  "Deduction review",
+  "Sales and order management",
+  "Procurement and supply chain",
+  "Operations and delivery",
+  "Finance and receivables",
+  "Service and support",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
-export type Workflow = {
-  /** The shared record id (handoff §7); also the page anchor #application-{id}. */
+/** The industry filters (handoff §5 home.industries): `?industry=` keys on /solutions. */
+export const INDUSTRY_KEYS = ["manufacturing", "distribution", "logistics", "services"] as const;
+export type IndustryKey = (typeof INDUSTRY_KEYS)[number];
+
+export type Application = {
+  /** The shared record id and the anchor on its function page (/solutions/{slug}#{id}). */
   id: string;
   name: string;
   category: Category;
-  status: string;
-  /** The one-line summary. */
+  /** The one-line summary (cards and the homepage). */
   text: string;
-  data: string;
-  output: string;
-  reviewer: string;
-  measure: string;
+  /** Who it is for. */
   fit: string;
-  example: { situation: string; evidence: string; action: string; limitation: string };
+  /** The illustrative scenario. */
+  example: string;
+  /** Works with. */
+  data: string;
+  /** What it produces. */
+  output: string;
+  /** Used by. */
+  reviewer: string;
+  /** What to measure. */
+  measure: string;
+  /** Industry filters this example appears under. */
+  industries: readonly IndustryKey[];
 };
 
-const STATUS = "Proposed workflow";
-
 /**
- * The six proposed workflows, in directory order: D01, D05 and D06 first (one per audience, the three
- * the homepage features), then D02, D03 and D04. APPLICATION_DEMOS (lib/application-demos.ts) is
- * index-aligned with this array.
+ * The fifteen application examples (handoff §7), three per function in CATEGORIES order. Industry tags
+ * come from the §5 industry example links and each record's "Who it is for"; correct them here.
  */
-export const APPLICATIONS: Workflow[] = [
+export const APPLICATIONS: Application[] = [
   {
-    id: "dispatch-pack",
-    name: "Dispatch document pack review",
-    category: "Dispatch documentation",
-    status: STATUS,
-    text: "Prepare a customer-specific document index and flag missing certificates, revision conflicts or mismatched references.",
-    data: "Customer checklist, delivery-line export, material and process certificates, approved test reports.",
-    output: "A draft document pack with source links and a list of items for the quality team to resolve.",
-    reviewer: "Quality or dispatch reviewer.",
-    measure: "Total preparation and review time, document-related rework and critical mismatches found.",
-    fit: "Manufacturers and certificate-dependent industrial stockists.",
-    example: {
-      situation: "Delivery line 12 refers to heat H241; the attached certificate refers to H214.",
-      evidence: "Show both original references and their source records.",
-      action: "Request confirmation of the correct certificate and keep the line marked for review.",
-      limitation: "This does not certify conformance or approve dispatch. Use existing quality-system functions where they adequately support the task.",
-    },
+    id: "sales-order-intake",
+    name: "Customer order intake",
+    category: "Sales and order management",
+    text: "Turn customer purchase orders and order messages into draft sales orders, with uncertain items and changed terms brought to the order desk.",
+    fit: "Distributors, wholesalers and manufacturers receiving orders in several formats.",
+    example: "An electrical distributor receives an order for 20 boxes of switches. The customer uses an old item code and the pack size is unclear. The application brings up the approved item mapping and asks the order desk to confirm the unit before preparing the order.",
+    data: "Customer orders, approved item and customer masters, price lists and relevant order history.",
+    output: "Draft order lines, source references and an exception queue. Approved entries can be passed to the order system through an agreed integration.",
+    reviewer: "Sales operations or the order desk.",
+    measure: "Time from receipt to accepted order; corrected item, quantity and price fields.",
+    industries: ["distribution", "manufacturing"],
   },
   {
-    id: "rfq-clarifications",
-    name: "RFQ clarification pack",
-    category: "RFQ review",
-    status: STATUS,
-    text: "Prepare a review of customer requirements and supplier documents, highlighting conflicts and questions to resolve before quoting.",
-    data: "Customer enquiry and revisions, supplier offer, technical datasheets, approved item references and a reviewed requirement checklist.",
-    output: "A source-linked requirement sheet and draft clarification questions.",
-    reviewer: "Sales owner with a qualified product or engineering reviewer.",
-    measure: "Time to a complete handover, missed requirements and review corrections.",
-    fit: "Industrial distributors, equipment dealers and manufacturers handling specification-heavy enquiries.",
-    example: {
-      situation: "A valve stockist receives a customer enquiry specifying SS316 wetted parts, while the supplier offer lists SS304.",
-      evidence: "Show the customer requirement and supplier statement with document references and their proposed link to the enquiry line.",
-      action: "Flag the material difference and prepare a clarification for the reviewer before a quotation is sent.",
-      limitation: "Do not treat the grades as equivalent, approve a substitute or calculate a quote automatically. If the line match is uncertain, leave it for review.",
-    },
+    id: "rfq-preparation",
+    name: "RFQ preparation",
+    category: "Sales and order management",
+    text: "Bring enquiry lines, specifications and supplier offers into a quote worksheet, with the questions your sales team needs to resolve.",
+    fit: "Manufacturers, equipment suppliers and distributors handling detailed enquiries.",
+    example: "A pump supplier receives a bill of quantities, two revised datasheets and an email changing the motor requirement. The application assembles the current requirements and marks the conflicting motor specification before the estimator prices the job.",
+    data: "Enquiries and revisions, product records, supplier offers and the team’s approved quote checklist.",
+    output: "A quote worksheet with requirement references, candidate catalogue matches and clarification questions.",
+    reviewer: "Sales estimator, with engineering review where required.",
+    measure: "Time to a complete quote worksheet; requirements missed or corrected during review.",
+    industries: ["manufacturing", "distribution", "services"],
   },
   {
-    id: "service-followup",
-    name: "Service to quote handover",
-    category: "Service follow-up",
-    status: STATUS,
-    text: "Find follow-up recommendations in authorised service reports and prepare them for the responsible service or sales owner.",
-    data: "Service reports, equipment records, approved part references, coverage information and existing quote status.",
-    output: "A proposed follow-up with the recommendation source and unresolved part or entitlement questions.",
-    reviewer: "Service owner, then sales where appropriate.",
-    measure: "Time to reviewed follow-up, duplicate proposals and confirmed actions.",
-    fit: "Industrial equipment manufacturers, dealers and independent service businesses.",
-    example: {
-      situation: "A pump service partner’s authorised report recommends replacing a seal at the next shutdown, but the equipment serial is incomplete.",
-      evidence: "Show the original recommendation, candidate equipment records and any existing follow-up or quote.",
-      action: "Prepare an internal follow-up asking the service owner to confirm the equipment, required part and next step.",
-      limitation: "Do not infer part compatibility, decide warranty coverage or send a customer quote. Use an existing field-service workflow if it already captures the recommendation.",
-    },
+    id: "supplier-price-updates",
+    name: "Supplier price list updates",
+    category: "Sales and order management",
+    text: "Compare new supplier price files with your item catalogue and prepare the changes your pricing team needs to approve.",
+    fit: "Industrial, electrical, building-product and spare-parts distributors.",
+    example: "A supplier sends a revised spreadsheet using new item descriptions and a different pack unit. The application separates confirmed price changes from uncertain item matches and shows the effective date on each proposed update.",
+    data: "Current and revised supplier files, approved item aliases, pack sizes and price records.",
+    output: "A proposed update file with previous price, new price, unit, effective date and unresolved matches.",
+    reviewer: "Pricing or catalogue manager.",
+    measure: "Time to approve a supplier update; incorrect mappings and price corrections.",
+    industries: ["distribution"],
   },
   {
-    id: "jobwork-reconciliation",
-    name: "Job work discrepancy review",
-    category: "Supplier coordination",
-    status: STATUS,
-    text: "Bring job-work movements, supplier statements and return documents together to explain unresolved differences.",
-    data: "Challans, material movements, job orders, supplier statements and approved rejection or scrap records.",
-    output: "A reconciliation sheet by challan and batch with source-backed explanations and unresolved items.",
-    reviewer: "Stores, procurement or operations owner.",
-    measure: "Age of unresolved differences, review time and corrections required.",
-    fit: "Manufacturers outsourcing processing to job workers.",
-    example: {
-      situation: "A coating job sends 1,000 pieces, receives 940 back and has accepted rejection records for 20.",
-      evidence: "The available records account for 960 pieces; 40 remain to be reconciled.",
-      action: "Prepare a follow-up with the linked challan, return and rejection records.",
-      limitation: "The 40 pieces are not automatically lost. Existing SAP or Tally job-work records remain the source for postings.",
-    },
+    id: "purchase-quote-comparison",
+    name: "Purchase quotation comparison",
+    category: "Procurement and supply chain",
+    text: "Put supplier quotations on a comparable basis, showing differences in quantity, specification, freight, payment terms and delivery.",
+    fit: "Procurement teams in manufacturing, distribution and project businesses.",
+    example: "Three suppliers quote the same purchase request. One quotes per box, another excludes freight, and the third offers a different delivery date. The application prepares a comparison sheet and keeps unconfirmed terms visible.",
+    data: "Purchase request, supplier quotations, approved unit conversions and the buyer’s comparison rules.",
+    output: "A comparison sheet with linked quotation lines, calculated totals where inputs are complete, and questions for suppliers.",
+    reviewer: "Buyer or procurement manager.",
+    measure: "Preparation time per comparison; errors in quantities, terms and total cost.",
+    industries: ["manufacturing", "distribution"],
   },
   {
-    id: "deduction-evidence",
-    name: "Customer deduction evidence",
-    category: "Deduction review",
-    status: STATUS,
-    text: "Assemble the records behind a short payment or debit note so finance can review the reason and prepare a response.",
-    data: "Deduction advice, invoice, remittance, delivery evidence and relevant approved commercial or quality records.",
-    output: "A draft evidence packet with missing support and a proposed response for review.",
-    reviewer: "Finance controller or authorised receivables owner.",
-    measure: "Preparation time, unresolved age and attributable recovery after review.",
-    fit: "Manufacturers and industrial distributors with recurring customer deductions.",
-    example: {
-      situation: "A buyer deducts ₹75,000 for a reported delivery shortage.",
-      evidence: "The invoice and delivery acknowledgement are available, but the receiver note is ambiguous.",
-      action: "Prepare the evidence and highlight the unresolved note for the finance owner.",
-      limitation: "This does not establish that the deduction is invalid or guarantee recovery. Existing dispute-management products must be assessed first.",
-    },
+    id: "supplier-commitment-tracking",
+    name: "Supplier commitment tracking",
+    category: "Procurement and supply chain",
+    text: "Turn supplier updates into a current view of promised quantities and dates, with the orders that need follow-up.",
+    fit: "Manufacturers, distributors and equipment suppliers managing open purchase orders.",
+    example: "A supplier changes a commitment of 100 contactors to 60 on Friday and 40 the following Wednesday. The application links the update to the purchase-order line and identifies customer commitments that need checking.",
+    data: "Open purchase orders, supplier confirmations, authorised updates and verified links to internal requirements.",
+    output: "A change list with previous and revised commitments, supporting messages, affected orders and follow-up owners.",
+    reviewer: "Procurement or supply planning.",
+    measure: "Time to capture a changed commitment; missed changes and overdue follow-ups.",
+    industries: ["manufacturing", "distribution", "services"],
   },
   {
-    id: "supplier-updates",
-    name: "Supplier promise change review",
-    category: "Supplier coordination",
-    status: STATUS,
-    text: "Prepare a review of changed quantities or dates from supplier updates and link them to the relevant purchase-order lines.",
-    data: "Open purchase orders, confirmed schedules, authorised supplier messages and linked internal requirements.",
-    output: "Proposed changes with source statements, affected commitments and questions for the buyer.",
-    reviewer: "Procurement owner.",
-    measure: "Time to reviewed update, extraction errors and unnecessary escalations.",
-    fit: "Manufacturers, industrial distributors and equipment dealers receiving supplier schedule changes.",
-    example: {
-      situation: "A distributor’s supplier changes a confirmed order of 100 contactors to 60 on Friday and 40 the following Wednesday.",
-      evidence: "Show the supplier message, confirmed PO schedule and any verified allocation to a customer order.",
-      action: "Prepare the revised schedule for review and identify linked customer commitments that need checking.",
-      limitation: "Do not change the PO or promise a delivery date. If the allocation or customer commitment is unknown, mark impact as needing review.",
-    },
+    id: "job-work-reconciliation",
+    name: "Job work reconciliation",
+    category: "Procurement and supply chain",
+    text: "Bring job-work movements and supplier records together to explain outstanding quantities and prepare the right follow-up.",
+    fit: "Manufacturers that send material or components to external processors.",
+    example: "A coating job sends 1,000 pieces, receives 940 back and has accepted rejection records for 20. The application accounts for the documented 960 pieces and prepares the remaining 40 for reconciliation with the job worker.",
+    data: "Job orders, challans, material movements, supplier statements, returns and approved rejection records.",
+    output: "A reconciliation by challan or batch, with explained balances and unresolved differences.",
+    reviewer: "Stores, procurement or operations.",
+    measure: "Age of outstanding differences; time to reconcile a job-work cycle.",
+    industries: ["manufacturing"],
+  },
+  {
+    id: "operational-exception-brief",
+    name: "Daily operational brief",
+    category: "Operations and delivery",
+    text: "Bring orders, supply updates and dispatch records into a daily brief showing what changed, what needs attention and who owns the next step.",
+    fit: "Businesses coordinating work across branches, plants or operating teams.",
+    example: "An operations head asks which orders due this week need attention. The application brings together a supplier delay, an unconfirmed stock allocation and a delivery hold, each linked to its source and responsible team.",
+    data: "Order book, stock and allocation records, supply updates, dispatch status and agreed exception rules.",
+    output: "A prioritised brief with data timestamps, supporting records, assigned follow-ups and unanswered questions.",
+    reviewer: "Operations head, branch manager or supply coordinator.",
+    measure: "Time to prepare the daily review; missed exceptions and follow-ups completed.",
+    industries: ["manufacturing", "distribution", "logistics"],
+  },
+  {
+    id: "production-record-capture",
+    name: "Production record capture",
+    category: "Operations and delivery",
+    text: "Turn shift sheets and production notes into structured records, with incomplete entries routed back to the team that knows the work.",
+    fit: "Manufacturers still consolidating production information from paper or spreadsheets.",
+    example: "A packaging plant records output, rejection quantities and downtime on shift sheets. The application prepares a daily production record, preserves the original sheet and asks the supervisor to resolve an unreadable quantity.",
+    data: "Shift sheets, job and machine references, product codes and agreed field definitions.",
+    output: "Structured production records and a review queue for missing, unreadable or inconsistent entries.",
+    reviewer: "Production supervisor.",
+    measure: "Time from shift end to a reviewed record; transcription errors and missing entries.",
+    industries: ["manufacturing"],
+  },
+  {
+    id: "delivery-document-followup",
+    name: "Delivery and POD follow-up",
+    category: "Operations and delivery",
+    text: "Match delivery acknowledgements to shipments and organise the follow-up for missing or disputed delivery records.",
+    fit: "Manufacturers, distributors, transport operators and logistics service businesses.",
+    example: "A distributor has delivered goods to several customer sites, but one proof of delivery has no clear order reference and another records a shortage. The application proposes the links and prepares separate follow-ups for missing evidence and the reported shortage.",
+    data: "Shipment records, lorry receipts, proof of delivery, customer acknowledgements and relevant correspondence.",
+    output: "A shipment-wise status list with matched records, unresolved links and follow-up tasks.",
+    reviewer: "Dispatch or logistics coordinator.",
+    measure: "Time to locate a usable POD; age of missing records and disputed deliveries.",
+    industries: ["manufacturing", "distribution", "logistics"],
+  },
+  {
+    id: "customer-deduction-investigation",
+    name: "Customer deduction investigation",
+    category: "Finance and receivables",
+    text: "Bring debit notes, invoices and delivery evidence together so finance can investigate a short payment and prepare a response.",
+    fit: "Manufacturers, distributors and service businesses with recurring customer deductions.",
+    example: "A customer deducts ₹75,000 against a delivery-shortage claim. The application links the debit note, invoice and delivery records, identifies an ambiguous receiver note and prepares a response for finance to review.",
+    data: "Debit notes, invoices, remittance details, delivery evidence and approved commercial terms.",
+    output: "A deduction case with supporting records, missing evidence and a draft response.",
+    reviewer: "Receivables or finance team.",
+    measure: "Investigation time; unresolved case age; actual recoveries recorded separately.",
+    industries: ["manufacturing", "distribution", "services"],
+  },
+  {
+    id: "freight-bill-review",
+    name: "Freight bill review",
+    category: "Finance and receivables",
+    text: "Compare transporter bills with agreed rates and trip records, and organise the charges that need explanation.",
+    fit: "Shippers, distributors and logistics businesses using several transport partners.",
+    example: "A transporter adds a detention charge to a freight bill. The application shows the agreed free period, available gate timestamps and any missing acknowledgement so logistics and finance can review the charge together.",
+    data: "Transporter bills, rate agreements, trip records, gate timestamps and approved extra-charge rules.",
+    output: "A bill review with recalculated charges where rules are complete, source references and unresolved differences.",
+    reviewer: "Logistics finance or the freight accounts team.",
+    measure: "Review time per bill; duplicate or unsupported charges confirmed by the reviewer.",
+    industries: ["distribution", "logistics"],
+  },
+  {
+    id: "payment-advice-matching",
+    name: "Payment advice matching",
+    category: "Finance and receivables",
+    text: "Read customer remittance details and propose how a payment relates to open invoices, keeping unexplained differences visible.",
+    fit: "Businesses receiving consolidated payments against several invoices or branches.",
+    example: "A customer transfers ₹4,80,000 and sends a separate advice covering five invoices totalling ₹5,00,000. The advice identifies a ₹20,000 deduction. The application prepares the proposed allocation and carries the deduction into a separate investigation.",
+    data: "Bank receipt reference, customer advice, open invoices, credit notes and approved deduction codes.",
+    output: "A proposed invoice allocation with source references and unresolved amounts.",
+    reviewer: "Receivables accountant.",
+    measure: "Time to an approved allocation; incorrect matches and amounts left unexplained.",
+    industries: ["distribution", "manufacturing", "services"],
+  },
+  {
+    id: "service-case-intake",
+    name: "Service request intake",
+    category: "Service and support",
+    text: "Turn customer messages into service cases with the right equipment, location and history attached.",
+    fit: "Equipment suppliers, installation companies and B2B service teams.",
+    example: "A customer sends a photo and a message about a pump at one of three sites. The application prepares the case, finds candidate asset records and asks for the missing serial number before assigning an engineer.",
+    data: "Approved customer channels, asset and site records, prior service history and routing rules.",
+    output: "A structured case, relevant history, missing-information questions and a suggested service queue.",
+    reviewer: "Service coordinator.",
+    measure: "Time to a complete case; incorrect asset links and misrouted requests.",
+    industries: ["services"],
+  },
+  {
+    id: "service-report-followup",
+    name: "Service report to follow-up",
+    category: "Service and support",
+    text: "Turn recommendations in service reports into assigned follow-ups and draft quotation inputs.",
+    fit: "Equipment manufacturers, dealers and independent service businesses.",
+    example: "A technician recommends replacing a mechanical seal at the next shutdown. The application links the report to the equipment, checks for an existing quote and prepares a follow-up with the part and coverage questions still to be confirmed.",
+    data: "Service reports, asset records, approved parts references, contract information and open quotes.",
+    output: "An assigned follow-up and draft quotation inputs with the original recommendation attached.",
+    reviewer: "Service manager and the responsible sales owner.",
+    measure: "Time to an assigned follow-up; duplicate proposals; recommendations acted on.",
+    industries: ["services", "manufacturing"],
+  },
+  {
+    id: "service-knowledge-assistant",
+    name: "Service knowledge assistant",
+    category: "Service and support",
+    text: "Help service teams find the right manual section and approved past resolution for the equipment they are working on.",
+    fit: "Equipment support teams and B2B service businesses with a maintained knowledge base.",
+    example: "An engineer looks up an error code for a particular drive model. The application retrieves the relevant manual revision and approved service note, showing the source and asking for the model suffix when it affects the answer.",
+    data: "Approved manuals, model and revision records, service bulletins and reviewed past cases.",
+    output: "A source-linked answer or a clear request for the information needed to find one.",
+    reviewer: "Service engineering or technical support.",
+    measure: "Time to a useful answer; unsupported answers and incorrect model or revision matches.",
+    industries: ["services"],
   },
 ];
 
-/** The three the homepage features, in order (handoff home.examples_intro). */
-export const FEATURED = [0, 1, 2] as const;
+export const appById = (id: string) => APPLICATIONS.find((a) => a.id === id);
 
-/** Old anchors (#application-{kind}) and the workflow each now scrolls to (handoff §11 legacy mapping). */
+/** The six the homepage features, in the handoff's order (§5 home.applications.featured_ids). */
+export const FEATURED_IDS = [
+  "sales-order-intake",
+  "purchase-quote-comparison",
+  "supplier-commitment-tracking",
+  "operational-exception-brief",
+  "customer-deduction-investigation",
+  "service-report-followup",
+] as const;
+export const FEATURED = FEATURED_IDS.map((id) => appById(id)!);
+
+/**
+ * Old anchors and the record each now scrolls to (handoff §4 "Preserve old links"): the six workflow ids
+ * of the previous revision, and the scene kinds used before that.
+ */
 export const LEGACY_ANCHORS: Record<string, string> = {
-  inventory: "jobwork-reconciliation",
-  demand: "supplier-updates",
-  risk: "supplier-updates",
-  production: "dispatch-pack",
-  maintenance: "dispatch-pack",
-  sales: "rfq-clarifications",
-  customer: "service-followup",
-  finance: "deduction-evidence",
+  "dispatch-pack": "delivery-document-followup",
+  "rfq-clarifications": "rfq-preparation",
+  "service-followup": "service-report-followup",
+  "jobwork-reconciliation": "job-work-reconciliation",
+  "deduction-evidence": "customer-deduction-investigation",
+  "supplier-updates": "supplier-commitment-tracking",
+  inventory: "job-work-reconciliation",
+  demand: "supplier-commitment-tracking",
+  risk: "supplier-commitment-tracking",
+  production: "operational-exception-brief",
+  maintenance: "service-report-followup",
+  sales: "sales-order-intake",
+  customer: "service-report-followup",
+  finance: "customer-deduction-investigation",
 };
 
 /**
- * The three customer segments (handoff home.audience). These are who buys, not three more products.
- * `workflows` are APPLICATIONS ids; `href` is the card's link.
+ * The four industries (handoff §5 home.industries). Examples only; the company is not limited to them.
+ * `apps` are APPLICATIONS ids (the card's three example links); `href` filters the directory.
  */
 export const AUDIENCE = [
   {
-    name: "Manufacturers",
-    text: "Prepare dispatch evidence, review job-work differences and investigate supplier or payment exceptions.",
-    workflows: ["dispatch-pack", "jobwork-reconciliation", "deduction-evidence"],
-    href: "/solutions/operations",
-    example: "A machined-components supplier links a delivery line to the material certificate for the correct heat and flags an absent external-process report.",
-    industries: "Engineering components, metal products, industrial machinery, electrical equipment",
+    key: "manufacturing",
+    name: "Manufacturing",
+    text: "For engineering, electrical, packaging, plastics and other manufacturing teams handling enquiries, supplier commitments and production records.",
+    apps: ["rfq-preparation", "supplier-commitment-tracking", "production-record-capture"],
+    href: "/solutions?industry=manufacturing",
   },
   {
-    name: "Industrial distributors and stockists",
-    text: "Clarify customer specifications against supplier offers, review delivery changes and assemble deduction evidence.",
-    workflows: ["rfq-clarifications", "supplier-updates", "deduction-evidence"],
-    href: "/solutions/commercial",
-    example: "A valve stockist compares a customer’s material requirement with a supplier’s offered grade and prepares a clarification before the sales team quotes.",
-    industries: "Industrial components, electrical equipment, machinery spares, metal products",
+    key: "distribution",
+    name: "Distribution and wholesale",
+    text: "For businesses managing large item catalogues, customer orders, changing supplier prices and payment follow-up.",
+    apps: ["sales-order-intake", "supplier-price-updates", "payment-advice-matching"],
+    href: "/solutions?industry=distribution",
   },
   {
-    name: "Equipment dealers and service businesses",
-    text: "Turn recommendations from authorised service reports into internal follow-ups with equipment, part and coverage questions visible.",
-    workflows: ["service-followup"],
-    href: "/solutions/customer",
-    example: "A pump service partner’s report recommends a seal replacement, but the serial number is incomplete and no one owns the follow-up.",
-    industries: "Dealers and service businesses supporting industrial equipment",
+    key: "logistics",
+    name: "Logistics and transport",
+    text: "For shippers and service providers coordinating delivery records, transporter bills and operational follow-up.",
+    apps: ["delivery-document-followup", "freight-bill-review", "operational-exception-brief"],
+    href: "/solutions?industry=logistics",
+  },
+  {
+    key: "services",
+    name: "Equipment and B2B services",
+    text: "For equipment dealers, installation teams and service businesses handling requests, reports and technical knowledge.",
+    apps: ["service-case-intake", "service-report-followup", "service-knowledge-assistant"],
+    href: "/solutions?industry=services",
+  },
+] as const satisfies readonly { key: IndustryKey; name: string; text: string; apps: readonly string[]; href: string }[];
+
+/** How we build (handoff §5 home.approach): four items, inputs to ownership. */
+export const APPROACH = [
+  {
+    title: "Bring the relevant records together",
+    text: "Use the orders, documents, messages and system records needed for the task, with a clear source and update frequency.",
+  },
+  {
+    title: "Define how your business works",
+    text: "Capture item aliases, units, customer terms, approval limits and exceptions with the people who use them.",
+  },
+  {
+    title: "Put the result into the workflow",
+    text: "Deliver a useful screen, draft, answer or task. Add system updates where the integration and approval rules support them.",
+  },
+  {
+    title: "Keep it useful after launch",
+    text: "Measure the work completed, review errors and agree responsibility for changes as documents and processes evolve.",
   },
 ] as const;
 
-/** The delivery process (handoff home.delivery): one sequence, no fixed durations. */
+/** The delivery process (handoff §5 home.delivery): one sequence, no fixed durations. */
 export const PATHS = {
-  label: "From a real exception to a tested workflow",
+  label: "Find the right starting point and build from there",
   steps: [
     {
-      title: "Review the task and existing tools",
-      text: "Look at a recent exception with the process owner. Check what the current software and its configuration already support.",
-      deliverable: "A decision on whether there is a gap worth investigating.",
+      title: "Understand the work",
+      text: "Walk through the processes that take time or create rework. Review the systems and people involved, including what your current tools already support.",
+      deliverable: "A shortlist of useful applications.",
     },
     {
-      title: "Agree the scope and evidence",
-      text: "Define the documents, record links, reviewer and acceptance criteria. Compare the proposed build with improving the existing setup.",
-      deliverable: "A written scope, estimate and agreed evaluation.",
+      title: "Choose the first application",
+      text: "Compare expected value, data readiness and implementation effort. Agree the scope, responsibilities, cost and success measures.",
+      deliverable: "A practical implementation plan.",
     },
     {
-      title: "Test on representative cases",
-      text: "Use complete, incomplete and conflicting records. Compare the proposed output with the team’s reviewed results and measure the full preparation effort.",
-      deliverable: "Evidence of what works, what fails and what still requires review.",
+      title: "Build and test with your team",
+      text: "Develop the application around real examples. Test routine cases and exceptions, then refine it with the people who will use it.",
+      deliverable: "A tested application and a rollout plan.",
     },
     {
-      title: "Launch with an owner",
-      text: "Define who uses the application, how issues are handled and how performance will be reviewed. Agree any ongoing support separately.",
-      deliverable: "A rollout plan with named responsibilities.",
+      title: "Run and improve",
+      text: "Train the users, review results and agree ongoing support. Reuse established connections and rules where they help the next application.",
+      deliverable: "A clear owner and a plan for improvement.",
     },
   ],
-  timing: "The delivery estimate depends on scope, data access and testing. We confirm it after the workflow review.",
+  timing: "Project scope, delivery time and support are agreed before work begins.",
 };
 
-/** The homepage FAQ (handoff home.faq). FAQ_TOPICS is index-aligned. */
+/** The homepage FAQ (handoff §8). FAQ_TOPICS is index-aligned. */
 export const FAQ = [
   {
-    q: "Why would we need this if we already use SAP, Tally or another ERP?",
-    a: "You may not. The first step is to check the task against your current software and configuration. We would consider a custom application only for a specific gap, such as preparing evidence from external documents that still takes your team substantial manual work.",
+    q: "Is Decignal a ready-made product or a custom application service?",
+    a: "We design and build applications around your business. The examples show common starting points; the workflow, integrations and rollout are scoped for each implementation.",
   },
   {
     q: "Is Decignal only for manufacturers?",
-    a: "Our initial audience also includes industrial distributors, stockists, equipment dealers and service businesses. We select the workflow that fits your operations. For example, a distributor may need RFQ clarification, while a manufacturer using external processors may need job-work reconciliation.",
+    a: "No. The examples cover manufacturing, distribution, logistics and B2B services, including sales, procurement, operations, finance and support. We can also discuss processes in other industries.",
   },
   {
-    q: "What is Decignal building?",
-    a: "Custom applications for specific operational tasks, including dispatch documents, supplier exceptions, RFQ clarification, customer deductions and service follow-up. The examples are proposed workflows; we confirm scope and capability before a build.",
+    q: "Can we use Decignal with SAP, Tally or other existing software?",
+    a: "That is part of discovery. We review the products, versions, modules and access available, then agree how to connect or use approved exports. We also check whether your current tools already provide a good solution.",
   },
   {
-    q: "Does this replace our ERP or quality system?",
-    a: "The proposed applications prepare work for your team while the existing systems remain responsible for their records and transactions. Any write-back or automated action would need a separately agreed scope.",
+    q: "Does every action need manual review?",
+    a: "We agree which steps can run automatically and which need approval. Routine steps can be automated after testing; uncertain cases and important business decisions follow the rules set with your team.",
   },
   {
-    q: "Could our software partner build this?",
-    a: "Possibly. Configuration, an established product or an application built by your current partner may be the right option. Compare the complete cost, support needs and results on your actual records before choosing.",
+    q: "Can an application use WhatsApp messages or regional-language documents?",
+    a: "We assess the specific business channel, language and document samples. Access must be authorised, and support is confirmed through testing for that workflow.",
   },
   {
-    q: "Which systems can you connect to?",
-    a: "We assess the exact product, version, available exports and access restrictions. An initial evaluation can use approved files. We confirm any live integration before including it in the proposal.",
+    q: "How are data access and security handled?",
+    a: "Before connecting systems, we agree the access needed, approved providers, hosting arrangements, retention and responsibilities with your team. Those requirements form part of the project scope.",
   },
   {
-    q: "How do you handle wrong or missing information?",
-    a: "The proposed workflow must show its source records and distinguish a supported match from missing or conflicting evidence. Your reviewer resolves the exceptions. We test that behaviour on representative cases before considering a rollout.",
+    q: "What will it cost and how long will it take?",
+    a: "The introductory conversation is free. Assessment, implementation and support are scoped separately, based on the application, data access and testing required.",
   },
   {
-    q: "Can we send WhatsApp messages, scans or regional-language documents?",
-    a: "Describe the sources and languages during the review. We assess authorised access and test representative samples. We do not assume access to private chats or promise accuracy on an untested document type or language.",
-  },
-  {
-    q: "How is our data handled?",
-    a: "Data access, storage, model providers, retention and deletion must be agreed before project data is shared. The introductory call does not require credentials or confidential documents. Website enquiry data is covered by the privacy notice.",
-  },
-  {
-    q: "What does the first engagement cost?",
-    a: "The introductory 30-minute call is free. A more detailed assessment, implementation and ongoing support are scoped separately. Fees and timing are set out in a written proposal.",
-  },
-  {
-    q: "Who owns the work and supports it?",
-    a: "The project agreement defines ownership or licences for custom work, reusable components and third-party services. It also defines documentation, data access, maintenance and handover responsibilities.",
-  },
-  {
-    q: "Are the examples customer results?",
-    a: "No. They illustrate proposed workflows. Ask us what can currently be demonstrated for your use case; any future customer results will be identified separately.",
+    q: "Are the examples on this website customer results?",
+    a: "They are illustrative examples of applications we can scope with a business. Any published customer result will be identified separately.",
   },
 ];
 
 /** One topic word per FAQ entry, index-aligned with FAQ. Neutral chrome: no tones. */
-export const FAQ_TOPICS = [
-  "Existing software",
-  "Audience",
-  "What we build",
-  "Your systems",
-  "Alternatives",
-  "Integration",
-  "Exceptions",
-  "Sources",
-  "Data",
-  "Cost",
-  "Ownership",
-  "Examples",
-];
+export const FAQ_TOPICS = ["What we do", "Industries", "Your systems", "Approvals", "Sources", "Data", "Cost", "Examples"];
 
 /** The five questions the nav's FAQ glance shows (NavPeek FAQ_PICK). */
-export const FAQ_PEEK = [0, 1, 5, 6, 9];
+export const FAQ_PEEK = [0, 1, 2, 3, 6];
 
 /**
- * The six record sources behind the worked dispatch review: the story's islands, the systems ring and
- * the evidence panels. `read` is the example's record from that source. No vendor names or logos as
- * connectors (handoff home.systems). Ids are kept from the earlier systems so photos and icons still map.
+ * The kinds of record an application can work from: icons and tones for the systems ring and the
+ * hero's islands. No vendor names or logos as connectors (handoff §5 home.systems). Ids are kept from
+ * the earlier systems so photos and icons still map. `group` is the SOURCE_GROUPS entry it belongs to.
  */
-export const CONNECTS: { id: string; name: string; full: string; tone: string; reads: string; read: string }[] = [
-  { id: "erp", name: "ERP", full: "ERP and accounting", tone: "cobalt", reads: "Delivery lines, invoices, purchase orders and receipts", read: "Line 12 recorded against heat H241" },
-  { id: "crm", name: "Customer", full: "Customer requirements", tone: "violet", reads: "Checklists, enquiries, revisions and deduction advices", read: "Checklist Rev C · six documents per shipment" },
-  { id: "mes", name: "Quality", full: "Quality records", tone: "emerald", reads: "Test reports, inspection records and batch references", read: "Dimensional report for line 12 · supported" },
-  { id: "wms", name: "Job work", full: "Job workers and processors", tone: "saffron", reads: "Challans, returns and process certificates", read: "Heat-treatment certificate · not found" },
-  { id: "sup", name: "Suppliers", full: "Supplier documents", tone: "tangerine", reads: "Material certificates, offers, datasheets and schedule updates", read: "Mill certificate refers to heat H214" },
-  { id: "ext", name: "Files", full: "Authorised email and folders", tone: "pink", reads: "Shared folders, authorised mailboxes, scans and exports", read: "Shipment folder · 11 files supplied" },
+export const CONNECTS: { id: string; name: string; full: string; tone: string; reads: string; read: string; group: number }[] = [
+  { id: "erp", name: "ERP", full: "ERP and accounting", tone: "cobalt", reads: "Orders, invoices, purchase orders and receipts", read: "Open orders and invoices", group: 0 },
+  { id: "crm", name: "CRM", full: "CRM and customer records", tone: "violet", reads: "Customers, enquiries, price lists and contracts", read: "Customer and item masters", group: 0 },
+  { id: "mes", name: "Service", full: "Inventory and service records", tone: "emerald", reads: "Stock, allocations, assets and service history", read: "Stock and asset records", group: 0 },
+  { id: "wms", name: "Sheets", full: "Spreadsheets and trackers", tone: "saffron", reads: "Trackers, price files, shift sheets and exports", read: "Trackers and price files", group: 1 },
+  { id: "sup", name: "Documents", full: "Documents and files", tone: "tangerine", reads: "Purchase orders, quotations, reports and shared folders", read: "Orders, quotations and reports", group: 1 },
+  { id: "ext", name: "Messages", full: "Business communications", tone: "pink", reads: "Approved email or messaging channels used in the workflow", read: "Approved email and messages", group: 2 },
 ];
 
-/** Each business function keeps one colour everywhere it appears. */
+/** The three source groups on the systems section (handoff §5 home.systems). */
+export const SOURCE_GROUPS = [
+  { name: "Business systems", text: "ERP, accounting, CRM, inventory and service records.", tone: "cobalt" },
+  { name: "Documents and files", text: "Purchase orders, quotations, reports, spreadsheets and shared folders.", tone: "tangerine" },
+  { name: "Business communications", text: "Approved email or messaging channels used in the selected workflow.", tone: "pink" },
+] as const;
+
+/** Each business function keeps one colour everywhere it appears (the route's colour before the rename). */
 export const CATEGORY_TONE: Record<Category, string> = {
-  "Supplier coordination": "cobalt",
-  "Dispatch documentation": "emerald",
-  "RFQ review": "tangerine",
-  "Service follow-up": "pink",
-  "Deduction review": "violet",
+  "Sales and order management": "tangerine",
+  "Procurement and supply chain": "cobalt",
+  "Operations and delivery": "emerald",
+  "Finance and receivables": "violet",
+  "Service and support": "pink",
 };

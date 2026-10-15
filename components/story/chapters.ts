@@ -3,11 +3,10 @@ import type { Tone } from "@/lib/tone";
 import { jumpTo } from "@/lib/jump";
 
 /**
- * Chapter accent: the colour of what each chapter is about (critic §2, S14). Red only where the
- * chapter states a risk (Signal, Problem). Industries takes the tone of the industry on screen;
- * TONE[7] is its first industry.
+ * Chapter accent: the colour of what each chapter is about (critic §2, S14). Industries takes the tone
+ * of the industry on screen; TONE[2] is its first industry.
  */
-export const TONE: Tone[] = ["cobalt", "signal", "signal", "violet", "emerald", "emerald", "tangerine", INDUSTRY_TONE[0], "cobalt"];
+export const TONE: Tone[] = ["cobalt", "tangerine", INDUSTRY_TONE[0], "cobalt"];
 
 /** The industry facing the reader at g (0..5). */
 export const industryAt = (g = store.g) => Math.round(industryF(localIn(CH.industries, g)));

@@ -66,11 +66,11 @@ export function AreaArt({ area }: { area: string }) {
   useFarHold(ref);
   return (
     <svg ref={ref} className="area-art" viewBox="0 0 360 150" aria-hidden>
-      {area === "Supplier coordination" && <SupplyChain />}
-      {area === "Dispatch documentation" && <Ledger {...DISPATCH} />}
-      {area === "RFQ review" && <Commercial />}
-      {area === "Service follow-up" && <Customer />}
-      {area === "Deduction review" && <Ledger {...DEDUCTION} />}
+      {area === "Procurement and supply chain" && <SupplyChain />}
+      {area === "Operations and delivery" && <Ledger {...BRIEF} />}
+      {area === "Sales and order management" && <Commercial />}
+      {area === "Service and support" && <Customer />}
+      {area === "Finance and receivables" && <Ledger {...DEDUCTION} />}
     </svg>
   );
 }
@@ -79,7 +79,7 @@ function Ground({ from = 8, to = 352 }: { from?: number; to?: number }) {
   return <path d={`M${from} ${GROUND}H${to}`} className="aa-ground aa-draw" pathLength={1} style={at(0)} />;
 }
 
-/* ---- Supply Chain: Plant 02 sends 240 units to Plant 01, which is heading below safety stock ---- */
+/* ---- Procurement: the supplier's changed delivery reaches your plant short; the change is flagged ---- */
 
 /** A plant in elevation: saw-tooth roof, chimney, windows, and a roller door on the road side (right). */
 function Plant() {
@@ -111,33 +111,33 @@ function SupplyChain() {
             <Plant />
           </g>
         </g>
-        {/* The same red dot as the example row beside the drawing: 40 returned pieces are still unexplained. */}
+        {/* The change to follow up: 40 of the 100 arrive the following Wednesday. */}
         <circle cx="348" cy="68" r="5" className="aa-risk aa-rise" style={at(520)} />
       </g>
-      {/* The return: 940 pieces back from the job worker. It leaves their dock and parks at your plant's door. */}
+      {/* Friday's delivery: 60 of the 100 promised. It leaves the supplier's dock and parks at your door. */}
       <g className="aa-truck">
         <g transform={`translate(200 ${GROUND})`}>
           <rect x="0" y="-32" width="44" height="25" rx="2" className="aa-solid" />
-          <text x="22" y="-19.5" textAnchor="middle" dominantBaseline="central" className="aa-on-tone">940</text>
+          <text x="22" y="-19.5" textAnchor="middle" dominantBaseline="central" className="aa-on-tone">60</text>
           <path d="M46 -7V-25h10l8 10v8z" className="aa-soft" />
           <path d="M49 -22h6l5.5 6.5H49z" className="aa-tint" />
           <circle cx="11" cy="-4.5" r="4.5" className="aa-wheel" />
           <circle cx="54" cy="-4.5" r="4.5" className="aa-wheel" />
         </g>
       </g>
-      <text x="52" y={LABEL} textAnchor="middle" className="aa-rise" style={at(200)}>JOB WORKER</text>
+      <text x="52" y={LABEL} textAnchor="middle" className="aa-rise" style={at(200)}>SUPPLIER</text>
       <text x="308" y={LABEL} textAnchor="middle" className="aa-rise aa-sig" style={at(320)}>YOUR PLANT</text>
     </>
   );
 }
 
-/* ---- RFQ review: the customer's requirement against the supplier's offer, one difference flagged ---- */
+/* ---- Sales: an order's fields against the approved catalogue, the pack unit left to confirm ---- */
 
 const SPECS = [
-  { name: "MATERIAL", need: 74, offer: 52, ok: false },
-  { name: "SIZE", need: 58, offer: 58, ok: true },
-  { name: "PRESSURE", need: 66, offer: 66, ok: true },
-  { name: "ENDS", need: 46, offer: 46, ok: true },
+  { name: "ITEM", need: 74, offer: 74, ok: true },
+  { name: "UNIT", need: 58, offer: 36, ok: false },
+  { name: "PRICE", need: 66, offer: 66, ok: true },
+  { name: "TERMS", need: 46, offer: 46, ok: true },
 ];
 const SPEC_X = (i: number) => 54 + i * 84;
 const BAR_W = 40;
@@ -166,13 +166,13 @@ function Commercial() {
       })}
       <g className="aa-rise" style={at(1060)}>
         <rect x="96" y="2" width="92" height="20" rx="10" className="aa-tag" />
-        <text x="142" y="12" textAnchor="middle" dominantBaseline="central" className="aa-on-tag">SS316 ≠ SS304</text>
+        <text x="142" y="12" textAnchor="middle" dominantBaseline="central" className="aa-on-tag">27 OF 40</text>
       </g>
     </>
   );
 }
 
-/* ---- Service follow-up: service reports on one pump; the seal recommendation goes to its owner ---- */
+/* ---- Service: service reports on one pump; the seal recommendation goes to its owner ---- */
 
 const CASES = Array.from({ length: 8 }, (_, i) => ({ x: 16 + (i % 4) * 30, y: i < 4 ? 44 : 80 }));
 const HUB = { x: 252, y: 73 };
@@ -230,9 +230,9 @@ const STATUS_X = 326;
 
 type LedgerSpec = { cols: [string, string, string]; rows: boolean[]; open: string };
 
-/** Dispatch documentation: delivery lines against their certificates; line 12's does not match. */
-const DISPATCH: LedgerSpec = { cols: ["LINE", "CERTIFICATE", "PROCESS"], rows: [true, true, false, true, true], open: "2 OPEN" };
-/** Deduction review: deductions against their invoices and delivery evidence; one note is unclear. */
+/** Operations: this week's orders against the latest update and an owner; three are open. */
+const BRIEF: LedgerSpec = { cols: ["ORDER", "UPDATE", "OWNER"], rows: [true, false, false, true, false], open: "3 OPEN" };
+/** Finance: deductions against their invoices and delivery evidence; one note is unclear. */
 const DEDUCTION: LedgerSpec = { cols: ["DEBIT NOTE", "INVOICE", "DELIVERY"], rows: [true, true, true, false, true], open: "1 TO REVIEW" };
 
 function Doc({ x, y, missing }: { x: number; y: number; missing?: boolean }) {
