@@ -422,6 +422,7 @@
   background: var(--color-surface);
   box-shadow: var(--edge-line);
   transition: transform var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
+  container-type: inline-size;
 }
 @media (hover: hover) {
   .bento-card:hover { transform: translateY(-4px); box-shadow: var(--edge-line), 0 24px 48px -28px rgb(15 18 23 / 0.35); }
@@ -434,7 +435,9 @@
   justify-self: end;
   margin-top: 24px;
   font-family: var(--font-heading);
-  font-size: clamp(48px, 5vw, 76px);
+  /* Capped by the card's own width (cqi): "Application." is ~5.4em, wider than a narrow card at 76px. */
+  font-size: min(clamp(48px, 5vw, 76px), 17cqi);
+  max-width: 100%;
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: -0.013em;
@@ -595,6 +598,8 @@
   .area-row-thumb .area-photo-frame { aspect-ratio: 16 / 10; border-radius: 12px; }
   .area-row[data-open] .area-row-thumb { opacity: 0; scale: 0.9; }
   .area-row-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; padding: 0 12px 40px 92px; }
+  /* The place fills the open row's full height: at 16:10 it stopped short of the taller column of applications beside it. */
+  .area-row-grid > .area-photo .area-photo-frame { height: 100%; min-height: 340px; aspect-ratio: auto; }
 }
 
 /* ---- Area rows (AreaRows.tsx): rows draw in, a tone wash rises under the hovered row, a preview of the
