@@ -52,6 +52,10 @@ export const store = {
   focus: -1,
   /** A card the page asks to bring forward (the approval panel points at the decision card). */
   focusHint: -1,
+  /** Control's fan on desktop: the card the reviewer tabs play forward when nobody points at one, or -1. */
+  deckAt: -1,
+  /** performance.now() of the last frame the pointer read a card in 3D (pauses the tabs' autoplay). */
+  hoverAt: -1e9,
   /** The page points at the signal crate (hovering its readout), so it lifts and glows. */
   signalHint: false,
   /** The system island opened for a closer look (click), or -1. */

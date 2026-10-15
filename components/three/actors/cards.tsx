@@ -285,9 +285,15 @@ function CardFocus() {
       if (pd.t < SWITCH_DWELL) hit = store.focus;
     } else pd.k = -1;
     // Hold focus briefly when the pointer slips into a gap, so a moving card never flickers.
-    if (hit >= 0) lost.current = 0;
-    else lost.current += dt;
-    const next = hint >= 0 ? hint : hit >= 0 ? hit : scrolling || lost.current > 0.18 || !readable() ? -1 : store.focus;
+    if (hit >= 0) {
+      lost.current = 0;
+      store.hoverAt = performance.now();
+    } else lost.current += dt;
+    // Nobody pointing at a card in Control: the card the reviewer tabs are playing comes forward, so the
+    // fan always shows one card read (LayerPicker), not only when a hover gets past the scroll gates.
+    const auto = store.deckAt >= 0 && weight(CH.control, store.g) > 0.9 ? store.deckAt : -1;
+    const idle = scrolling || lost.current > 0.18 || !readable() ? -1 : store.focus;
+    const next = hint >= 0 ? hint : hit >= 0 ? hit : auto >= 0 && (idle < 0 || lost.current > 0.18) ? auto : idle;
     if (next !== store.focus) {
       store.focus = next;
       document.body.style.cursor = next >= 0 ? "pointer" : "";

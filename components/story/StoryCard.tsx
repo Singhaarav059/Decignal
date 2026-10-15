@@ -26,6 +26,7 @@ import { accentVars, toneVars } from "@/lib/tone";
 import { TONE } from "./chapters";
 import { SystemChips } from "./SystemChips";
 import { DecisionControls } from "./DecisionControls";
+import { LayerPicker } from "./LayerPicker";
 import { ScaleCard } from "./ScaleApps";
 import { IndustryCard, IndustryTitle } from "./IndustryDetail";
 import { FinalCard } from "./FinalCard";
@@ -352,6 +353,7 @@ export function ChapterBody({ ch }: { ch: number }) {
       <Head ch={CH.control} />
       <Rest>
         <Body ch={CH.control} optional />
+        <LayerPicker />
         <DecisionControls />
       </Rest>
         </>

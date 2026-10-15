@@ -984,3 +984,9 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 .story-body .hero-offer { display: block; margin-top: 8px; }
 .hero-offer::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; vertical-align: 0.12em; background: var(--color-cobalt-ink); }
 .hero-caption { display: block; padding-top: 8px; border-top: 1px solid var(--color-line); color: var(--color-ink-2); font-weight: 500; }
+
+/* Control's card on desktop (LayerPicker): the fan's five cards as tabs, the line of the one in front. */
+.layer-picker { margin-top: 14px; }
+.layer-picker .story-seg { margin-top: 0; }
+.layer-picker-text { margin-top: 10px; min-height: 1lh; color: var(--color-ink-2); }
+.layer-picker .seg-item { padding: 0 10px; }
