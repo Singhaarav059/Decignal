@@ -579,7 +579,7 @@ function World3D() {
       }}
     >
       {world}
-      {paced && <Pacer paused={storyPaused} drawnAt={lastDraw} />}
+      {paced && <Pacer paused={storyPaused} drawnAt={lastDraw} dpr={govern ? undefined : q.dpr} />}
       {govern && <Governor at={dpr} set={govern} />}
     </Canvas>
   );

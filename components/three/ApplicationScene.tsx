@@ -352,7 +352,7 @@ export default function ApplicationScene(props: Props) {
             and a world at the end of its stage stands still while the page sways. */}
         <FrameGate drawn={mark} />
       </Suspense>
-      {playing && paced && <Pacer paused={paused} drawnAt={drawnAt} />}
+      {playing && paced && <Pacer paused={paused} drawnAt={drawnAt} dpr={govern ? undefined : q.dpr} />}
       {playing && govern && <Governor at={dpr} set={govern} />}
     </Canvas>
   );

@@ -7,6 +7,13 @@
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { probe, resting } from "@/lib/pace";
+import { store } from "@/lib/story";
+
+/** Density while the page scrolls, and how recent a scroll counts as moving / how long a stop must
+ *  last before the full density comes back (ms): a pause between two flicks keeps the moving density. */
+const MOVING = 1.25;
+const MOVING_FOR = 100;
+const SHARP_AFTER = 300;
 
 /** A frame may come this much early (ms): rAF times jitter, and a strict gap would skip every other one. */
 const SLACK = 4;
@@ -23,7 +30,7 @@ const QUIET_FPS = 8;
  * a change, 30 times a second. Once nothing has drawn for a second and the page rests, it updates 8
  * times a second instead; a scroll or touch brings it back at once.
  */
-export function Pacer({ paused, drawnAt }: { paused?: () => boolean; drawnAt?: () => number }) {
+export function Pacer({ paused, drawnAt, dpr }: { paused?: () => boolean; drawnAt?: () => number; dpr?: number | [number, number] }) {
   const get = useThree((s) => s.get);
   const advance = useThree((s) => s.advance);
   const setDpr = useThree((s) => s.setDpr);
@@ -33,6 +40,43 @@ export function Pacer({ paused, drawnAt }: { paused?: () => boolean; drawnAt?: (
       probe.dprSetters.delete(setDpr);
     };
   }, [setDpr]);
+
+  // Motion density (2026-10-15, the user's call): while the page scrolls under the thumb the world draws
+  // at MOVING density, and the moment the scroll stops it draws once more at full density, so every
+  // picture that holds still is the same as before. A changed density resizes the canvas, which FrameGate
+  // counts as a change, so the sharp frame is drawn at once. `dpr` is the canvas's own density; without
+  // it (a weak device, whose governor owns the density) nothing here runs.
+  useEffect(() => {
+    if (dpr === undefined) return;
+    let low = false;
+    let raf = 0;
+    const watch = () => {
+      raf = 0;
+      if (probe.fixedDpr) {
+        low = false;
+        return;
+      }
+      const quiet = performance.now() - store.scrollAt;
+      if (!low && quiet < MOVING_FOR) {
+        low = true;
+        setDpr(Math.min(MOVING, window.devicePixelRatio || 1));
+      } else if (low && quiet > SHARP_AFTER) {
+        low = false;
+        setDpr(dpr);
+        return;
+      }
+      if (low) raf = requestAnimationFrame(watch);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(watch);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+      if (low) setDpr(dpr);
+    };
+  }, [dpr, setDpr]);
   useEffect(() => {
     let raf = 0;
     let last = -1e9;
