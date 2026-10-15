@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { AREAS } from "@/lib/areas";
+import { AREAS, appHref } from "@/lib/areas";
+import { AUDIENCE, CATEGORY_TONE, appById } from "@/lib/content";
 import { CTA, META, SOLUTIONS_INDEX } from "@/lib/copy";
 import { OG_BASE, SHARE_IMAGES, TWITTER_BASE } from "@/lib/site";
 import { toneVars } from "@/lib/tone";
@@ -59,6 +60,35 @@ export default function SolutionsPage() {
               ))}
             </ul>
           </div>
+        </section>
+
+        <section className="svc-section page-wrap" aria-labelledby="idx-audience">
+          <SectionTitle id="idx-audience" lines={[SOLUTIONS_INDEX.audienceTitle]} lede={SOLUTIONS_INDEX.audienceNote} tone="cobalt" reveal="lines" />
+          <ul className="svc-areas idx-audience" data-count={AUDIENCE.length}>
+            {AUDIENCE.map((a, i) => (
+              <li key={a.name} data-reveal style={{ ["--i" as string]: i }}>
+                <div className="svc-area card">
+                  <span className="svc-area-body">
+                    <SectionLink href={a.href} className="t-subtitle idx-audience-name" data-cta="idx-audience">
+                      {a.name}
+                    </SectionLink>
+                    <span className="t-small svc-area-lead">{a.text}</span>
+                    <span className="svc-area-apps">
+                      {a.apps.map((id) => {
+                        const w = appById(id)!;
+                        return (
+                          <a key={id} href={appHref(w)} className="t-small" style={toneVars(CATEGORY_TONE[w.category])}>
+                            <span className="svc-dot" aria-hidden />
+                            {w.name}
+                          </a>
+                        );
+                      })}
+                    </span>
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section id="applications" className="svc-section page-wrap" aria-label={SOLUTIONS_INDEX.eyebrow}>

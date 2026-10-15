@@ -11,11 +11,11 @@ import { Footer } from "@/components/sections/Footer";
 import { ServiceRuntime } from "@/components/service/ServiceRuntime";
 import { SERVICE_SECTIONS } from "@/components/service/sections";
 import { ServiceHero } from "@/components/service/ServiceHero";
-import { ServiceApps, ServiceClosing, ServiceExample, ServiceOutcomes, ServiceQuestions } from "@/components/service/ServiceSections";
+import { ServiceApps, ServiceClosing, ServiceExample, ServiceExpect, ServiceGet, ServiceOutcomes, ServiceProcess, ServiceQuestions } from "@/components/service/ServiceSections";
 import { AreaLinks } from "@/components/service/AreaLinks";
 
 // The phone dock's section links: the four a visitor jumps between, then the call.
-const DOCK_IDS = ["outcomes", "applications", "example", "faq", "audit"];
+const DOCK_IDS = ["expect", "applications", "deliverables", "faq", "audit"];
 const DOCK_SECTIONS = SERVICE_SECTIONS.filter((s) => DOCK_IDS.includes(s.id));
 
 // The five functions are the only pages here: any other slug is the root not-found page (notFound below).
@@ -84,7 +84,10 @@ export default async function ServicePage({ params }: PageProps<"/solutions/[slu
       <main id="main" tabIndex={-1} className="svc" style={{ ...toneVars(area.tone), ...accentVars(area.tone) }}>
         <ServiceHero area={area} />
         <ServiceOutcomes area={area} />
+        <ServiceExpect area={area} />
         <ServiceApps area={area} />
+        <ServiceGet area={area} />
+        <ServiceProcess area={area} />
         {/* Below the records, so its 3D mounts on approach rather than with the first screen. */}
         <ServiceExample area={area} />
         <ServiceQuestions area={area} />

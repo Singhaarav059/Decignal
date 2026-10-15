@@ -356,3 +356,10 @@
 .dir-empty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 /* A link to one record lands with the card clear of the floating nav. */
 .svc-app { scroll-margin-top: 104px; }
+/* /solutions industry cards: the name links to its filtered examples, each example to its record. */
+.idx-audience-name { color: var(--color-ink); text-decoration: none; }
+.idx-audience-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.idx-audience .svc-area-apps a { color: var(--color-ink-2); }
+.idx-audience .svc-area-apps a:hover { color: var(--color-ink); }
+.idx-audience .svc-area-apps { display: grid; margin-top: 14px; border-top: 1px solid var(--color-line); }
+.idx-audience .svc-area-apps > a { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--color-line); font-weight: 500; }

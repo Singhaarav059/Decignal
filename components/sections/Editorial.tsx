@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   Building2,
+  ChartNoAxesCombined,
   Database,
   LayoutGrid,
   MessageCircleQuestion,
@@ -21,6 +22,7 @@ import {
   CTA,
   FAQ_COPY,
   HOW,
+  OUTCOMES_COPY,
   SYSTEMS_STRIP,
   type Headline,
 } from "@/lib/copy";
@@ -35,6 +37,9 @@ import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
 import { AreaPhoto } from "./AreaPhoto";
 import { AREAS, appHref } from "@/lib/areas";
 import { FeaturedApps } from "./FeaturedApps";
+import { AreaRows } from "./AreaRows";
+import { MeasureArt } from "./MeasureArt";
+import { TrailDial } from "./TrailDial";
 import { LiquidShapes } from "../ui/LiquidShapes";
 import { Demonstrations } from "./Demonstrations";
 import { HowSteps } from "./HowSteps";
@@ -129,7 +134,8 @@ function Head({
 }
 
 /** Everything below the story, as one sheet over it, in the handoff's order (§11): applications,
- *  problem, how we build, industries, examples, systems, delivery, about, questions and the enquiry.
+ *  problem, how we build, industries, examples (tabs, then the worked dial), systems, delivery, what we
+ *  measure, about, questions and the enquiry.
  *  The page renders <Footer /> after <main>. */
 export function Editorial() {
   const ref = useReveal();
@@ -139,8 +145,10 @@ export function Editorial() {
       <Statement />
       <Audience />
       <Demonstrations />
+      <TrailDial />
       <Systems />
       <HowItWorks />
+      <Measure />
       <About />
       <Faq />
       <Audit />
@@ -235,6 +243,8 @@ function Applications() {
         </div>
         <div className="page-wrap">
           <FeaturedApps />
+          {/* All five functions as rows, each opening to its examples. */}
+          <AreaRows />
         </div>
       </div>
       {/* The same six, one at a time in 3D. */}
@@ -358,6 +368,46 @@ function Audience() {
 
 /* ------------------------------------------------------------------ */
 
+/** What we measure (#outcomes): the baseline agreed for the chosen application. */
+function Measure() {
+  return (
+    <section id="outcomes" className="results measure" aria-labelledby="outcomes-title">
+      <div className="page-wrap">
+        <div className="results-head">
+          <Head
+            icon={<ChartNoAxesCombined size={13} strokeWidth={2.2} />}
+            id="outcomes-title"
+            label={OUTCOMES_COPY.eyebrow}
+            headline={OUTCOMES_COPY.headline}
+          />
+          <div className="results-head-side">
+            <p data-reveal className="t-lede">
+              {OUTCOMES_COPY.intro}
+            </p>
+            <p data-reveal className="t-small results-note">
+              {OUTCOMES_COPY.note}
+            </p>
+          </div>
+        </div>
+        <ul className="record-groups measure-list">
+          {OUTCOMES_COPY.measures.map((m, i) => (
+            <li key={m.k} data-reveal className="record-group" style={toneVars(m.tone)}>
+              <MeasureArt k={i} />
+              <p className="record-group-k t-label">
+                <i aria-hidden />
+                {m.k}
+              </p>
+              <p className="t-body record-group-text">{m.text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
 /** About (handoff §5 about): head and lede, then the place beside the second paragraph, the founder and the call to action, on one pair of columns. */
 function About() {
   const f = ABOUT.founder;
@@ -415,8 +465,6 @@ function About() {
 function HowItWorks() {
   return (
     <section id="how" className="how" aria-labelledby="how-title">
-      {/* Old links to the measurement section land on the delivery process (handoff §4). */}
-      <span id="outcomes" aria-hidden />
       <HowSteps
         head={
           <Head

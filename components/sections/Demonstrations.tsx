@@ -10,7 +10,7 @@ import SegmentedControl from "../ui/SegmentedControl";
 import { Arrow } from "../ui/Arrow";
 
 /**
- * Three illustrative examples (handoff §5 demonstrations), at #example and kept at #trail. All three
+ * Three illustrative examples (handoff §5 demonstrations), at #example. All three
  * labels show together; Order intake is open first. Nothing advances on its own and nothing waits on the
  * scroll: each example is its four plain lines and an interface state that draws the same facts.
  */
@@ -20,7 +20,6 @@ export function Demonstrations() {
   const panel = "demo-panel";
   return (
     <section id="example" className="demos" aria-labelledby="demos-title">
-      <span id="trail" aria-hidden />
       <div className="page-wrap">
         <SectionTitle
           icon={<Waypoints size={13} strokeWidth={2.2} />}

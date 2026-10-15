@@ -8,6 +8,7 @@ import { Arrow } from "../ui/Arrow";
 import { ApplicationExplorer } from "../sections/ApplicationExplorer";
 import { FaqList } from "../sections/FaqList";
 import { ServiceAppsBoundary } from "./ServiceAppsBoundary";
+import { ExpectArt } from "./ExpectArt";
 import { AppRecord } from "./AppRecord";
 
 /** "What changes": the three outcome bullets, each with a check. */
@@ -25,6 +26,70 @@ export function ServiceOutcomes({ area }: { area: Area }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** "Where the manual work remains": three cards, each a small drawing of the problem, a title and one line. */
+export function ServiceExpect({ area }: { area: Area }) {
+  return (
+    <section id="expect" className="svc-section page-wrap" aria-labelledby="svc-expect">
+      <SectionTitle id="svc-expect" lines={[AREA_SHARED.problemHeading]} tone={area.tone} reveal="lines" />
+      <ol className="svc-expect">
+        {area.expect.map((e, i) => (
+          <li key={e.title} className="card svc-expect-card" data-reveal style={{ ["--i" as string]: i }}>
+            <div className="svc-expect-art">
+              <ExpectArt slug={area.slug} index={i} />
+            </div>
+            <div className="svc-expect-copy">
+              <h3 className="t-subtitle">{e.title}</h3>
+              <p className="t-body">{e.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** "What an application would prepare": the outputs, each with a check, then what stays with your team. */
+export function ServiceGet({ area }: { area: Area }) {
+  return (
+    <section id="deliverables" className="svc-section svc-split page-wrap" aria-labelledby="svc-get">
+      <SectionTitle id="svc-get" lines={[AREA_SHARED.outputHeading]} tone={area.tone} reveal="lines" className="svc-split-head" />
+      <div>
+        <ul className="svc-checks">
+          {area.deliverables.map((d) => (
+            <li key={d} data-reveal>
+              <span className="svc-check" aria-hidden>
+                <Check size={14} strokeWidth={2.6} />
+              </span>
+              <span className="t-body">{d}</span>
+            </li>
+          ))}
+        </ul>
+        <p data-reveal className="t-small svc-scope">
+          <span className="t-label">{AREA_SHARED.scopeLabel}</span> {area.scope}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/** "Start with the work your team does today": one short paragraph and the way to the full process. */
+export function ServiceProcess({ area }: { area: Area }) {
+  return (
+    <section id="how" className="svc-section svc-split page-wrap" aria-labelledby="svc-how">
+      <SectionTitle id="svc-how" lines={[AREA_SHARED.processHeading]} tone={area.tone} reveal="lines" className="svc-split-head" />
+      <div className="svc-process">
+        <p data-reveal className="t-lede">
+          {AREA_SHARED.processBody}
+        </p>
+        <SectionLink href={AREA_SHARED.processLink.href} className="ed-link svc-process-link" data-cta="svc-how">
+          {AREA_SHARED.processLink.label}
+          <Arrow />
+        </SectionLink>
+      </div>
     </section>
   );
 }

@@ -1,0 +1,88 @@
+/* Decor pass (trail lane): the seven step drawings (components/sections/trail/TrailArt.tsx) that the
+   trail dial (TrailDial.tsx) draws in its face. --q on each drawing (0 to 1) is its progress, written
+   from scroll; it defaults to 1, so without script or with reduced motion everything is drawn. */
+
+/* ---- The drawings: 140 x 104. useSvgScale writes the on-screen scale to --svg-k, so labels stay
+   11px and every stroke keeps its weight (data 2, outlines 1.25, axes 1) at any drawing size. ---- */
+.tr-art {
+  display: block; width: 100%; height: auto; margin-bottom: 20px; overflow: visible;
+  /* Three beats per station: frame, data, then marks and figures. */
+  --a: clamp(0, var(--q, 1) * 2.5, 1);
+  --b: clamp(0, var(--q, 1) * 2 - 0.4, 1);
+  --c: clamp(0, var(--q, 1) * 2.5 - 1.5, 1);
+  --w1: calc(1px / var(--svg-k, 1));
+  --w125: calc(1.25px / var(--svg-k, 1));
+  --w15: calc(1.5px / var(--svg-k, 1));
+  --w2: calc(2px / var(--svg-k, 1));
+}
+.tr-art text {
+  font-family: var(--font-heading); font-size: calc(11px / var(--svg-k, 1)); font-weight: 600; letter-spacing: 0.07em;
+  font-variant-numeric: tabular-nums; fill: var(--color-ink-soft);
+  opacity: var(--c); transform: translateY(calc((1 - var(--c)) * 3px));
+}
+.tr-art text.tg-al { opacity: var(--a); transform: none; }
+.tr-art text.tg-key { fill: var(--tone-ink, var(--color-ink)); }
+.tr-art text.tg-ink { fill: var(--color-ink-2); }
+.tr-art text.tg-risk { fill: var(--color-signal-ink); }
+/* A figure printed on a filled record (the heat number on its tag). */
+.tr-art text.tg-on { fill: var(--color-on-ink); }
+.tr-art[data-small] text { display: none; }
+
+.tg-floor { fill: none; stroke: var(--color-line-strong); stroke-width: var(--w1); stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--a)); }
+.tg-tick { fill: none; stroke: var(--color-line-strong); stroke-width: var(--w1); opacity: var(--a); }
+.tg-ref { fill: none; stroke: var(--color-ink-muted); stroke-width: var(--w1); stroke-dasharray: calc(2px / var(--svg-k, 1)) calc(3px / var(--svg-k, 1)); opacity: var(--a); }
+.tg-dim { fill: none; stroke: var(--color-ink-muted); stroke-width: var(--w1); }
+.tg-line { fill: none; stroke: var(--tone); stroke-width: var(--w2); stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--b)); }
+.tg-line.is-ink { stroke: var(--color-ink-2); }
+.tg-line.is-risk { stroke: var(--color-signal); }
+.tg-line.tg-late { stroke-dashoffset: calc(1 - var(--c)); }
+.tg-line.tg-fade { stroke-dasharray: none; stroke-dashoffset: 0; }
+.tg-stem { fill: none; stroke: var(--tone); stroke-width: var(--w125); stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--b)); }
+.tg-fade { opacity: var(--c); }
+.tg-solid { fill: var(--tone); }
+.tg-hollow { fill: var(--color-surface); stroke: var(--tone); stroke-width: var(--w125); }
+.tg-ring { stroke: var(--color-surface); stroke-width: var(--w15); }
+.tg-risk-dot { fill: var(--color-signal); stroke: var(--color-surface); stroke-width: var(--w15); }
+.tg-risk-ring { fill: var(--color-surface); stroke: var(--color-signal); stroke-width: var(--w15); }
+.tg-check { fill: none; stroke: var(--color-on-ink); stroke-width: var(--w2); stroke-linecap: round; stroke-linejoin: round; }
+
+/* Columns grow from the floor; bars follow one another; fills rise inside their outline. */
+.tg-grow, .tg-bar, .tg-fill-in { transform-box: fill-box; transform-origin: 50% 100%; }
+.tg-grow { transform: scaleY(var(--b)); }
+.tg-bar { transform: scaleY(clamp(0, (var(--q, 1) - 0.15 - var(--i, 0) * 0.1) * 2.5, 1)); }
+.tg-fill-in { transform: scaleY(var(--c)); }
+.tg-mark { transform-box: fill-box; transform-origin: 50% 50%; opacity: var(--c); transform: scale(calc(0.7 + 0.3 * var(--c))); }
+
+/* 05: the plants stand with the frame; the load drives out of Plant 02 with the data. */
+.tg-glyph { opacity: var(--a); }
+.tg-glyph path { fill: var(--color-surface); stroke: var(--color-ink-soft); stroke-width: var(--w125); stroke-linejoin: round; }
+.tg-load { transform: translateX(calc((var(--b) - 1) * 19px)); opacity: clamp(0, var(--b) * 4, 1); }
+.tg-chassis { fill: var(--color-ink-2); }
+.tg-cab { fill: var(--color-surface); stroke: var(--color-ink-2); stroke-width: var(--w125); stroke-linejoin: round; }
+.tg-wheel { fill: var(--color-ink-2); stroke: var(--color-surface); stroke-width: var(--w1); }
+
+/* 01: the breach is live, so its marker breathes slowly (its own opacity, never a ring). */
+.tg-pulse { animation: tr-live 3.2s ease-in-out infinite; }
+@keyframes tr-live { 50% { opacity: 0.45; } }
+
+/* ---- Tablets: the row wraps into two tiers (Signal and Evidence, then Action), each tier with its
+   own run of the rule. Twelve tracks so both tiers fill the panel: the first tier's four stations take
+   three tracks each, the second tier's three take four. Every drawing keeps the first tier's width,
+   so the two tiers share one drawing size and stroke scale. ---- */
+@media (min-width: 768px) and (max-width: 1199px) {
+  
+  .tr-art { max-width: 208px; }
+}
+
+/* ---- Phones: the trail runs down the left edge, each drawing beside or under its text ---- */
+@media (max-width: 767px) {
+  .tr-art { grid-area: art; width: 160px; margin: calc(var(--headroom, 0) * var(--svg-k, 1) * -1px) 0 0; }
+}
+@media (max-width: 640px) {
+  .tr-art { width: 156px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-pulse { animation: none; }
+}
+

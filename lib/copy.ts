@@ -361,6 +361,53 @@ export const DEMOS_COPY = {
   },
 } as const;
 
+/** The worked example as a dial (TrailDial.tsx, #review, kept at #trail): order intake, step by step. */
+export const TRAIL = {
+  label: "Illustrative review",
+  headline: ["A customer order with", "13 lines left to confirm"] as Headline,
+  intro: "The order desk receives a 40-line purchase order. The draft has to match the approved item catalogue, the pack units and the customer’s terms before it reaches the order system.",
+  /** The dial's last turn: back with the order desk. */
+  loop: { k: "Order desk", name: "Your team approves", ex: "The order desk resolves the open lines and approves the draft before it reaches the order system." },
+  aria: "How the order moves: customer order, item aliases, catalogue match, pack units, open lines, questions, order desk",
+  groups: ["Input", "Application", "Next step"],
+  steps: [
+    { step: "Customer order", ex: `Purchase order ${APP_FACTS.order.po}: ${ORDER_COUNTS.total} lines, some with old item codes`, tone: "violet", group: 0 },
+    { step: "Item aliases", ex: "Line 7 uses an old item code for 20 boxes of switches", tone: "cobalt", group: 0 },
+    { step: "Catalogue", ex: `${ORDER_COUNTS.matched} lines matched using approved item mappings`, tone: "emerald", group: 1 },
+    { step: "Pack units", ex: `${ORDER_COUNTS.unit} lines with an unclear box or piece unit`, tone: "saffron", group: 1 },
+    { step: "Open lines", ex: `${ORDER_COUNTS.item + ORDER_COUNTS.unit} lines kept out of the ready list; none is guessed`, tone: "signal", group: 2 },
+    { step: "Questions", ex: `Confirm ${ORDER_COUNTS.item} items and clarify ${ORDER_COUNTS.unit} units with the customer`, tone: "tangerine", group: 2 },
+    { step: "Order desk", ex: "A draft order waiting for the order desk to approve", tone: "pink", group: 2 },
+  ],
+  /** The readable three-row review: order line, what it matched, status. */
+  table: {
+    aria: "Illustrative order intake",
+    head: ["Order line", "Matched to", "Status"],
+    rows: [
+      { ref: "Line 3 · Switch 16A", doc: "Catalogue item SW-16A", status: "Matched", risk: false },
+      { ref: "Line 7 · old item code", doc: "Two possible catalogue items", status: "Confirm item", risk: true },
+      { ref: "Line 12 · 20 boxes", doc: "Pack unit not stated", status: "Clarify unit", risk: true },
+    ],
+  },
+  recommendation: `Confirm the ${ORDER_COUNTS.item} items and ${ORDER_COUNTS.unit} units before the draft goes to the order system.`,
+  explanation: "The application prepares the draft and keeps uncertain lines visible. The order desk checks them and approves the order.",
+  review: "Draft order · not yet approved",
+  disclaimer: "Illustrative records. This example shows what an application could prepare, not a completed customer project.",
+} as const;
+
+/** What we measure (#outcomes): agreed for the application you choose. */
+export const OUTCOMES_COPY = {
+  eyebrow: "What we measure",
+  headline: ["Agree a baseline", "before anything is built"] as Headline,
+  intro: "We agree a baseline for the application you choose: time from receipt to an accepted order, time to a comparable quotation sheet, or time to an assigned service follow-up.",
+  note: "Corrections and missed exceptions count as well as speed. Results are measured against your own baseline.",
+  measures: [
+    { k: "Time", text: "End-to-end time for the complete task, including corrections and finding the records.", tone: "cobalt" },
+    { k: "Accuracy", text: "Missed exceptions, wrong matches and questions raised that were not needed.", tone: "emerald" },
+    { k: "Rework", text: "Corrections your team makes and information that has to be requested again.", tone: "tangerine" },
+  ],
+} as const;
+
 /** Systems (handoff §5 systems, #systems). Groups are SOURCE_GROUPS in lib/content.ts. */
 export const SYSTEMS_STRIP = {
   eyebrow: "Your systems",
@@ -601,6 +648,8 @@ export const SOLUTIONS_INDEX = {
   closingBody: "Bring the task you want to improve. We can assess a different application using your systems, rules and records.",
   closingButton: "Discuss your process",
   functionsTitle: "Business functions",
+  audienceTitle: "Who the examples are for",
+  audienceNote: "Manufacturing, distribution, logistics and B2B services. Each card links to its examples; the process you want to improve can sit anywhere in the business.",
 } as const;
 
 /* ------------------------------------------------------------------ */

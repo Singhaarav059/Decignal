@@ -24,6 +24,8 @@ export type Area = {
   index: number;
   /** The function summary (handoff §6 business function summaries). */
   lead: string;
+  /** The example line in its open row on the homepage (AreaRows). */
+  signal: string;
   /** Solution hero: two lines, the second is the accent line. */
   headline: Headline;
   /** The introduction under the headline. */
@@ -32,6 +34,12 @@ export type Area = {
   meta: { title: string; description: string };
   /** "What changes": three bullets. */
   outcomes: string[];
+  /** "Where the manual work remains": three cards, a short title and the sentence. */
+  expect: { title: string; text: string }[];
+  /** "What an application would prepare": three outputs. */
+  deliverables: string[];
+  /** The note under the outputs: what stays with your team. */
+  scope: string;
   /** The application records the page renders (APPLICATIONS ids). */
   workflowIds: string[];
   /** The one worked example, labelled "Illustrative example". */
@@ -48,6 +56,13 @@ export const AREA_SHARED = {
   exampleNote: "Application examples. Scope and integrations are agreed for each implementation.",
   exampleHeading: "Illustrative example",
   faqHeading: "Questions",
+  problemHeading: "Where the manual work remains",
+  outputHeading: "What an application would prepare",
+  scopeLabel: "Stays with your team",
+  processHeading: "Start with the work your team does today",
+  processBody:
+    "Show us a recent example and how your current software handles it. We will look at what an application would add, and whether configuring the tools you already have is enough.",
+  processLink: { label: "See how we work", href: "/#how" },
 } as const;
 
 const base = (slug: AreaSlug, category: Category) => ({
@@ -64,6 +79,7 @@ export const AREAS: Area[] = [
   {
     ...base("commercial", "Sales and order management"),
     lead: "Prepare enquiries, customer orders and supplier price updates for the people responsible for sales.",
+    signal: "40-line order: 27 matched, 13 for the order desk",
     headline: ["Give your sales team", "a better starting point"],
     valueProp:
       "Customer enquiries, order messages and supplier price files arrive in different formats. We build applications that turn them into structured work for your sales team, with the relevant records and unresolved questions together.",
@@ -77,6 +93,17 @@ export const AREAS: Area[] = [
       "Keep item, unit, price and revision questions visible before a customer commitment.",
       "Pass approved work into the systems your team already uses.",
     ],
+    expect: [
+      { title: "Orders in many formats", text: "Purchase orders arrive as PDFs, spreadsheets and emails, each laid out differently." },
+      { title: "Codes that do not match", text: "Customers use their own item codes and pack sizes, so lines are matched by hand." },
+      { title: "Questions found late", text: "A unit or revision question surfaces after the order or quote is half prepared." },
+    ],
+    deliverables: [
+      "Draft order lines linked to the approved catalogue.",
+      "A list of the items, units and prices still to confirm.",
+      "Approved work passed to the order system through an agreed route.",
+    ],
+    scope: "Pricing decisions, technical suitability and customer commitments stay with your sales team.",
     workflowIds: ["sales-order-intake", "rfq-preparation", "supplier-price-updates"],
     demo: demo("order"),
     faq: [
@@ -97,6 +124,7 @@ export const AREAS: Area[] = [
   {
     ...base("supply-chain", "Procurement and supply chain"),
     lead: "Compare quotations, track supplier commitments and reconcile job-work records.",
+    signal: "100 contactors promised: 60 on Friday, 40 on Wednesday",
     headline: ["Keep purchasing work moving", "as the details change"],
     valueProp:
       "Supplier quotations, revised commitments and external processing records can leave buyers piecing together the current position. We build applications that organise those inputs and turn them into clear comparisons and follow-ups.",
@@ -110,6 +138,17 @@ export const AREAS: Area[] = [
       "Capture revised quantities and dates against the right purchase-order lines.",
       "Reconcile external processing records with the evidence attached.",
     ],
+    expect: [
+      { title: "Quotes on different terms", text: "Supplier quotations price per box or per piece, with or without freight." },
+      { title: "Changes left in messages", text: "A revised quantity or date stays in an email, not against the purchase-order line." },
+      { title: "Returns that do not add up", text: "Job-work challans, returns and rejection records disagree on what is outstanding." },
+    ],
+    deliverables: [
+      "A comparison sheet with every quotation on one basis.",
+      "Revised commitments linked to the right purchase-order lines.",
+      "A reconciliation with explained balances and open differences.",
+    ],
+    scope: "Purchasing records, planning logic and award decisions stay in your systems and with your buyers.",
     workflowIds: ["purchase-quote-comparison", "supplier-commitment-tracking", "job-work-reconciliation"],
     demo: demo("supplier"),
     faq: [
@@ -130,6 +169,7 @@ export const AREAS: Area[] = [
   {
     ...base("operations", "Operations and delivery"),
     lead: "Prepare operational briefs, capture production records and follow up on delivery evidence.",
+    signal: "This week’s orders: a delay, an allocation and a hold, each with an owner",
     headline: ["Bring the next operational", "decision into view"],
     valueProp:
       "A daily review can involve an order book, several trackers, shift records and delivery updates. We build applications that bring the relevant information together, capture records and organise the work that needs attention.",
@@ -143,6 +183,17 @@ export const AREAS: Area[] = [
       "Capture production information without hiding missing or uncertain entries.",
       "Keep delivery evidence and outstanding follow-ups linked to the shipment.",
     ],
+    expect: [
+      { title: "A review built by hand", text: "The daily meeting starts with someone pulling the order book and trackers together." },
+      { title: "Records with gaps", text: "Shift sheets and production notes arrive with missing or unreadable entries." },
+      { title: "Delivery proof to chase", text: "A proof of delivery has no clear reference, or records a shortage to follow up." },
+    ],
+    deliverables: [
+      "A daily brief of exceptions with sources and owners.",
+      "Structured production records with a queue for uncertain entries.",
+      "A shipment-wise list of delivery records and follow-ups.",
+    ],
+    scope: "Planning, dispatch and quality approvals stay with the responsible teams.",
     workflowIds: ["operational-exception-brief", "production-record-capture", "delivery-document-followup"],
     demo: PAGE_DEMOS.operations,
     faq: [
@@ -163,6 +214,7 @@ export const AREAS: Area[] = [
   {
     ...base("finance-and-risk", "Finance and receivables"),
     lead: "Investigate deductions, review freight bills and match payment advice to invoices.",
+    signal: "₹75,000 deducted for a reported shortage",
     headline: ["Give finance the context", "behind the difference"],
     valueProp:
       "A short payment, an extra freight charge or an unclear remittance can trigger a search across several teams. We build applications that link the records, explain what is documented and prepare the unresolved items for finance.",
@@ -176,6 +228,17 @@ export const AREAS: Area[] = [
       "Review charges against the relevant agreement and operational records.",
       "Prepare payment allocations with unmatched amounts kept visible.",
     ],
+    expect: [
+      { title: "Codes to investigate", text: "A debit note uses a reason code that needs the delivery records behind it." },
+      { title: "Records in three teams", text: "Supporting evidence sits with dispatch, sales and finance." },
+      { title: "Payments that do not match", text: "One payment covers several invoices, with a deduction in a separate advice." },
+    ],
+    deliverables: [
+      "A case linking the deduction to its invoice and delivery records.",
+      "Freight charges checked against the agreed rate and trip records.",
+      "A proposed payment allocation with unmatched amounts visible.",
+    ],
+    scope: "Accounting entries, approvals and settlement decisions follow your finance controls.",
     workflowIds: ["customer-deduction-investigation", "freight-bill-review", "payment-advice-matching"],
     demo: PAGE_DEMOS.finance,
     faq: [
@@ -196,6 +259,7 @@ export const AREAS: Area[] = [
   {
     ...base("customer", "Service and support"),
     lead: "Prepare service cases, act on report recommendations and find approved technical information.",
+    signal: "A seal recommended at the next shutdown, now with an owner",
     headline: ["Carry customer requests", "through to the next step"],
     valueProp:
       "A customer message, a technician’s report and a technical manual often belong to the same service job. We build applications that connect this information and help the right person respond or follow up.",
@@ -209,6 +273,17 @@ export const AREAS: Area[] = [
       "Give recommendations in reports a clear owner and next step.",
       "Retrieve approved technical information for the right model and revision.",
     ],
+    expect: [
+      { title: "Requests without details", text: "A customer message names a site but not the equipment or its serial." },
+      { title: "Recommendations in reports", text: "A technician’s recommendation stays in a PDF with no owner." },
+      { title: "Answers in old manuals", text: "Engineers search for the right manual revision for the model in front of them." },
+    ],
+    deliverables: [
+      "A service case with the asset and its history attached.",
+      "An assigned follow-up with draft quotation inputs.",
+      "A source-linked answer from approved manuals and past cases.",
+    ],
+    scope: "Diagnosis, part compatibility, coverage and safety-critical actions stay with qualified staff.",
     workflowIds: ["service-case-intake", "service-report-followup", "service-knowledge-assistant"],
     demo: demo("service"),
     faq: [
