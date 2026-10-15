@@ -44,9 +44,10 @@ function lensMap(w: number, h: number, r: number) {
   return url;
 }
 
-/** The map as a data URL. Encoded with toBlob and read with a FileReader, both off the main thread:
- *  toDataURL encoded the PNG in the frame, and the story card's map, redrawn as it settled after each
- *  chapter's hand-off, cost the scroll a third of a second over the story. (A blob URL would need
+/** The map as an uncompressed BMP data URL, written straight from the pixels. Any canvas encode runs on
+ *  the main thread: toDataURL in the frame, and toBlob too (a profile of a laptop scroll, 2026-10-15:
+ *  1.4 s of PNG encoding over the story as the card's map was redrawn after each chapter's hand-off).
+ *  A BMP needs no compression, so the whole map costs a few milliseconds. (A blob URL would need
  *  createObjectURL, a synchronous call to the browser process.) */
 function drawMap(w: number, h: number, r: number): Promise<string> {
   // A large map is drawn at half size and stretched by the filter: the field is smooth (and blurred
@@ -54,12 +55,19 @@ function drawMap(w: number, h: number, r: number): Promise<string> {
   const k = w * h > 40_000 ? 0.5 : 1;
   const cw = Math.ceil(w * k);
   const ch = Math.ceil(h * k);
-  const c = document.createElement("canvas");
-  c.width = cw;
-  c.height = ch;
-  const ctx = c.getContext("2d")!;
-  const img = ctx.createImageData(cw, ch);
-  const d = img.data;
+  // 24-bit BMP: a 54-byte header, then rows bottom-up in blue, green, red, each padded to 4 bytes.
+  const stride = (cw * 3 + 3) & ~3;
+  const bmp = new Uint8Array(54 + stride * ch);
+  const head = new DataView(bmp.buffer);
+  head.setUint16(0, 0x4d42, true);
+  head.setUint32(2, bmp.length, true);
+  head.setUint32(10, 54, true);
+  head.setUint32(14, 40, true);
+  head.setInt32(18, cw, true);
+  head.setInt32(22, ch, true);
+  head.setUint16(26, 1, true);
+  head.setUint16(28, 24, true);
+  head.setUint32(34, stride * ch, true);
   const rim = Math.max(4, Math.min(RIM, r * 0.9, Math.min(w, h) / 2));
   const hw = w / 2;
   const hh = h / 2;
@@ -91,28 +99,21 @@ function drawMap(w: number, h: number, r: number): Promise<string> {
         dx = -nx * m;
         dy = -ny * m;
       }
-      const i = (y * cw + x) * 4;
-      d[i] = Math.round(128 + dx * 127);
-      d[i + 1] = Math.round(128 + dy * 127);
-      d[i + 2] = 128;
-      d[i + 3] = 255;
+      const i = 54 + (ch - 1 - y) * stride + x * 3;
+      bmp[i] = 128;
+      bmp[i + 1] = Math.round(128 + dy * 127);
+      bmp[i + 2] = Math.round(128 + dx * 127);
     }
   }
-  ctx.putImageData(img, 0, 0);
-  return new Promise((done) =>
-    c.toBlob((b) => {
-      // Decoded before a filter takes it, so the swap never draws a frame with an empty map.
-      const ready = (url: string) => {
-        const im = new Image();
-        im.src = url;
-        im.decode().then(() => done(url), () => done(url));
-      };
-      if (!b) return ready(c.toDataURL("image/png"));
-      const fr = new FileReader();
-      fr.onload = () => ready(String(fr.result));
-      fr.onerror = () => ready(c.toDataURL("image/png"));
-      fr.readAsDataURL(b);
-    }, "image/png"),
+  let bin = "";
+  for (let i = 0; i < bmp.length; i += 0x8000) bin += String.fromCharCode(...bmp.subarray(i, i + 0x8000));
+  const url = `data:image/bmp;base64,${btoa(bin)}`;
+  // Decoded before a filter takes it, so the swap never draws a frame with an empty map.
+  const im = new Image();
+  im.src = url;
+  return im.decode().then(
+    () => url,
+    () => url,
   );
 }
 
