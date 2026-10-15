@@ -232,8 +232,9 @@ function layer(c: C, k: number, fan = false) {
   c.fillStyle = SOFT;
   wrap(c, caption, 90, 556, colW, 78);
 
-  // Right column: the drawing. Its words only where the whole card is in view; fanned, it is a
-  // drawing alone, so no word is ever cut by the card in front.
+  // Right column: the drawing with its labels. Fanned, the card in front covers this half at rest and
+  // it shows whole only when the card is read, so the labels are drawn there too; the column's heading
+  // stays for the unfanned card.
   const x0 = fan ? FAN_W + 60 : 720;
   const x1 = FACE_W - 90;
   const w = x1 - x0;
@@ -270,14 +271,12 @@ function layer(c: C, k: number, fan = false) {
     c.lineTo(x1, yOf(STORY.qty));
     c.stroke();
     dot(c, x0, yOf(STORY.first.qty), 24, COLORS.signal);
-    if (!fan) {
-      font(c, 46, 650);
-      c.fillStyle = ink(COLORS.signal);
-      c.fillText(STORY.first.day, x0, yOf(STORY.first.qty) + 80);
-      c.textAlign = "right";
-      c.fillText(STORY.rest.day, xr - 20, yOf(STORY.first.qty) + 80);
-      c.textAlign = "left";
-    }
+    font(c, 46, 650);
+    c.fillStyle = ink(COLORS.signal);
+    c.fillText(STORY.first.day, x0, yOf(STORY.first.qty) + 80);
+    c.textAlign = "right";
+    c.fillText(STORY.rest.day, xr - 20, yOf(STORY.first.qty) + 80);
+    c.textAlign = "left";
   } else if (k === 1) {
     // The purchase-order line as it was: 100 contactors in tens, all due Friday.
     const cols = 5;
@@ -297,13 +296,11 @@ function layer(c: C, k: number, fan = false) {
       const covered = o.covered ? o.qty : Math.min(o.qty, Math.max(0, left));
       left -= o.qty;
       const y = top + i * pitch;
-      const by = y + (fan ? 20 : 48);
-      if (!fan) {
-        font(c, 42, 600);
-        c.fillStyle = SOFT;
-        c.fillText(`${o.id} · ${o.qty}`, x0, y + 20);
-      }
-      const bh = Math.min(84, pitch - (fan ? 40 : 70));
+      const by = y + 48;
+      font(c, 42, 600);
+      c.fillStyle = SOFT;
+      c.fillText(`${o.id} · ${o.qty}`, x0, y + 20);
+      const bh = Math.min(84, pitch - 70);
       const full = (o.qty / SO_A.qty) * w;
       rr(c, x0, by, full, bh, bh / 2);
       c.fillStyle = o.covered ? tone : COLORS.signal;
@@ -315,17 +312,11 @@ function layer(c: C, k: number, fan = false) {
       }
     });
   } else {
-    // The checks themselves where they can be read, else three ticked rows.
+    // The checks themselves, ticked.
     FACES.policyChecks.forEach((t, i) => {
       const y = top + (fan ? 90 : 60) + i * (fan ? 170 : 130);
       check(c, x0 + 28, y - 4, i === 2 ? TINTS.cobalt : TINTS.emerald);
-      if (fan) {
-        rr(c, x0 + 90, y - 20, (w - 90) * [0.9, 0.7, 0.8][i], 34, 17);
-        c.fillStyle = BG2;
-        c.fill();
-        return;
-      }
-      font(c, 48, 550);
+      font(c, fan ? 46 : 48, 550);
       c.fillStyle = INK;
       wrap(c, t, x0 + 90, y + 14, w - 90, 56);
     });

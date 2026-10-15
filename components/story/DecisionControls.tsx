@@ -45,7 +45,11 @@ export function DecisionControls() {
       // While someone is deciding, the follow-up card in the stack comes forward to be read.
       onPointerEnter={() => (store.focusHint = DECISION_CARD)}
       onPointerLeave={() => (store.focusHint = -1)}
-      onFocus={() => (store.focusHint = DECISION_CARD)}
+      // Keyboard focus only: a clicked button keeps focus, and that would hold the card forward and
+      // turn off hover reading for the whole fan until the reader clicked elsewhere.
+      onFocus={(e) => {
+        if (e.target.matches(":focus-visible")) store.focusHint = DECISION_CARD;
+      }}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) store.focusHint = -1;
       }}

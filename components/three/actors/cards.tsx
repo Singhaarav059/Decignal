@@ -263,7 +263,9 @@ function CardFocus() {
       const onCur = !!drawn && drawn.object === bodies[cur];
       // Scale's hand: the card being read keeps the pointer while it is the card drawn under it,
       // wherever it now stands; otherwise the card whose resting place is under the pointer takes it.
-      hit = onCur ? cur : restK;
+      // Control's fan: the read card rises over its neighbours' strips, so there the resting places
+      // alone decide and every card stays reachable; the read card keeps the pointer only over a gap.
+      hit = weight(CH.scale, store.g) > 0.5 ? (onCur ? cur : restK) : restK >= 0 ? restK : onCur ? cur : -1;
     }
     // Moving from one card to another, the new one takes over once the pointer has held on it a moment,
     // so a quick sweep across the stack does not set every card moving at once.
