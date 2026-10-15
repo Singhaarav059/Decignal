@@ -5,5 +5,4 @@ export { Islands } from "./actors/islands";
 export { SignalCrate } from "./actors/signal";
 export { ChartCrates } from "./actors/chart";
 export { Transfer } from "./actors/transfer";
-export { Yard } from "./actors/yard";
 export { Cards } from "./actors/cards";

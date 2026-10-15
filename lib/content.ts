@@ -252,7 +252,7 @@ export const APPLICATIONS: Application[] = [
 export const appById = (id: string) => APPLICATIONS.find((a) => a.id === id);
 
 /** The six the homepage features, in the handoff's order (§5 home.applications.featured_ids). */
-export const FEATURED_IDS = [
+const FEATURED_IDS = [
   "sales-order-intake",
   "purchase-quote-comparison",
   "supplier-commitment-tracking",

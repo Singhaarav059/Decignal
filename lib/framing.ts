@@ -25,7 +25,7 @@ const FZ = Math.cos(Math.atan2(DX, DZ));
 /** What the page measured: the nav's bottom edge, the giant headlines (hero and final), the blocks
  *  around them the world keeps clear of one by one ([data-frame]: the hero's corners), and the
  *  Industries callout, whose right edge starts that chapter's stage. */
-export const page = { navB: 72, head: [] as (Box | null)[], frames: [] as Box[][], at: 0, callout: null as Box | null };
+const page = { navB: 72, head: [] as (Box | null)[], frames: [] as Box[][], at: 0, callout: null as Box | null };
 /** The card's rect as last seen while each chapter held (the card's content changes height per chapter). */
 export const cardSeen: (Box | null)[] = CHAPTERS.map(() => null);
 

@@ -9,7 +9,7 @@ import { useEffect } from "react";
  * so no object stalls the scroll the first time it comes into view. Hidden and off-camera objects
  * are included; their visibility is restored before the next frame.
  */
-export function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, roots?: THREE.Object3D[]) {
+function prewarm(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, roots?: THREE.Object3D[]) {
   const hidden: THREE.Object3D[] = [];
   const culled: THREE.Object3D[] = [];
   const visit = (o: THREE.Object3D) => {

@@ -37,7 +37,7 @@ type Look = {
 };
 
 const SKIN = ["#8A5A3C", "#C48A62", "#E2B48E", "#5C3A26", "#A86E4A", "#D6A17A"];
-export const LOOKS: Record<string, Look> = {
+const LOOKS: Record<string, Look> = {
   crew: { skin: SKIN[0], shirt: "#2F3A4A", trousers: "#262C36", vest: "#D7EE3A", hat: "#F3F5F7", hair: "#1E2126", boots: "#2A2E35", body: "m", hairStyle: "crop", beard: true, height: 1.02 },
   warehouse: { skin: SKIN[1], shirt: "#3D4652", trousers: "#2A2F37", vest: "#FF7A1F", hat: "#F2C230", hair: "#2A2E35", boots: "#23262D", body: "f", hairStyle: "ponytail", height: 0.96 },
   planner: { skin: SKIN[2], shirt: "#EEF1F5", trousers: "#2E3646", vest: null, hat: null, hair: "#16181C", boots: "#2A2E35", body: "f", hairStyle: "bun", glasses: true, height: 0.97 },

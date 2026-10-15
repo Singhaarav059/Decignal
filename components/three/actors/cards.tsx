@@ -3,7 +3,7 @@
 // Cards: the follow-up, its layers and functions, read under the pointer, and the ending's audit board.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { toCreasedNormals } from "three-stdlib";
+import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { easing } from "maath";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CH, HOVER_REST, blendAt, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";

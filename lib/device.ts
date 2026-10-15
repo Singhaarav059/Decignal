@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 
 const PHONE = "(max-width: 767px)";
 
-export const isPhone = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches;
+const isPhone = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches;
 
 /** A phone in the hand: phone width and a touch screen. A desktop window that merely loads narrow is not
  *  one; it may be widened later, and what is built once (materials) must not stay on the phone budget. */

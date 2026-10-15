@@ -267,7 +267,7 @@ export function StoryCard() {
 }
 
 /** One chapter's content, as the card shows it. */
-export function ChapterBody({ ch }: { ch: number }) {
+function ChapterBody({ ch }: { ch: number }) {
   switch (ch) {
     case CH.fragments:
       return (
