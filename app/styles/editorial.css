@@ -975,6 +975,8 @@
 /* ---- The worked example's readable review, under the dial: three rows, then the recommendation. ---- */
 .dial-intro { margin-top: 14px; max-width: 44ch; color: var(--color-ink-2); }
 .dial-review { display: grid; gap: 28px; padding-bottom: var(--section-y); }
+/* Below 768px Systems stacks and opens on its own --section-y, so a bottom one here doubled the gap. */
+@media (max-width: 767px) { .dial-review { padding-bottom: 0; } }
 @media (min-width: 1024px) {
   .dial-review { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 56px; align-items: start; padding-top: 8px; }
 }
