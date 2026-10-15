@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useState } from "react";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE, industryF, subscribe } from "@/lib/story";
+import { areaHref } from "@/lib/areas";
 import { APPLICATIONS, FEATURED } from "@/lib/content";
 import { CHAPTER_COPY, INDUSTRY } from "@/lib/copy";
 import { showApplication } from "@/lib/jump";
@@ -105,7 +106,7 @@ export function IndustryCard() {
               </ul>
               {app >= 0 && (
                 <a
-                  href={here ? "#applications" : "/solutions"}
+                  href={here ? `#application-${APPLICATIONS[app].id}` : `${areaHref(APPLICATIONS[app].category)}#workflow-${APPLICATIONS[app].id}`}
                   className="story-link t-small"
                   onClick={(e) => {
                     if (!here || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

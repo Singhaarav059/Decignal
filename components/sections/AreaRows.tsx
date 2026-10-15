@@ -176,7 +176,7 @@ export function AreaRows() {
                           return (
                           <li key={a.name}>
                             <a
-                              href={here ? `#application-${a.id}` : `${areaHref(area.category)}#applications`}
+                              href={here ? `#application-${a.id}` : `${areaHref(area.category)}#workflow-${a.id}`}
                               className="area-ui-app"
                               onClick={(e) => {
                                 if (!here || !plainClick(e)) return;
