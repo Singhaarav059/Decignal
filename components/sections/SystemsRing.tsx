@@ -12,7 +12,7 @@ import crm from "@/assets/photos/sys-crm.jpg";
 import mes from "@/assets/photos/sys-mes.jpg";
 import wms from "@/assets/photos/sys-wms.jpg";
 import sup from "@/assets/photos/sys-sup.jpg";
-import ext from "@/assets/photos/sys-ext.jpg";
+import ext from "@/assets/photos/sys-files.jpg";
 
 /** The place each record source keeps its documents (assets/photos/CREDITS.md), shown as a duotone in its colour. */
 const PHOTO: Record<string, { src: StaticImageData; alt: string }> = {
@@ -21,7 +21,7 @@ const PHOTO: Record<string, { src: StaticImageData; alt: string }> = {
   mes: { src: mes, alt: "An automated production line" },
   wms: { src: wms, alt: "A warehouse aisle of stocked racking" },
   sup: { src: sup, alt: "Trailers parked in a truck yard, seen from above" },
-  ext: { src: ext, alt: "A container port and a ship at the quay, from the air" },
+  ext: { src: ext, alt: "Stacks of paper files and folders on an office desk" },
 };
 
 /**
