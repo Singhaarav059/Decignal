@@ -607,7 +607,7 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
   transition: text-decoration-color var(--dur-2) var(--ease);
 }
 .story-link:hover { text-decoration-color: currentColor; }
-.story-link .arrow { display: inline-grid; overflow: hidden; width: 14px; margin-left: 6px; vertical-align: -1px; }
+.story-link .arrow { display: inline-grid; overflow: hidden; width: 14px; margin-left: 8px; vertical-align: -1px; }
 .story-link .arrow > span { grid-area: 1 / 1; transition: transform var(--dur-4) var(--ease-out-expo); }
 .story-link .arrow > span + span { transform: translateX(-120%); }
 @media (hover: hover) {
@@ -694,6 +694,8 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
   .final-outcomes li { grid-template-columns: auto 6.5em 1fr; align-items: center; gap: 10px; padding: 9px 12px; }
   .final-lead { display: none; }
   .final-card .story-chips, .final-card .story-body { display: none; }
+  /* The link wraps under the button: inset by the button's padding so the two labels share a left edge. */
+  .final-card .story-actions .story-link { padding-left: 20px; }
 }
 /* Short phones: the closing world sits between the headline and this card, and had a sliver (11px on a
    667px screen). The systems row steps aside (the hero and the islands name them) and the rows tighten. */
@@ -953,7 +955,8 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
   .hero-meta { right: var(--edge); width: min(250px, 19vw); justify-items: end; text-align: right; }
   .hero-lede { --d: 520ms; font-size: 16px; line-height: 1.5; color: var(--color-ink-2); }
   .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 20px; --d: 620ms; }
-  .hero-link { margin-top: 0; font-size: var(--fs-body); }
+  /* The link always sits under the button here: inset by the button's padding, so the two labels share a left edge. */
+  .hero-link { margin-top: 0; padding-left: 20px; font-size: var(--fs-body); }
   .hero-meta { --d: 700ms; }
   /* The offer and its caption on a small frosted white glass card, so they read over the coloured field. */
   .hero-meta-text {

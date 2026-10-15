@@ -159,5 +159,8 @@
 @media (max-width: 767px) {
   :root {
     --card-b: max(16px, env(safe-area-inset-bottom));
+    /* The card fills the same column as the nav, the tabs and the deck above it: capped at 440px, a wide
+       phone or small tablet left it pinned left under a centred deck. */
+    --card-w: calc(100% - 2 * var(--gutter));
   }
 }
