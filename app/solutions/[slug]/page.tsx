@@ -26,9 +26,9 @@ import { AreaLinks } from "@/components/service/AreaLinks";
 const DOCK_IDS = ["deliverables", "how", "applications", "faq", "audit"];
 const DOCK_SECTIONS = SERVICE_SECTIONS.filter((s) => DOCK_IDS.includes(s.id));
 
-// The five functions are the only pages here: any other slug is the root not-found page.
-export const dynamicParams = false;
-
+// The five functions are the only pages here: any other slug is the root not-found page (notFound below).
+// No `dynamicParams = false`: Zoho Catalyst's runtime can't find the prerendered pages and answered 404,
+// so a page it can't find is rendered on request instead.
 export function generateStaticParams() {
   return AREA_SLUGS.map((slug) => ({ slug }));
 }
