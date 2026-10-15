@@ -10,6 +10,8 @@ const KEY = "decignal:intro";
 const FONT_WAIT = 300;
 /** The world fades in once its scene is ready (lib/chrome.ts); never later than this. */
 const SCENE_CAP = 4000;
+/** The same wait on an upright phone, whose windows already show their posters. */
+const FLOW_CAP = 900;
 /** Survives client navigation: the entrance plays once per visit. */
 let played = false;
 
@@ -58,7 +60,9 @@ export function Loader() {
     if (repeat) rise();
     else Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, FONT_WAIT))]).then(rise);
     void landOnHash({ veil: true });
-    const cap = window.setTimeout(() => html.classList.add("scene-ready"), SCENE_CAP);
+    // An upright phone's story windows show baked posters (PhoneFlow), so the page need not wait long
+    // for the live world: it takes over each window once it has drawn.
+    const cap = window.setTimeout(() => html.classList.add("scene-ready"), html.dataset.flow === "phone" ? FLOW_CAP : SCENE_CAP);
     // The dots leave with the scene's fade; unmount once it has.
     const poll = window.setInterval(() => {
       if (!html.classList.contains("scene-ready")) return;

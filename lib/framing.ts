@@ -262,6 +262,8 @@ function place(n: number, f: number, hw: number, hh: number, ix: number, iy: num
 const FLOW_SIDE = 16;
 const FLOW_TOP = 40;
 const FLOW_FOOT = 10;
+/** How much larger than its own framing a subject may draw in a phone's window. */
+const FLOW_GROW = 1.8;
 
 /** Fills the stage and exclusions for chapter c: the card and the giant headline; an open panel shrinks the stage. */
 function setStage(c: number, vw: number, vh: number, panel: boolean) {
@@ -454,6 +456,18 @@ export function frameShot(s: Shot, c: number, vw: number, vh: number, panel: boo
       spot.x = ix;
       spot.y = iy;
     }
+  } else if (flow.on) {
+    // A phone's chapter window is the subject's alone: it grows to fill it (up to FLOW_GROW), where at
+    // its own size a small subject (the closing sign) floated in empty sky.
+    let lo = 1;
+    let hi = FLOW_GROW;
+    for (let it = 0; it < 9; it++) {
+      const mid = (lo + hi) / 2;
+      if (place(n, mid, hw, hh, ix, iy)) lo = mid;
+      else hi = mid;
+    }
+    f = lo;
+    place(n, f, hw, hh, ix, iy);
   }
   const qx = spot.x;
   const qy = spot.y;

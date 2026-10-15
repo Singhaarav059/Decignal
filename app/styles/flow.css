@@ -69,3 +69,44 @@ html:not([data-flow="phone"]) #story-flow { display: none; }
    the slot keeps the tallest name's height, so the card never jumps as they swap. */
 .pflow-card .ind-roll { height: auto; margin-bottom: 0; white-space: normal; }
 .pflow-card .ind-roll > span { height: auto; }
+
+/* The baked poster shows the window's world from the first paint; the live canvas (or the copy it left)
+   takes over once it has drawn here. */
+.pflow-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; transition: opacity 300ms linear; }
+html.scene-live .pflow-win[data-held] .pflow-poster,
+.pflow-win[data-kept] .pflow-poster { opacity: 0; }
+/* The live canvas in a phone's window fades in flat over its poster (no scale: they match). */
+.pflow-gl.intro-stage { transform: none; transition: opacity 300ms linear; }
+
+/* ---- The applications on an upright phone (components/sections/ApplicationFlow.tsx): one section per
+   application, scrolled natively; nothing pinned. ---- */
+.aflow { position: relative; margin-top: 8px; padding-inline: var(--gutter); }
+.aflow-sec + .aflow-sec { margin-top: 56px; }
+.aflow-head .application-label { justify-content: flex-start; }
+.aflow-name { min-width: 0; }
+.aflow-count { margin-left: auto; flex: none; font: 600 var(--fs-label) / 1 var(--font-label); font-variant-numeric: tabular-nums; color: var(--color-ink-soft); }
+.aflow-head .application-title { margin-top: 8px; }
+.aflow-head .application-reads { margin-top: 12px; }
+/* One height for every window, so the canvas never resizes as it moves between them. */
+.aflow-win {
+  position: relative;
+  height: clamp(250px, 40svh, 360px);
+  margin: 4px calc(-1 * var(--gutter)) 0;
+}
+.aflow-gl { position: absolute; inset: 0; }
+.aflow-gl canvas { opacity: 0; transition: opacity 300ms linear; }
+.aflow-gl canvas[data-ready] { opacity: 1; }
+.aflow-win[data-held]:has(canvas[data-ready]) .pflow-poster,
+.aflow-win[data-kept] .pflow-poster { opacity: 0; }
+.aflow-win .pflow-still[data-kept]:not([data-under]) { opacity: 1; }
+.aflow-card { display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 26px; background: rgb(250 251 253 / 0.94); }
+@supports (corner-shape: squircle) {
+  .aflow-card { corner-shape: squircle; border-radius: 40px; }
+}
+.aflow-card .application-stages { align-self: flex-start; }
+.aflow-card .application-metric { gap: 4px; }
+.aflow-card .application-metric-value { font-size: 40px; }
+/* The pinned stage hides the source chips on short screens for the scene's room; here the page scrolls,
+   so they always show. Flat (no blur): they sit on the page, not over the moving world. */
+.aflow-head .application-reads { display: flex; }
+.aflow-head .application-reads li { -webkit-backdrop-filter: none; backdrop-filter: none; }

@@ -32,9 +32,17 @@ const restAt = (i: number) => Math.min(CHAPTERS[i].ts * 0.5, 0.3);
 const holdEnd = (i: number) => CHAPTERS[i].ts - 0.015;
 
 /** A stepped window plays its steps from its top at START of the screen to its top at END of its own
- *  height above the nav (partly gone): most of a screen of plain scrolling, the window in view throughout. */
-const START = 0.62;
-const END = 0.4;
+ *  height above the nav (half gone): over a screen of plain scrolling, the window in view throughout,
+ *  so a step is never squeezed into a short stretch of the thumb's travel. */
+const START = 0.86;
+const END = 0.55;
+/** The steps follow the scroll through a short ease (s): a flick no longer flips several at once, and
+ *  each move lands softly with the thumb instead of jumping by the scroll's own steps. */
+const EASE = 0.16;
+/** The focus line, as a share of the screen's height from its top, and the lead the window already
+ *  showing keeps (px), so the canvas never swaps back and forth at the midpoint. */
+const FOCUS = 0.62;
+const HOLD = 40;
 /** The nav's bottom edge, which the windows scroll under. */
 const NAV = 72;
 
@@ -95,6 +103,24 @@ export function PhoneFlow({ live }: { live: boolean }) {
     const offs = new Map<number, number>();
     const playedAt = (k: number, y: number) => Math.min(Math.max(played(k, y) + (offs.get(k) ?? 0), 0), 1);
 
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // The eased step position (local progress) and where the scroll puts it.
+    let easeCh = -1;
+    let eased = 0;
+    let goal = 0;
+    let easing = 0;
+    let easeT = 0;
+    const ease = (t: number) => {
+      const dt = Math.min((t - easeT) / 1000, 0.05);
+      easeT = t;
+      eased += (goal - eased) * (1 - Math.exp(-dt / EASE));
+      if (Math.abs(goal - eased) < 1e-4) eased = goal;
+      // Still arriving: the 3D keeps its full frame rate (lib/pace.ts resting).
+      store.scrollAt = t;
+      setG(easeCh + eased);
+      easing = eased === goal ? 0 : requestAnimationFrame(ease);
+    };
+
     let at = -1; // the chapter the story shows
     let held = -1; // the 3D window holding the canvas
     let moves = 0;
@@ -109,20 +135,26 @@ export function PhoneFlow({ live }: { live: boolean }) {
       }
       c.getContext("2d")?.drawImage(src, 0, 0);
       c.toggleAttribute("data-kept", true);
+      wins[k].toggleAttribute("data-kept", true);
     };
 
     const update = () => {
       const y = window.scrollY;
-      // The chapter whose window shows most; between windows, the section at the screen's middle.
+      // The chapter whose window is nearest the focus line (a little below the screen's middle), among
+      // those on screen: the canvas reaches a window as it comes in, so its world arrives with it rather
+      // than once it is half read. Between windows, the section at the screen's middle.
       let best = -1;
       let most = 1;
+      let near = Infinity;
+      const focus = y + vh * FOCUS;
       wGeo.forEach(({ top, h }, k) => {
         const seen = Math.min(top + h, y + vh) - Math.max(top, y + NAV);
-        // The window already shown keeps the story until another shows clearly more of itself.
-        const score = seen + (k === at ? 24 : 0);
-        if (score > most) {
-          most = score;
+        if (seen <= 1) return;
+        const d = Math.abs(top + h / 2 - focus) - (k === at ? HOLD : 0);
+        if (d < near) {
+          near = d;
           best = k;
+          most = seen;
         }
       });
       if (best < 0) {
@@ -143,6 +175,10 @@ export function PhoneFlow({ live }: { live: boolean }) {
         for (const k of offs.keys()) if (k !== ch) offs.delete(k);
       }
       const local = STEPPED.has(ch) ? playedAt(ch, y) * holdEnd(ch) : restAt(ch);
+      const jumped = ch !== easeCh;
+      easeCh = ch;
+      goal = local;
+      if (jumped || still || !STEPPED.has(ch)) eased = local;
       if (three && held !== ch) {
         // Hidden until the new chapter has drawn: the canvas still holds the last window's picture.
         veil(host, true);
@@ -156,7 +192,11 @@ export function PhoneFlow({ live }: { live: boolean }) {
       }
       flow.live = three;
       // A still chapter holds one g: its readers hear nothing until the story moves.
-      if (Math.abs(store.g - (ch + local)) > 1e-6) setG(ch + local);
+      if (Math.abs(store.g - (ch + eased)) > 1e-6) setG(ch + eased);
+      if (Math.abs(goal - eased) > 1e-4 && !easing) {
+        easing = requestAnimationFrame(ease);
+        easeT = performance.now();
+      }
 
       // The sky: each section's colour, blended into the next over its last quarter.
       const line = y + vh * 0.5;
@@ -171,7 +211,11 @@ export function PhoneFlow({ live }: { live: boolean }) {
     };
 
     // The window holding the canvas shows the live picture, not its copy.
-    const shown = () => stills.forEach((c, k) => c?.toggleAttribute("data-under", k === held));
+    const shown = () =>
+      stills.forEach((c, k) => {
+        c?.toggleAttribute("data-under", k === held);
+        if (wins[k].hasAttribute("data-held") !== (k === held)) wins[k].toggleAttribute("data-held", k === held);
+      });
 
     let raf = 0;
     const schedule = () => {
@@ -185,6 +229,8 @@ export function PhoneFlow({ live }: { live: boolean }) {
     measure();
     update();
     shown();
+    // Dev only: the poster bake (scripts/bake-flow-posters.mjs) reads the world through this.
+    if (process.env.NODE_ENV !== "production") Object.assign(window, { __flow: flow });
     const ro = new ResizeObserver(() => {
       measure();
       schedule();
@@ -215,6 +261,7 @@ export function PhoneFlow({ live }: { live: boolean }) {
 
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(easing);
       ro.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
@@ -297,8 +344,13 @@ function Window({ ch }: { ch: number }) {
       </div>
     );
   }
+  // The window's picture from the first paint (public/flow, baked by scripts/bake-flow-posters.mjs), until
+  // the live world has drawn here or left its own copy: the 3D builds after the page is up.
+  const first = ch === CH.fragments;
   return (
     <div className="pflow-win" data-win={ch} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element -- a fixed-size poster, served as baked */}
+      <img className="pflow-poster" src={`/flow/${ch}.webp`} alt="" width={780} height={794} loading={first ? "eager" : "lazy"} fetchPriority={first ? "high" : "auto"} decoding="async" />
       <canvas className="pflow-still" />
     </div>
   );

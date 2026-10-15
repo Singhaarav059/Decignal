@@ -47,7 +47,12 @@ export const flow = {
   /** Draws the world's current picture now and returns its canvas, to copy into the window it leaves
    *  (Scene.tsx FlowSnap); null until the scene is up and warm. */
   snap: null as (() => HTMLCanvasElement | null) | null,
+  /** Flowing windows of other canvases on the page (the phone explorer, ApplicationFlow). */
+  windows: 0,
 };
+
+/** A canvas here may sit in a window of the flow rather than span the screen (ScreenTag's margins). */
+export const windowed = () => flow.on || flow.windows > 0;
 
 /** The story's element: the pinned track, or the flowing phone story. */
 export function storyTrack(): HTMLElement | null {

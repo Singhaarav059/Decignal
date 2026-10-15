@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
@@ -19,44 +19,17 @@ import { CountUp } from "../ui/CountUp";
 import { OperationEvidence } from "./OperationEvidence";
 import { whenStill } from "@/lib/idle";
 import { usePhone } from "@/lib/device";
+import { STAGE_AT, Swap, headline } from "./explorer-parts";
+import { ApplicationFlow } from "./ApplicationFlow";
+import { flowMode, onFlowMode } from "@/lib/flow";
 
 gsap.registerPlugin(ScrollTrigger);
 // Viewport heights per application, by FEATURED index: every tab (situation, records, next step) gets
 // its own stretch of scroll. The quotation scene keeps the most for its truck.
 const CHAPTER_LENGTHS = [0.85, 1.05, 0.95, 0.9, 0.85, 0.9];
-/** Where each stage sits inside its chapter (a click on Signal, Evidence or Action lands here). */
-const STAGE_AT = [0.18, 0.48, 0.84];
 const ALL = FEATURED.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
 
-/**
- * Text that changes in place: the old words fade up and out while the new ones rise in (opacity and
- * 8px, --dur-3). Only the words change; nothing around them remounts (E15).
- */
-function Swap({ text, render = (t) => t, className }: { text: string; render?: (text: string, live: boolean) => ReactNode; className?: string }) {
-  const [now, setNow] = useState(text);
-  const [old, setOld] = useState<string | null>(null);
-  if (text !== now) {
-    setOld(now);
-    setNow(text);
-  }
-  useEffect(() => {
-    if (old === null) return;
-    const t = window.setTimeout(() => setOld(null), 340);
-    return () => window.clearTimeout(t);
-  }, [old]);
-  return (
-    <span className={`swap${className ? ` ${className}` : ""}`}>
-      {old !== null && <span key={`o:${old}`} className="swap-out" aria-hidden>{render(old, false)}</span>}
-      <span key={`n:${now}`} className="swap-in">{render(now, true)}</span>
-    </span>
-  );
-}
-
-const headline = (t: string) => {
-  const [a, b] = t.split("\n");
-  return <>{a} <span className="accent">{b}</span></>;
-};
 
 type Props = {
   /** FEATURED indices to show, in order. Default: all six. */
@@ -69,8 +42,22 @@ type Props = {
   pace?: number;
 };
 
+/**
+ * The applications in 3D. Upright phones read them as a flowing page (ApplicationFlow, the same idea as
+ * the story's PhoneFlow): one section per application, scrolled natively. Other screens keep the pinned
+ * stage below. The server renders the pinned one; a phone swaps it after hydration, far below the fold.
+ */
+export function ApplicationExplorer(props: Props) {
+  const mode = useSyncExternalStore(onFlowMode, flowMode, () => "wide" as const);
+  if (mode === "phone") {
+    const list = (props.apps ?? props.indices ?? ALL);
+    return <ApplicationFlow list={list} />;
+  }
+  return <PinnedExplorer {...props} />;
+}
+
 /** One continuous stage, driven by the same Lenis/GSAP scroll as the lead story. */
-export function ApplicationExplorer({ apps, indices, compact = false, pace }: Props) {
+function PinnedExplorer({ apps, indices, compact = false, pace }: Props) {
   // A new array on every parent render must not rebuild the ScrollTrigger: key the list by its contents.
   const key = (apps ?? indices ?? ALL).join(",");
   const list = useMemo(() => key.split(",").map(Number), [key]);

@@ -30,7 +30,27 @@ type Props = SceneProps & {
   kinds?: readonly DemoKind[];
   /** Where the subject goes: the canvas is full-bleed and the camera frames the free area. */
   frame?: RefObject<Frame>;
+  /** Filled with a function that draws the current picture now and returns the canvas (a phone's
+   *  flowing explorer copies a window's picture before the canvas moves on). */
+  snap?: RefObject<(() => HTMLCanvasElement | null) | null>;
 };
+
+/** Registers the snapshot function (Props.snap). */
+function Snap({ to }: { to: RefObject<(() => HTMLCanvasElement | null) | null> }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    to.current = () => {
+      gl.render(scene, camera);
+      return gl.domElement;
+    };
+    return () => {
+      to.current = null;
+    };
+  }, [to, gl, scene, camera]);
+  return null;
+}
 
 const NO_FRAME: Frame = { left: 0, top: 0, right: 0, bottom: 0 };
 
@@ -351,6 +371,7 @@ export default function ApplicationScene(props: Props) {
         {/* Drawn only when the picture changed: the hand-off at a chapter's edge only fades the wrapper,
             and a world at the end of its stage stands still while the page sways. */}
         <FrameGate drawn={mark} />
+        {props.snap && <Snap to={props.snap} />}
       </Suspense>
       {playing && paced && <Pacer paused={paused} drawnAt={drawnAt} />}
       {playing && govern && <Governor at={dpr} set={govern} />}
