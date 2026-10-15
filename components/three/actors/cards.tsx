@@ -252,18 +252,26 @@ function CardFocus() {
       ndc.set(store.pointer.x, store.pointer.y);
       ray.setFromCamera(ndc, camera);
       restRay.ray.copy(ray.ray);
-      // The card being read keeps the pointer while it is the card drawn under it, wherever it now
-      // stands; otherwise the card whose resting place is under the pointer takes it.
       const cur = store.focus;
       const live = bodies.filter((b): b is THREE.Mesh => !!b && b.parent?.parent?.visible !== false);
       if (glassBody?.parent?.parent?.visible) live.push(glassBody);
+      const at = rests.filter((b): b is THREE.Mesh => !!b && b.parent?.visible !== false);
+      if (glassRest?.parent?.visible) at.push(glassRest);
+      const rest = restRay.intersectObjects(at, false)[0];
+      const restK = rest ? rests.indexOf(rest.object as THREE.Mesh) : -1;
       const drawn = cur >= 0 ? ray.intersectObjects(live, false)[0] : undefined;
-      if (drawn && drawn.object === bodies[cur]) hit = cur;
-      else {
-        const at = rests.filter((b): b is THREE.Mesh => !!b && b.parent?.visible !== false);
-        if (glassRest?.parent?.visible) at.push(glassRest);
-        const first = restRay.intersectObjects(at, false)[0];
-        if (first) hit = rests.indexOf(first.object as THREE.Mesh);
+      const onCur = !!drawn && drawn.object === bodies[cur];
+      if (weight(CH.control, store.g) > 0.5) {
+        // Control's fan: the card whose place in the stack is under the pointer is read. The read card
+        // drifts to the middle and grows over its neighbours' places, so letting it keep the pointer
+        // wherever it was drawn left the cards behind it unreachable. Places do not move, so this
+        // depends on the pointer alone and cannot trade focus; the read card keeps the pointer only
+        // where it reaches past the stack.
+        hit = restK >= 0 ? restK : onCur ? cur : -1;
+      } else {
+        // Scale's hand: the card being read keeps the pointer while it is the card drawn under it,
+        // wherever it now stands; otherwise the card whose resting place is under the pointer takes it.
+        hit = onCur ? cur : restK;
       }
     }
     // Moving from one card to another, the new one takes over once the pointer has held on it a moment,
