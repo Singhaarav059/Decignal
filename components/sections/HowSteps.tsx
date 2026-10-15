@@ -40,6 +40,18 @@ export function HowSteps({ head }: { head: ReactNode }) {
     [],
   );
 
+  // A sheet's route leg draws once the sheet is on screen (a class, not a view timeline: the sheets stick).
+  useEffect(() => {
+    const sheets = root.current?.querySelectorAll<HTMLElement>(".how-sheet");
+    if (!sheets) return;
+    const io = new IntersectionObserver(
+      (es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("is-in")),
+      { threshold: 0.5 },
+    );
+    sheets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div ref={root} className="how-steps">
       <div className="page-wrap how-top">
@@ -70,13 +82,38 @@ export function HowSteps({ head }: { head: ReactNode }) {
                   <div className="how-route">
                     <h3 className="how-sheet-title">{x.title}.</h3>
                     <p className="how-text">{x.text}</p>
-                    <p className="how-route-label t-label">{HOW.youGet}</p>
-                    <ul className="how-deliver" aria-label={HOW.youGet}>
-                      <li>
-                        <Check size={15} strokeWidth={2.6} aria-hidden />
-                        {x.deliverable}
-                      </li>
-                    </ul>
+                    {/* The step as a ledger: who is in it, what it looks at, what it hands over. */}
+                    <dl className="how-ledger">
+                      <div>
+                        <dt>{HOW.ledger.people}</dt>
+                        <dd>{x.people}</dd>
+                      </div>
+                      <div>
+                        <dt>{HOW.ledger.inputs}</dt>
+                        <dd>{x.inputs}</dd>
+                      </div>
+                      <div className="how-ledger-out">
+                        <dt>{HOW.youGet}</dt>
+                        <dd>
+                          <Check size={18} strokeWidth={2.6} aria-hidden />
+                          {x.deliverable}
+                        </dd>
+                      </div>
+                    </dl>
+                    {/* The whole route at the foot of the words: steps behind are ticked, this one is lit
+                        and its leg draws in as the sheet arrives. */}
+                    <ol className="how-track" aria-label={HOW.track}>
+                      {steps.map((s, j) => (
+                        <li
+                          key={j}
+                          className={j < i ? "is-done" : j === i ? "is-now" : undefined}
+                          aria-current={j === i ? "step" : undefined}
+                        >
+                          <i aria-hidden>{j < i && <Check size={11} strokeWidth={3} />}</i>
+                          <span>{s.title}</span>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                   <div className="how-plate" style={toneVars(sheet.tone)}>
                     <StepArt index={i} />

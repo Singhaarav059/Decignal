@@ -825,6 +825,8 @@ export const HOW = {
   /** Each colour sheet's head (HowSteps.tsx): its place in the order, in words rather than numerals. */
   stepWords: ["First.", "Second.", "Third.", "Then."],
   youGet: "Deliverable",
+  ledger: { people: "Who is involved", inputs: "What we look at" },
+  track: "Where this step sits",
 } as const;
 
 /** About (handoff §5 about, #about). */
