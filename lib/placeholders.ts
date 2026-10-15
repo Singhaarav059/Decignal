@@ -18,7 +18,15 @@ export const PLACEHOLDER = {
     name: "Krupal Chaudhary",
     role: "Founder & CEO",
     experience:
-      "Founded Demaze Technologies in Ahmedabad, where a team of 35+ has delivered 45+ AI and software projects over six years.",
+      "Founded Demaze Technologies, an AI and software company in Ahmedabad. Its team and track record:",
+    /** The same Demaze figures, drawn as the founder card's facts (Editorial.tsx About). `n` is how many
+     *  marks the small unit chart under each figure draws: one per person, project or year. */
+    company: "Demaze Technologies",
+    figures: [
+      { value: "35+", label: "people on the team", n: 35, kind: "dots", tone: "cobalt" },
+      { value: "45+", label: "AI and software projects", n: 45, kind: "ticks", tone: "emerald" },
+      { value: "6", label: "years in business", n: 6, kind: "rail", tone: "violet" },
+    ],
     linkedin: "https://www.linkedin.com/in/krupalchaudhary-ai",
     /** The portrait is assets/photos/founder.jpg, from the same page. */
     photoAlt: "Portrait of Krupal Chaudhary",

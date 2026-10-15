@@ -2,13 +2,20 @@
 // Laid out on a 1600 x 1000 grid and drawn at any scale. The cards are a few hundred pixels wide on
 // screen, so the type is set large and sparse: the smallest text is 40 units, nothing is decoration-
 // sized, and detail lives in the page's own readouts beside the cards.
-import { FUNCTIONS } from "@/lib/story";
-import { FACES } from "@/lib/copy";
-import { APP_FACTS } from "@/lib/example";
+import { FUNCTIONS, LAYERS } from "@/lib/story";
+import { CONTROL, FACES } from "@/lib/copy";
+import { APP_FACTS, STORY } from "@/lib/example";
 import { ORDER_COUNTS as ORDER } from "@/lib/demonstrations";
 import { COLORS, TINTS } from "./palette";
 
+/** The reader's choice on the page's follow-up panel, which the decision face follows. */
+export type DecisionMode = "idle" | "confirmed" | "declined";
+
 export type FaceSpec =
+  /** The follow-up: `qty` is the Friday quantity (60 to 100); the rest come on Wednesday. */
+  | { kind: "decision"; qty?: number; mode?: DecisionMode }
+  /** `fan`: the card is read fanned out, with only its left part in view, so all its text sits there. */
+  | { kind: "layer"; k: number; fan?: boolean }
   /** Drawn upright (portrait) in the function's colour, for Scale's hand of cards. */
   | { kind: "function"; k: number }
   /** The glass layer card's print: text only, on a clear ground, upright like the hand. */
@@ -23,6 +30,8 @@ const INK = COLORS.ink;
 const SOFT = "#555D6B";
 const LINE = "#E3E6EB";
 const BG2 = "#EDEFF3";
+/** The five layers in LAYERS order: signal, record, impact, rules, follow-up. */
+export const LAYER_TONE = [COLORS.signal, TINTS.violet, TINTS.saffron, TINTS.cobalt, TINTS.emerald];
 /** The five functions in FUNCTIONS order: sales, procurement, operations, finance, service (CATEGORY_TONE). */
 export const FUNCTION_TONE = [TINTS.tangerine, TINTS.cobalt, TINTS.emerald, TINTS.violet, TINTS.pink];
 
@@ -120,6 +129,207 @@ function check(c: C, x: number, y: number, color: string) {
   c.lineTo(x - 4, y + 11);
   c.lineTo(x + 15, y - 10);
   c.stroke();
+}
+
+
+/** A status pill, right-aligned. Outline: the tone as a hairline and its ink; solid: the tone as the
+ *  fill, with white or ink text (onTone). A state on the card, never a control. */
+function status(c: C, text: string, xRight: number, y: number, tone: string, solid: boolean) {
+  font(c, 44, 650);
+  const w = c.measureText(text).width + (solid ? 88 : 108);
+  const x = xRight - w;
+  rr(c, x, y - 60, w, 88, 44);
+  if (solid) {
+    c.fillStyle = tone;
+    c.fill();
+  } else {
+    c.strokeStyle = tone;
+    c.lineWidth = 5;
+    c.stroke();
+    dot(c, x + 42, y - 16, 11, tone);
+  }
+  c.fillStyle = solid ? onTone(tone) : ink(tone);
+  c.fillText(text, x + (solid ? 44 : 66), y);
+}
+
+/* ------------------------------------------------------------------ */
+
+const [SO_A, SO_B] = STORY.orders;
+/** What SO-3318 gets by its Monday if `qty` arrive on Friday (SO-3310 takes its 50 first). */
+const soBBy = (qty: number) => Math.max(0, Math.min(SO_B.qty, qty - SO_A.qty));
+
+/** The follow-up: what it schedules, what it leaves open, and where it stands. The page's panel holds
+ *  the real Confirm, Adjust and Decline; the card only shows the state they leave it in. */
+function decision(c: C, qty: number = STORY.first.qty, mode: DecisionMode = "idle") {
+  const rest = STORY.qty - qty;
+  label(c, FACES.decisionLabel, 90, 138);
+  if (mode === "confirmed") status(c, qty === STORY.first.qty ? `Confirmed · ${qty}` : `Asked · ${qty}`, FACE_W - 90, 140, TINTS.emerald, true);
+  else if (mode === "declined") status(c, "Declined", FACE_W - 90, 140, COLORS.signal, true);
+  else status(c, `With the ${STORY.owners.confirm.toLowerCase()}`, FACE_W - 90, 140, TINTS.emerald, false);
+  title(c, CONTROL.title(qty), 330, 140, mode === "declined" ? SOFT : INK);
+  font(c, 62, 500);
+  c.fillStyle = SOFT;
+  c.fillText(rest > 0 ? `and ${rest} on ${STORY.rest.day} · ${STORY.po} line ${STORY.poLine}` : `${STORY.po} line ${STORY.poLine}`, 90, 428);
+
+  const got = soBBy(qty);
+  const stats: [string, string, boolean][] = [
+    [STORY.first.day, `${qty}`, false],
+    [STORY.rest.day, `${rest}`, false],
+    [`${SO_B.id} by ${SO_B.due.slice(0, 3)}`, `${got} of ${SO_B.qty}`, got < SO_B.qty],
+  ];
+  const bw = (FACE_W - 180 - 48) / 3;
+  stats.forEach(([k, v, risk], i) => {
+    const x = 90 + i * (bw + 24);
+    rr(c, x, 492, bw, 230, 32);
+    c.fillStyle = BG2;
+    c.fill();
+    font(c, 48, 500);
+    c.fillStyle = SOFT;
+    c.fillText(k, x + 40, 574);
+    font(c, 92, 650);
+    c.fillStyle = risk ? ink(COLORS.signal) : INK;
+    c.fillText(v, x + 40, 678);
+  });
+
+  // Who acts, as a quiet line: the owner's dot, then the words.
+  dot(c, 108, 864, 13, TINTS.emerald);
+  font(c, 54, 500);
+  c.fillStyle = SOFT;
+  c.fillText(FACES.decisionFoot, 142, 882);
+}
+
+/** The fact each layer contributes, set large in the left column so it reads even when the cards fan out. */
+const LAYER_METRIC: [string, string][] = [
+  [`${STORY.first.qty} + ${STORY.rest.qty}`, `The supplier’s new schedule`],
+  [`${STORY.qty}`, `Due ${STORY.due} on ${STORY.po}`],
+  [`${STORY.short.waiting}`, `Short for ${STORY.short.order} on ${SO_B.due}`],
+  [`${FACES.policyChecks.length} / ${FACES.policyChecks.length}`, "Checks in place"],
+];
+
+/** Fanned, a layer card shows about its left 42%: every word sits there, the drawing to its right. */
+const FAN_W = 0.42 * FACE_W;
+
+function layer(c: C, k: number, fan = false) {
+  if (k === 4) return decision(c);
+  const tone = LAYER_TONE[k];
+  const L = LAYERS[k];
+  const [metric, caption] = LAYER_METRIC[k];
+  label(c, L.name, 90, 138, ink(tone));
+  if (!fan) status(c, "Checked", FACE_W - 90, 140, TINTS.emerald, false);
+
+  // Left column: the one number that matters, as large as the column allows.
+  const colW = FAN_W - 140;
+  let size = 230;
+  c.letterSpacing = "-8px";
+  for (; size > 130; size -= 10) {
+    font(c, size, 650);
+    if (c.measureText(metric).width <= colW) break;
+  }
+  c.fillStyle = INK;
+  c.fillText(metric, 80, 430);
+  c.letterSpacing = "0px";
+  font(c, 64, 500);
+  c.fillStyle = SOFT;
+  wrap(c, caption, 90, 556, colW, 78);
+
+  // Right column: the drawing. Its words only where the whole card is in view; fanned, it is a
+  // drawing alone, so no word is ever cut by the card in front.
+  const x0 = fan ? FAN_W + 60 : 720;
+  const x1 = FACE_W - 90;
+  const w = x1 - x0;
+  if (!fan) {
+    font(c, 60, 650);
+    c.fillStyle = INK;
+    c.letterSpacing = "-1.5px";
+    wrap(c, L.text, x0, 300, w, 72);
+    c.letterSpacing = "0px";
+  }
+
+  const top = fan ? 300 : 500;
+  const bottom = 900;
+  if (k === 0) {
+    // The promise (dashed, all 100 on Friday) and the new schedule: 60 until Wednesday, then 100.
+    const yOf = (u: number) => bottom - 40 - (u / STORY.qty) * (bottom - 40 - top - 30);
+    const xr = x0 + w * 0.62;
+    c.strokeStyle = hexA(INK, 0.45);
+    c.setLineDash([18, 16]);
+    c.lineWidth = 5;
+    c.beginPath();
+    c.moveTo(x0, yOf(STORY.qty));
+    c.lineTo(x1, yOf(STORY.qty));
+    c.stroke();
+    c.setLineDash([]);
+    c.strokeStyle = COLORS.signal;
+    c.lineWidth = 11;
+    c.lineCap = "round";
+    c.lineJoin = "round";
+    c.beginPath();
+    c.moveTo(x0, yOf(STORY.first.qty));
+    c.lineTo(xr, yOf(STORY.first.qty));
+    c.lineTo(xr, yOf(STORY.qty));
+    c.lineTo(x1, yOf(STORY.qty));
+    c.stroke();
+    dot(c, x0, yOf(STORY.first.qty), 24, COLORS.signal);
+    if (!fan) {
+      font(c, 46, 650);
+      c.fillStyle = ink(COLORS.signal);
+      c.fillText(STORY.first.day, x0, yOf(STORY.first.qty) + 80);
+      c.textAlign = "right";
+      c.fillText(STORY.rest.day, xr - 20, yOf(STORY.first.qty) + 80);
+      c.textAlign = "left";
+    }
+  } else if (k === 1) {
+    // The purchase-order line as it was: 100 contactors in tens, all due Friday.
+    const cols = 5;
+    const gap = 22;
+    const cw = (w - gap * (cols - 1)) / cols;
+    const ch = Math.min(cw, (bottom - top - gap) / 2);
+    for (let i = 0; i < 10; i++) {
+      rr(c, x0 + (i % cols) * (cw + gap), top + Math.floor(i / cols) * (ch + gap), cw, ch, 20);
+      c.fillStyle = hexA(tone, i < STORY.first.qty / 10 ? 1 : 0.3);
+      c.fill();
+    }
+  } else if (k === 2) {
+    // The three allocated orders: each bar its quantity, the part Friday's 60 leaves uncovered in red.
+    let left = STORY.first.qty;
+    const pitch = (bottom - top) / STORY.orders.length;
+    STORY.orders.forEach((o, i) => {
+      const covered = o.covered ? o.qty : Math.min(o.qty, Math.max(0, left));
+      left -= o.qty;
+      const y = top + i * pitch;
+      const by = y + (fan ? 20 : 48);
+      if (!fan) {
+        font(c, 42, 600);
+        c.fillStyle = SOFT;
+        c.fillText(`${o.id} · ${o.qty}`, x0, y + 20);
+      }
+      const bh = Math.min(84, pitch - (fan ? 40 : 70));
+      const full = (o.qty / SO_A.qty) * w;
+      rr(c, x0, by, full, bh, bh / 2);
+      c.fillStyle = o.covered ? tone : COLORS.signal;
+      c.fill();
+      if (!o.covered && covered > 0) {
+        rr(c, x0, by, (covered / SO_A.qty) * w, bh, bh / 2);
+        c.fillStyle = tone;
+        c.fill();
+      }
+    });
+  } else {
+    // The checks themselves where they can be read, else three ticked rows.
+    FACES.policyChecks.forEach((t, i) => {
+      const y = top + (fan ? 90 : 60) + i * (fan ? 170 : 130);
+      check(c, x0 + 28, y - 4, i === 2 ? TINTS.cobalt : TINTS.emerald);
+      if (fan) {
+        rr(c, x0 + 90, y - 20, (w - 90) * [0.9, 0.7, 0.8][i], 34, 17);
+        c.fillStyle = BG2;
+        c.fill();
+        return;
+      }
+      font(c, 48, 550);
+      c.fillStyle = INK;
+      wrap(c, t, x0 + 90, y + 14, w - 90, 56);
+    });
+  }
 }
 
 
@@ -684,7 +894,16 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
   }
   c.fillStyle = "#FFFFFF";
   c.fillRect(0, 0, FACE_W, FACE_H);
-  final(c);
+  switch (spec.kind) {
+    case "decision":
+      decision(c, spec.qty, spec.mode);
+      break;
+    case "layer":
+      layer(c, spec.k, spec.fan);
+      break;
+    default:
+      final(c);
+  }
   // Hairline frame
   c.strokeStyle = LINE;
   c.lineWidth = 4;
@@ -693,6 +912,10 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
 
 export function faceKey(s: FaceSpec) {
   switch (s.kind) {
+    case "decision":
+      return `decision-${s.qty ?? STORY.first.qty}-${s.mode ?? "idle"}`;
+    case "layer":
+      return `layer-${s.k}${s.fan ? "-fan" : ""}`;
     case "final":
       return "final";
     case "glass":

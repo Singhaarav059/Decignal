@@ -46,18 +46,20 @@ type ChromeState = {
   dock: boolean;
 };
 
+// In page order (the detector names the last start the reader has passed), with the revision 3 names
+// (handoff §5 shared navigation). The phone dock carries three beside "Talk to us", which is what fits.
 export const HOME_SECTIONS: ChromeSection[] = [
-  { id: "who-we-help", label: "Who we help", short: "Who" },
+  { id: "applications", label: "Applications", short: "Apps" },
   { id: "problem", label: "The problem", dock: false },
-  { id: "platform", label: "Approach" },
-  { id: "applications", label: "Workflows" },
-  { id: "example", label: "Illustrative review", short: "Example", dock: false },
-  { id: "systems", label: "Your records", dock: false },
+  { id: "platform", label: "How we build", dock: false },
+  { id: "who-we-help", label: "Industries" },
+  { id: "example", label: "Illustrative examples", short: "Examples", dock: false },
+  { id: "systems", label: "Your systems", dock: false },
   { id: "how", label: "How we work", short: "How" },
   { id: "outcomes", label: "What we measure", dock: false },
   { id: "about", label: "About", dock: false },
-  { id: "faq", label: "Questions", short: "FAQ" },
-  { id: "audit", label: "Talk to Decignal", short: "Talk" },
+  { id: "faq", label: "Questions", short: "FAQ", dock: false },
+  { id: "audit", label: "Talk to Decignal", short: "Talk to us" },
 ];
 
 const INITIAL: ChromeState = {

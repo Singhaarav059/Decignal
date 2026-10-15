@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 import { AREA_SLUGS, appsOf, areaBySlug, areaEyebrow } from "@/lib/areas";
 import { BRAND, LOGO_ICON_VIEWBOX, LOGO_PLATES, SITE_NAME } from "@/lib/site";
 
-export const alt = `${SITE_NAME}: one business area, its headline and its applications`;
+export const alt = `${SITE_NAME}: a business function, its headline and its three application examples`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamicParams = false;

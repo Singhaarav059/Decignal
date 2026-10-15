@@ -37,7 +37,7 @@ export function ServiceHero({ area }: { area: Area }) {
           <p className="t-lede svc-hero-lede">{area.valueProp}</p>
           <div className="svc-actions">
             <SectionLink href={CTA.href} className="btn btn-primary" data-cta="svc-hero">
-              {CTA.primary}
+              {CTA.workflow}
               <Arrow />
             </SectionLink>
             <SectionLink href={SERVICE.secondaryHref} className="btn btn-ghost" data-cta="svc-hero-apps">

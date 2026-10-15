@@ -983,3 +983,89 @@ export function BearingBed({ filled = 7 }: { filled?: number }) {
   );
 }
 
+
+/* ---------------- The signal tote's contactors ---------------- */
+
+/** Ten cells in a 5 x 2 grid, one per ten contactors on the PO line: the first `filled` hold a
+ *  contactor, the rest are empty cut-outs (the 40 that now come on Wednesday). */
+const CT_X = [-0.22, -0.11, 0, 0.11, 0.22];
+const CT_Z = [-0.085, 0.085];
+const CT_SLOTS = CT_Z.flatMap((z) => CT_X.map((x) => [x, z] as const));
+/** A 3-pole contactor, about 60 x 90 mm and 85 mm tall, sunk 40 mm into the foam. */
+const CT = { w: 0.06, d: 0.09, h: 0.085, sink: 0.04 };
+
+function contactorBed(filled: number) {
+  return {
+    foam: geo("bed-foam", () =>
+      merge([
+        rbox(CRATE.w - 0.036, 0.03, CRATE.d - 0.036, 0.008, 0, -0.016, 0),
+        box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, CRATE.d / 2 - 0.024),
+        box(CRATE.w - 0.04, 0.008, 0.012, 0, 0.002, -CRATE.d / 2 + 0.024),
+        box(0.012, 0.008, CRATE.d - 0.04, CRATE.w / 2 - 0.024, 0.002, 0),
+        box(0.012, 0.008, CRATE.d - 0.04, -CRATE.w / 2 + 0.024, 0.002, 0),
+      ]),
+    ),
+    pockets: geo(`ct-pockets-${filled}`, () =>
+      filled < CT_SLOTS.length
+        ? merge(CT_SLOTS.slice(filled).map(([x, z]) => new THREE.PlaneGeometry(CT.w + 0.006, CT.d + 0.006).rotateX(-Math.PI / 2).translate(x, 0.0005, z)))
+        : new THREE.BufferGeometry(),
+    ),
+    // Moulded housing: the base block and the raised front module with its coil window.
+    body: geo(`ct-body-${filled}`, () => {
+      const top = CT.h - CT.sink;
+      return filled
+        ? merge(
+            CT_SLOTS.slice(0, filled).flatMap(([x, z]) => [
+              rbox(CT.w, CT.h - 0.018, CT.d, 0.005, x, -CT.sink + (CT.h - 0.018) / 2, z, 2),
+              rbox(CT.w - 0.008, 0.02, CT.d * 0.46, 0.004, x, top - 0.01, z, 2),
+            ]),
+          )
+        : new THREE.BufferGeometry();
+    }),
+    // The dark parts: the terminal shrouds front and back and the window in the module.
+    dark: geo(`ct-dark-${filled}`, () => {
+      const top = CT.h - CT.sink - 0.018;
+      return filled
+        ? merge(
+            CT_SLOTS.slice(0, filled).flatMap(([x, z]) => [
+              box(CT.w - 0.006, 0.006, 0.016, x, top + 0.003, z - CT.d / 2 + 0.012),
+              box(CT.w - 0.006, 0.006, 0.016, x, top + 0.003, z + CT.d / 2 - 0.012),
+              box(0.026, 0.002, 0.018, x, top + 0.0188, z),
+            ]),
+          )
+        : new THREE.BufferGeometry();
+    }),
+    // Three terminal screws on each side.
+    screws: geo(`ct-screws-${filled}`, () => {
+      const top = CT.h - CT.sink - 0.018 + 0.006;
+      return filled
+        ? merge(CT_SLOTS.slice(0, filled).flatMap(([x, z]) => [-1, 1].flatMap((s) => [-0.018, 0, 0.018].map((dx) => cylY(0.0055, 0.003, x + dx, top + 0.0015, z + s * (CT.d / 2 - 0.012), 12)))))
+        : new THREE.BufferGeometry();
+    }),
+  };
+}
+
+let ctMats: { foam: THREE.Material; pocket: THREE.Material; body: THREE.Material; dark: THREE.Material } | null = null;
+const contactorMats = () =>
+  (ctMats ??= {
+    foam: new THREE.MeshStandardMaterial({ color: "#181A1E", roughness: 0.88, metalness: 0.06 }),
+    pocket: new THREE.MeshStandardMaterial({ color: "#0C0D10", roughness: 0.95, metalness: 0 }),
+    body: plastic("#E6E9ED", 0.45),
+    dark: new THREE.MeshStandardMaterial({ color: "#2A2E35", roughness: 0.6, metalness: 0 }),
+  });
+
+/** Contents of the signal tote: CT-40A contactors in an anti-static foam insert. `filled` of its ten
+ *  cells hold one (each cell stands for ten on the PO line); the empty ones show what is now late. */
+export function ContactorBed({ filled = 6 }: { filled?: number }) {
+  const g = contactorBed(Math.max(0, Math.min(CT_SLOTS.length, Math.round(filled))));
+  const m = contactorMats();
+  return (
+    <group position-y={CRATE.h / 2 - 0.028}>
+      <mesh geometry={g.foam} material={m.foam} receiveShadow />
+      <mesh geometry={g.pockets} material={m.pocket} />
+      <mesh geometry={g.body} material={m.body} castShadow receiveShadow />
+      <mesh geometry={g.dark} material={m.dark} />
+      <mesh geometry={g.screws} material={chrome()} />
+    </group>
+  );
+}

@@ -1,6 +1,6 @@
 "use client";
 
-// Cards: the five functions dealt into Scale's hand, read under the pointer, and the ending's board.
+// Cards: the follow-up, its layers and functions, read under the pointer, and the ending's audit board.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { toCreasedNormals } from "three-stdlib";
@@ -10,14 +10,18 @@ import { CH, HOVER_REST, blendAt, localIn, scaleDeal, scaleF, store, weight } fr
 import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, ISO_DIR, bgAt, cardPose, handAxis, handPose, handRoll, handShift, setDeckEdge } from "@/lib/scene";
 import { WHITE, clay, useDisposeOnUnmount } from "../kit";
 import { aluminium } from "../materials";
-import { FACE_H, FACE_W, FUNCTION_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type FaceSpec } from "../faces";
+import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type DecisionMode, type FaceSpec } from "../faces";
 import { reducedMotion, useActor } from "./core";
 import { goToFunction } from "@/components/story/ScaleApps";
 import { phoneWide, portraitWide } from "@/lib/device";
 
 /* ------------------------------------------------------------------ */
-/* Cards: the functions and the ending's board                        */
+/* Cards: the decision, its layers, functions and the ending's audit   */
 /* ------------------------------------------------------------------ */
+
+// The decision card stands out of Industries (each place's callout is page text), so it takes the
+// ending's face there, out of sight, before it rises at the hub on portrait screens.
+const finalAt = (g: number) => g >= CH.industries + 0.5;
 
 /* Faces are drawn at about their size on screen in device pixels. A texture much larger than the
    face's footprint is shrunk through its mipmaps, which softens text; one much smaller is stretched.
@@ -205,8 +209,10 @@ const REST_LAYER = 31;
 const onRestLayer = (m: THREE.Mesh | null) => m?.layers.set(REST_LAYER);
 /** How long the pointer must hold on another card before it takes the focus from the one being read. */
 const SWITCH_DWELL = 0.07;
-const readable = () => weight(CH.scale, store.g) > 0.9;
-const toneOf = (k: number) => FUNCTION_TONE[k];
+/** The reader's choice on the page's approval panel (DecisionControls writes it), if any. */
+const decisionNow = (): { mode: DecisionMode; qty: number } | undefined => store.decision;
+const readable = () => Math.max(weight(CH.control, store.g), weight(CH.scale, store.g)) > 0.9;
+const toneOf = (k: number) => (store.g < CH.scale - 0.5 ? LAYER_TONE[k] : FUNCTION_TONE[k]);
 
 /** Finds the card under the pointer once per frame. In Scale a click on a card scrolls to its function. */
 function CardFocus() {
@@ -238,7 +244,7 @@ function CardFocus() {
     // still pointer stay put, instead of opening when the scroll pauses and closing when it resumes
     // (it read as shaking).
     const moved = store.pointerAt > store.scrollFrom;
-    // Pointing at the page's own controls (a Scale column) reads the card they
+    // Pointing at the page's own controls (the approval panel, a Scale column) reads the card they
     // name. Those controls sit over the canvas, so the cards behind them are not under the pointer:
     // skip the ray, or a card peeking out behind a column steals focus back and forth every frame.
     const hint = readable() && store.focusHint >= 0 ? store.focusHint : -1;
@@ -283,6 +289,9 @@ function CardFocus() {
   });
   return null;
 }
+
+/** The approval lift lasts 300 ms. */
+const PULSE = 0.3;
 
 /* The ending's audit board stands on the ground on a stand of its own: two
    aluminium legs under the board's lower edge, each on a foot rail, and at the end a rear strut. It
@@ -435,6 +444,8 @@ function Card({ k }: { k: number }) {
   // In the hand the card takes its function's colour edge to edge, so its own body takes it too.
   const body = useMemo(() => clay(WHITE, 0.35).clone(), []);
   useDisposeOnUnmount(body, (m) => m.dispose());
+  // Confirming on the page gives the follow-up card one short lift and settle (no glow).
+  const pulse = useRef({ mode: decisionNow()?.mode ?? "idle", t: 1 });
   const stand = useRef<((camera: THREE.Camera) => void) | null>(null);
   const rim = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), []);
   const rimRef = useRef<THREE.Mesh>(null);
@@ -461,7 +472,9 @@ function Card({ k }: { k: number }) {
       axY.set(0, 1, 0).applyQuaternion(g.quaternion);
       s = axY.dot(toCam.subVectors(camera.position, g.position)) >= 0 ? 1 : -1;
     }
-    const next = baseFaces(k);
+    let next = baseFaces(k);
+    // Its back (the function face) is turned away at the hub, so only the face it shows changes.
+    if (k === DECISION_CARD && finalAt(store.g)) next = { ...next, top: { kind: "final" }, topRotated: true };
     if (
       faceKey(next.top) !== faceKey(faces.top) ||
       faceKey(next.bottom) !== faceKey(faces.bottom) ||
@@ -489,6 +502,14 @@ function Card({ k }: { k: number }) {
     const f = store.focus;
     const a = anim.current;
     const d = Math.min(dt, 1 / 30);
+    const pl = pulse.current;
+    const mode = decisionNow()?.mode ?? "idle";
+    if (mode !== pl.mode) {
+      if (mode === "confirmed" && k === DECISION_CARD) pl.t = 0;
+      pl.mode = mode;
+    }
+    pl.t += d;
+    const bump = pl.t < PULSE ? Math.sin((Math.PI * pl.t) / PULSE) * 0.6 : 0;
     a.me = THREE.MathUtils.damp(a.me, f === k ? 1 : 0, 9, d);
     a.other = THREE.MathUtils.damp(a.other, f >= 0 && f !== k ? 1 : 0, 7, d);
     if (f >= 0 && f !== k) a.side = Math.sign(k - f);
@@ -502,8 +523,8 @@ function Card({ k }: { k: number }) {
     // screen edge. Cards to the left only shift a little: the copy column sits on that side.
     const aside = a.side > 0 ? 0.4 : 0.26;
     const fx = a.side * a.other * aside + (2 - k) * 0.3 * a.me;
-    const fy = s * (a.me * 1.05 - a.other * 0.1);
-    const fs = 1 + a.me * 0.2 - a.other * 0.03;
+    const fy = s * (Math.max(a.me, bump) * 1.05 - a.other * 0.1);
+    const fs = 1 + Math.max(a.me, bump * 0.5) * 0.2 - a.other * 0.03;
     // Scale's hand: the cards are square to the viewer and nothing may pass through a neighbour, so a
     // card stays in its own plane. The one being read grows a little, and the cards dealt after it
     // (lying over it) step right until it shows whole (handShift).
@@ -743,13 +764,15 @@ function GlassCard() {
 }
 
 type FaceState = { top: FaceSpec; topRotated?: boolean; bottom: FaceSpec; bottomRotated: boolean };
-// The top face only shows on the ending's board; the back is the function dealt into Scale's hand.
-const baseFaces = (k: number): FaceState => ({
-  top: { kind: "final" },
-  topRotated: true,
-  bottom: { kind: "function", k },
-  bottomRotated: false,
-});
+const baseFaces = (k: number): FaceState => {
+  const d = decisionNow();
+  return {
+    // The layers are read fanned out (Control); the decision shows what the page's panel decided.
+    top: k === DECISION_CARD ? { kind: "decision", qty: d?.qty, mode: d?.mode } : { kind: "layer", k, fan: true },
+    bottom: { kind: "function", k },
+    bottomRotated: false,
+  };
+};
 
 function useFacesState(k: number) {
   return useState<FaceState>(() => baseFaces(k));

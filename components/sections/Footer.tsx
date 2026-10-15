@@ -8,10 +8,9 @@ import { APPLICATIONS, CATEGORIES } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
 import { CTA, FOOTER } from "@/lib/copy";
 import { CONTACT_EMAIL } from "@/lib/site";
-import { PLACEHOLDER } from "@/lib/placeholders";
 
-/** The monitored inbox: the configured one, else the placeholder until it is supplied. */
-const EMAIL = CONTACT_EMAIL ?? PLACEHOLDER.email;
+/** The monitored inbox; the address is left out until a real one is supplied (never a .example stand-in). */
+const EMAIL = CONTACT_EMAIL;
 import { jumpTo } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
 import { LogoMark } from "../ui/Logo";
@@ -147,7 +146,13 @@ export function Footer() {
 
       <div className="page-wrap footer-legal">
         <span>
-          {FOOTER.positioning} {FOOTER.identity} · <a href={`mailto:${EMAIL}`}>{FOOTER.contact(EMAIL)}</a>
+          {FOOTER.positioning} {FOOTER.identity}
+          {EMAIL && (
+            <>
+              {" "}
+              · <a href={`mailto:${EMAIL}`}>{FOOTER.contact(EMAIL)}</a>
+            </>
+          )}
         </span>
         <ul className="footer-legal-links">
           <li>{FOOTER.copyright}</li>

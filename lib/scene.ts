@@ -2,6 +2,7 @@
 // from return null, and the actor scales in or out of the scene during the transition.
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
+import { STORY } from "./example";
 import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, scaleDeal, SCALE_DEAL } from "./story";
 
 export type Vec3 = [number, number, number];
@@ -30,7 +31,7 @@ export const ISLAND_TOP = 0.036; // models stand on this height (kit PAD_TOP)
 export const CRATE = { w: 0.6, h: 0.3, d: 0.42 };
 export const CARD = { w: 1.6, t: 0.05, h: 1.0 }; // face is w x h, t thick
 
-/* ---------------- The hero: six kinds of record, six islands ---------------- */
+/* ---------------- 01 Systems: six systems, six islands ---------------- */
 
 /** The hub the six systems feed: the middle of the hero layout, where SystemNetwork's threads meet. */
 export const HUB: [number, number] = [0, -1.2];
@@ -62,6 +63,17 @@ const aboutHub = (l: [number, number, number][]) =>
   l.map(([x, z, ry]) => [...isoXZ(x - HUB[0], z - HUB[1], HUB[0], HUB[1]), ry] as [number, number, number]);
 const ISLANDS = aboutHub(HERO_LAYOUT);
 const PORTRAIT_ISLANDS = aboutHub(PORTRAIT_LAYOUT);
+export const WMS = 3;
+
+/** Context ring around the signal, square to the viewer. Returns world x, z and the ring angle. */
+export const RING = (s: number) => {
+  const a = (s / 6) * Math.PI * 2 + Math.PI / 6;
+  const [x, z] = isoXZ(Math.sin(a) * 3.1, Math.cos(a) * 2.35);
+  return [x, z, a] as const;
+};
+/** Centre height of the signal tote in Context: on the ground at the ring's centre. */
+export const CONTEXT_CRATE_S = 1.7;
+const HUB_Y = (CRATE.h * CONTEXT_CRATE_S) / 2;
 
 export function islandPose(s: number, c: number, portrait = false): Pose | null {
   const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[s];
@@ -73,12 +85,78 @@ export function islandPose(s: number, c: number, portrait = false): Pose | null 
       return { p: [x, 0, z], ry, s: 1.1 };
     case CH.fragments:
       return { p: [x, 0, z], ry, s: 1.1 };
+    case CH.context: {
+      const [rx, rz] = RING(s);
+      return { p: [rx, 0, rz], ry: Math.atan2(-rx, -rz) * 0.25, s: 0.88 };
+    }
+    case CH.decision:
+      // The records fold into the tote they explain; the tote then leaves for your warehouse.
+      return { p: [0, HUB_Y, 0], s: 0 };
     default:
       return null;
   }
 }
 
-/* ---------------- The yard the application scenes stand on (actors/yard.tsx) ---------------- */
+/* ---------------- The signal tote: the contactors on PO-8842 line 3 ---------------- */
+
+// Where it sits on the warehouse island, relative to the island centre: stacked on the warehouse's own tote.
+// Totes on the island are shown at half size, in proportion to the warehouse beside them.
+export const ISLAND_TOTE = 0.5;
+const CRATE_ON_ISLAND: Vec3 = [0.48, ISLAND_TOP + CRATE.h * ISLAND_TOTE * 1.5, 0.42];
+/** Signal: the tote stands on the ground in front of the hub, where the six systems fold into it. */
+const SIGNAL_AT: [number, number] = [0.1, 0.55];
+const SIGNAL_S = 1.5;
+
+/* ---------------- 03 Problem: crates become the week's contactor chart ---------------- */
+
+/**
+ * The week from the promised Friday to the Thursday after, one column per day (STORY). Each column is
+ * the contactors the three customer orders need by that day, in crates of CRATE_UNITS; a crate the
+ * supplier's revised delivery (60 Friday, 40 Wednesday) does not cover by then is the signal red.
+ * Monday and Tuesday are short by SO-3318's 20; Wednesday's 40 closes the gap.
+ */
+export const DAY_NAMES = ["Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"] as const;
+const dayOf = (name: string) => DAY_NAMES.indexOf(name as (typeof DAY_NAMES)[number]);
+/** Contactors one crate stands for. */
+export const CRATE_UNITS = 20;
+/** Needed by the orders by day d (cumulative), from their verified allocations. */
+export const NEED = DAY_NAMES.map((_, d) => STORY.orders.reduce((n, o) => n + (dayOf(o.due) <= d ? o.qty : 0), 0));
+/** Arrived by day d (cumulative) on the supplier's revised commitment. */
+export const ARRIVED = DAY_NAMES.map((_, d) => (d >= dayOf(STORY.first.day) ? STORY.first.qty : 0) + (d >= dayOf(STORY.rest.day) ? STORY.rest.qty : 0));
+/** The original promise: all 100 on Friday. */
+export const PROMISED_UNITS = STORY.qty;
+export const DAYS = NEED.map((n) => Math.ceil(n / CRATE_UNITS));
+export const STEP_Y = CRATE.h + 0.035;
+export const DAY_X = (d: number) => (d - 3) * 1.0;
+/** Heights of the original promise (100) and the revised Friday delivery (60) on the chart. */
+export const PROMISED_Y = (PROMISED_UNITS / CRATE_UNITS) * STEP_Y;
+export const unitsY = (u: number) => (u / CRATE_UNITS) * STEP_Y;
+export const dayUnits = (d: number) => NEED[d];
+export const crateFill = (d: number, level: number) => Math.min(1, Math.max(0, NEED[d] / CRATE_UNITS - level));
+/** A crate the revised delivery has not covered by its day. */
+export const crateShort = (d: number, level: number) => level * CRATE_UNITS >= ARRIVED[d];
+/** The day the gap opens: SO-3318's Monday. Its uncovered crate is the signal tote. */
+export const GAP_DAY = dayOf(STORY.orders.find((o) => o.id === STORY.short.order)!.due);
+export const CHART_CRATES = DAYS.reduce((s, n) => s + n, 0) - 1; // the last slot is the signal
+
+/** Every crate's day and level, column by column; the gap day's top crate is moved last (the signal). */
+const SLOTS = (() => {
+  const all: { d: number; l: number }[] = [];
+  DAYS.forEach((n, d) => {
+    for (let l = 0; l < n; l++) all.push({ d, l });
+  });
+  const k = all.findIndex((x) => x.d === GAP_DAY && x.l === DAYS[GAP_DAY] - 1);
+  all.push(...all.splice(k, 1));
+  return all;
+})();
+/** Chart slot k (0..CHART_CRATES): day column and level. The final slot is the signal. */
+export const chartSlot = (k: number): { d: number; l: number } => SLOTS[Math.min(k, SLOTS.length - 1)];
+export const chartPos = (k: number): Vec3 => {
+  const { d, l } = chartSlot(k);
+  return [DAY_X(d), CRATE.h * crateFill(d, l) / 2 + l * STEP_Y, 0];
+};
+
+/* ---------------- 05 Decision: two plants, one truck, one forklift ---------------- */
 
 /** Vehicles and buildings are modelled in metres; this is their scale in the scene. */
 export const M = 0.135;
@@ -88,19 +166,50 @@ export const PLANT_01: Vec3 = [2.55, 0, -1.6];
 export const PLANT_FRONT = PLANT_02[2] + 5 * M;
 /** The road runs along x in front of the plants; the truck drives on its centre line. */
 export const ROAD_Z = 0.35;
-export const TRUCK_X0 = -2.75; // parked at Plant 02, trailer alongside the yard
-export const TRUCK_X1 = 2.3; // pulled up at Plant 01
-/** Truck x as the yard scene plays (local t), plus how far it has driven on along the road on exit. */
+/** Long enough to run off both sides of the frame in every Decision shot. */
+export const ROAD_LENGTH = 30;
+export const TRUCK_X0 = -2.75; // parked at the supplier (PLANT_02), trailer alongside the yard
+export const TRUCK_X1 = 2.3; // pulled up at your warehouse (PLANT_01)
+/** How far the Decision shot follows the truck either way (0.15 of its drive, about its midpoint). */
+const FOLLOW = 0.15 * ((TRUCK_X1 - TRUCK_X0) / 2);
+
+export function transferredUnits(t: number) {
+  const trips = clamp01((t - BEATS.load[0]) / (BEATS.load[1] - BEATS.load[0])) * 3;
+  return Math.min(3, Math.floor(trips) + (trips % 1 >= 0.6 ? 1 : 0)) * (STORY.first.qty / 3);
+}
+
+/** Truck x as the decision chapter plays, plus how far it has driven on along the road during the exit. */
 export const truckX = (t: number, exit = 0) =>
   TRUCK_X0 + smootherstep(BEATS.drive[0], BEATS.drive[1], t) * (TRUCK_X1 - TRUCK_X0) + exit * exit * 9;
-/** Totes on the hero's warehouse island are shown at half size, in proportion to the warehouse. */
-export const ISLAND_TOTE = 0.5;
 
-/** Where the hero's six islands fold to as the story turns to the functions: the foot of Scale's hand,
- *  so the records visibly become the applications built on them. */
-export const HAND_FOOT: Vec3 = [0, 0.5, 0.2];
+export function signalCratePose(c: number, t: number, portrait = false): Pose | null {
+  if (c === CH.final && portrait) return null; // it stands on the warehouse island, absent there
+  switch (c) {
+    case CH.fragments:
+    case CH.final: {
+      const [x, z, ry] = (portrait ? PORTRAIT_ISLANDS : ISLANDS)[WMS];
+      const [ox, oy, oz] = CRATE_ON_ISLAND;
+      const cs = Math.cos(ry);
+      const sn = Math.sin(ry);
+      const k = 1.1; // island scale
+      return { p: [x + (ox * cs + oz * sn) * k, oy * k, z + (-ox * sn + oz * cs) * k], ry, s: k * ISLAND_TOTE };
+    }
+    case CH.signal:
+      // On its pad on the ground (Marks SignalPing), turning slowly as the reader looks at it.
+      return { p: [SIGNAL_AT[0], ISLAND_TOP + (CRATE.h * SIGNAL_S) / 2, SIGNAL_AT[1]], ry: -0.55 + t * 0.4, s: SIGNAL_S };
+    case CH.problem:
+      return { p: chartPos(CHART_CRATES), s: 1 };
+    case CH.context:
+      return { p: [0, HUB_Y, 0], ry: 0.4 + t * 0.6, s: CONTEXT_CRATE_S };
+    case CH.decision:
+      // The gap is at your warehouse (PLANT_01): the tote folds into it as the yard builds up.
+      return { p: [PLANT_01[0], 0.25, PLANT_01[2] + 0.9], s: 0 };
+    default:
+      return null;
+  }
+}
 
-/* ---------------- Cards: the functions and the ending's board ---------------- */
+/* ---------------- Cards: the decision, its layers, functions and industries ---------------- */
 
 export const CARDS = 5; // signal, evidence, context, policy, decision
 export const DECISION_CARD = 4;
@@ -110,6 +219,10 @@ const FLIP = -Math.PI / 2; // stood up, back face to camera
 const LEAN = 0.2;
 /** Centre height of a card of scale s standing on its bottom edge, leaned back by `lean`. */
 const standY = (s: number, lean: number) => (CARD.h / 2) * s * Math.cos(lean) + 0.03;
+/** Control's fan of layers stands beside your warehouse (PLANT_01), where the 60 arrived. */
+const FAN: [number, number] = [2.8, -0.45];
+/** Size of the fanned layers: large enough that a layer's caption reads at 1440. */
+const FAN_S = 1.65;
 /** The audit board's size on portrait screens, where it is framed on its own: the Industries board's. */
 const FINAL_SP = 1.6;
 /** Scale's hand of functions stands about this point; its last function card becomes the Industries board. */
@@ -192,10 +305,16 @@ export function handRoll(i: number, t: number, portrait: boolean, peek = 0) {
 }
 
 export function cardPose(k: number, c: number, t: number, portrait = false, phone = false, peek = 0): Pose | null {
-  // Phones read the functions as a flat deck at full width (components/story/ScalePhone.tsx); in 3D
-  // they could only be shown a third of that size, so the cards step out for that chapter.
-  if (phone && c === CH.scale) return null;
+  // Phones read the layers and functions as a flat deck at full width (components/story/PhoneDeck.tsx);
+  // in 3D they could only be shown a third of that size, so the cards step out for those two chapters.
+  if (phone && (c === CH.control || c === CH.scale)) return null;
   switch (c) {
+    case CH.control: {
+      // The decision opens into the layers it was built from: a fan, square to the viewer.
+      const s = FAN_S;
+      const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
+      return { p: [x, standY(s, LEAN), z], rx: UP - LEAN, ry: -0.4 - t * 0.04 + ISO.az, s };
+    }
     case CH.scale:
       // Flip: the back of each card is a different business function, dealt into a hand one per step.
       return handPose(k, t, portrait, peek);
@@ -213,7 +332,7 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
   }
 }
 
-/* ---------------- Industries: one service road past four places ---------------- */
+/* ---------------- 08 Industries: one service road past four places ---------------- */
 
 import { industrySettle } from "./story";
 
@@ -337,6 +456,50 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
     case CH.fragments:
       islandPillars(o, portrait, 1.42, 1.75);
       o.dist = 20 * drift;
+      break;
+    case CH.signal:
+      // The tote and the ring of working days drawn round it on the ground.
+      pillar(o, SIGNAL_AT[0], SIGNAL_AT[1], 0.62, 0, CRATE.h * SIGNAL_S + 0.35);
+      // The day ring (SignalPing: radius 1.035 at the crate's scale over 1.2) stays whole in frame.
+      pillar(o, SIGNAL_AT[0], SIGNAL_AT[1], 1.06 * (SIGNAL_S / 1.2), 0, 0.02);
+      o.dist = 6.2 * drift;
+      break;
+    case CH.problem:
+      for (let d = 0; d < DAYS.length; d++) pillar(o, DAY_X(d), 0.05, 0.42, -0.25, DAYS[d] * STEP_Y + 0.3);
+      // The promise and the revised Friday delivery are labelled left of the chart (narrow screens
+      // carry them in a legend under the axis instead); Wednesday's step is labelled inside it.
+      if (!portrait) pillar(o, DAY_X(0) - 1.25, 0, 0.2, unitsY(STORY.first.qty) - 0.1, PROMISED_Y + 0.1);
+      o.dist = 17 * drift;
+      break;
+    case CH.context: {
+      for (let s = 0; s < 6; s++) {
+        const [x, z] = RING(s);
+        pillar(o, x, z, 0.86, 0, 1.6);
+      }
+      pillar(o, 0, 0, 0.6, 0, CRATE.h * CONTEXT_CRATE_S);
+      o.dist = 20 * drift;
+      break;
+    }
+    case CH.decision:
+      // Both plants, the yard and the road between them; the road itself runs off both sides. The
+      // follow below slides the yard up to FOLLOW either way as the truck crosses: room for it all round.
+      pillar(o, PLANT_02[0], PLANT_02[2] + 0.2, 1.5 + FOLLOW, 0, 1.25);
+      pillar(o, PLANT_01[0], PLANT_01[2] + 0.2, 1.5 + FOLLOW, 0, 1.25);
+      pillar(o, PLANT_02[0] - 0.4, ROAD_Z, 0.5 + FOLLOW, 0, 0.55);
+      pillar(o, PLANT_01[0] + 0.4, ROAD_Z, 0.5 + FOLLOW, 0, 0.55);
+      o.dist = 16 * drift;
+      // A gentle follow as the truck crosses the yard: no whip pan.
+      o.pan[0] = 0.15 * (truckX(t) - (TRUCK_X0 + TRUCK_X1) / 2);
+      break;
+    case CH.control:
+      for (let k = 0; k < CARDS; k++) {
+        // Each layer is turned 0.4 from square: about 0.92 of its half width either side on screen.
+        // The outer layers also budget the step aside a read neighbour gives them (cards.tsx).
+        const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
+        const edge = k === 0 || k === CARDS - 1 ? 0.3 : 0;
+        pillar(o, x, z, (CARD.w / 2) * FAN_S * 0.92 + edge, 0, CARD.h * FAN_S + 0.1);
+      }
+      o.dist = 13.3 * drift;
       break;
     case CH.scale: {
       // Framed on the whole hand as dealt, so the camera holds still while cards land in it: the

@@ -5,6 +5,7 @@ import { AREAS, appHref } from "@/lib/areas";
 import { APPLICATIONS, CATEGORY_TONE, INDUSTRY_KEYS, type IndustryKey } from "@/lib/content";
 import { CTA, SOLUTIONS_INDEX } from "@/lib/copy";
 import { toneVars } from "@/lib/tone";
+import { jumpTo } from "@/lib/jump";
 import SegmentedControl from "../ui/SegmentedControl";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
@@ -27,13 +28,38 @@ export function AppDirectory() {
   const [ind, setInd] = useState<Ind>(ALL);
 
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search);
-    const f = q.get("function");
-    const i = q.get("industry");
-    // Read once after hydration: the server's render shows everything, so links and crawlers see all.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isFn(f)) setFn(f);
-    if (isInd(i)) setInd(i);
+    // The address sets the filters: after hydration (the server's render shows everything, so links and
+    // crawlers see all), on back and forward, and when a link on this page (the industry cards) changes
+    // only the query. A soft navigation would keep this component mounted and leave the filters stale.
+    // A value that is missing or unknown falls back to all.
+    const read = () => {
+      const q = new URLSearchParams(window.location.search);
+      const f = q.get("function");
+      const i = q.get("industry");
+      setFn(isFn(f) ? f : ALL);
+      setInd(isInd(i) ? i : ALL);
+    };
+    read();
+    // A client navigation from another page may commit the new address after this effect runs.
+    const raf = requestAnimationFrame(read);
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || (a.target && a.target !== "_self")) return;
+      const url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname !== window.location.pathname || !url.search || url.hash) return;
+      e.preventDefault();
+      history.pushState(history.state, "", `${url.pathname}${url.search}`);
+      read();
+      void jumpTo("#applications", { focus: false });
+    };
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("popstate", read);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("popstate", read);
+    };
   }, []);
 
   const pick = (nextFn: Fn, nextInd: Ind) => {

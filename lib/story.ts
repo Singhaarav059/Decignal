@@ -2,6 +2,8 @@
 // g = chapterIndex + localProgress. Each chapter holds its state, then transitions
 // into the next one after `ts` (transition start) of its length.
 
+import { STORY } from "./example";
+
 type Chapter = {
   id: string;
   label: string;
@@ -9,21 +11,28 @@ type Chapter = {
   ts: number; // fraction of the chapter where the transition to the next one begins
 };
 
-// Story length budget (viewport heights): 7.3 in all (handoff revision 3: the offer comes sooner). The
-// hero hands over straight to the five functions; Scale holds one function per step, then one more for
-// the glass layer card that lands on the fan; the final chapter is short and ends in an exit (S69-07).
+// Story length budget (viewport heights): 16 in all. Chapters 02 to 06 follow one illustrative example
+// (STORY in lib/example.ts: a supplier changes a delivery promise); Scale holds one function per step,
+// then one more for the glass layer card that lands on the fan; Industries holds its four places; the
+// final chapter is short and ends in an exit (S69-07).
 export const CHAPTERS: Chapter[] = [
   // The hero hands off almost at once (ts 0.12): a long hold read as the page sticking, then the camera
   // and the folding islands rushed through half the distance (a flash). Now the move starts with the
   // first scroll and spreads over nearly the whole chapter.
-  { id: "fragments", label: "Overview", len: 1.3, ts: 0.12 },
+  { id: "fragments", label: "Systems", len: 1.3, ts: 0.12 },
+  { id: "signal", label: "Signal", len: 1.3, ts: 0.5 },
+  { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
+  { id: "context", label: "Context", len: 1.5, ts: 0.55 },
+  { id: "decision", label: "Follow-up", len: 2.7, ts: 0.9 },
+  { id: "control", label: "Control", len: 1.7, ts: 0.62 },
   { id: "scale", label: "Functions", len: 2.6, ts: 0.75 },
   { id: "industries", label: "Industries", len: 2.4, ts: 0.85 },
   { id: "final", label: "Start", len: 1, ts: 1 },
 ];
 
+export type ChapterId = "fragments" | "signal" | "problem" | "context" | "decision" | "control" | "scale" | "industries" | "final";
 /** Chapter index by id. */
-export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<"fragments" | "scale" | "industries" | "final", number>;
+export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<ChapterId, number>;
 export const TOTAL_LEN = CHAPTERS.reduce((s, c) => s + c.len, 0);
 
 /** How long the scroll must rest before hover effects wake (ms). */
@@ -48,6 +57,8 @@ export const store = {
   focus: -1,
   /** A card the page asks to bring forward (the approval panel points at the decision card). */
   focusHint: -1,
+  /** The page points at the signal (hovering its readout: the supplier's message), so it lifts. */
+  signalHint: false,
   /** performance.now() of the last frame the pointer read a card in 3D (pauses the tabs' autoplay). */
   hoverAt: -1e9,
   /** The system island opened for a closer look (click), or -1. */
@@ -64,11 +75,17 @@ export const store = {
   cardRect: null as CardRect | null,
   /** The story canvas has drawn its first frames (shaders compiled). */
   sceneReady: false,
+  /** The reader's choice in the Control panel (written by DecisionControls), drawn on the 3D follow-up card.
+   *  qty: units the buyer asks for on Friday (STORY.first.qty by default; the rest come on Wednesday). */
+  decision: { mode: "idle", qty: STORY.first.qty } as StoryDecision,
   selectListeners: new Set<(i: number) => void>(),
   listeners: new Set<(g: number) => void>(),
 };
 
 type CardRect = { x: number; y: number; w: number; h: number };
+/** idle: nothing chosen yet; confirmed: the buyer confirms (or asks for) a schedule; declined: the buyer
+ *  goes back to the supplier. An illustrative choice: nothing posts anywhere. */
+export type StoryDecision = { mode: "idle" | "confirmed" | "declined"; qty: number };
 
 /** StoryCard reports its viewport rect (ResizeObserver plus resize); null when it is gone. */
 export function setCardRect(r: CardRect | null) {
@@ -177,6 +194,11 @@ export const BEATS = {
   unload: [0.63, 0.88] as const,
 };
 
+/** Context steps through the records one source at a time, in the card's order: Messages (the supplier's
+ *  message), ERP (the PO line and its allocations), Sheets (the buyer's tracker). SYSTEMS indices. */
+export const CONTEXT_PINS = [5, 0, 3] as const;
+/** Which evidence step (0..2) Context shows at local t: its hold (0.05 to 0.55) in three equal beats. */
+export const contextBeat = (t: number) => Math.min(2, Math.max(0, Math.floor((t - 0.05) / (0.5 / 3))));
 
 /**
  * Steps through `count` items over local progress a..a+u: equal holds, each followed by a turn that
@@ -227,13 +249,16 @@ export function setAfter(p: number) {
 }
 
 /**
- * The one 3D pin open at g, by chapter and beat. Ids: "fn:<k>" (Scale), "industry:<k>" (Industries).
- * Hero and Final pin nothing by default; between chapters nothing is pinned.
+ * The one 3D pin open at g, by chapter and beat. Ids: "island:<system>" (Context), "fn:<k>" (Scale),
+ * "industry:<k>" (Industries). Hero, Signal, Problem, Decision, Control and Final pin nothing by default
+ * (the 3D lane may add Decision pins here); between chapters nothing is pinned.
  */
 function pinAt(g: number): string | null {
   const { i, local, e } = blendAt(g);
   if (e > 0.4) return null;
   switch (i) {
+    case CH.context:
+      return `island:${CONTEXT_PINS[contextBeat(local)]}`;
     case CH.scale:
       return `fn:${scaleBeat(local)}`;
     case CH.industries:
@@ -250,6 +275,18 @@ function pinAt(g: number): string | null {
 export const SYSTEMS = ["ERP", "CRM", "SERVICE", "SHEETS", "DOCUMENTS", "MESSAGES"] as const;
 
 // Figures follow the fact sheet in lib/example.ts; section and chapter strings live in lib/copy.ts.
+
+/**
+ * The five cards behind the follow-up (chapters 02 to 06, the 3D card stack and the phone deck), in the
+ * order the application builds them. The running example is STORY in lib/example.ts: illustrative only.
+ */
+export const LAYERS = [
+  { name: "Signal", text: `Supplier: ${STORY.first.qty} on ${STORY.first.day}, ${STORY.rest.qty} on ${STORY.rest.day}` },
+  { name: "Record", text: `${STORY.po} line ${STORY.poLine}: ${STORY.qty} ${STORY.item.toLowerCase()} due ${STORY.due}` },
+  { name: "Impact", text: `${STORY.short.order} needs ${STORY.orders[1].qty} by ${STORY.orders[1].due}; ${STORY.short.covered} covered` },
+  { name: "Rules", text: `${STORY.owners.confirm} confirms; ${STORY.owners.review.toLowerCase()} reviews affected orders` },
+  { name: "Follow-up", text: `Confirm ${STORY.first.qty} + ${STORY.rest.qty}; review ${STORY.short.order}` },
+];
 
 /** The five functions in Scale's hand, each with one illustrative line (handoff revision 3, §5 and §6). */
 export const FUNCTIONS = [

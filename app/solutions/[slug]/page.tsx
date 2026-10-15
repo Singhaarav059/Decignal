@@ -14,8 +14,8 @@ import { ServiceHero } from "@/components/service/ServiceHero";
 import { ServiceApps, ServiceClosing, ServiceExample, ServiceExpect, ServiceGet, ServiceOutcomes, ServiceProcess, ServiceQuestions } from "@/components/service/ServiceSections";
 import { AreaLinks } from "@/components/service/AreaLinks";
 
-// The phone dock's section links: the four a visitor jumps between, then the call.
-const DOCK_IDS = ["expect", "applications", "deliverables", "faq", "audit"];
+// The phone dock's section links: the three a visitor jumps between, then "Talk to us" (what fits a phone).
+const DOCK_IDS = ["expect", "applications", "faq", "audit"];
 const DOCK_SECTIONS = SERVICE_SECTIONS.filter((s) => DOCK_IDS.includes(s.id));
 
 // The five functions are the only pages here: any other slug is the root not-found page (notFound below).

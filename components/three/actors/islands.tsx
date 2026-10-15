@@ -3,9 +3,10 @@
 // 01 / 02 / 04: the six system islands, their hover and click focus, and their pins.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { CH, SYSTEMS as STORY_SYSTEMS, activePin, select, smoothstep, store, weight } from "@/lib/story";
-import { HAND_FOOT, islandPose } from "@/lib/scene";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CH, CONTEXT_PINS, SYSTEMS as STORY_SYSTEMS, activePin, contextBeat, localIn, select, smoothstep, store, subscribe, weight } from "@/lib/story";
+import { STORY } from "@/lib/example";
+import { WMS, islandPose, signalCratePose } from "@/lib/scene";
 import { SYSTEMS } from "@/components/ui/systems";
 import { TINTS } from "../palette";
 import { Island, SYSTEM_MODELS } from "../kit";
@@ -47,12 +48,21 @@ let tagHover = -1;
 let touchPin = -1;
 let touch = false;
 const reduceMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const islandsLive = () => weight(CH.fragments, store.g) > 0.9;
+const islandsLive = () => Math.max(weight(CH.fragments, store.g), weight(CH.context, store.g)) > 0.9;
 
 /** World position of a system island, for the camera to lean toward. */
 const islandWorld = (i: number, out: THREE.Vector3) => {
   const g = islandRoots[i];
   return g ? g.getWorldPosition(out) : null;
+};
+
+// Context steps through the records in the order the card lists them (lib/story CONTEXT_PINS): the
+// supplier's message, the PO line with its allocations, the buyer's tracker. Each pin reads its part.
+const [MAIL, ERP, TRACKER] = CONTEXT_PINS;
+const CONTEXT_VALUE: Record<number, string> = {
+  [MAIL]: `${STORY.first.qty} ${STORY.first.day} · ${STORY.rest.qty} ${STORY.rest.day}`,
+  [ERP]: `${STORY.po} line ${STORY.poLine} · ${STORY.short.order} short ${STORY.short.waiting}`,
+  [TRACKER]: `${STORY.qty} due ${STORY.due}`,
 };
 
 /** Once the timeline writes store.pin (lib/story pinAt), it is the only source of the chapter's pin. */
@@ -70,10 +80,15 @@ function storePin() {
   return SYSTEMS.findIndex((sys, s) => sys.id === key || sys.name.toLowerCase() === key || STORY_SYSTEMS[s].toLowerCase() === key);
 }
 
-/** The chapter's own pin: the timeline's, if it has written one. */
+/** The chapter's own pin: the timeline's when it has one, else the Context beats. */
 function chapterPin() {
   const p = storePin();
-  return p === -2 ? -1 : p;
+  if (p !== -2) return p;
+  if (weight(CH.context, store.g) > 0.5) {
+    // The hold (local 0.05 to 0.55) in three equal beats.
+    return CONTEXT_PINS[contextBeat(localIn(CH.context, store.g))];
+  }
+  return -1;
 }
 
 /** The one island whose label is open: the one pointed at, else the chapter's pin, else none. */
@@ -85,8 +100,14 @@ function islandPin() {
   return chapterPin();
 }
 
-/** How much of its colour island s shows (S4): all six, in the hero and the ending. */
-const accentGoal = () => 1;
+/** How much of its colour island s shows (S4): all six in the hero and the ending; in Context only
+ *  the evidence in focus (the chapter's pin, or the island pointed at or opened) keeps it. */
+function accentGoal(s: number) {
+  const ctx = weight(CH.context, store.g);
+  if (ctx <= 0) return 1;
+  const focus = s === store.selected || s === islandHover || (store.selected < 0 && islandHover < 0 && s === chapterPin()) ? 1 : 0;
+  return 1 - ctx * (1 - focus);
+}
 
 function IslandFocus() {
   const ray = useMemo(() => new THREE.Raycaster(), []);
@@ -211,15 +232,28 @@ function Hover({ i, children }: { i: number; children: React.ReactNode }) {
 
 /** Pins step out first when the islands leave, so the converging models stay legible. */
 const pinShown = (s: number) =>
-  smoothstep(0.8, 1, weight(CH.fragments, store.g)) * smoothstep(0.6, 1, islandRisen[s]);
+  smoothstep(0.8, 1, Math.max(weight(CH.fragments, store.g), weight(CH.context, store.g))) * smoothstep(0.6, 1, islandRisen[s]);
 
-/** An island's pin: what that kind of record holds in the examples. */
+/**
+ * An island's pin: in Context it carries the evidence row it stands for, elsewhere what the system knows.
+ * It follows the story on its own, so the swap re-renders one label rather than the island's models.
+ */
 function IslandTag({ s, tone }: { s: number; tone: string }) {
   const sys = SYSTEMS[s];
+  const [ring, setRing] = useState(false);
+  useEffect(() => {
+    let last = false;
+    return subscribe((g) => {
+      const on = weight(CH.context, g) > 0.5;
+      if (on === last) return;
+      last = on;
+      setRing(on);
+    });
+  }, []);
   return (
     <ScreenTag
       title={sys.name}
-      value={`${sys.knows} · ${sys.value}`}
+      value={ring && CONTEXT_VALUE[s] ? CONTEXT_VALUE[s] : `${sys.knows} · ${sys.value}`}
       tone={tone}
       show={() => pinShown(s)}
       open={() => islandPin() === s}
@@ -237,7 +271,7 @@ function SystemIsland({ s }: { s: number }) {
   const Model = SYSTEM_MODELS[s];
   const tone = TINTS[sys.tone as keyof typeof TINTS];
   const root = useRef<THREE.Group>(null);
-  const k = useEased(accentGoal, 5);
+  const k = useEased(() => accentGoal(s), 5);
   useStoryAccent(root, tone, () => (islandAccent[s] = k.current));
   return (
     <group
@@ -271,13 +305,23 @@ function SystemIsland({ s }: { s: number }) {
   );
 }
 
+/* Problem to Context: the warehouse rises first, so the week's stock has somewhere to fold into, and
+   the ring builds on round from it while the chart is still leaving: never an empty frame between
+   them. It goes the far way round, so the island beside the card comes last, once the camera is there. */
+const RING_ENTER = SYSTEMS.map((_, s) => {
+  const order = (WMS - s + 6) % 6;
+  const a = 0.03 + order * 0.075;
+  return [a, a + 0.46] as const;
+});
+const ENTERS = RING_ENTER.map((w) => (c: number) => (c === CH.context ? w : null));
+
 export function Islands() {
   const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
   return (
     <>
       <IslandFocus />
       {SYSTEMS.map((sys, s) => (
-        <Actor key={sys.id} track={(c) => islandPose(s, c, portrait)} delay={s * 0.06} exit={(c) => (c === CH.fragments ? HAND_FOOT : null)}>
+        <Actor key={sys.id} track={(c) => islandPose(s, c, portrait)} delay={s * 0.06} enter={ENTERS[s]} exit={(c) => (c === CH.fragments ? signalCratePose(CH.signal, 0, portrait)?.p ?? null : null)}>
           {/* Pads stand on the ground: they rise in once after the loader and never float. */}
           <Rise delay={0.25 + s * 0.09} float={() => 0} onRise={(k) => (islandRisen[s] = k)}>
             <SystemIsland s={s} />

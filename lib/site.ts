@@ -2,7 +2,7 @@
 // ImageResponse, themeColor and the manifest cannot read CSS variables, so the brand hexes live here.
 // The words come from the copy deck (lib/copy.ts META and HERO); this file only names them.
 
-import { HERO, META } from "./copy";
+import { CONTACT, HERO, META } from "./copy";
 
 const DEFAULT_SITE_URL = "https://decignal.up.railway.app";
 
@@ -27,8 +27,8 @@ export const SHARE_DESCRIPTION = META.shareDescription;
 /** The OG image's line under the headline. */
 export const OG_FOOTER = META.ogFooter;
 
-/** Shown in the footer and privacy page only when the owner sets it. */
-export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || undefined;
+/** The monitored inbox (NEXT_PUBLIC_CONTACT_EMAIL or the supplied fact); undefined while only a .example stand-in exists. */
+export const CONTACT_EMAIL = CONTACT.email;
 
 /** The visible hero headline (the page h1); the OG image reads the same lines. */
 export const HERO_LINES = HERO.headline;

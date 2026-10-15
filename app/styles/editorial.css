@@ -883,6 +883,24 @@
 .about-founder-role { color: var(--color-ink-soft); }
 .about-founder-text { margin-top: 18px; color: var(--color-ink-2); }
 .about-founder-link { margin-top: 10px; justify-self: start; }
+/* The founder's company in three figures over small unit charts, one mark per person, project or year
+   (Editorial.tsx FounderFacts). Marks draw in once when the card comes into view ([data-on]). */
+.about-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 14px; padding-top: 18px; border-top: 1px solid var(--color-line); }
+.about-fact { display: grid; grid-template-rows: auto 30px auto; row-gap: 10px; align-content: start; min-width: 0; }
+.about-fact-v { font-size: clamp(28px, 2.4vw, 36px); font-weight: 500; line-height: 1; letter-spacing: -0.015em; color: var(--color-ink); }
+.about-fact-l { color: var(--color-ink-soft); text-wrap: balance; }
+.about-fact-art { display: grid; align-content: end; gap: 3px; }
+.about-fact-art i { display: block; background: var(--tone); opacity: 0; transition: opacity 360ms var(--ease), scale 620ms var(--ease-out-expo); transition-delay: calc(var(--i) * 16ms); }
+.about-fact[data-kind="dots"] .about-fact-art { grid-template-columns: repeat(12, minmax(0, 7px)); }
+.about-fact[data-kind="dots"] i { aspect-ratio: 1; border-radius: 50%; scale: 0.3; }
+.about-fact[data-kind="ticks"] .about-fact-art { grid-template-columns: repeat(15, minmax(0, 7px)); column-gap: 1px; }
+.about-fact[data-kind="ticks"] i { justify-self: center; width: 2px; height: 8px; border-radius: 1px; scale: 1 0; transform-origin: 50% 100%; }
+.about-fact[data-kind="rail"] .about-fact-art { grid-template-columns: repeat(6, minmax(0, 1fr)); max-width: 132px; }
+.about-fact[data-kind="rail"] i { height: 8px; border-radius: 4px; scale: 0 1; transform-origin: 0 50%; transition-delay: calc(var(--i) * 110ms); }
+.about-facts[data-on] .about-fact-art i { opacity: 1; scale: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .about-fact-art i { opacity: 1; scale: 1; transition: none; }
+}
 .about-cta { justify-self: start; }
 @media (min-width: 900px) {
   .about-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); column-gap: clamp(40px, 4.5vw, 64px); row-gap: var(--ed-gap); align-items: end; }

@@ -63,6 +63,7 @@ export type AuditResponse =
 const AUDIT_MESSAGES = {
   name: "Please complete this field.",
   email: "Enter a valid email address.",
+  required: "Please complete this field.",
   company: "Please complete this field.",
   workflow: "Please complete this field.",
   tooLong: (max: number) => `Keep this to ${max.toLocaleString("en-IN")} characters or fewer.`,
@@ -74,9 +75,12 @@ export const AUDIT_COPY = {
   sending: "Sending your request…",
   invalid: "Some answers need a look. Check the highlighted fields.",
   rate_limited: "Too many requests. Try again in a few minutes.",
-  not_configured: "We cannot take requests online yet. Download your answers and email them to us.",
+  not_configured: (email?: string) =>
+    email
+      ? "We cannot take requests online yet. Download your answers and email them to us."
+      : "We cannot take requests online yet. Download your answers and try again later.",
   errorHeading: "Your request could not be sent",
-  errorBody: (email: string) => `Please try again. If the problem continues, email ${email}.`,
+  errorBody: (email?: string) => (email ? `Please try again. If the problem continues, email ${email}.` : "Please try again."),
   retry: "Try again",
   download: "Download your answers",
   successHeading: "Your request has been received",
@@ -127,7 +131,8 @@ export function validateAudit(input: unknown): Result {
   // Checked in form order, so the first key is the first field to fix.
   const name = text("name", LIMITS.name);
   const email = line(o.email);
-  if (email.length > LIMITS.email || !EMAIL.test(email)) fields.email = M.email;
+  if (!email) fields.email = M.required;
+  else if (email.length > LIMITS.email || !EMAIL.test(email)) fields.email = M.email;
   const company = text("company", LIMITS.company);
 
   const workflow = block(o.workflow);

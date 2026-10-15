@@ -8,7 +8,7 @@ import { Forklift, SemiTruck, TRUCK } from "./vehicles";
 import { Person, Walker } from "./people";
 import { LoadedPallet, Bearing, box, cylX, geo, merge } from "./parts";
 import { aluminium, chrome, enamel, plastic, steel, cladding, darkGlass } from "./materials";
-import { Yard } from "./Actors";
+import { Yard } from "./actors/yard";
 import { SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "./transfer-motion";
 import { M, ROAD_Z, truckX } from "@/lib/scene";
 import { Bolts, Box, Floor, Pin, Route, phase, type Motion, type PinRef, type Vec } from "./SceneKit";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect } from "react";
-import { Building2, Layers, type LucideIcon } from "lucide-react";
+import { Building2, CalendarClock, ClipboardCheck, Layers, Network, ShieldCheck, TriangleAlert, type LucideIcon } from "lucide-react";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE } from "@/lib/story";
 import { CHAPTER_COPY, CHAPTER_FACTS, EXAMPLE_LABEL, INDUSTRY } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
@@ -12,6 +12,11 @@ import { useIndustryAt } from "./IndustryDetail";
 
 /** Each chapter's sign in its head's label. */
 const ICON: Partial<Record<number, LucideIcon>> = {
+  [CH.signal]: CalendarClock,
+  [CH.problem]: TriangleAlert,
+  [CH.context]: Network,
+  [CH.decision]: ClipboardCheck,
+  [CH.control]: ShieldCheck,
   [CH.scale]: Layers,
   [CH.industries]: Building2,
 };
@@ -108,7 +113,7 @@ function ChapterHead({ c }: { c: number }) {
               </span>
             )}
             <span>{CHAPTERS[c].label}</span>
-            {c === CH.industries && <span className="chapter-kicker-note">{EXAMPLE_LABEL}</span>}
+            {c !== CH.scale && <span className="chapter-kicker-note">{EXAMPLE_LABEL}</span>}
           </span>
         </p>
         <p className="t-display chapter-h" style={accentVars(TONE[c])}>

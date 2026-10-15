@@ -1,7 +1,7 @@
 "use client";
 
 // The yard: a road, the aprons in front of two plants and the painted bays where pallets are staged.
-// The applications explorer stands its scenes on it (OperationalScenes).
+// The story's Decision chapter (transfer.tsx) and the applications explorer (OperationalScenes) stand on it.
 import * as THREE from "three";
 import { useMemo } from "react";
 import { PLANT_01, PLANT_02, PLANT_FRONT, ROAD_Z } from "@/lib/scene";
@@ -10,9 +10,9 @@ import { asphalt, concrete, enamel } from "../materials";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 /** Top of the concrete apron in front of each plant (scene units). */
-const APRON_TOP = 0.012;
+export const APRON_TOP = 0.012;
 
-function roadLines(roadLength: number) {
+export function roadLines(roadLength: number) {
   const parts: THREE.BufferGeometry[] = [];
   // Road edge lines and a dashed centre line
   for (const s of [-1, 1]) parts.push(new THREE.BoxGeometry(roadLength, 0.002, 0.018).translate(0, 0.0165, ROAD_Z + s * 0.33));
@@ -21,7 +21,7 @@ function roadLines(roadLength: number) {
 }
 
 /** The aprons in front of both plants and the painted bays where the pallets are staged. */
-function YardPads() {
+export function YardPads() {
   const bays = useMemo(() => {
     const parts: THREE.BufferGeometry[] = [];
     for (const x of [...SLOT_X, ...DROP_X]) {

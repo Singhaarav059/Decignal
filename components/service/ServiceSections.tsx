@@ -79,7 +79,7 @@ export function ServiceGet({ area }: { area: Area }) {
 /** "Start with the work your team does today": one short paragraph and the way to the full process. */
 export function ServiceProcess({ area }: { area: Area }) {
   return (
-    <section id="how" className="svc-section svc-split page-wrap" aria-labelledby="svc-how">
+    <section id="start" className="svc-section svc-split page-wrap" aria-labelledby="svc-how">
       <SectionTitle id="svc-how" lines={[AREA_SHARED.processHeading]} tone={area.tone} reveal="lines" className="svc-split-head" />
       <div className="svc-process">
         <p data-reveal className="t-lede">

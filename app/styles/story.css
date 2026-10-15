@@ -330,7 +330,7 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 .story-rows dd { font-weight: 600; color: var(--color-ink); white-space: nowrap; }
 .story-rows [data-risk] { color: var(--color-signal-ink); }
 
-/* 02: the six days to the breach, as on the ring around the crate. */
+/* 02: the working days from the supplier's message to the second delivery. */
 .signal-days {
   margin-top: 10px;
   display: grid;
@@ -353,6 +353,9 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
   color: var(--color-ink-soft);
 }
 .signal-days li[data-risk] small { color: var(--color-signal-ink); }
+/* The day the first part of the delivery lands: in ink, flat. */
+.signal-days li[data-mark] span { background: var(--color-ink-2); }
+.signal-days li[data-mark] small { color: var(--color-ink); font-weight: 600; }
 @keyframes day-in { from { transform: scaleX(0); } to { transform: none; } }
 
 /* 04: the three checks, each tied to its island. The open pin's row sits on a neutral pill. */
@@ -377,7 +380,7 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 .evidence-check-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
 .evidence-checks strong { font-weight: 600; color: var(--color-ink); white-space: nowrap; }
 
-/* 05: the transfer order's progress. */
+/* 05: the follow-up's progress as the application assembles it. */
 .stepper-wrap { margin-top: 16px; }
 .stepper {
   display: grid;
@@ -437,7 +440,7 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
 /* Five stages in a 360px card: at 13px "Approved" filled its column and met "Picking". */
 @media (max-width: 399px) { .stepper-label { font-size: 12px; } }
 
-/* 06: the approval panel inside the card. */
+/* 06: the buyer's panel inside the card. */
 .decision-panel {
   margin-top: 16px;
   padding-top: 14px;

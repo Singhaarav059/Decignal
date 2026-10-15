@@ -13,11 +13,23 @@
 // explorer scenes in lib/application-demos.ts, the island panels in components/ui/systems.tsx, form
 // messages in lib/audit.ts (AUDIT_COPY), identity facts in lib/placeholders.ts.
 
-import { APP_FACTS, inr, inrShort } from "./example";
+import { APP_FACTS, STORY, inr, inrShort, units } from "./example";
 import { ORDER_COUNTS } from "./demonstrations";
 import { PLACEHOLDER } from "./placeholders";
 
 export type Headline = readonly [string, string];
+
+/** An address the site may show: never a reserved .example stand-in (handoff §11 acceptance review). */
+const publishable = (e?: string) => (e && !/\.example$/i.test(e.trim()) ? e.trim() : undefined);
+
+/** The monitored inboxes, when supplied (NEXT_PUBLIC_CONTACT_EMAIL, else lib/placeholders.ts). Undefined
+ *  until a real address exists; the pages then point to the enquiry form instead of printing an address. */
+export const CONTACT = (() => {
+  const email = publishable(process.env.NEXT_PUBLIC_CONTACT_EMAIL) ?? publishable(PLACEHOLDER.email);
+  return { email, privacyEmail: publishable(PLACEHOLDER.privacyEmail) ?? email };
+})();
+/** How the legal pages say to get in touch: the inbox, or the enquiry form until one is supplied. */
+const reach = (e: string | undefined) => (e ? `email ${e}` : "use the enquiry form on this website");
 
 /* ------------------------------------------------------------------ */
 /* Calls to action (handoff §5 shared navigation)                       */
@@ -95,18 +107,66 @@ export const HERO = {
 } as const;
 
 type ChapterCopy = {
-  /** Two lines, line 2 in the chapter tone. */
+  /** Two lines, line 2 in the chapter tone; red only when the line states a risk (S14). */
   title: Headline;
   /** At most 2 lines in the 440px card (95 characters or fewer). */
   body: string;
+  /** The one readout under the body: a number and what it counts. */
+  readout?: { value: string; label: string; risk?: boolean };
+  /** Rows revealed by the card's "Details" disclosure. */
+  details?: { label: string; value: string; risk?: boolean }[];
 };
 
+/** The story's running example (STORY, lib/example.ts): the order that falls short and the orders around it. */
+const [SO_A, SO_B, SO_C] = STORY.orders;
+/** What the orders due by Monday need on Friday: SO-3310 and SO-3318. */
+const NEEDED_BY_MONDAY = SO_A.qty + SO_B.qty;
+
 /**
- * Chapters, index-aligned with CHAPTERS in lib/story.ts (index 0 is the hero, above): the five
- * functions, the four industries and the close.
+ * Chapters, index-aligned with CHAPTERS in lib/story.ts (index 0 is the hero, above). Chapters 02 to 06
+ * follow one illustrative example (handoff revision 3 §5, supplier follow-up): the application prepares,
+ * the buyer confirms, sales reviews. Then the five functions, the four industries and the close.
  */
 export const CHAPTER_COPY: (ChapterCopy | null)[] = [
   null,
+  {
+    title: ["A supplier changes", "the promise."],
+    body: `${STORY.qty} ${STORY.item.toLowerCase()} were due ${STORY.due}. The supplier now offers ${STORY.first.qty} on ${STORY.first.day}, ${STORY.rest.qty} on ${STORY.rest.day}.`,
+    readout: { value: `${STORY.lateDays} days`, label: `Later for ${STORY.rest.qty} of the ${STORY.qty}`, risk: true },
+    details: [
+      { label: "On the PO line", value: `${STORY.qty} due ${STORY.due}` },
+      { label: "Revised", value: `${STORY.first.qty} ${STORY.first.day} · ${STORY.rest.qty} ${STORY.rest.day}`, risk: true },
+      { label: "Message", value: STORY.messageAt },
+    ],
+  },
+  {
+    title: ["One order", "falls short."],
+    body: `Three customer orders are linked to this line. ${STORY.short.order} is due ${SO_B.due}, before the ${STORY.rest.qty} arrive.`,
+    readout: { value: units(STORY.short.waiting), label: `Of ${STORY.short.order} wait for ${STORY.rest.day}`, risk: true },
+    details: [
+      { label: SO_A.id, value: `${SO_A.qty} · ${SO_A.due} · covered` },
+      { label: SO_B.id, value: `${SO_B.qty} · ${SO_B.due} · ${STORY.short.covered} covered`, risk: true },
+      { label: SO_C.id, value: `${SO_C.qty} · ${SO_C.due} · covered` },
+    ],
+  },
+  {
+    title: ["Every record.", "One picture."],
+    body: "Message, order line, allocations and tracker, read together. Select one to see it.",
+  },
+  {
+    title: ["One clear", "follow-up."],
+    body: `Confirm ${STORY.first.qty} on ${STORY.first.day} and ${STORY.rest.qty} on ${STORY.rest.day}. Sales reviews ${STORY.short.order}, with the original message.`,
+    readout: { value: STORY.short.order, label: "The one order for sales to review" },
+    details: [
+      { label: "Original message", value: STORY.messageAt },
+      { label: STORY.owners.confirm, value: "Confirms the schedule" },
+      { label: STORY.owners.review, value: `Reviews ${STORY.short.order}` },
+    ],
+  },
+  {
+    title: ["You see why.", "You decide."],
+    body: "Confirm the revised schedule, ask for more on Friday or decline it. The buyer decides.",
+  },
   {
     title: ["Applications across", "your business"],
     body: "Sales, procurement, operations, finance and service: three application examples in each.",
@@ -125,11 +185,38 @@ export const CHAPTER_COPY: (ChapterCopy | null)[] = [
 
 /**
  * The chapter heads on wide screens (ChapterHeads.tsx): three figures beside each chapter's headline.
- * None reads as a result: they count the catalogue and the offer.
+ * Each names the record it is read from and takes that source's tone; `risk` turns the figure red.
+ * Figures in 02 to 06 come from the illustrative example (STORY) and never repeat the card's own readout;
+ * the rest count the catalogue and the offer. None reads as a result.
  */
 type ChapterFact = { value: string; unit?: string; label: string; source: string; tone: string; risk?: boolean };
 export const CHAPTER_FACTS: (ChapterFact[] | null)[] = [
   null,
+  [
+    { value: `${STORY.qty}`, unit: "pieces", label: `Due ${STORY.due} on ${STORY.po}`, source: "ERP", tone: "cobalt" },
+    { value: `${STORY.first.qty}`, unit: "pieces", label: `Now on ${STORY.first.day}`, source: "Messages", tone: "pink" },
+    { value: `${STORY.rest.qty}`, unit: "pieces", label: `Moved to ${STORY.rest.day}`, source: "Messages", tone: "signal", risk: true },
+  ],
+  [
+    { value: `${SO_A.qty}`, unit: "pieces", label: `${SO_A.id}, due ${SO_A.due}: covered`, source: "ERP", tone: "cobalt" },
+    { value: SO_B.due, label: `${SO_B.id}’s promised date`, source: "CRM", tone: "violet" },
+    { value: `${STORY.short.covered}`, unit: `of ${SO_B.qty}`, label: `${SO_B.id} covered by ${SO_B.due}`, source: "ERP", tone: "signal", risk: true },
+  ],
+  [
+    { value: "6", unit: "sources", label: "Read together, nothing changed", source: "All six", tone: "cobalt" },
+    { value: "1", unit: "message", label: `Linked to ${STORY.po} line ${STORY.poLine}`, source: "Messages", tone: "pink" },
+    { value: `${STORY.orders.length}`, unit: "orders", label: "Verified allocation links only", source: "ERP", tone: "cobalt" },
+  ],
+  [
+    { value: `${STORY.first.qty} + ${STORY.rest.qty}`, label: "Revised commitment", source: "Messages", tone: "pink" },
+    { value: `Line ${STORY.poLine}`, label: `Of ${STORY.po}, linked`, source: "ERP", tone: "cobalt" },
+    { value: "1", unit: "row", label: "For the buyer to update", source: "Sheets", tone: "saffron" },
+  ],
+  [
+    { value: STORY.owners.confirm, label: "Confirms the schedule", source: "Rules", tone: "violet" },
+    { value: STORY.owners.review, label: `Reviews ${STORY.short.order}`, source: "Rules", tone: "emerald" },
+    { value: "0", unit: "changes", label: "Until someone decides", source: "Example", tone: "cobalt" },
+  ],
   [
     { value: "5", unit: "functions", label: "Sales to service", source: "Library", tone: "emerald" },
     { value: "15", unit: "examples", label: "Application examples, scoped for you", source: "Library", tone: "violet" },
@@ -142,6 +229,80 @@ export const CHAPTER_FACTS: (ChapterFact[] | null)[] = [
   ],
   null,
 ];
+
+/** 02 Signal readout card (StoryCard SignalDetails): its accessible summary. */
+export const SIGNAL_ARIA = `Supplier message, ${STORY.messageAt}: ${STORY.first.qty} ${STORY.item.toLowerCase()} on ${STORY.first.day} and ${STORY.rest.qty} on ${STORY.rest.day}, instead of ${STORY.qty} on ${STORY.due}`;
+
+/** 02 Signal: the working days from the message to the second delivery. `mark`: the first part lands;
+ *  `risk`: the rest lands, after SO-3318's Monday. */
+export const SIGNAL_DAYS: readonly { label: string; mark?: boolean; risk?: boolean }[] = [
+  { label: "Wed" },
+  { label: "Thu" },
+  { label: `Fri · ${STORY.first.qty}`, mark: true },
+  { label: "Mon" },
+  { label: "Tue" },
+  { label: `Wed · ${STORY.rest.qty}`, risk: true },
+];
+
+/** 04 Context: the three records, each linked to its island (StoryCard EvidenceChecks). `island` is the
+ *  SYSTEMS index and the order matches CONTEXT_PINS in lib/story.ts. */
+export const EVIDENCE_CHECKS = {
+  aria: "Records behind this follow-up",
+  rows: [
+    { tone: "pink", label: "Supplier message", value: `${STORY.first.qty} ${STORY.first.day.slice(0, 3)} · ${STORY.rest.qty} ${STORY.rest.day.slice(0, 3)}`, island: 5, system: "Messages" },
+    { tone: "cobalt", label: "PO line and orders", value: `Line ${STORY.poLine} · ${STORY.orders.length} linked`, island: 0, system: "ERP" },
+    { tone: "saffron", label: "Buyer’s tracker", value: `Was ${STORY.qty} on ${STORY.due}`, island: 3, system: "Sheets" },
+  ],
+  /** Accessible name per row. */
+  rowAria: (label: string, value: string, system: string) => `${label}: ${value}. From ${system}. Open the record.`,
+} as const;
+
+/** 05 Follow-up: the steps as the application assembles it (StoryCard Stepper). Short: five share a row. */
+export const STEPPER = ["Read", "Linked", "Checked", "Drafted", "With buyer"] as const;
+
+/** 06 Control: the buyer's panel (DecisionControls.tsx). Illustrative: nothing is sent or posted, and a
+ *  live setup writes to a system only through an agreed integration. */
+export const CONTROL = {
+  eyebrow: "Interactive example",
+  title: (qty: number) => `${qty} on ${STORY.first.day}`,
+  restLeft: (rest: number) => `${rest} on ${STORY.rest.day}`,
+  balanceAria: (qty: number, rest: number) => `${qty} ${STORY.item.toLowerCase()} on ${STORY.first.day}, ${rest} on ${STORY.rest.day}`,
+  first: "arriving",
+  rest: "later",
+  /** The marker on the Friday bar: what the orders due by Monday need. */
+  needed: NEEDED_BY_MONDAY,
+  confirm: "Confirm",
+  adjust: "Adjust",
+  decline: "Decline",
+  /** The supplier's own figure is confirmed; anything more is a request to the supplier. */
+  confirmQty: (qty: number) => (qty === STORY.first.qty ? `Confirm ${qty}` : `Ask for ${qty}`),
+  cancel: "Cancel",
+  /** Under the Friday slider. It runs from the supplier's 60 to the full 100 in steps of 10. */
+  note: (qty: number) =>
+    qty === STORY.first.qty
+      ? `The supplier’s schedule. ${STORY.short.order} gets ${STORY.short.covered} of its ${SO_B.qty} by ${SO_B.due}; sales reviews it.`
+      : qty < NEEDED_BY_MONDAY
+        ? `${STORY.short.order} would get ${qty - SO_A.qty} of its ${SO_B.qty} by ${SO_B.due}. The supplier has to agree first.`
+        : qty < STORY.qty
+          ? `Covers every order due by ${SO_B.due}, if the supplier agrees to send it.`
+          : "The original promise. The buyer asks the supplier to keep it.",
+  declinePrompt: "What goes back to the supplier?",
+  reasons: ["Keep the original date", "Confirm in writing first", "Ask another supplier"],
+  planLabel: "Example tracker",
+  /** The confirmed chip: "60 Fri · 40 Wed · PO-8842". */
+  planChip: (qty: number) => `${qty} Fri · ${STORY.qty - qty} Wed · ${STORY.po}`,
+  confirmedTitle: (qty: number) =>
+    qty === STORY.first.qty
+      ? "Confirmed in this example. In a live setup, the buyer records the revised schedule; your purchasing system changes only through an agreed integration."
+      : `Request prepared in this example. In a live setup, the buyer asks the supplier for ${qty} on ${STORY.first.day}; nothing changes until they agree.`,
+  confirmedMeta: (qty: number) =>
+    qty === STORY.first.qty
+      ? `Example · ${STORY.owners.confirm} confirms → ${STORY.owners.review.toLowerCase()} reviews ${STORY.short.order}`
+      : `Example · ${STORY.owners.confirm} asks → supplier replies → ${STORY.owners.review.toLowerCase()} reviews ${STORY.short.order}`,
+  declinedTitle: "Declined. The buyer goes back to the supplier; the order stays as it was.",
+  declinedMeta: (reason: string) => `Reason: ${reason}`,
+  undo: "Undo",
+} as const;
 
 /** Scale: the function card (StoryCard / ScaleApps). */
 export const SCALE = {
@@ -157,6 +318,11 @@ export const STORY_UI = {
   cardAria: "The story, chapter by chapter",
   functionsAria: "Business functions",
   phoneAria: "Application examples by business function",
+  layers: "Cards behind the follow-up",
+  qtyAria: `${STORY.item} on ${STORY.first.day}`,
+  qtyDown: `Fewer on ${STORY.first.day}`,
+  qtyUp: `More on ${STORY.first.day}`,
+  stepperAria: `Follow-up for ${STORY.po}`,
   /** IslandPanel: "Source 3 of 6". */
   source: (n: number, total = 6) => `Source ${n} of ${total}`,
   /** IslandPanel: what the source holds for this example (no live-sync claim). */
@@ -199,17 +365,23 @@ export const FINAL = {
 
 /** The nav's story glance (NavPeek CHAPTER_INFO and its groups), index-aligned with CHAPTERS. */
 export const STORY_PEEK = {
-  title: "The overview in four parts",
-  sub: "What we build, across five functions and four industries.",
+  title: "The story in nine chapters",
+  sub: "One supplier follow-up, an illustrative example, then five functions and four industries.",
   chapters: [
     "Custom AI applications for Indian businesses",
+    "A supplier changes a delivery promise",
+    "One customer order falls short",
+    "Every record, read together",
+    "One clear follow-up for the buyer",
+    "The buyer confirms, sales reviews",
     "Applications across five business functions",
     "Examples for four industries",
     "Find the right application for your business",
   ],
   groups: [
     { name: "The offer", from: 0 },
-    { name: "Where it applies", from: 1 },
+    { name: "One example", from: 1 },
+    { name: "Where it applies", from: 6 },
   ],
 } as const;
 
@@ -416,6 +588,230 @@ export const SYSTEMS_STRIP = {
   note: "Tell us the software and versions you use. We confirm access, supported formats and integration scope during discovery.",
 } as const;
 
+/**
+ * Also reads (components/sections/ReadWheel.tsx, inside #systems): the records the fifteen applications
+ * work with (each record's "Works with" in lib/content.ts APPLICATIONS), on a dial. Every example read
+ * restates that application's illustrative scenario; no live integration, vendor or result is implied.
+ * `apps` are APPLICATIONS ids; a row with `f` draws a bar, a row without one is a field as read.
+ */
+export type WheelItem = {
+  name: string;
+  title: string;
+  text: string;
+  apps: string[];
+  fig: string;
+  unit?: string;
+  caption: string;
+  icon: string;
+  compare: { label: string; value: string; f?: number; risk?: boolean }[];
+};
+export const ALSO_READS = {
+  label: "Also reads",
+  title: "The records your teams already handle.",
+  lede: "Orders, challans, delivery records, debit notes and service reports. Each application reads only the records its task needs, with access agreed during discovery.",
+  example: "Illustrative example",
+  usedBy: "Used by",
+  tabsAria: "Records the applications read, by function",
+  itemOf: (n: number, total: number) => `${n} of ${total}`,
+  groups: [
+    {
+      id: "supply",
+      label: "Sales and supply",
+      tone: "cobalt",
+      items: [
+        {
+          name: "Customer orders",
+          title: "Purchase orders and order messages",
+          text: "Orders in the format each customer sends: item codes, quantities, units and terms, read against your approved item and customer masters.",
+          apps: ["sales-order-intake", "operational-exception-brief"],
+          fig: "20",
+          unit: "boxes",
+          caption: "An order for switches under an old item code",
+          icon: "erp",
+          compare: [
+            { label: "Item code", value: "Mapped from old code" },
+            { label: "Pack size", value: "Confirm with desk", risk: true },
+          ],
+        },
+        {
+          name: "Quotations",
+          title: "Supplier offers and price files",
+          text: "Quotations, revised price lists and datasheets, put on a comparable basis of unit, freight, terms and delivery.",
+          apps: ["purchase-quote-comparison", "supplier-price-updates", "rfq-preparation"],
+          fig: "3",
+          unit: "quotations",
+          caption: "Three suppliers quoting the same purchase request",
+          icon: "sup",
+          compare: [
+            { label: "Unit basis", value: "Per box, converted" },
+            { label: "Freight", value: "Excluded by one", risk: true },
+          ],
+        },
+        {
+          name: "Supplier confirmations",
+          title: "Promised quantities and dates",
+          text: "Supplier updates linked to the purchase-order line they change, so revised commitments are not missed.",
+          apps: ["supplier-commitment-tracking", "operational-exception-brief"],
+          fig: "100",
+          unit: "contactors",
+          caption: "One commitment split into two deliveries",
+          icon: "ext",
+          compare: [
+            { label: "Friday", value: "60", f: 0.6 },
+            { label: "The following Wednesday", value: "40", f: 0.4, risk: true },
+          ],
+        },
+      ],
+    },
+    {
+      id: "ops",
+      label: "Operations",
+      tone: "emerald",
+      items: [
+        {
+          name: "Challans",
+          title: "Job-work movements and returns",
+          text: "Challans, supplier statements, returns and approved rejection records, reconciled by challan or batch.",
+          apps: ["job-work-reconciliation"],
+          fig: "40",
+          unit: "pieces",
+          caption: "A coating job: 1,000 sent, the balance to reconcile",
+          icon: "wms",
+          compare: [
+            { label: "Documented", value: "960 pcs", f: 0.96 },
+            { label: "To reconcile", value: "40 pcs", f: 0.04, risk: true },
+          ],
+        },
+        {
+          name: "Shift sheets",
+          title: "Production notes on paper or sheets",
+          text: "Output, rejections and downtime as recorded on the shift sheet, with the original kept beside the structured record.",
+          apps: ["production-record-capture"],
+          fig: "1",
+          unit: "entry to resolve",
+          caption: "A packaging plant’s daily production record",
+          icon: "sheet",
+          compare: [
+            { label: "Original sheet", value: "Kept with record" },
+            { label: "Unreadable quantity", value: "To supervisor", risk: true },
+          ],
+        },
+        {
+          name: "Lorry receipts and PODs",
+          title: "Delivery evidence",
+          text: "Lorry receipts, proof of delivery and customer acknowledgements, matched to the shipments they belong to.",
+          apps: ["delivery-document-followup", "customer-deduction-investigation"],
+          fig: "2",
+          unit: "follow-ups",
+          caption: "Deliveries to several customer sites",
+          icon: "tms",
+          compare: [
+            { label: "POD without order reference", value: "Link proposed" },
+            { label: "Shortage recorded", value: "Separate follow-up", risk: true },
+          ],
+        },
+      ],
+    },
+    {
+      id: "finance",
+      label: "Finance",
+      tone: "violet",
+      items: [
+        {
+          name: "Debit notes",
+          title: "Customer deductions",
+          text: "Debit notes read with the invoice, delivery evidence and agreed commercial terms behind them.",
+          apps: ["customer-deduction-investigation", "payment-advice-matching"],
+          fig: "₹75,000",
+          caption: "A deduction against a delivery-shortage claim",
+          icon: "pos",
+          compare: [
+            { label: "Invoice and delivery records", value: "Linked" },
+            { label: "Receiver note", value: "Ambiguous", risk: true },
+          ],
+        },
+        {
+          name: "Remittance advice",
+          title: "Payment details from customers",
+          text: "Customer advice read against the bank receipt and open invoices, with any difference kept visible.",
+          apps: ["payment-advice-matching"],
+          fig: "₹20,000",
+          unit: "deduction",
+          caption: "One advice covering five invoices",
+          icon: "pos",
+          compare: [
+            { label: "Invoices on the advice", value: "₹5,00,000", f: 1 },
+            { label: "Amount received", value: "₹4,80,000", f: 0.96, risk: true },
+          ],
+        },
+        {
+          name: "Transporter bills",
+          title: "Freight bills and trip records",
+          text: "Transporter bills read with agreed rates, trip records and gate timestamps.",
+          apps: ["freight-bill-review"],
+          fig: "1",
+          unit: "charge to review",
+          caption: "A detention charge added to a freight bill",
+          icon: "tms",
+          compare: [
+            { label: "Free period", value: "From rate agreement" },
+            { label: "Acknowledgement", value: "Missing", risk: true },
+          ],
+        },
+      ],
+    },
+    {
+      id: "service",
+      label: "Service",
+      tone: "pink",
+      items: [
+        {
+          name: "Service messages",
+          title: "Requests from approved channels",
+          text: "Customer messages and photos, read with asset, site and service-history records.",
+          apps: ["service-case-intake"],
+          fig: "3",
+          unit: "candidate sites",
+          caption: "A photo and a message about a pump",
+          icon: "desk",
+          compare: [
+            { label: "Asset records", value: "Candidates found" },
+            { label: "Serial number", value: "Requested", risk: true },
+          ],
+        },
+        {
+          name: "Service reports",
+          title: "Technician recommendations",
+          text: "Recommendations in service reports, linked to the equipment, contract and any open quote.",
+          apps: ["service-report-followup"],
+          fig: "1",
+          unit: "recommendation",
+          caption: "Replace a mechanical seal at the next shutdown",
+          icon: "cmms",
+          compare: [
+            { label: "Existing quote", value: "Checked" },
+            { label: "Part and coverage", value: "To confirm", risk: true },
+          ],
+        },
+        {
+          name: "Manuals",
+          title: "Manuals, bulletins and past cases",
+          text: "Approved manuals by model and revision, service bulletins and reviewed past resolutions.",
+          apps: ["service-knowledge-assistant"],
+          fig: "1",
+          unit: "manual revision",
+          caption: "An error code on a particular drive model",
+          icon: "sup",
+          compare: [
+            { label: "Source", value: "Revision and note" },
+            { label: "Model suffix", value: "Asked when needed", risk: true },
+          ],
+        },
+      ],
+    },
+  ] as { id: string; label: string; tone: string; items: WheelItem[] }[],
+} as const;
+
 /** How we work (Editorial.tsx, HowSteps.tsx; handoff §5 delivery). Steps are PATHS in lib/content.ts. */
 export const HOW = {
   eyebrow: "How we work",
@@ -546,12 +942,12 @@ export const PAGES = {
   /** Built from the facts in lib/placeholders.ts; replace those before launch. */
   privacy: {
     title: "Privacy notice",
-    lead: `This notice explains how ${PLACEHOLDER.operator} handles personal information submitted through the Decignal website. For questions, contact ${PLACEHOLDER.privacyEmail}.`,
+    lead: `This notice explains how ${PLACEHOLDER.operator} handles personal information submitted through the Decignal website. For questions, ${reach(CONTACT.privacyEmail)}.`,
     effective: `Effective ${PLACEHOLDER.effective}`,
     sections: [
       {
         title: "Who operates this website",
-        text: `This website is operated by ${PLACEHOLDER.operator}. You can reach us at ${PLACEHOLDER.email}.`,
+        text: `This website is operated by ${PLACEHOLDER.operator}.${CONTACT.email ? ` You can reach us at ${CONTACT.email}.` : ""}`,
       },
       {
         title: "Information collected",
@@ -567,11 +963,11 @@ export const PAGES = {
       },
       {
         title: "Retention and deletion",
-        text: `${PLACEHOLDER.privacy.retention} Email ${PLACEHOLDER.privacyEmail} to ask for deletion.`,
+        text: `${PLACEHOLDER.privacy.retention} To ask for deletion, ${reach(CONTACT.privacyEmail)}.`,
       },
       {
         title: "Questions and requests",
-        text: `You can ask to see, correct or delete your details by emailing ${PLACEHOLDER.privacyEmail}. We will confirm when the request is complete.`,
+        text: `To see, correct or delete your details, ${reach(CONTACT.privacyEmail)}. We will confirm when the request is complete.`,
       },
       {
         title: "Changes to this notice",
@@ -602,7 +998,7 @@ export const PAGES = {
       },
       {
         title: "Contact",
-        text: `Questions about these terms can be sent to ${PLACEHOLDER.email}.`,
+        text: `For questions about these terms, ${reach(CONTACT.email)}.`,
       },
     ],
   },
@@ -658,6 +1054,11 @@ export const SOLUTIONS_INDEX = {
 /* ------------------------------------------------------------------ */
 
 export const FACES = {
+  /** faces.ts decision(): the follow-up card's label and its foot line (who acts). */
+  decisionLabel: "Follow-up · example",
+  decisionFoot: `${STORY.owners.confirm} confirms · ${STORY.owners.review.toLowerCase()} reviews ${STORY.short.order}`,
+  /** faces.ts layer(3): the rules the follow-up was prepared under. */
+  policyChecks: ["Impact from verified allocations", `${STORY.owners.confirm} confirms the schedule`, `${STORY.owners.review} reviews affected orders`],
   /** faces.ts deduction ledger rows (finance): [record, value, held open]. */
   ledger: [
     [APP_FACTS.deduction.invoice, "Linked", false],

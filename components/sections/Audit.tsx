@@ -27,7 +27,6 @@ import {
 import { AUDIT } from "@/lib/copy";
 import { jumpTo } from "@/lib/jump";
 import { CONTACT_EMAIL } from "@/lib/site";
-import { PLACEHOLDER } from "@/lib/placeholders";
 import SectionTitle from "../ui/SectionTitle";
 import { CalendarCheck } from "lucide-react";
 import { Arrow } from "../ui/Arrow";
@@ -440,10 +439,11 @@ function Field({
 /** Request states after a send that did not go through: what happened and what the visitor can do. */
 function Notice({ status, onDownload, mailBody }: { status: Status; onDownload: () => void; mailBody: () => string }) {
   if (status.kind !== "rate_limited" && status.kind !== "not_configured" && status.kind !== "failed") return null;
-  const email = CONTACT_EMAIL ?? PLACEHOLDER.email;
+  // No address is offered until a real one is supplied (never a .example stand-in).
+  const email = CONTACT_EMAIL;
   // The email fallback carries the answers, unless they are too long for a mailto link.
   const body = mailBody();
-  const mail = `mailto:${email}?subject=${encodeURIComponent(AUDIT.eyebrow)}${body.length <= 1500 ? `&body=${encodeURIComponent(body)}` : ""}`;
+  const mail = email && `mailto:${email}?subject=${encodeURIComponent(AUDIT.eyebrow)}${body.length <= 1500 ? `&body=${encodeURIComponent(body)}` : ""}`;
   return (
     <div className="audit-notice" role="alert">
       {status.kind === "failed" ? (
@@ -452,7 +452,7 @@ function Notice({ status, onDownload, mailBody }: { status: Status; onDownload: 
           <p>{AUDIT_COPY.errorBody(email)}</p>
         </>
       ) : (
-        <p>{status.kind === "rate_limited" ? AUDIT_COPY.rate_limited : AUDIT_COPY.not_configured}</p>
+        <p>{status.kind === "rate_limited" ? AUDIT_COPY.rate_limited : AUDIT_COPY.not_configured(email)}</p>
       )}
       <div className="audit-notice-actions">
         {status.kind === "not_configured" && (
@@ -461,7 +461,7 @@ function Notice({ status, onDownload, mailBody }: { status: Status; onDownload: 
             <Arrow />
           </button>
         )}
-        {status.kind !== "rate_limited" && (
+        {status.kind !== "rate_limited" && email && mail && (
           <a className="audit-notice-mail" href={mail}>
             {AUDIT.orEmail(email)}
           </a>

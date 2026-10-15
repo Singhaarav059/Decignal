@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   Building2,
   ChartNoAxesCombined,
@@ -31,7 +31,9 @@ import { toneVars } from "@/lib/tone";
 import SectionTitle from "../ui/SectionTitle";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
+import { CountUp } from "../ui/CountUp";
 import { SystemsRing } from "./SystemsRing";
+import { ReadWheel } from "./ReadWheel";
 import { Statement } from "./Statement";
 import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
 import { AreaPhoto } from "./AreaPhoto";
@@ -195,6 +197,8 @@ function Systems() {
           {SYSTEMS_STRIP.note}
         </p>
       </div>
+      {/* The records the applications read, on a dial the scroll turns. */}
+      <ReadWheel />
     </section>
   );
 }
@@ -444,6 +448,7 @@ function About() {
                 </div>
               </div>
               <p className="t-body about-founder-text">{f.experience}</p>
+              <FounderFacts />
               <a className="ed-link about-founder-link" href={f.linkedin} target="_blank" rel="noopener noreferrer">
                 {ABOUT.linkedin}
                 <Arrow />
@@ -457,6 +462,46 @@ function About() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** The founder's company in three figures, each over a small unit chart with one mark per person,
+ *  project or year. The figures count up and the marks draw in once, when the card comes into view;
+ *  reduced motion shows both at rest. */
+function FounderFacts() {
+  const f = ABOUT.founder;
+  const ref = useRef<HTMLUListElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        setOn(true);
+        io.disconnect();
+      },
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <ul ref={ref} className="about-facts" aria-label={f.company} data-on={on || undefined}>
+      {f.figures.map((x) => (
+        <li key={x.label} className="about-fact" data-kind={x.kind} style={toneVars(x.tone)}>
+          <span className="about-fact-v tabular">
+            <CountUp value={x.value} play={on} duration={1200} />
+          </span>
+          <span className="about-fact-art" aria-hidden>
+            {Array.from({ length: x.n }, (_, i) => (
+              <i key={i} style={{ ["--i" as string]: i } as CSSProperties} />
+            ))}
+          </span>
+          <span className="t-label about-fact-l">{x.label}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
