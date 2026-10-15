@@ -622,12 +622,12 @@ export function Factory() {
 }
 
 /** WMS: a small distribution shed, stock outside, a forklift at work. */
-export function Warehouse({ accent = TINTS.saffron, crates = true }: { accent?: string; crates?: boolean }) {
+export function Warehouse({ accent = TINTS.saffron, crates = true, name = "WMS" }: { accent?: string; crates?: boolean; name?: string }) {
   const tote = useMemo(() => plastic(accent, 0.5, true), [accent]);
   return (
     <group>
       <group position={[-0.12, 0, -0.22]} scale={0.06}>
-        <Plant accent={accent} name="WMS" />
+        <Plant accent={accent} name={name} />
       </group>
       {/* Stock outside the dock: half-size totes, two stacks; the signal tote rides on the front one */}
       {crates && (

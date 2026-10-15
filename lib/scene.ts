@@ -340,11 +340,11 @@ export const indLayout = { under: false };
  *  pole, the truck's cab) at the stage's edge. */
 const IND_REACH: [number, number][] = [
   [-1.75, 1.6], // factory
-  [-1.42, 2.0], // truck
-  [-1.7, 1.66], // store
-  [-1.88, 2.4], // quay
-  [-1.9, 1.24], // ops room
+  [-1.42, 2.0], // coil truck
+  [-1.6, 1.6], // machine bay
   [-1.9, 1.9], // substation (its feeder runs on off the frame by design)
+  [-1.75, 1.7], // distributor's warehouse
+  [-1.55, 1.55], // pump on its service skid
 ];
 /** The reach at a camera position between stops, eased like the glide. */
 function indReach(track: number): [number, number] {
@@ -356,7 +356,7 @@ function indReach(track: number): [number, number] {
 /** Each place's height (world units, measured from its parts, the factory's to its smoke): portrait
  *  screens frame each place by its own, as siteH left the low ones (the truck, the quay) small under a
  *  band of empty sky in the short space a phone leaves between the callout and the card. */
-const IND_TOP = [3.0, 1.45, 1.75, 1.35, 1.8, 2.25];
+const IND_TOP = [3.0, 1.45, 1.7, 2.25, 1.7, 1.25];
 /** The height at a camera position between stops, eased like the glide. */
 function indTop(track: number) {
   const k = Math.min(Math.max(Math.floor(track), 0), IND_TOP.length - 1);
@@ -368,11 +368,11 @@ function indTop(track: number) {
  *  the decision is about, on the side facing the callout. */
 const IND_PIN: Vec3[] = [
   [-0.36, 0.42, 0.18], // the factory's line hall
-  [-0.2, 0.26, 0.05], // the harness crates on the trailer
-  [-0.32, 0.36, 0.3], // the store's awning
-  [-0.3, 0.3, 0.0], // the containers on the quay
-  [-0.28, 0.3, -0.05], // the server racks
+  [-0.2, 0.26, 0.05], // the coils on the trailer
+  [0.36, 0.4, 0.12], // the machine's control pendant
   [0.02, 0.4, 0.06], // the transformer
+  [-0.15, 0.36, -0.2], // the distributor's shed
+  [0.0, 0.2, -0.06], // the pump's coupling and seal
 ];
 export const indPin = (k: number): Vec3 => {
   const [x, y, z] = IND_PIN[k];

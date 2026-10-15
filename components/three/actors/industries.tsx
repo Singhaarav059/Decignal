@@ -10,12 +10,12 @@ import { useEffect, useMemo, useRef } from "react";
 import { CH, blendAt, industryF, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
 import { IND, IND_BESIDE_MIN, IND_ROAD, indLayout, indPin, indX, industryTrack } from "@/lib/scene";
 import { TINTS } from "../palette";
-import { Factory, ServerRacks, Storefront } from "../buildings";
+import { Factory, Warehouse } from "../buildings";
 import { SemiTruck, TRUCK } from "../vehicles";
 import { Substation } from "../substation";
 import { Person } from "../people";
-import { aluminium, asphalt, cladding, concrete, enamel, plastic, rubber, steel } from "../materials";
-import { box, cylY, geo, merge, rbox } from "../parts";
+import { asphalt, concrete, enamel, plastic, steel } from "../materials";
+import { box, cylX, cylY, cylZ, geo, merge, rbox } from "../parts";
 import { reducedMotion } from "./core";
 import { mediaWidth, tallTouch } from "@/lib/device";
 
@@ -114,134 +114,120 @@ function Road({ presence }: { presence: React.RefObject<{ len: number; alpha: nu
 
 /* ---------------- The six places (island units, scaled by IND.siteS) ---------------- */
 
-/** Automotive: a semi with three wire-harness crates strapped on the trailer, the driver checking them. */
-const HARNESS = [3.3, 0.6, -2.1];
-function HarnessTruck() {
-  const crate = geo("ind-harness", () => merge(HARNESS.map((x) => rbox(1.5, 1.05, 2.0, 0.06, x, TRUCK.deckY + 0.525, 0))));
-  const lids = geo("ind-harness-lid", () => merge(HARNESS.map((x) => rbox(1.56, 0.08, 2.06, 0.03, x, TRUCK.deckY + 1.07, 0))));
-  const straps = geo("ind-harness-strap", () => merge(HARNESS.map((x) => box(0.08, 1.2, 2.1, x, TRUCK.deckY + 0.58, 0))));
+/** Metal products: a semi carrying three steel coils on cradles to a job worker, the driver checking
+ *  the load; one coil's band in the industry's tone (the batch being reconciled). */
+const COILS = [3.3, 0.6, -2.1];
+function CoilTruck() {
+  const coils = geo("ind-coils", () => merge(COILS.map((x) => cylZ(0.62, 1.15, x, TRUCK.deckY + 0.68, 0, 32))));
+  const eyes = geo("ind-coil-eyes", () => merge(COILS.map((x) => cylZ(0.26, 1.17, x, TRUCK.deckY + 0.68, 0, 24))));
+  const cradles = geo("ind-coil-cradle", () => merge(COILS.map((x) => box(1.2, 0.16, 1.0, x, TRUCK.deckY + 0.08, 0))));
+  const bands = geo("ind-coil-band", () => merge(COILS.slice(0, 2).map((x) => cylZ(0.635, 0.08, x, TRUCK.deckY + 0.68, 0, 32))));
   return (
     <group position={[-0.05, 0.012, 0.02]} rotation-y={0.42} scale={0.11}>
       <SemiTruck accent="#9AA3AF" parked>
-        <mesh geometry={crate} material={plastic(TINTS.cobalt, 0.45, true)} castShadow receiveShadow />
-        <mesh geometry={lids} material={plastic("#E9ECF0", 0.5)} castShadow />
-        <mesh geometry={straps} material={steel("#2A2C31", 0.6)} />
+        <mesh geometry={cradles} material={enamel("#3A3E45", 0.6)} castShadow receiveShadow />
+        <mesh geometry={coils} material={steel("#B9C0C9", 0.35)} castShadow receiveShadow />
+        <mesh geometry={eyes} material={steel("#2A2C31", 0.6)} />
+        <mesh geometry={bands} material={steel("#2A2C31", 0.6)} castShadow />
+        <mesh position={[COILS[2], TRUCK.deckY + 0.68, 0]} rotation-x={Math.PI / 2} material={plastic(TINTS.cobalt, 0.45)} castShadow>
+          <cylinderGeometry args={[0.64, 0.64, 0.12, 32]} />
+        </mesh>
       </SemiTruck>
       <Person look="driver" pose="tablet" seed={2.2} position={[-3.6, 0, 2.3]} rotation-y={-0.4} />
     </group>
   );
 }
 
-/** Logistics: a quay edge with bollards and fenders, containers stacked three rows deep and two high. */
-const ROWS = [-0.3, 0, 0.3];
-function Quay() {
-  const quay = geo("ind-quay-trim", () =>
+/** Industrial machinery: a machining centre on its assembly plinth under a light bay gantry: bed,
+ *  table, column and spindle head; the control pendant in the industry's tone, an engineer beside it
+ *  checking the build against the specification. */
+function MachineBay() {
+  const frame = geo("ind-gantry", () =>
     merge([
-      ...[-0.5, -0.17, 0.17, 0.5].map((x) => cylY(0.024, 0.05, x, 0.055, -0.43, 16)),
-      ...[-0.5, -0.17, 0.17, 0.5].map((x) => cylY(0.032, 0.012, x, 0.084, -0.43, 16)),
+      ...[-0.55, 0.55].flatMap((x) => [box(0.026, 0.52, 0.026, x, 0.26, -0.24), box(0.026, 0.52, 0.026, x, 0.26, 0.24), box(0.026, 0.026, 0.5, x, 0.52, 0)]),
+      box(1.12, 0.034, 0.04, 0, 0.535, -0.06),
     ]),
   );
-  const fenders = geo("ind-quay-fend", () => merge([-0.34, 0, 0.34].map((x) => rbox(0.12, 0.024, 0.016, 0.006, x, 0.016, -0.505))));
+  const hoist = geo("ind-hoist", () => merge([rbox(0.07, 0.05, 0.06, 0.01, 0.26, 0.5, -0.06), box(0.005, 0.1, 0.005, 0.26, 0.42, -0.06), rbox(0.035, 0.025, 0.025, 0.006, 0.26, 0.365, -0.06)]));
+  const bed = geo("ind-mc-bed", () => merge([rbox(0.62, 0.12, 0.36, 0.02, 0, 0.1, 0.02), box(0.44, 0.025, 0.26, 0, 0.172, 0.05)]));
+  const column = geo("ind-mc-col", () =>
+    merge([rbox(0.18, 0.34, 0.14, 0.02, -0.02, 0.33, -0.11), rbox(0.16, 0.1, 0.22, 0.02, -0.02, 0.42, -0.01), cylY(0.022, 0.08, -0.02, 0.33, 0.06, 20)]),
+  );
+  const ways = geo("ind-mc-ways", () => merge([-0.08, 0.08].map((z) => box(0.5, 0.012, 0.02, 0, 0.162, 0.05 + z))));
   return (
     <>
-      {/* Quay deck and its white cope line along the water side */}
-      <mesh position={[0, 0.021, -0.02]} material={concrete("#DADEE4")} receiveShadow castShadow>
-        <boxGeometry args={[1.36, 0.018, 0.96]} />
+      <mesh position={[0, 0.02, 0]} material={concrete("#D6DAE0")} receiveShadow castShadow>
+        <boxGeometry args={[1.3, 0.016, 0.9]} />
       </mesh>
-      <mesh position={[0, 0.031, -0.47]} material={enamel("#F4F6F8", 0.5)}>
-        <boxGeometry args={[1.36, 0.003, 0.02]} />
+      <mesh position={[0, 0.034, 0.02]} material={enamel("#E9ECF0", 0.5)} receiveShadow castShadow>
+        <boxGeometry args={[0.8, 0.028, 0.5]} />
       </mesh>
-      <mesh geometry={quay} material={steel("#2C2F35", 0.5)} castShadow />
-      <mesh geometry={fenders} material={rubber()} castShadow />
-      {/* The dock basin behind the quay: still water inside a concrete edge */}
-      <mesh position={[0, 0.004, -0.74]} material={enamel("#71859A", 0.12)} receiveShadow>
-        <boxGeometry args={[1.3, 0.008, 0.5]} />
-      </mesh>
-      <mesh geometry={geo("ind-basin", () => merge([box(1.36, 0.03, 0.03, 0, 0.015, -1.0), box(0.03, 0.03, 0.5, -0.665, 0.015, -0.75), box(0.03, 0.03, 0.5, 0.665, 0.015, -0.75)]))} material={concrete("#DADEE4")} castShadow receiveShadow />
-      {/* The stack: the tangerine box on top of the front row is the one being rerouted */}
-      <group position={[-0.08, 0.03, -0.04]}>
-        {ROWS.flatMap((z, r) =>
-          [0, 1].map((t) => (
-            <Container key={`${r}-${t}`} at={[0, t * (CONT.h + 0.004), z]} color={t === 1 && r === 2 ? TINTS.tangerine : ["#C9CED6", "#B4BBC6", "#D8DCE2"][(r + t) % 3]} />
-          )),
-        )}
+      <group position={[0, 0.02, 0]}>
+        <mesh geometry={bed} material={enamel("#C9CED6", 0.45)} castShadow receiveShadow />
+        <mesh geometry={ways} material={steel("#8A929D", 0.3)} />
+        <mesh geometry={column} material={enamel("#DDE1E6", 0.45)} castShadow receiveShadow />
+        {/* The part on the table */}
+        <mesh position={[-0.02, 0.21, 0.06]} material={steel("#B9C0C9", 0.3)} castShadow>
+          <boxGeometry args={[0.12, 0.05, 0.1]} />
+        </mesh>
+        <mesh geometry={frame} material={steel("#6B727C", 0.5)} castShadow />
+        <mesh geometry={hoist} material={enamel("#2E3238", 0.5)} castShadow />
+        {/* The control pendant: the part the specification question is about */}
+        <mesh position={[0.36, 0.2, 0.12]} material={enamel("#2E3238", 0.5)} castShadow>
+          <boxGeometry args={[0.02, 0.2, 0.02]} />
+        </mesh>
+        <mesh position={[0.36, 0.33, 0.12]} rotation-y={-0.5} material={plastic(TINTS.pink, 0.45)} castShadow>
+          <boxGeometry args={[0.1, 0.09, 0.03]} />
+        </mesh>
       </group>
-      <group position={[0.48, 0.03, 0.36]} rotation-y={-2.2} scale={0.1}>
-        <Person look="crew" pose="tablet" seed={3.7} />
+      <group position={[0.5, 0.028, 0.3]} rotation-y={-2.4} scale={0.13}>
+        <Person look="planner" pose="tablet" seed={4.4} />
       </group>
     </>
   );
 }
 
-/** A 20 ft box, long side to the road (6.1 x 2.6 x 2.4 m at the crew's scale, 1 unit = 10 m): ribbed
- *  walls, corner posts and rails, and the door end's locking bars. */
-const CONT = { l: 0.606, h: 0.259, w: 0.244 };
-function Container({ at, color }: { at: [number, number, number]; color: string }) {
-  const trim = geo("ind-cont-trim", () => {
-    const { l, h, w } = CONT;
-    const parts: THREE.BufferGeometry[] = [];
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push(box(0.012, h, 0.012, (sx * (l - 0.012)) / 2, h / 2, (sz * (w - 0.012)) / 2));
-    for (const y of [0.005, h - 0.005]) for (const sz of [-1, 1]) parts.push(box(l, 0.01, 0.008, 0, y, (sz * (w - 0.006)) / 2));
-    for (const z of [-0.075, -0.03, 0.03, 0.075]) parts.push(box(0.004, h - 0.02, 0.005, l / 2 + 0.002, h / 2, z));
-    return merge(parts);
-  });
-  return (
-    <group position={at}>
-      <mesh position-y={CONT.h / 2} material={cladding(color, 40, 0.5)} castShadow receiveShadow>
-        <boxGeometry args={[CONT.l - 0.004, CONT.h - 0.004, CONT.w - 0.004]} />
-      </mesh>
-      <mesh geometry={trim} material={steel("#454A52", 0.5)} castShadow />
-    </group>
-  );
-}
-
-/** Financial services: the racks behind glass and a small operations desk, one violet status lamp. */
-function OpsRoom() {
-  const desk = geo("ind-desk", () =>
+/** Equipment service: a pump set on its skid at a customer's site, the coupling and seal housing in the
+ *  industry's tone, the service technician writing up the visit. */
+function PumpService() {
+  const skid = geo("ind-skid", () => merge([rbox(0.66, 0.035, 0.3, 0.008, 0, 0.0375, 0), ...[-0.12, 0.12].map((z) => box(0.66, 0.02, 0.03, 0, 0.012, z))]));
+  const motor = geo("ind-motor", () =>
     merge([
-      rbox(0.5, 0.018, 0.22, 0.006, 0, 0.18, 0),
-      ...[-1, 1].map((s) => box(0.016, 0.17, 0.2, s * 0.23, 0.085, 0)),
+      cylX(0.075, 0.26, -0.13, 0.135, 0, 32),
+      ...[0, 1, 2, 3, 4, 5].map((i) => box(0.24, 0.006, 0.006, -0.13, 0.135 + Math.sin((i / 6) * Math.PI * 2) * 0.078, Math.cos((i / 6) * Math.PI * 2) * 0.078)),
+      box(0.18, 0.06, 0.12, -0.13, 0.085, 0),
     ]),
   );
-  const screens = geo("ind-screens", () => merge([-0.12, 0.12].map((x) => rbox(0.2, 0.12, 0.012, 0.004, x, 0.29, -0.06)).concat([box(0.02, 0.08, 0.02, -0.12, 0.22, -0.07), box(0.02, 0.08, 0.02, 0.12, 0.22, -0.07)])));
+  const pump = geo("ind-pump", () =>
+    merge([
+      cylZ(0.085, 0.09, 0.15, 0.135, 0, 32),
+      box(0.1, 0.07, 0.1, 0.15, 0.085, 0),
+      cylX(0.032, 0.34, 0.37, 0.135, 0, 20),
+      cylY(0.028, 0.3, 0.15, 0.36, 0, 20),
+      cylX(0.048, 0.016, 0.3, 0.135, 0, 24),
+      cylY(0.044, 0.014, 0.15, 0.24, 0, 24),
+    ]),
+  );
   return (
     <>
-      <group position={[-0.3, 0.012, -0.14]} scale={0.62}>
-        <ServerRacks />
+      <mesh position={[0, 0.02, 0]} material={concrete("#D6DAE0")} receiveShadow castShadow>
+        <boxGeometry args={[1.3, 0.016, 0.9]} />
+      </mesh>
+      <group position={[-0.05, 0.028, -0.06]} rotation-y={0.25}>
+        <mesh geometry={skid} material={enamel("#3A3E45", 0.55)} castShadow receiveShadow />
+        <mesh geometry={motor} material={enamel("#9AA3AF", 0.4)} castShadow receiveShadow />
+        <mesh geometry={pump} material={steel("#B9C0C9", 0.35)} castShadow receiveShadow />
+        {/* The coupling guard over the seal housing: the recommendation in the report */}
+        <mesh position={[0.04, 0.135, 0]} material={plastic(TINTS.saffron, 0.45)} castShadow>
+          <boxGeometry args={[0.07, 0.09, 0.1]} />
+        </mesh>
       </group>
-      <group position={[0.38, 0.012, 0.18]} rotation-y={-0.35}>
-        <mesh geometry={desk} material={enamel("#F1F3F6", 0.5)} castShadow receiveShadow />
-        <mesh geometry={screens} material={enamel("#2A2D33", 0.5)} castShadow />
-        {/* Screens showing the review queue: light, flat, a violet header on the one being worked */}
-        {[-0.12, 0.12].map((x, i) => (
-          <group key={x}>
-            <mesh position={[x, 0.29, -0.0535]} material={enamel("#E4E8EE", 0.6)}>
-              <planeGeometry args={[0.185, 0.105]} />
-            </mesh>
-            <mesh position={[x, 0.33, -0.053]} material={enamel(i ? "#AEB6C2" : TINTS.violet, 0.5)}>
-              <planeGeometry args={[0.185, 0.016]} />
-            </mesh>
-            {[0, 1, 2].map((r) => (
-              <mesh key={r} position={[x - 0.02, 0.305 - r * 0.022, -0.053]} material={enamel("#BCC3CD", 0.6)}>
-                <planeGeometry args={[0.13, 0.008]} />
-              </mesh>
-            ))}
-          </group>
-        ))}
-        {/* The status lamp: violet enamel, not lit */}
-        <mesh position={[0.2, 0.2, 0.05]} material={enamel(TINTS.violet, 0.35)} castShadow>
-          <cylinderGeometry args={[0.014, 0.016, 0.03, 20]} />
-        </mesh>
-        {/* The operator faces the screens, at the same scale as the engineer at the racks (0.34 x 0.62) */}
-        <group position={[0, 0.106, 0.165]} rotation-y={Math.PI / 2} scale={0.21}>
-          <Person look="planner" pose="sit" seed={5.1} />
-        </group>
-        <mesh position={[0, 0.1, 0.17]} material={steel("#30343B", 0.5)} castShadow>
-          <boxGeometry args={[0.12, 0.012, 0.12]} />
-        </mesh>
-        <mesh position={[0, 0.05, 0.17]} material={aluminium(0.35)}>
-          <cylinderGeometry args={[0.008, 0.008, 0.1, 8]} />
-        </mesh>
+      {/* A toolbox and the technician with the service report */}
+      <mesh position={[0.36, 0.06, 0.28]} rotation-y={0.3} material={enamel("#C23A2B", 0.45)} castShadow>
+        <boxGeometry args={[0.12, 0.06, 0.06]} />
+      </mesh>
+      <group position={[0.18, 0.028, 0.32]} rotation-y={-2.6} scale={0.1}>
+        <Person look="crew" pose="tablet" seed={3.7} />
       </group>
     </>
   );
@@ -253,15 +239,15 @@ const SITES: (() => React.ReactNode)[] = [
       <Factory />
     </group>
   ),
-  () => <HarnessTruck />,
+  () => <CoilTruck />,
+  () => <MachineBay />,
+  () => <Substation />,
   () => (
-    <group position={[0, 0.012, -0.08]} scale={1.1}>
-      <Storefront accent={TINTS.pink} />
+    <group position={[-0.05, 0.012, 0]} scale={0.95}>
+      <Warehouse accent={TINTS.violet} name="STOCKIST" />
     </group>
   ),
-  () => <Quay />,
-  () => <OpsRoom />,
-  () => <Substation />,
+  () => <PumpService />,
 ];
 
 /* ---------------- The chapter: presence, the build in and out, and culling ---------------- */

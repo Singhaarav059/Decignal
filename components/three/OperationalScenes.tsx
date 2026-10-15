@@ -717,110 +717,39 @@ export function SupplyRisk({ motion, step, pin, visible = true }: SceneProps) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 05. RFQ: the supplier offer, the sales desk and the customer enquiry */
+/* 05. RFQ: the offer and the enquiry meet at the sales desk; no stock moves */
 /* ------------------------------------------------------------------ */
-export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps) {
-  const tone = TINTS.violet;
-  const forkliftGroup = useRef<THREE.Group>(null);
-  const forkHeight = useRef(0.06);
-  const [pickedFromEast, setPickedFromEast] = useState(false);
-  const [droppedAtWest, setDroppedAtWest] = useState(false);
+/** A document on the move: a white sheet, its header band in its source's colour, two lines of text. */
+function DocSheet({ band }: { band: string }) {
+  return (
+    <>
+      <Box at={[0, 0, 0]} size={[0.34, 0.016, 0.26]} color="#FFFFFF" />
+      <Box at={[0, 0.01, -0.08]} size={[0.3, 0.006, 0.05]} color={band} />
+      {[0, 1].map((r) => (
+        <Box key={r} at={[-0.03, 0.01, r * 0.05]} size={[0.22, 0.004, 0.014]} color="#ACB2BC" />
+      ))}
+    </>
+  );
+}
 
+export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps) {
+  const tone = TINTS.tangerine;
+  const offerDoc = useRef<THREE.Group>(null);
+  const enquiryDoc = useRef<THREE.Group>(null);
+  const [atDesk, setAtDesk] = useState(false);
+
+  // Nothing physical moves: the supplier's offer and the customer's enquiry travel as documents along
+  // the corridor to the sales desk, where they are compared. The stock stays where it is, and no quote
+  // or substitute goes out (handoff D05).
   useFrame(() => {
     if (!visible) return;
     const p = motion.current.progress;
-    const t = phase(p, 0.25, 0.94);
-
-    // Tangent-aligned realistic movement sequence:
-    // [0..0.20]: Approach East bay from transit aisle (z: 0.95 -> 0.38), yaw: -PI/2 (facing -Z / bay)
-    // [0.20..0.28]: Lift forks under top surplus pallet (h: 0.22 -> 0.38)
-    // [0.28..0.42]: Reverse straight out to aisle (z: 0.38 -> 0.95), pivot smoothly to face +X (yaw: -PI/2 -> 0)
-    // [0.42..0.72]: Transit along aisle to West (x: -2.3 -> 2.3), yaw: 0 (facing +X, wheels rolling)
-    // [0.72..0.82]: Pivot to face West bay (yaw: 0 -> -PI/2), drive forward into bay (z: 0.95 -> 0.38)
-    // [0.82..0.90]: Lower mast (h: 0.38 -> 0.05), deposit pallet onto West receiving pad
-    // [0.90..1.0]: Reverse empty back out to aisle (z: 0.38 -> 0.88), forks lowered
-    let fx = -2.3;
-    let fz = 0.95;
-    let fyaw = -Math.PI / 2;
-    let fh = 0.06;
-    let isPicked = false;
-    let isDropped = false;
-
-    if (t < 0.20) {
-      // Approach East bay
-      const u = t / 0.20;
-      fx = -2.3;
-      fz = THREE.MathUtils.lerp(0.95, 0.38, THREE.MathUtils.smoothstep(u, 0, 1));
-      fyaw = -Math.PI / 2;
-      fh = THREE.MathUtils.lerp(0.06, 0.22, u);
-      isPicked = false;
-      isDropped = false;
-    } else if (t < 0.28) {
-      // Mast lifts top pallet
-      const u = (t - 0.20) / 0.08;
-      fx = -2.3;
-      fz = 0.38;
-      fyaw = -Math.PI / 2;
-      fh = THREE.MathUtils.lerp(0.22, 0.38, THREE.MathUtils.smoothstep(u, 0, 1));
-      isPicked = u > 0.4;
-      isDropped = false;
-    } else if (t < 0.42) {
-      // Reverse straight out to aisle, then turn into +X travel heading
-      const u = (t - 0.28) / 0.14;
-      fx = -2.3;
-      fz = THREE.MathUtils.lerp(0.38, 0.95, THREE.MathUtils.smoothstep(u, 0, 1));
-      // Tangent turn: yaw turns smoothly from -PI/2 to 0 as it enters aisle
-      fyaw = u < 0.5 ? -Math.PI / 2 : THREE.MathUtils.lerp(-Math.PI / 2, 0, THREE.MathUtils.smoothstep((u - 0.5) * 2, 0, 1));
-      fh = 0.38;
-      isPicked = true;
-      isDropped = false;
-    } else if (t < 0.72) {
-      // Transiting along central aisle facing +X
-      const u = (t - 0.42) / 0.30;
-      fx = THREE.MathUtils.lerp(-2.3, 2.3, THREE.MathUtils.smoothstep(u, 0, 1));
-      fz = 0.95;
-      fyaw = 0; // facing direction of travel (+X)
-      fh = 0.38;
-      isPicked = true;
-      isDropped = false;
-    } else if (t < 0.82) {
-      // Turn into West bay and drive in
-      const u = (t - 0.72) / 0.10;
-      fx = 2.3;
-      // Tangent turn: yaw turns from 0 to -PI/2 (facing into bay)
-      fyaw = THREE.MathUtils.lerp(0, -Math.PI / 2, THREE.MathUtils.smoothstep(u, 0, 0.5));
-      fz = u < 0.4 ? 0.95 : THREE.MathUtils.lerp(0.95, 0.38, THREE.MathUtils.smoothstep((u - 0.4) / 0.6, 0, 1));
-      fh = 0.38;
-      isPicked = true;
-      isDropped = false;
-    } else if (t < 0.90) {
-      // Lower pallet onto West receiving pad
-      const u = (t - 0.82) / 0.08;
-      fx = 2.3;
-      fz = 0.38;
-      fyaw = -Math.PI / 2;
-      fh = THREE.MathUtils.lerp(0.38, 0.05, THREE.MathUtils.smoothstep(u, 0, 1));
-      isPicked = u < 0.6;
-      isDropped = u >= 0.6;
-    } else {
-      // Reverse empty back to aisle
-      const u = (t - 0.90) / 0.10;
-      fx = 2.3;
-      fz = THREE.MathUtils.lerp(0.38, 0.88, THREE.MathUtils.smoothstep(u, 0, 1));
-      fyaw = -Math.PI / 2;
-      fh = 0.05;
-      isPicked = false;
-      isDropped = true;
-    }
-
-    if (forkliftGroup.current) {
-      forkliftGroup.current.position.set(fx, 0, fz);
-      forkliftGroup.current.rotation.y = fyaw;
-    }
-    forkHeight.current = fh;
-
-    if (isPicked !== pickedFromEast) setPickedFromEast(isPicked);
-    if (isDropped !== droppedAtWest) setDroppedAtWest(isDropped);
+    const t = phase(p, 0.2, 0.7);
+    const k = THREE.MathUtils.smoothstep(t, 0, 1);
+    if (offerDoc.current) offerDoc.current.position.set(THREE.MathUtils.lerp(-2.3, -0.42, k), 0.03, 0.95);
+    if (enquiryDoc.current) enquiryDoc.current.position.set(THREE.MathUtils.lerp(2.3, 0.42, k), 0.03, 0.95);
+    const arrived = t >= 0.98;
+    if (arrived !== atDesk) setAtDesk(arrived);
   });
 
   return (
@@ -835,7 +764,7 @@ export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps)
             id={["east", "central", "west"][i]}
             at={[0, 1.45, 0]}
             title={i === 0 ? "SUPPLIER OFFER" : i === 1 ? "SALES DESK" : `CUSTOMER / ${R.enquiry}`}
-            value={i === 2 ? `${R.required} wetted parts required` : i === 0 ? `${R.offered} listed in the offer` : step === 2 ? "Clarification drafted" : "Lines matched to the enquiry"}
+            value={i === 2 ? `${R.required} wetted parts required` : i === 0 ? `${R.offered} listed in the offer` : step === 2 ? "Clarification drafted" : atDesk ? "Both documents in review" : "Lines matched to the enquiry"}
             tone={i === 2 ? COLORS.signal : i === 0 ? tone : DOT}
             alert={i === 2}
             motion={motion}
@@ -849,50 +778,54 @@ export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps)
         </group>
       ))}
 
-      {/* East surplus bay: 2-tier stack (base pallet stays, top pallet picked) */}
+      {/* The supplier's stock stays on its bay: offered, not shipped */}
       <group position={[-2.3, 0, 0.22]} scale={0.65}>
-        {/* Base pallet: stays at East permanently */}
         <LoadedPallet tote={plastic("#C3C8D0")} />
-        {/* Top surplus pallet: picked by forklift, visible only before pickup */}
-        {!pickedFromEast && !droppedAtWest && (
-          <group position={[0, 0.22, 0]}>
-            <LoadedPallet tote={plastic(tone)} />
-          </group>
-        )}
+        <group position={[0, 0.22, 0]}>
+          <LoadedPallet tote={plastic(tone)} />
+        </group>
+      </group>
+      <group position={[-1.55, 0, 0.3]} rotation-y={Math.PI * 0.5} scale={M}>
+        <Forklift color={TRIM} parked />
       </group>
 
-      {/* West receiving slot: pallet DELOADED at West bay after transfer */}
-      {droppedAtWest && (
-        <group position={[2.3, 0, 0.22]} scale={0.65}>
-          <LoadedPallet tote={plastic(tone)} />
+      {/* The sales desk where the two documents meet, and the clarification that waits on it */}
+      <Box at={[0, 0.09, 0.3]} size={[0.9, 0.04, 0.42]} color="#E9ECF0" />
+      {[-0.4, 0.4].map((x) => (
+        <Box key={x} at={[x, 0.045, 0.3]} size={[0.04, 0.09, 0.38]} color="#C3C8D0" />
+      ))}
+      {step === 2 && (
+        <group position={[0, 0.115, 0.3]}>
+          <Box at={[0, 0, 0]} size={[0.3, 0.012, 0.22]} color="#FFFFFF" />
+          <Box at={[0, 0.008, -0.07]} size={[0.26, 0.006, 0.04]} color={tone} />
+          {[0, 1, 2].map((r) => (
+            <Box key={r} at={[-0.02, 0.008, -0.01 + r * 0.04]} size={[0.2, 0.004, 0.012]} color="#ACB2BC" />
+          ))}
         </group>
       )}
 
-      {/* Dealer staff: the West account manager checks the allocation, East signs off the surplus */}
-      <group position={[2.95, 0, 0.32]} rotation-y={Math.PI * 0.85} scale={0.15}>
-        <Person look="planner" pose={droppedAtWest ? "wave" : "tablet"} seed={1.7} />
+      {/* The account manager reads both; the supplier's buyer stands by the offer */}
+      <group position={[0.2, 0, 0.62]} rotation-y={Math.PI} scale={0.15}>
+        <Person look="planner" pose="tablet" seed={1.7} />
       </group>
       <group position={[-1.6, 0, 0.36]} rotation-y={Math.PI * 1.15} scale={0.15}>
         <Person look="crew" pose="tablet" seed={0.3} />
       </group>
-      {/* Central transit corridor track */}
+
+      {/* The corridor the documents travel along */}
       <Box at={[0, 0.002, 0.95]} size={[7, 0.01, 0.65]} color="#AAAFB7" />
       {Array.from({ length: 14 }, (_, i) => (
         <Box key={i} at={[-3.2 + i * 0.48, 0.012, 0.95]} size={[0.22, 0.006, 0.018]} color="#F3F5F7" />
       ))}
-
-      {/* Transfer forklift: enters naturally, turns with tangent heading, carries top pallet */}
-      <group ref={forkliftGroup} position={[-2.3, 0, 0.95]} scale={M}>
-        <Forklift color={TRIM} lift={() => forkHeight.current}>
-          {pickedFromEast && !droppedAtWest && (
-            <group rotation-y={Math.PI / 2}>
-              <LoadedPallet tote={plastic(tone)} />
-            </group>
-          )}
-        </Forklift>
+      <group ref={offerDoc} position={[-2.3, 0.03, 0.95]}>
+        <DocSheet band={tone} />
+      </group>
+      <group ref={enquiryDoc} position={[2.3, 0.03, 0.95]}>
+        <DocSheet band={COLORS.signal} />
       </group>
 
-      <Route points={[[-2.3, 0.016, 1.55], [2.3, 0.016, 1.55], [2.3, 0.016, 1.1]]} color={tone} radius={0.014} dashed flow speed={0.32} pulseColor={tone} />
+      <Route points={[[-2.3, 0.016, 1.55], [0, 0.016, 1.55], [0, 0.016, 1.1]]} color={tone} radius={0.014} dashed flow speed={0.32} pulseColor={tone} />
+      <Route points={[[2.3, 0.016, 1.55], [0, 0.016, 1.55], [0, 0.016, 1.1]]} color={COLORS.signal} radius={0.014} dashed flow speed={0.32} pulseColor={COLORS.signal} />
     </group>
   );
 }
