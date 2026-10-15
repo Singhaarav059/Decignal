@@ -154,14 +154,23 @@ const damp = (a: number, b: number, lambda: number, dt: number) => b + (a - b) *
 
 /** Text blocks of the story copy that are on screen; a label never sits on them. */
 let blocks: DOMRect[] = [];
+let range: Range;
 function readBlocks() {
   blocks = [];
+  range ??= document.createRange();
   const seen = new Set<Element>();
   document.querySelectorAll<HTMLElement>("[data-ch], [data-ind]").forEach((ch) => {
     const o = parseFloat(ch.style.opacity || "1");
     if (o < 0.3 || ch.style.visibility === "hidden") return;
     ch.querySelectorAll<HTMLElement>("h1, h2, h3, p, dl, ul, ol, button, a, [data-obstacle]").forEach((el) => {
       seen.add(el);
+      // Headings and paragraphs by their lines: a short last line leaves room a label may use, where
+      // the block's box kept labels shut under a two-line heading.
+      if (/^(H\d|P)$/.test(el.tagName) && !el.hasAttribute("data-obstacle")) {
+        range.selectNodeContents(el);
+        for (const r of range.getClientRects()) if (r.width > 0 && r.height > 0) blocks.push(r);
+        return;
+      }
       const r = el.getBoundingClientRect();
       if (r.width > 0 && r.height > 0) blocks.push(r);
     });

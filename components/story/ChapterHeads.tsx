@@ -126,8 +126,9 @@ function ChapterHead({ c }: { c: number }) {
             </span>
           </span>
         </p>
-        {/* The whole head is aria-hidden (the card holds the same words), so the figures are plain spans. */}
-        <div className="chapter-facts">
+        {/* The whole head is aria-hidden (the card holds the same words), so the figures are plain spans.
+            A 3D label never opens over them (data-obstacle). */}
+        <div className="chapter-facts" data-obstacle>
           {facts.map((f) => (
             <div key={f.label} className="chapter-fact" data-risk={f.risk || undefined} style={toneVars(f.tone)}>
               <div className="chapter-fact-in" data-roll="1.05">
