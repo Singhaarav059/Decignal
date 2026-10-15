@@ -61,6 +61,9 @@
 .orbit-cap-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-pill); color: var(--tone-on); background: var(--tone); }
 .orbit-read { margin-top: 4px; color: var(--color-ink-soft); text-wrap: balance; }
 @media (min-width: 768px) {
+  /* The orbit's own band above its top tiles is the section's air; --section-y on top of the
+     review's bottom padding left a dead gap after the disclaimer. */
+  .works-with-section { padding-top: 0; }
   /* The height follows the track round the panel (SystemsRing sets --orbit-h). */
   .orbit { height: var(--orbit-h, clamp(780px, 116svh, 1040px)); place-items: center; gap: 0; }
   .orbit-copy { z-index: 20; width: min(740px, 54vw); padding: clamp(28px, 3.4vw, 44px) clamp(24px, 3.2vw, 44px) clamp(22px, 2.6vw, 32px); border-radius: 36px; }
