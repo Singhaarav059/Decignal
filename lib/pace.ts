@@ -91,4 +91,34 @@ export function resting(now = performance.now()) {
 export const probe = {
   off3d: false,
   dprSetters: new Set<(dpr: number | [number, number]) => void>(),
+  /** Each canvas's draws since the probe last read them: main-thread ms in render(), render calls,
+   *  draw calls and triangles. Filled only with ?perf (probeGl). */
+  gl: new Map<string, GlTally>(),
 };
+
+export type GlTally = { ms: number; renders: number; calls: number; triangles: number; dpr: number };
+
+type Renderer = {
+  render: (...a: never[]) => void;
+  info: { render: { calls: number; triangles: number } };
+  getPixelRatio: () => number;
+};
+
+/** With ?perf, counts what `name`'s canvas draws: the probe splits a frame into the 3D's share and the
+ *  page's. Each render() is timed, and three's info (reset per render) is added up after it. */
+export function probeGl(name: string, gl: Renderer) {
+  if (typeof window === "undefined" || !new URLSearchParams(location.search).has("perf")) return;
+  const t: GlTally = { ms: 0, renders: 0, calls: 0, triangles: 0, dpr: gl.getPixelRatio() };
+  probe.gl.set(name, t);
+  if (process.env.NODE_ENV !== "production") Object.assign(window, { __probe: probe });
+  const render = gl.render.bind(gl);
+  gl.render = ((...a: never[]) => {
+    const s = performance.now();
+    render(...a);
+    t.ms += performance.now() - s;
+    t.renders++;
+    t.calls += gl.info.render.calls;
+    t.triangles += gl.info.render.triangles;
+    t.dpr = gl.getPixelRatio();
+  }) as Renderer["render"];
+}

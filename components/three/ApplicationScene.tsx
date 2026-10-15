@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { isTouch } from "@/lib/pace";
+import { isTouch, probeGl } from "@/lib/pace";
 import { Pacer } from "./Pacer";
 import { memo, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
@@ -336,6 +336,7 @@ export default function ApplicationScene(props: Props) {
         gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 0.95;
+        probeGl("explorer", gl);
       }}>
       <Suspense fallback={null}>
         <Studio resolution={q.phone ? 256 : 512} />

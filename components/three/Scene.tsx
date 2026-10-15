@@ -15,7 +15,7 @@ import { SystemNetwork } from "./SystemNetwork";
 import { canvasQuality, portraitWide, tallTouch } from "@/lib/device";
 import { markSceneReady } from "@/lib/chrome";
 import { onJumpCut } from "@/lib/jump";
-import { isTouch } from "@/lib/pace";
+import { isTouch, probeGl } from "@/lib/pace";
 import { Pacer } from "./Pacer";
 import { SceneBoundary } from "./SceneBoundary";
 import { FinalMark } from "./actors/mark";
@@ -575,6 +575,7 @@ function World3D() {
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = 0.95;
         gl.setClearColor(0x000000, 0);
+        probeGl("story", gl);
       }}
     >
       {world}

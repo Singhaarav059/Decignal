@@ -5,7 +5,7 @@
 // measuring the frame rate the phone itself reaches and how much of each second went to script and
 // to style and layout on the main thread. It also says whether the 3D runs at all, and why not: the
 // errors and lost contexts since the page loaded. The result is text to copy or screenshot.
-import { probe } from "./pace";
+import { probe, type GlTally } from "./pace";
 import { gToProgress } from "./story";
 import { canvasQuality } from "./device";
 import { deviceTier } from "./tier";
@@ -49,6 +49,25 @@ function frames(ms: number, y?: number) {
     };
     requestAnimationFrame(f);
   });
+}
+
+/** What each canvas drew over a stretch: renders a second, main-thread ms a second inside render(),
+ *  and per render the draw calls, thousands of triangles and the density. Read from probeGl's tallies. */
+function snap() {
+  return new Map([...probe.gl].map(([k, t]) => [k, { ...t }]));
+}
+function drew(before: Map<string, GlTally>, ms: number) {
+  const s = Math.max(ms / 1000, 0.001);
+  const out: string[] = [];
+  for (const [k, t] of probe.gl) {
+    const b = before.get(k) ?? { ms: 0, renders: 0, calls: 0, triangles: 0, dpr: t.dpr };
+    const n = t.renders - b.renders;
+    if (!n) continue;
+    out.push(
+      `${k} ${Math.round(n / s)}/s ${Math.round((t.ms - b.ms) / s)}ms/s ${Math.round((t.calls - b.calls) / n)}dc ${Math.round((t.triangles - b.triangles) / n / 1000)}k tri @${t.dpr}x`,
+    );
+  }
+  return out.join(", ") || "no 3D drawn";
 }
 
 const fps = (d: number[]) => (d.length ? Math.round(1000 / (d.reduce((a, b) => a + b, 0) / d.length)) : 0);
@@ -186,6 +205,7 @@ export function startProbe(log: ProbeLog) {
     const idle = fps(await frames(1500));
     const head = `${device(log)}\nidle at top ${idle} fps (${work(log, i0, performance.now())} ms/s)\nper place rest/move fps, then main-thread ms per second:`;
     const rows: string[] = [];
+    const draws: string[] = [];
     try {
       for (let c = 0; c < CONFIGS.length; c++) {
         const cfg = CONFIGS[c];
@@ -200,13 +220,17 @@ export function startProbe(log: ProbeLog) {
           // Rest is measured once the page and the scene have settled.
           await wait(900);
           const rest = await frames(1200);
+          const before = snap();
+          const m0 = performance.now();
           const move = await frames(1500, y);
           cells.push(`${name} ${fps(rest)}/${fps(move)}`);
+          // The 3D's share of a moving second, for the configs that draw it.
+          if (!cfg.off3d && !cfg.css) draws.push(`  ${cfg.name} ${name} moving: ${drew(before, performance.now() - m0)}`);
         }
         // Long-frame entries arrive a little after their frame.
         await wait(150);
         rows.push(`${cfg.name.padEnd(11)} ${cells.join(" · ")} | ${work(log, a, performance.now())}`);
-        show(`${head}\n${rows.join("\n")}`);
+        show(`${head}\n${rows.join("\n")}${draws.length ? `\n3D per moving second (renders, ms in render(), per render: draw calls, triangles, density):\n${draws.join("\n")}` : ""}`);
       }
     } finally {
       style.remove();
