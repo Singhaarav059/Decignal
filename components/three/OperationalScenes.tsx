@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Plant, Storefront } from "./buildings";
 import { Forklift, SemiTruck, TRUCK } from "./vehicles";
-import { LOOKS, Person, Walker } from "./people";
+import { Person, Walker } from "./people";
 import { LoadedPallet, Bearing, box, cylX, geo, merge } from "./parts";
 import { aluminium, chrome, enamel, plastic, steel, cladding, darkGlass } from "./materials";
 import { Yard } from "./Actors";
@@ -13,10 +13,8 @@ import { SLOT_X, STAGE_Z, DECK_Z, liftAt, palletStates, type Lift } from "./tran
 import { M, ROAD_Z, truckX } from "@/lib/scene";
 import { Bolts, Box, Floor, Pin, Route, phase, type Motion, type PinRef, type Vec } from "./SceneKit";
 import { COLORS, TINTS } from "./palette";
-import { NEUTRAL } from "./accent";
 import { DEMO_PINS } from "@/lib/application-demos";
 import { APP_FACTS, EXAMPLE, inr } from "@/lib/example";
-import { EVIDENCE_LABELS } from "@/lib/copy";
 
 /** pin: the object the reader points at in the card (its tag opens instead of the stage's subject). */
 export type SceneProps = { motion: Motion; step: number; still: boolean; pin?: PinRef; visible?: boolean };
@@ -31,12 +29,16 @@ export type SceneProps = { motion: Motion; step: number; still: boolean; pin?: P
 const TRIM = "#5E6675";
 /** A pin on a neutral object. */
 const DOT = "#8A909A";
-const P1 = EXAMPLE.plant01;
-const P2 = EXAMPLE.plant02;
-const TRF = EXAMPLE.transfer;
+const J = APP_FACTS.jobwork;
+const S = APP_FACTS.service;
+const U = APP_FACTS.supplier;
+const R = APP_FACTS.rfq;
+const DED = APP_FACTS.deduction;
+/** The returned pieces the truck carries in the job-work scene, per pallet (three pallets). */
+const PER_PALLET = Math.round(J.returned / 3);
 
 /* ------------------------------------------------------------------ */
-/* 01. LOGISTICS: Complete loading at source + deloading at dock      */
+/* 01. JOB WORK: the job worker loads the return, your plant receives it */
 /* ------------------------------------------------------------------ */
 export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
   const truck = useRef<THREE.Group>(null);
@@ -150,16 +152,16 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
     }
   });
 
-  const sent = states.filter((v) => v === 2).length * 80;
+  const loaded = Math.min(J.returned, states.filter((v) => v === 2).length * PER_PALLET);
 
   return (
     <group dispose={null}>
       <Yard roadLength={8.9} />
       <group position={[-2.55, 0, -1.6]} scale={M}>
-        <Plant accent={TRIM} name="PLANT 02" />
+        <Plant accent={TRIM} name="JOB WORKER" />
       </group>
       <group position={[2.55, 0, -1.6]} scale={M}>
-        <Plant accent={TRIM} name="PLANT 01" />
+        <Plant accent={TRIM} name="YOUR PLANT" />
       </group>
 
       {/* Pallets staged at Plant 02 (loading source) */}
@@ -189,8 +191,8 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
             },
           )}
         </SemiTruck>
-        {/* The transfer's tag rides on the truck */}
-        <Pin id="truck" at={[0, 4.4, 0]} title={TRF.id} value={delivered >= 2 ? "Received at Plant 01" : arrived ? "Unloading at Plant 01" : sent > 0 ? `${sent} of ${TRF.units} units loaded` : `${TRF.pallets} pallets of ${TRF.perPallet} units`} tone={delivered >= 2 ? TINTS.emerald : TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
+        {/* The return challan's tag rides on the truck */}
+        <Pin id="truck" at={[0, 4.4, 0]} title={`RETURN · ${J.challan}`} value={delivered >= 2 ? `${J.returned} pieces received` : arrived ? "Unloading at your plant" : loaded > 0 ? `${loaded} of ${J.returned} pieces loaded` : `${J.returned} pieces to return`} tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
       </group>
 
       {/* Loading forklift at Plant 02 */}
@@ -225,14 +227,14 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
         </Forklift>
       </group>
 
-      <Pin id="plant02" at={[-2.55, 1.45, -1.6]} title="PLANT 02" value={`${P2.stock - sent} on hand`} tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
+      <Pin id="plant02" at={[-2.55, 1.45, -1.6]} title={`${J.worker.toUpperCase()} / ${J.process.toUpperCase()}`} value={`${J.sent.toLocaleString("en-IN")} sent · ${J.rejected} rejections on record`} tone={TINTS.saffron} motion={motion} pin={pin} subject={DEMO_PINS.inventory.steps[step]} />
       <Pin
         id="plant01"
         at={[2.55, 1.45, -1.6]}
-        title={`PLANT 01 / ${EXAMPLE.part.toUpperCase()}`}
-        value={delivered >= 2 ? `Day 6 · ${P1.day6With} units, above safety stock` : `Day 6 · ${P1.day6Without} units, under ${P1.safety}`}
-        tone={delivered >= 2 ? TINTS.emerald : COLORS.signal}
-        alert={delivered < 2}
+        title={`YOUR PLANT / ${J.challan}`}
+        value={step === 2 ? `${J.open} pieces prepared for review` : `${J.sent - J.returned - J.rejected} pieces not yet explained`}
+        tone={COLORS.signal}
+        alert
         motion={motion}
         pin={pin}
         subject={DEMO_PINS.inventory.steps[step]}
@@ -242,7 +244,7 @@ export function Logistics({ motion, step, pin, visible = true }: SceneProps) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 02. PRODUCTION: Line 03 queue transfer & deloading onto Line 02    */
+/* 02. DISPATCH: the shipment line, its certificate and the pack       */
 /* ------------------------------------------------------------------ */
 function Conveyor({ x, z, length = 4.9, active = true }: { x: number; z: number; length?: number; active?: boolean }) {
   const beltProgress = useRef(0);
@@ -438,15 +440,15 @@ export function Production({ motion, step, pin, visible = true }: SceneProps) {
       <group position={[-3.1, 0, 1.55]} rotation-y={-0.6} scale={0.5}>
         <Person look="planner" pose="tablet" seed={4.1} />
       </group>
-      <Pin id="line03" at={[2.05, 1.62, 0.8]} title={APP_FACTS.production.queuedAt.toUpperCase()} value={step === 2 ? "Back on plan" : `${APP_FACTS.production.queued} lots queued`} tone={step === 2 ? TINTS.emerald : COLORS.signal} alert={step < 2} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
-      <Pin id="line02" at={[2.05, 1.62, -0.8]} title={APP_FACTS.production.to.toUpperCase()} value={step === 2 ? `${APP_FACTS.production.moved} lots from Line 03` : "Free capacity"} tone={step === 2 ? TINTS.emerald : DOT} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
-      <Pin id="order" at={[-1.4, 0.95, 0.8]} title={EVIDENCE_LABELS.productionOrder} value={step === 2 ? "Both lines balanced" : `Shift at ${APP_FACTS.production.shift}`} tone={TINTS.emerald} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
+      <Pin id="line03" at={[2.05, 1.62, 0.8]} title={`LINE ${EXAMPLE.line.n} / ${EXAMPLE.line.item.toUpperCase()}`} value={`Heat ${EXAMPLE.line.heat} on record`} tone={DOT} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
+      <Pin id="line02" at={[2.05, 1.62, -0.8]} title={`CERTIFICATE / ${EXAMPLE.cert.source.toUpperCase()}`} value={`Heat ${EXAMPLE.cert.heat} · conflicting`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
+      <Pin id="order" at={[-1.4, 0.95, 0.8]} title={`SHIPMENT ${EXAMPLE.shipment.id}`} value={step === 2 ? "For review · 2 questions" : `Checklist ${EXAMPLE.checklist.rev} · 6 documents`} tone={TINTS.emerald} motion={motion} pin={pin} subject={DEMO_PINS.production.steps[step]} />
     </group>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* 03. SUPPLY RISK: Gantry crane running trolley, hoist & deloading   */
+/* 03. SUPPLIER UPDATE: the changed promise and the order it touches  */
 /* ------------------------------------------------------------------ */
 function Container({ at, color }: { at: Vec; color: string }) {
   return (
@@ -708,116 +710,14 @@ export function SupplyRisk({ motion, step, pin, visible = true }: SceneProps) {
         </SemiTruck>
       </group>
 
-      <Pin id="port" at={[-1.4, 2.5, -0.7]} title="PORT / PRIMARY LANE" value={`${APP_FACTS.risk.parts.join(" · ")} · ${APP_FACTS.risk.laneDelayDays} days late`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.risk.steps[step]} />
-      <Pin id="supplier2" at={[1.65, 0.45, 1.6]} title={APP_FACTS.risk.alternative.toUpperCase()} value={step === 2 ? "Both parts assigned" : `Both parts in ${APP_FACTS.risk.alternativeDays} days`} tone={step === 2 ? TINTS.emerald : TINTS.tangerine} motion={motion} pin={pin} subject={DEMO_PINS.risk.steps[step]} />
+      <Pin id="port" at={[-1.4, 2.5, -0.7]} title={`SUPPLIER UPDATE / ${U.po}`} value={`${U.qty} ${U.item.toLowerCase()} → ${U.first} ${U.firstDay}, ${U.rest} ${U.restDay}`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.risk.steps[step]} />
+      <Pin id="supplier2" at={[1.65, 0.45, 1.6]} title={`CUSTOMER ORDER ${U.order}`} value={step === 2 ? "Revised schedule for the buyer" : "Allocated to this PO line"} tone={TINTS.tangerine} motion={motion} pin={pin} subject={DEMO_PINS.risk.steps[step]} />
     </group>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* 04. DISTRIBUTION: Central DC to Storefronts with Dock Deloading    */
-/* ------------------------------------------------------------------ */
-export function Distribution({ motion, step, pin, commercial = false, visible = true }: SceneProps & { commercial?: boolean }) {
-  const tone = TINTS.cobalt;
-  const vehicle = useRef<THREE.Group>(null);
-  const [unloadedAtStore, setUnloadedAtStore] = useState(false);
-
-  useFrame(() => {
-    if (!visible) return;
-    const p = motion.current.progress;
-    const t = phase(p, 0.35, 0.92);
-    if (vehicle.current) {
-      // Truck drives along roadway to Storefront delivery apron
-      const truckX = THREE.MathUtils.lerp(-2.2, 1.62, t);
-      vehicle.current.position.x = truckX;
-    }
-    // Deloading pallet onto dedicated storefront receiving pad upon arrival
-    const reachedStore = t >= 0.72;
-    if (reachedStore !== unloadedAtStore) setUnloadedAtStore(reachedStore);
-  });
-
-  return (
-    <group dispose={null}>
-      <Floor size={[7.6, 0.03, 4.2]} />
-      <Route points={[[-3.5, 0.015, 0.8], [3.5, 0.015, 0.8]]} radius={0.01} color="#E3E7EC" dashed />
-      <group position={[-2.3, 0, -0.85]} scale={0.14}>
-        <Plant accent={TRIM} name="CENTRAL DC" />
-      </group>
-
-      {/* Permanent, continuous storefront buildings: Storefront 1 is the West Store */}
-      {[0, 1, 2].map((i) => (
-        <group key={i} position={[0.6 + i * 1.02, 0, -0.65]} scale={0.65}>
-          {/* Demand reads in cobalt orders: the stores stay neutral here (violet means CRM). */}
-          <Storefront accent={NEUTRAL} />
-        </group>
-      ))}
-
-      {/* Pedestrian sidewalk in front of storefronts */}
-      <Box at={[1.62, 0.02, -0.05]} size={[3.4, 0.03, 0.6]} color="#DFE2E7" />
-
-      {/* Shoppers on the pavement, and the store's receiver waiting at the pad */}
-      <group scale={0.1}>
-        <Walker look="shopper" speed={0.9} path={[[1, -1.7], [32, -1.7], [32, 0.4], [1, 0.4]]} />
-        <Walker look="planner" speed={1.1} offset={0.5} path={[[1, -1.7], [32, -1.7], [32, 0.4], [1, 0.4]]} />
-        <Walker look={{ ...LOOKS.shopper, shirt: "#2F6DF6", skin: "#8A5A3C", hair: "#16181C" }} speed={0.8} offset={0.25} path={[[1, -1.7], [32, -1.7], [32, 0.4], [1, 0.4]]} />
-      </group>
-      <group position={[2.3, 0, 0.3]} rotation-y={Math.PI - 0.3} scale={0.11}>
-        <Person look="warehouse" pose={commercial ? "stand" : "tablet"} seed={2.4} />
-      </group>
-      {/* Dedicated Storefront receiving staging pad in front of West Store (NOT inside the building!) */}
-      <Box at={[1.62, 0.035, 0.16]} size={[0.95, 0.012, 0.62]} color="#C3C8D0" />
-
-      {/* Staged replenishment inventory at Central DC */}
-      <group position={[-1.2, 0, -0.7]} scale={0.6}>
-        <LoadedPallet tote={plastic(tone)} />
-      </group>
-      <Route points={[[-3.3, 0.02, 0.8], [3.2, 0.02, 0.8]]} radius={0.12} color="#B4BAC4" />
-      <Route
-        points={[[-2.3, 0.15, 0.8], [2.5, 0.15, 0.8]]}
-        radius={0.018}
-        color={tone}
-        dashed
-        flow
-        speed={0.35}
-        pulseColor={tone}
-      />
-
-      {/* Delivery transport truck: pallet deloads once arrived at storefront receiving pad */}
-      <group ref={vehicle} position={[-2.2, 0, 0.8]} scale={0.12}>
-        <SemiTruck accent="#C3C8D0">
-          {!unloadedAtStore && (
-            <group position={[TRUCK.slots[1], TRUCK.deckY, 0]}>
-              <LoadedPallet tote={plastic(tone)} />
-            </group>
-          )}
-        </SemiTruck>
-      </group>
-
-      {/* Pallet DELOADED onto dedicated receiving pad in front of storefront */}
-      {unloadedAtStore && (
-        <group position={[1.62, 0.045, 0.16]} scale={0.58}>
-          <LoadedPallet tote={plastic(tone)} />
-        </group>
-      )}
-
-      <Pin id="central" at={[-2.3, 1.5, -0.85]} title="CENTRAL DC" value={step === 2 ? "Dispatch plan updated" : "Stock and capacity checked"} tone={DOT} motion={motion} pin={pin} subject={DEMO_PINS.demand.steps[step]} />
-      <Pin
-        id="west"
-        at={[1.62, 1.05, -0.65]}
-        title={commercial ? "WEST / DEALER NETWORK" : APP_FACTS.demand.dc.toUpperCase()}
-        value={unloadedAtStore ? "Order raised" : "Orders ahead of the plan"}
-        tone={unloadedAtStore ? TINTS.emerald : COLORS.signal}
-        alert={!unloadedAtStore}
-        motion={motion}
-        pin={pin}
-        subject={DEMO_PINS.demand.steps[step]}
-      />
-    </group>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* 05. DEALER NETWORK: Forklift Picks Surplus from East, Deloads West  */
+/* 05. RFQ: the supplier offer, the sales desk and the customer enquiry */
 /* ------------------------------------------------------------------ */
 export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps) {
   const tone = TINTS.violet;
@@ -926,18 +826,18 @@ export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps)
   return (
     <group dispose={null}>
       <Floor size={[7.6, 0.04, 4.5]} />
-      {["EAST", "CENTRAL", "WEST"].map((region, i) => (
+      {["SUPPLIER", "SALES DESK", "CUSTOMER"].map((region, i) => (
         <group key={region} position={[-2.3 + i * 2.3, 0, -0.75]}>
           <group scale={1.15}>
             <Storefront />
           </group>
           <Pin
-            id={region.toLowerCase()}
+            id={["east", "central", "west"][i]}
             at={[0, 1.45, 0]}
-            title={`${region} / DEALERS`}
-            value={i === 2 ? (droppedAtWest ? "Allocation raised" : "Orders above allocation") : i === 0 ? (droppedAtWest ? "Surplus moved West" : "Surplus within policy") : "Orders match allocation"}
-            tone={i === 2 ? (droppedAtWest ? TINTS.emerald : COLORS.signal) : i === 0 ? tone : DOT}
-            alert={i === 2 && !droppedAtWest}
+            title={i === 0 ? "SUPPLIER OFFER" : i === 1 ? "SALES DESK" : `CUSTOMER / ${R.enquiry}`}
+            value={i === 2 ? `${R.required} wetted parts required` : i === 0 ? `${R.offered} listed in the offer` : step === 2 ? "Clarification drafted" : "Lines matched to the enquiry"}
+            tone={i === 2 ? COLORS.signal : i === 0 ? tone : DOT}
+            alert={i === 2}
             motion={motion}
             pin={pin}
             subject={DEMO_PINS.sales.steps[step]}
@@ -998,7 +898,7 @@ export function DealerNetwork({ motion, step, pin, visible = true }: SceneProps)
 }
 
 /* ------------------------------------------------------------------ */
-/* 06. MAINTENANCE: Diagnostic Motor & Vibration Decoupling           */
+/* 06. SERVICE: the pump in the report and the seal it recommends      */
 /* ------------------------------------------------------------------ */
 function Motor({ motion, still, visible = true }: Pick<SceneProps, "motion" | "still" | "visible">) {
   const rotor = useRef<THREE.Group>(null);
@@ -1096,14 +996,13 @@ export function Maintenance(props: SceneProps) {
       <group position={[0, -0.22, 0]}>
         <Motor {...props} />
       </group>
-      <Pin id="motor" at={[-0.85, 1.85, 0]} title={`${APP_FACTS.maintenance.line.toUpperCase()} / DRIVE MOTOR`} value={`Sensor ${APP_FACTS.maintenance.sensor} · ${APP_FACTS.maintenance.peak} peak`} tone={props.step === 0 ? COLORS.signal : DOT} alert={props.step === 0} motion={props.motion} pin={props.pin} subject={DEMO_PINS.maintenance.steps[props.step]} />
+      <Pin id="motor" at={[-0.85, 1.85, 0]} title={`${S.equipment.toUpperCase()} / ${S.report}`} value={`Serial ${S.serial} · incomplete`} tone={COLORS.signal} alert={props.step === 0} motion={props.motion} pin={props.pin} subject={DEMO_PINS.maintenance.steps[props.step]} />
       <Pin
         id="bearing"
         at={[2.25, 1.2, -0.65]}
-        title={EXAMPLE.part.toUpperCase()}
-        value={props.step === 2 ? "Inspection booked" : "Drive-end bearing to inspect"}
-        tone={props.step === 2 ? TINTS.emerald : COLORS.signal}
-        alert={props.step < 2}
+        title={S.part.toUpperCase()}
+        value={props.step === 2 ? "Follow-up for the service owner" : `Replace at the ${S.when.toLowerCase()}`}
+        tone={TINTS.pink}
         motion={props.motion}
         pin={props.pin}
         subject={DEMO_PINS.maintenance.steps[props.step]}
@@ -1113,142 +1012,7 @@ export function Maintenance(props: SceneProps) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 07. CUSTOMER / SERVICE: 14 Service Cases Converging on Bearing X90 */
-/* ------------------------------------------------------------------ */
-function CaseTicket({ step }: { id: number; step: number }) {
-  const isEscalated = step === 2;
-  const tagColor = isEscalated ? TINTS.emerald : TINTS.violet;
-  return (
-    <group>
-      {/* Heavy cardstock case file card */}
-      <Box at={[0, 0, 0]} size={[0.44, 0.035, 0.56]} color="#FFFFFF" />
-      {/* Case record top header tab */}
-      <Box at={[0, 0.022, -0.21]} size={[0.36, 0.008, 0.08]} color={tagColor} />
-      {/* Case ID badge dot */}
-      <mesh position={[-0.13, 0.028, -0.21]}>
-        <cylinderGeometry args={[0.016, 0.016, 0.006, 12]} />
-        <meshBasicMaterial color="#FFFFFF" />
-      </mesh>
-      {/* Case record metadata lines */}
-      <Box at={[0.03, 0.022, -0.21]} size={[0.2, 0.006, 0.022]} color="#FFFFFF" />
-      <Box at={[-0.03, 0.022, -0.09]} size={[0.3, 0.005, 0.018]} color="#384048" />
-      <Box at={[0, 0.022, -0.02]} size={[0.36, 0.005, 0.014]} color="#A7AEB7" />
-      <Box at={[0, 0.022, 0.05]} size={[0.36, 0.005, 0.014]} color="#A7AEB7" />
-      <Box at={[-0.05, 0.022, 0.12]} size={[0.26, 0.005, 0.014]} color="#A7AEB7" />
-      {/* Barcode / tracking index */}
-      <Box at={[0.11, 0.022, 0.19]} size={[0.14, 0.005, 0.036]} color="#2C3238" />
-    </group>
-  );
-}
-
-/** Height of the service bench top the cases and the bearing lie on. */
-const BENCH = 0.36;
-
-export function Customer({ motion, step, pin, visible = true }: SceneProps) {
-  const tickets = useRef<(THREE.Group | null)[]>([]);
-  const links = useRef<THREE.Group>(null);
-
-  useFrame(() => {
-    if (!visible) return;
-    const t = phase(motion.current.progress, 0.2, 0.76);
-    // The links grow out from the bearing as the cases move into the ring, so none of them points at an empty spot.
-    links.current?.scale.set(Math.max(t, 0.001), 1, Math.max(t, 0.001));
-    tickets.current.forEach((g, i) => {
-      if (!g) return;
-      const a = (i / 14) * Math.PI * 2;
-      g.position.set(
-        THREE.MathUtils.lerp(-2.4 + (i % 4) * 0.48, Math.cos(a) * 2.3, t),
-        0.12 + Math.sin(i) * 0.015,
-        THREE.MathUtils.lerp(-1 + Math.floor(i / 4) * 0.5, Math.sin(a) * 1.7, t),
-      );
-      g.rotation.y = THREE.MathUtils.lerp((i % 3 - 1) * 0.16, -a, t);
-    });
-  });
-
-  return (
-    <group dispose={null}>
-      <Floor size={[7.6, 0.035, 4.8]} />
-      {/* The service bench: a neutral grey top on a steel frame. The people stand on the floor beside it. */}
-      <Box at={[0, BENCH - 0.025, 0]} size={[5.3, 0.05, 4.2]} color="#D5D9DF" />
-      <Box at={[0, BENCH - 0.08, 0]} size={[5.0, 0.06, 3.9]} color="#ACB2BC" />
-      {[-1, 1].map((sx) =>
-        [-1, 1].map((sz) => <Box key={`${sx}${sz}`} at={[sx * 2.45, (BENCH - 0.05) / 2, sz * 1.85]} size={[0.08, BENCH - 0.05, 0.08]} metal />),
-      )}
-      {/* Everything on the bench sits on its top (BENCH); 0.08 was the old pedestal's height */}
-      <group position-y={BENCH - 0.08}>
-        {/* Optical probe sensor arm */}
-        <group position={[1.05, 0.35, 0]}>
-          <mesh material={chrome()}>
-            <cylinderGeometry args={[0.035, 0.035, 0.65, 16]} />
-          </mesh>
-          <Box at={[0, 0.34, 0]} size={[0.22, 0.18, 0.16]} color="#242B30" />
-          <mesh position={[0, 0.34, 0.09]} material={darkGlass()}>
-            <planeGeometry args={[0.16, 0.12]} />
-          </mesh>
-        </group>
-
-        {/* Central inspected component: Bearing X90 */}
-        <group position={[0, 0.8, 0]} rotation-x={Math.PI / 2} scale={10}>
-          <Bearing />
-        </group>
-
-        {/* The 14 Service Case Ticket Cards (CAS-01 through CAS-14) */}
-        {Array.from({ length: 14 }, (_, i) => (
-          <group
-            key={i}
-            ref={(g) => {
-              tickets.current[i] = g;
-            }}
-          >
-            <CaseTicket id={i + 1} step={step} />
-          </group>
-        ))}
-
-        {/* Dynamic telemetry lines linking all 14 service tickets to Bearing X90 */}
-        <group ref={links}>
-          {step > 0 &&
-            Array.from({ length: 14 }, (_, i) => {
-              const a = (i / 14) * Math.PI * 2;
-              return (
-                <Route
-                  key={i}
-                  points={[[Math.cos(a) * 2.1, 0.09, Math.sin(a) * 1.5], [0, 0.09, 0]]}
-                  color={step === 2 ? "#A9CDBA" : "#CBC1F5"}
-                  radius={0.012}
-                  flow
-                  speed={0.4}
-                  pulseColor={step === 2 ? TINTS.emerald : TINTS.violet}
-                />
-              );
-            })}
-        </group>
-
-        <Pin
-          id="bearing"
-          at={[0, 1.7, 0]}
-          title={step === 0 ? "SERVICE CASES" : EXAMPLE.part.toUpperCase()}
-          value={step === 2 ? "One escalation to Quality" : step === 1 ? "The part in every case" : "No link between them yet"}
-          tone={step === 2 ? TINTS.emerald : step === 1 ? COLORS.signal : TINTS.violet}
-          alert={step === 1}
-          motion={motion}
-          pin={pin}
-          subject={DEMO_PINS.customer.steps[step]}
-        />
-      </group>
-      {/* A quality engineer inspects the part; a service lead briefs from the far side */}
-      <group position={[2.95, 0, 0.95]} rotation-y={Math.PI * 0.9} scale={0.78}>
-        <Person look="engineer" pose="tablet" seed={0.7} />
-      </group>
-      {/* Clear of the bench's left edge, so from the camera she reads as standing on the floor, not on the bench */}
-      <group position={[-3.45, 0, -0.4]} rotation-y={-0.15} scale={0.78}>
-        <Person look="planner" pose={step === 2 ? "point" : "stand"} seed={2.9} />
-      </group>
-    </group>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* 08. FINANCE: Three-way Match & Held Disbursement Ledger            */
+/* 08. DEDUCTION: invoice, receiver note and the debit note it answers */
 /* ------------------------------------------------------------------ */
 export function Finance({ step, motion, pin, visible = true }: SceneProps) {
   const isHeld = step === 2;
@@ -1269,7 +1033,7 @@ export function Finance({ step, motion, pin, visible = true }: SceneProps) {
         ))}
         {/* Green verified checkmark badge stamp */}
         <Box at={[0.42, 0.025, 0.65]} size={[0.44, 0.008, 0.16]} color="#ACB2BC" />
-        <Pin id="po" at={[0, 0.3, -0.95]} title="PURCHASE ORDER" value={`${APP_FACTS.finance.po} · matched`} tone={DOT} motion={motion} pin={pin} subject={DEMO_PINS.finance.steps[step]} />
+        <Pin id="po" at={[0, 0.3, -0.95]} title="INVOICE" value={`${DED.invoice} · linked`} tone={DOT} motion={motion} pin={pin} subject={DEMO_PINS.finance.steps[step]} />
       </group>
 
       {/* Document 2 (Middle): GOODS RECEIPT GRN-1049 (MISSING RECEIPT) */}
@@ -1285,7 +1049,7 @@ export function Finance({ step, motion, pin, visible = true }: SceneProps) {
         {Array.from({ length: 4 }, (_, i) => (
           <Box key={i} at={[0, 0.022, -0.45 + i * 0.14]} size={[1.2, 0.004, 0.02]} color="#C3C8D0" />
         ))}
-        <Pin id="grn" at={[0, 0.3, -0.95]} title="GOODS RECEIPT" value={`${APP_FACTS.finance.receipt} · missing`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.finance.steps[step]} />
+        <Pin id="grn" at={[0, 0.3, -0.95]} title="RECEIVER NOTE" value={`${DED.ack} · ambiguous`} tone={COLORS.signal} alert motion={motion} pin={pin} subject={DEMO_PINS.finance.steps[step]} />
       </group>
 
       {/* Document 3 (Right Stack): 3 SUPPLIER INVOICES (FANNED PACK) */}
@@ -1313,9 +1077,9 @@ export function Finance({ step, motion, pin, visible = true }: SceneProps) {
       <Pin
         id="invoices"
         at={[2.15, 0.35, -1.35]}
-        title="SUPPLIER INVOICES"
-        value={isHeld ? `${inr(APP_FACTS.finance.heldTotal)} on hold` : "Awaiting a goods receipt"}
-        tone={isHeld ? TINTS.emerald : TINTS.cobalt}
+        title={`DEBIT NOTE ${DED.debit}`}
+        value={isHeld ? `${inr(DED.amount)} · packet for finance` : `${inr(DED.amount)} · ${DED.reason.toLowerCase()}`}
+        tone={TINTS.violet}
         motion={motion}
         pin={pin}
         subject={DEMO_PINS.finance.steps[step]}

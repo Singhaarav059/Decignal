@@ -62,10 +62,7 @@ const JSON_LD = {
       url: `${SITE_URL}/`,
       logo: `${SITE_URL}/icon-512.png`,
       description: SITE_DESCRIPTION,
-      areaServed: [
-        { "@type": "Country", name: "India" },
-        { "@type": "Continent", name: "Africa" },
-      ],
+      areaServed: { "@type": "Country", name: "India" },
     },
     {
       "@type": "WebSite",

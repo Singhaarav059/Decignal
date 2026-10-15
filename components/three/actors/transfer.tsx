@@ -1,12 +1,13 @@
 "use client";
 
-// 05 Decision: the yard, both plants, the forklift loading 240 units and the truck taking them across.
+// 05 Decision: the yard, your plant and the customer, the forklift loading shipment SHP-0612, and the
+// truck held at the bay: line 12 is flagged for review, so nothing leaves (handoff: dispatch not approved).
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { BEATS, CH, activePin, blendAt, localIn, smootherstep, smoothstep, store, weight } from "@/lib/story";
 import { M, PLANT_01, PLANT_02, PLANT_FRONT, ROAD_LENGTH, ROAD_Z, transferredUnits, truckX, type Pose } from "@/lib/scene";
-import { TINTS } from "../palette";
+import { COLORS, TINTS } from "../palette";
 import { Plant } from "../buildings";
 import { Forklift, SemiTruck, TRUCK } from "../vehicles";
 import { LoadedPallet } from "../parts";
@@ -21,7 +22,7 @@ import { Actor, arriveK, reducedMotion, type Track } from "./core";
 const APRON_TOP = 0.012;
 
 /* ------------------------------------------------------------------ */
-/* 05 Decision: a forklift loads 240 units, the truck takes them across */
+/* 05 Decision: the shipment is loaded, and held at the bay for review   */
 /* ------------------------------------------------------------------ */
 
 const inDecision = (p: Pose): Track => (c) => (c === CH.decision ? p : null);
@@ -135,7 +136,7 @@ const PLANT_02_POSE: Pose = { p: PLANT_02, s: M };
 const PLANT_01_POSE: Pose = { p: PLANT_01, s: M };
 const YARD_POSE: Pose = { p: [0, 0, 0] };
 
-/** The yard's words as they change frame by frame: the units sent, the truck's status, Plant 01's day. */
+/** The yard's words as they change frame by frame: the pallets loaded, the truck's status. */
 type Live = { sent: number; order: string; arrived: boolean };
 
 /**
@@ -153,9 +154,9 @@ function LiveTag({ title, read, open }: { title: string; read: () => readonly [s
   return <ScreenTag title={title} value={value} tone={tone} rest="none" show={tagShown} open={open} />;
 }
 
-const plant02Text = (l: Live) => [`${620 - l.sent} units · ${l.sent} sent`, TINTS.saffron] as const;
-const plant01Text = (l: Live) => (l.arrived ? (["Day 6 · 380 projected", TINTS.emerald] as const) : (["Day 6 · 140 projected", TINTS.cobalt] as const));
-const truckText = (l: Live) => [l.order, TINTS.emerald] as const;
+const plant02Text = (l: Live) => [l.arrived ? "Line 12 held for review" : `${l.sent} of 3 pallets loaded`, TINTS.saffron] as const;
+const plant01Text = () => ["Awaiting the document pack", TINTS.cobalt] as const;
+const truckText = (l: Live) => [l.order, l.arrived ? COLORS.signal : TINTS.emerald] as const;
 const openPlant02 = pinned("plant02");
 const openPlant01 = pinned("plant01");
 const openTruck = pinned("truck");
@@ -172,9 +173,9 @@ export function Transfer() {
   const statesRef = useRef(states);
   // Units on their way (counted exactly as the page's "Plant 02 left" figure counts them), the truck's
   // status and Plant 01's arrival: read by the tags (LiveTag), never re-rendering the yard.
-  const live = useMemo<Live>(() => ({ sent: 0, arrived: false, order: "Approved · loading next" }), []);
+  const live = useMemo<Live>(() => ({ sent: 0, arrived: false, order: "Staged for loading" }), []);
   const read02 = useCallback(() => plant02Text(live), [live]);
-  const read01 = useCallback(() => plant01Text(live), [live]);
+  const read01 = useCallback(() => plant01Text(), []);
   const readTruck = useCallback(() => truckText(live), [live]);
   const lift1H = useCallback(() => height.current, []);
   const lift2H = useCallback(() => height2.current, []);
@@ -187,9 +188,11 @@ export function Transfer() {
     const { i, j, e: raw, local } = blendAt(store.g);
     const e = reducedMotion() ? (raw < 0.5 ? 0 : 1) : raw;
     const here = i === CH.decision || j === CH.decision;
-    const t = i === CH.decision ? local : 0;
-    // Arriving from Context: the truck drives in along the road to Plant 02. Leaving for Control:
-    // it drives on along the road and out of frame, never off the end of it.
+    // The yard plays only as far as the loading: the shipment is held at the bay, so the truck never
+    // drives across and the customer's forklift never unloads (dispatch has not been approved).
+    const t = Math.min(i === CH.decision ? local : 0, BEATS.drive[0] - 0.001);
+    // Arriving from Context: the truck drives in along the road to your plant. Leaving for Control: it
+    // stays at the bay and fades with the yard.
     const inK = j === CH.decision && i !== CH.decision ? smootherstep(0, 1, arriveK(e, 0.05)) : here ? 1 : 0;
     const exit = i === CH.decision ? e : 0;
 
@@ -197,12 +200,13 @@ export function Transfer() {
     unloadAt(t, lift2);
     height.current = lift.h;
     height2.current = lift2.h;
-    live.sent = Math.round(transferredUnits(store.g >= CH.decision + 1 ? 1 : localIn(CH.decision, store.g)));
+    live.sent = Math.round(transferredUnits(store.g >= CH.decision + 1 ? 1 : localIn(CH.decision, store.g)) / 80);
     if (truck.current) {
       const inX = (1 - inK) * (1 - inK) * 9;
-      truck.current.visible = here && (inK > 0.002 || exit > 0);
-      truck.current.position.set(truckX(t, exit) - inX, 0, ROAD_Z);
-      truck.current.scale.setScalar(M * smoothstep(0, 0.25, inK));
+      const fade = 1 - smoothstep(0, 0.6, exit);
+      truck.current.visible = here && inK > 0.002 && fade > 0.002;
+      truck.current.position.set(truckX(t) - inX, 0, ROAD_Z);
+      truck.current.scale.setScalar(M * smoothstep(0, 0.25, inK) * fade);
     }
     if (fork.current) {
       const s = smootherstep(0, 1, j === CH.decision && i !== CH.decision ? arriveK(e, 0.12) : here ? 1 : 0) * (1 - smoothstep(0, 0.6, exit));
@@ -230,22 +234,12 @@ export function Transfer() {
       statesRef.current = next.slice();
       setStates(statesRef.current);
     }
-    const done = t > BEATS.unload[1] - 0.02;
-    const atPlant = t > BEATS.drive[1] - 0.02;
-    live.arrived = done;
-    // The truck's own status, in step with the transfer order panel on the page.
+    // The truck's own status, in step with the review panel on the page.
     let onDeck = 0;
     for (const v of next) if (v === 2) onDeck++;
-    const status = done
-      ? "Received at Plant 01"
-      : atPlant
-        ? `Unloading at Plant 01 · ${PALLETS - onDeck} of ${PALLETS}`
-        : t >= BEATS.drive[0]
-        ? "In transit · 2 days"
-        : t >= BEATS.load[0]
-          ? `Loading · ${onDeck} of ${PALLETS} pallets`
-          : "Approved · loading next";
-    live.order = status;
+    const loaded = onDeck === PALLETS;
+    live.arrived = loaded;
+    live.order = loaded ? "Held at the bay · for review" : t >= BEATS.load[0] ? `Loading · ${onDeck} of ${PALLETS} pallets` : "Staged for loading";
   });
 
   // Built once: a pallet moving re-renders the pallets, not the plants, their crews or the road.
@@ -254,24 +248,24 @@ export function Transfer() {
       road: <StoryRoad />,
       plant02: (
         <Actor track={inDecision(PLANT_02_POSE)} arrive="build" leave="build">
-          <Plant accent={TINTS.saffron} name="PLANT 02" ground={APRON_TOP / M} neutral />
+          <Plant accent={TINTS.saffron} name="YOUR PLANT" ground={APRON_TOP / M} neutral />
           <group position={[0, 7.8, 0]}>
-            <LiveTag title="Plant 02" read={read02} open={openPlant02} />
+            <LiveTag title="Dispatch bay" read={read02} open={openPlant02} />
           </group>
         </Actor>
       ),
       plant01: (
         <Actor track={inDecision(PLANT_01_POSE)} delay={0.08} arrive="build" leave="build">
-          <Plant accent={TINTS.cobalt} name="PLANT 01" ground={APRON_TOP / M} neutral />
+          <Plant accent={TINTS.cobalt} name="CUSTOMER A" ground={APRON_TOP / M} neutral />
           <group position={[0, 7.8, 0]}>
-            <LiveTag title="Plant 01" read={read01} open={openPlant01} />
+            <LiveTag title="Customer A" read={read01} open={openPlant01} />
           </group>
         </Actor>
       ),
       pads: <YardPads />,
       truckTag: (
         <group position={[6.2, 4.6, 0]}>
-          <LiveTag title="TRF-0240" read={readTruck} open={openTruck} />
+          <LiveTag title="SHP-0612" read={readTruck} open={openTruck} />
         </group>
       ),
     }),
@@ -294,7 +288,7 @@ export function Transfer() {
             </group>
           ) : null,
         )}
-        {/* Pallets received in Plant 01's bays */}
+        {/* The customer's bays stay empty: nothing is dispatched in this example. */}
         {DROP_X.map((x, n) =>
           states[n] === 3 ? (
             <group key={`r${n}`} position={[x, 0, STAGE_Z]} scale={M}>

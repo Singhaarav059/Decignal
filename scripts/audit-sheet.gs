@@ -4,6 +4,9 @@
 //   2. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the /exec URL.
 //   3. Set AUDIT_WEBHOOK_URL=<that URL>?key=<SECRET> in .env.local and on Railway.
 // The site POSTs the JSON payload from app/api/audit (sendWebhook). One row per request.
+// Version 2 (the short workflow-review form) sends name, email, company, workflow and systems; it also
+// fills `decision` and `systemsOther`, so a sheet set up for version 1 keeps its columns in place.
+// Role, country, phone, area and preferred times stay empty from version 2 on.
 
 const SECRET = "change-me";
 const SHEET_NAME = "Decignal inquiries";
@@ -18,9 +21,9 @@ const COLUMNS = [
   ["Country", (d) => d.country],
   ["Phone", (d) => d.phone],
   ["Area", (d) => d.area],
-  ["Decision", (d) => d.decision],
-  ["Systems", (d) => (d.systems || []).join(", ")],
-  ["Systems (other)", (d) => d.systemsOther],
+  ["Decision", (d) => d.workflow || d.decision],
+  ["Systems", (d) => (Array.isArray(d.systems) ? d.systems.join(", ") : "")],
+  ["Systems (other)", (d) => d.systemsOther || (typeof d.systems === "string" ? d.systems : "")],
   ["Preferred times", (d) => (d.slotsLocal || []).join("\n")],
   ["Time zone", (d) => d.timeZone],
   ["Source page", (d) => d.source],

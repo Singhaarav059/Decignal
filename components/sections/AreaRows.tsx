@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { ArrowDownRight, Plus } from "lucide-react";
 import { AREAS, appsOf, areaHref } from "@/lib/areas";
-import { APPLICATION_DEMOS } from "@/lib/application-demos";
+import { FEATURED } from "@/lib/content";
 import { CTA } from "@/lib/copy";
 import { showApplication } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
@@ -129,9 +129,8 @@ export function AreaRows() {
                   <span className="area-row-dot" aria-hidden />
                   <span className="area-row-name">{area.name}</span>
                   <span className="area-row-lead">{area.lead}</span>
-                  <span className="area-row-count tabular">
-                    {apps.length}{" "}
-                    {apps.length === 1 ? "application" : "applications"}
+                  <span className="area-row-count">
+                    {apps.length === 1 ? "Proposed workflow" : "Proposed workflows"}
                   </span>
                   <span className="area-row-thumb" aria-hidden>
                     <AreaPhoto area={area} sizes="160px" />
@@ -162,29 +161,32 @@ export function AreaRows() {
                         <p className="area-ui-signal">
                           <span className="area-ui-dot" aria-hidden />
                           <span>
-                            <span className="area-ui-label">Signal</span>
+                            <span className="area-ui-label">Illustrative example</span>
                             {area.signal}
                           </span>
                         </p>
                       </div>
                       <ul
                         className="area-ui-apps"
-                        aria-label={`${area.name} applications`}
+                        aria-label={`${area.name}: proposed workflows`}
                       >
-                        {apps.map((a) => (
+                        {apps.map((a) => {
+                          // The three featured workflows open in the explorer below; the others on their page.
+                          const here = (FEATURED as readonly number[]).includes(a.i);
+                          return (
                           <li key={a.name}>
                             <a
-                              href={`#application-${APPLICATION_DEMOS[a.i].kind}`}
+                              href={here ? `#application-${a.id}` : `${areaHref(area.category)}#applications`}
                               className="area-ui-app"
                               onClick={(e) => {
-                                if (!plainClick(e)) return;
+                                if (!here || !plainClick(e)) return;
                                 e.preventDefault();
                                 showApplication(a.i);
                               }}
                             >
                               <span>
                                 <span className="area-ui-label">{a.name}</span>
-                                {a.example}
+                                {a.example.situation}
                               </span>
                               <ArrowDownRight
                                 size={16}
@@ -193,7 +195,8 @@ export function AreaRows() {
                               />
                             </a>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                       <SectionLink
                         href={areaHref(area.category)}

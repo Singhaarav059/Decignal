@@ -33,16 +33,17 @@ function auditFocus(): HTMLElement | true {
   return Array.from(fields).find((el) => el.offsetParent !== null && !el.closest("[aria-hidden=true]")) ?? true;
 }
 
-/** Every "Book a free AI audit" in the chrome: a real link to #audit that jumps there and puts focus in
- *  the form (see auditFocus). Other pages without the form go to the home page's. */
+/** Every "Book a workflow review" in the chrome: a real link to /#audit that jumps there and puts focus
+ *  in the form (see auditFocus). Pages without the form (a solution page's #audit is only a closing call
+ *  to action) go to the home page's. */
 export function AuditLink({ onDone, onClick, ...rest }: Omit<ComponentProps<typeof SectionLink>, "href" | "focus">) {
   return (
     <SectionLink
-      href={`/${CTA.href}`}
+      href={CTA.href}
       onDone={onDone}
       onClick={(e) => {
         onClick?.(e);
-        if (e.defaultPrevented || !plainClick(e) || !document.getElementById("audit")) return;
+        if (e.defaultPrevented || !plainClick(e) || !document.querySelector("#audit form")) return;
         e.preventDefault();
         onDone?.();
         void jumpTo("#audit", { focus: auditFocus() });

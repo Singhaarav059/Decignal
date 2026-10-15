@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useState } from "react";
 import { CH, CHAPTERS, INDUSTRIES, INDUSTRY_TONE, industryF, subscribe } from "@/lib/story";
-import { APPLICATIONS } from "@/lib/content";
+import { APPLICATIONS, FEATURED } from "@/lib/content";
 import { CHAPTER_COPY, INDUSTRY } from "@/lib/copy";
 import { showApplication } from "@/lib/jump";
 import { accentVars, toneVars } from "@/lib/tone";
@@ -87,6 +87,8 @@ export function IndustryCard() {
       <div className="story-stack">
         {INDUSTRIES.map((ind, k) => {
           const app = APPLICATIONS.findIndex((a) => a.name === ind.start);
+          // The three featured workflows open in the explorer; the others on the directory.
+          const here = (FEATURED as readonly number[]).includes(app);
           return (
             <div key={ind.name} id={`ind-${k}`} role="tabpanel" className="story-stack-item ind-block" data-on={k === at || undefined} style={toneVars(INDUSTRY_TONE[k])}>
               <p className="t-body ind-challenge">{ind.challenge}</p>
@@ -103,15 +105,15 @@ export function IndustryCard() {
               </ul>
               {app >= 0 && (
                 <a
-                  href="#applications"
+                  href={here ? "#applications" : "/solutions"}
                   className="story-link t-small"
                   onClick={(e) => {
-                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    if (!here || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                     e.preventDefault();
                     showApplication(app);
                   }}
                 >
-                  {INDUSTRY.startLink(ind.start, ind.weeks)}
+                  {INDUSTRY.startLink(ind.start)}
                   <Arrow />
                 </a>
               )}

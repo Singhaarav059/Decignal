@@ -1,10 +1,10 @@
 import {
   Database,
-  Users,
+  ClipboardList,
+  ShieldCheck,
   Factory,
-  Warehouse,
   Truck,
-  Globe,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,24 +19,25 @@ type SystemMeta = {
   /** The same fact in a few words, for the island tag on a phone. */
   short: string;
   detail: string;
-  /** Opened island: what it covers in the example, its size, freshness and what Decignal reads from it. No vendor names (D8). */
+  /** Opened island: what it holds in the example, the sample's size, and what the review uses from it.
+   *  No vendor names as connectors, no live-sync claims (handoff home.systems). */
   product: string;
   records: string;
+  /** The kind of input the example assumes: an authorised export or file, never a live connection. */
   sync: string;
   reads: [string, string][];
-  /** What this system contributes to the decision, in one sentence. */
+  /** What this source contributes to the review, in one sentence. */
   role: string;
-  /** Two figures side by side: the comparison that makes this system's fact matter. */
+  /** Two figures side by side: the comparison that makes this source's record matter. */
   compare: { label: string; value: string; f: number; risk?: boolean }[];
 };
 
-/** The six sources in the running example (lib/example.ts). Each keeps its colour everywhere it appears. */
+/** The six record sources in the worked example (lib/example.ts). Each keeps its colour everywhere it appears. */
 export const SYSTEMS: SystemMeta[] = [
-  { id: "erp", name: "ERP", full: "Enterprise resource planning", tone: "cobalt", Icon: Database, knows: "Stock on hand", value: "410 units", short: "On hand 410", detail: "Bearing X90 · Plant 01", product: "Plants 01 and 02", records: "2.4M records", sync: "2 min ago", reads: [["Stock on hand · Plant 01", "410 units"], ["Safety stock", "175 units"], ["Transfer cost per unit", "INR 158"]], role: "The record of truth for stock. Its on-hand figure is what first falls toward safety stock.", compare: [{ label: "On hand · Plant 01", value: "410 units", f: 0.82 }, { label: "Safety stock", value: "175 units", f: 0.35, risk: true }] },
-  { id: "crm", name: "CRM", full: "Customer relationships", tone: "violet", Icon: Users, knows: "Open orders", value: "+18%", short: "Orders +18%", detail: "Over the last 3 weeks", product: "Dealer and account orders", records: "86k accounts", sync: "5 min ago", reads: [["Open orders · X90", "+18% in 3 weeks"], ["Accounts ordering X90", "37"], ["Orders due this month", "1,120 units"]], role: "Shows demand before it reaches the plant. A rise in open orders is the evidence the shortage is real.", compare: [{ label: "Open orders, 3 weeks ago", value: "950 units", f: 0.72 }, { label: "Open orders, today", value: "1,120 units", f: 0.85 }] },
-  { id: "mes", name: "MES", full: "Manufacturing execution", tone: "emerald", Icon: Factory, knows: "X90 used", value: "45 / day", short: "X90 · 45 / day", detail: "Line 02 · Plant 01", product: "Plant 01 production lines", records: "14 lines", sync: "1 min ago", reads: [["X90 used per day", "45 units"], ["X90 per unit built", "2 bearings"], ["Next changeover", "Thursday"]], role: "Turns demand into consumption. Line 02 draws 45 X90 bearings a day, two for every unit it builds.", compare: [{ label: "Line 02 plan", value: "157 / week", f: 0.83 }, { label: "Line 02 capacity", value: "190 / week", f: 1 }] },
-  { id: "wms", name: "WMS", full: "Warehouse management", tone: "saffron", Icon: Warehouse, knows: "Stock at Plant 02", value: "620 units", short: "Plant 02 · 620", detail: "240 transferable above plan", product: "Plant 02 warehouse", records: "38k bins", sync: "1 min ago", reads: [["Plant 02 stock", "620 units"], ["Plant 02 plan", "380 units"], ["Dock 3 free", "Today, 14:00"]], role: "Knows where stock physically sits. Plant 02 holds more than its own plan needs.", compare: [{ label: "Plant 02 stock", value: "620 units", f: 0.9 }, { label: "Plant 02 plan", value: "380 units", f: 0.55 }] },
-  { id: "sup", name: "Suppliers", full: "Supplier portals", tone: "tangerine", Icon: Truck, knows: "Next delivery", value: "21 days", short: "Delivery 21 days", detail: "Vendor 1140", product: "Vendor portals and confirmations", records: "212 vendors", sync: "1 hr ago", reads: [["Vendor 1140 next delivery", "21 days"], ["Expedite option", "+INR 92,000"], ["On-time rate", "91%"]], role: "Says when relief arrives from outside. Too late here, which rules out waiting.", compare: [{ label: "Shortage in", value: "6 days", f: 0.29, risk: true }, { label: "Next supplier delivery", value: "21 days", f: 1 }] },
-  { id: "ext", name: "External", full: "The outside world", tone: "pink", Icon: Globe, knows: "Inter-plant lane", value: "Clear", short: "Lane clear", detail: "Next 14 days", product: "Freight, weather and traffic feeds", records: "6 feeds", sync: "15 min ago", reads: [["Lane, Plant 02 to Plant 01", "Clear, 2 days"], ["Rain risk on route", "Low"], ["Freight for 3 pallets", "INR 38,000"]], role: "Checks the world between plants: the road, the weather and what freight costs today.", compare: [{ label: "Transfer by road", value: "2 days", f: 0.1 }, { label: "Wait for supplier", value: "21 days", f: 1 }] },
+  { id: "erp", name: "ERP", full: "ERP and accounting", tone: "cobalt", Icon: Database, knows: "Line 12 heat", value: "H241", short: "Line 12 · H241", detail: "Shipment SHP-0612", product: "Delivery-line export", records: "14 delivery lines", sync: "Authorised export", reads: [["Line 12 · Flange F-80", "40 pieces"], ["Heat on record", "H241"], ["Shipment", "SHP-0612"]], role: "The record of what is being shipped. Line 12’s heat number is what every certificate must match.", compare: [{ label: "Heat on the delivery line", value: "H241", f: 0.8 }, { label: "Heat on the certificate", value: "H214", f: 0.8, risk: true }] },
+  { id: "crm", name: "Customer", full: "Customer requirements", tone: "violet", Icon: ClipboardList, knows: "Checklist", value: "Rev C", short: "Checklist Rev C", detail: "Six documents per shipment", product: "Approved customer checklist", records: "6 required documents", sync: "Approved file", reads: [["Checklist revision", "Rev C"], ["Documents per shipment", "6"], ["Heat traceability", "Required"]], role: "Says what the customer requires. Every document in the pack is checked against this revision.", compare: [{ label: "Required by the checklist", value: "6 documents", f: 1 }, { label: "Supported so far", value: "4 documents", f: 0.67 }] },
+  { id: "mes", name: "Quality", full: "Quality records", tone: "emerald", Icon: ShieldCheck, knows: "Line 12 reports", value: "2 found", short: "2 reports found", detail: "Dimensional and test reports", product: "Inspection and test reports", records: "Reports for 14 lines", sync: "Authorised export", reads: [["Dimensional report · line 12", "Supported"], ["Test report · line 12", "Supported"], ["Reviewer", "Quality"]], role: "Holds the internal evidence. The reports for line 12 are present and match the delivery record.", compare: [{ label: "Internal reports needed", value: "2", f: 1 }, { label: "Found for line 12", value: "2", f: 1 }] },
+  { id: "wms", name: "Job work", full: "Job workers and processors", tone: "saffron", Icon: Factory, knows: "Heat treatment", value: "Not found", short: "Not found", detail: "Job worker 03", product: "Process certificates and challans", records: "3 job workers", sync: "Supplied files", reads: [["Heat-treatment certificate", "Not found"], ["Processor", "Job worker 03"], ["Challan for line 12", "JW-0412"]], role: "Holds external-process evidence. The certificate the checklist needs is not in the supplied files.", compare: [{ label: "Process certificates required", value: "1", f: 1 }, { label: "Process certificates found", value: "0", f: 0.04, risk: true }] },
+  { id: "sup", name: "Suppliers", full: "Supplier documents", tone: "tangerine", Icon: Truck, knows: "Certificate heat", value: "H214", short: "Certificate · H214", detail: "Supplier 07", product: "Material certificates", records: "9 certificates", sync: "Supplied files", reads: [["Material certificate", "Heat H214"], ["Supplier", "Supplier 07"], ["Linked to line", "12 (proposed)"]], role: "Supplies the material evidence. Its heat number does not match the delivery line, so the link stays open.", compare: [{ label: "Heat on the delivery line", value: "H241", f: 0.8 }, { label: "Heat on the certificate", value: "H214", f: 0.8, risk: true }] },
+  { id: "ext", name: "Files", full: "Authorised email and folders", tone: "pink", Icon: FolderOpen, knows: "Shipment folder", value: "11 files", short: "11 files", detail: "Scans and attachments", product: "Shared shipment folder", records: "11 files", sync: "Authorised folder", reads: [["Files supplied", "11"], ["Scans", "4"], ["Unreadable pages", "0"]], role: "Where documents actually arrive. Every file is read where it is; nothing is assumed from chats or portals.", compare: [{ label: "Files supplied", value: "11", f: 1 }, { label: "Linked to a checklist item", value: "9", f: 0.82 }] },
 ];
-

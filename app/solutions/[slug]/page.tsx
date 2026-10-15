@@ -7,13 +7,13 @@ import { accentVars, toneVars } from "@/lib/tone";
 import { CtaPill } from "@/components/CtaPill";
 import { Nav } from "@/components/Nav";
 import { PhoneDock } from "@/components/PhoneDock";
-import { Audit } from "@/components/sections/Audit";
 import { Footer } from "@/components/sections/Footer";
 import { ServiceRuntime } from "@/components/service/ServiceRuntime";
 import { SERVICE_SECTIONS } from "@/components/service/sections";
 import { ServiceHero } from "@/components/service/ServiceHero";
 import {
   ServiceApps,
+  ServiceClosing,
   ServiceExpect,
   ServiceGet,
   ServiceProcess,
@@ -22,11 +22,11 @@ import {
 } from "@/components/service/ServiceSections";
 import { AreaLinks } from "@/components/service/AreaLinks";
 
-// The phone dock's section links: the four a visitor jumps between, then the audit.
+// The phone dock's section links: the four a visitor jumps between, then the review.
 const DOCK_IDS = ["deliverables", "how", "applications", "faq", "audit"];
 const DOCK_SECTIONS = SERVICE_SECTIONS.filter((s) => DOCK_IDS.includes(s.id));
 
-// The five areas are the only pages here: any other slug is the root not-found page.
+// The five functions are the only pages here: any other slug is the root not-found page.
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -39,13 +39,14 @@ export async function generateMetadata({ params }: PageProps<"/solutions/[slug]"
   if (!area) return {};
   const { title, description } = area.meta;
   const url = `/solutions/${area.slug}`;
-  // openGraph and twitter replace the layout's objects (shallow merge), so they restate the base.
+  // openGraph and twitter replace the layout's objects (shallow merge), so they restate the base. The
+  // handoff titles already carry "| Decignal", so the layout's title template is bypassed.
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
-    openGraph: { ...OG_BASE, title: `${title} · ${SITE_NAME}`, description, url },
-    twitter: { ...TWITTER_BASE, title: `${title} · ${SITE_NAME}`, description },
+    openGraph: { ...OG_BASE, title, description, url },
+    twitter: { ...TWITTER_BASE, title, description },
   };
 }
 
@@ -59,14 +60,11 @@ function jsonLd(area: Area) {
         "@type": "Service",
         "@id": `${url}#service`,
         name: area.meta.title,
-        serviceType: "Decision intelligence",
+        serviceType: "Custom AI applications",
         description: area.meta.description,
         url,
         provider: { "@id": `${SITE_URL}/#org` },
-        areaServed: [
-          { "@type": "Country", name: "India" },
-          { "@type": "Continent", name: "Africa" },
-        ],
+        areaServed: { "@type": "Country", name: "India" },
       },
       {
         "@type": "BreadcrumbList",
@@ -100,7 +98,7 @@ export default async function ServicePage({ params }: PageProps<"/solutions/[slu
         <ServiceApps area={area} />
         <ServiceWhy area={area} />
         <ServiceQuestions area={area} />
-        <Audit area={area.slug} source={`/solutions/${area.slug}`} />
+        <ServiceClosing area={area} />
         <section className="svc-section svc-others page-wrap" aria-labelledby="svc-others">
           <h2 id="svc-others" className="t-label">
             {SERVICE.others}

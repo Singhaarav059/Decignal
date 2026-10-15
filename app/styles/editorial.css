@@ -760,16 +760,17 @@
   .how-sheet { position: sticky; top: 88px; min-height: calc(100svh - 112px); display: grid; }
   .how-sheet-inner { grid-template-rows: auto 1fr; }
   .how-sheet-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; column-gap: 40px; }
-  .how-plate { grid-column: 1 / -1; }
+  .how-plate { grid-column: auto; align-self: stretch; }
   .how-sheets { gap: 0; padding-bottom: 12px; }
   .how-sheet + .how-sheet { margin-top: 24px; }
 }
-/* From 1024 the drawing takes a third column: below it, on a 1024x768 tablet the stuck sheet ran past
-   the screen's foot and cut the drawing's last rows. */
+/* One step per sheet: its words beside the drawing at every width from 900. */
 @media (min-width: 1024px) {
-  .how-sheet-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr); }
-  .how-plate { grid-column: auto; align-self: stretch; }
+  .how-sheet-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 56px; }
 }
+.how-timing { max-width: 40ch; color: var(--color-ink-soft); align-self: end; }
+.how-sheet-title { max-width: 22ch; }
+.how-text { max-width: 46ch; }
 .bento-photo .bento-art { width: 100%; }
 /* Where the approver card spans two columns, its drawing keeps the size it has in one. */
 @media (min-width: 768px) and (max-width: 1023px) { .bento-photo .bento-art { max-width: 400px; } }
@@ -797,4 +798,77 @@
       animation-range: entry 0% entry 60%;
     }
   }
+}
+
+/* ---- Record groups (systems) and what we measure: three flat columns on a hairline, each led by its
+   colour dot, the same chrome as the bento's function chips. ---- */
+.record-groups { display: grid; gap: 0; margin-top: var(--ed-gap); border-top: 1px solid var(--color-line); }
+.record-group { padding: 22px 0; border-bottom: 1px solid var(--color-line); }
+.record-group-k { display: flex; align-items: center; gap: 9px; color: var(--color-ink); }
+.record-group-k i { width: 8px; height: 8px; flex: none; border-radius: var(--radius-pill); background: var(--tone); }
+.record-group-text { margin-top: 10px; max-width: 46ch; color: var(--color-ink-2); }
+.record-groups-note { margin-top: 18px; max-width: 60ch; color: var(--color-ink-soft); }
+@media (min-width: 900px) {
+  .record-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 40px; border-bottom: 1px solid var(--color-line); }
+  .record-group { border-bottom: 0; padding: 28px 0 30px; }
+}
+
+/* The workflows head's honesty note and its link to the directory. */
+.apps-note { margin-top: 14px; max-width: 48ch; color: var(--on-ink-soft, var(--color-ink-soft)); }
+.apps-note .ed-link { margin-top: 8px; }
+
+/* Audience cards: the segment's workflows under its example, then the link. */
+.segment-flows { display: grid; gap: 10px; }
+.segment-flows ul { display: flex; flex-wrap: wrap; gap: 6px; }
+.segment-flows li { display: inline-flex; align-items: center; height: 28px; padding: 0 11px; border-radius: var(--radius-pill); font-size: var(--fs-small); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--color-ink-2); box-shadow: var(--edge-line); }
+.segment-flows li::before { content: ""; width: 7px; height: 7px; margin-right: 7px; border-radius: var(--radius-pill); background: var(--tone); }
+.segment-flows .ed-link { justify-self: start; text-transform: none; letter-spacing: 0; }
+.outcome-copy .outcome-number { text-wrap: balance; }
+
+/* About: the place, then the second paragraph, the founder card and the call to action. */
+.about-grid { display: grid; gap: 28px; margin-top: var(--ed-gap); }
+.about-photo .area-photo { height: 100%; }
+.about-side { display: grid; gap: 20px; align-content: start; }
+.about-second { max-width: 46ch; color: var(--color-ink-2); }
+.about-founder { gap: 6px; }
+.about-founder-name { margin-top: 6px; color: var(--color-ink); }
+.about-founder-role { color: var(--color-ink-soft); }
+.about-founder-text { margin-top: 6px; color: var(--color-ink-2); }
+.about-founder-link { margin-top: 10px; justify-self: start; }
+.about-cta { justify-self: start; }
+@media (min-width: 900px) {
+  .about-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; align-items: stretch; }
+}
+
+/* The problem's lead line and closing, around the sentence that sharpens as it scrolls. */
+.stmt-lead { color: var(--color-ink); max-width: 34ch; margin-bottom: 18px; }
+.stmt-closing { margin-top: 22px; max-width: 52ch; color: var(--color-ink-2); }
+/* The approach follows the problem on the same sheet: one section gap, not two. */
+.stmt-approach { padding-top: 0; }
+.stmt-approach .bento { margin-top: var(--ed-gap); }
+.bento-card .bento-areas + .bento-text { margin-top: 14px; }
+
+/* ---- The worked example's readable review, under the dial: three rows, then the recommendation. ---- */
+.dial-intro { margin-top: 14px; max-width: 44ch; color: var(--color-ink-2); }
+.dial-review { display: grid; gap: 28px; padding-bottom: var(--section-y); }
+@media (min-width: 1024px) {
+  .dial-review { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 56px; align-items: start; padding-top: 8px; }
+}
+.review-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body, 16px); }
+.review-table th { padding: 0 12px 12px 0; text-align: left; color: var(--color-ink-soft); border-bottom: 1px solid var(--color-line-strong); }
+.review-table td { padding: 16px 12px 16px 0; vertical-align: top; color: var(--color-ink); border-bottom: 1px solid var(--color-line); }
+.review-table td:first-child { font-variant-numeric: tabular-nums; }
+.review-status { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; color: var(--color-ink-2); }
+.review-status i { width: 8px; height: 8px; flex: none; border-radius: var(--radius-pill); background: var(--color-emerald); }
+.review-status[data-risk] { color: var(--color-signal-ink); }
+.review-status[data-risk] i { background: var(--color-signal); }
+.review-notes { display: grid; gap: 12px; }
+.review-rec { color: var(--color-ink); max-width: 40ch; }
+.review-expl { color: var(--color-ink-2); max-width: 46ch; }
+.review-state { color: var(--color-ink); }
+.review-disclaimer { color: var(--color-ink-soft); max-width: 52ch; }
+@media (max-width: 599px) {
+  .review-table thead { display: none; }
+  .review-table tr { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--color-line); }
+  .review-table td { padding: 0; border: 0; }
 }

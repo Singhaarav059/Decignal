@@ -21,9 +21,9 @@ import { whenStill } from "@/lib/idle";
 import { usePhone } from "@/lib/device";
 
 gsap.registerPlugin(ScrollTrigger);
-// Viewport heights per application, by APPLICATIONS index: every stop (signal, evidence, action) gets its
-// own stretch of scroll. Inventory keeps the most for its truck.
-const CHAPTER_LENGTHS = [1.35, 0.9, 1.1, 1.2, 1.1, 0.9, 0.95, 0.95];
+// Viewport heights per workflow, by APPLICATIONS index: every tab (situation, source records, for review)
+// gets its own stretch of scroll. Job work keeps the most for its truck.
+const CHAPTER_LENGTHS = [1.1, 0.95, 1.2, 1.35, 0.95, 1.1];
 /** Where each stage sits inside its chapter (a click on Signal, Evidence or Action lands here). */
 const STAGE_AT = [0.18, 0.48, 0.84];
 const ALL = APPLICATIONS.map((_, i) => i);
@@ -59,7 +59,7 @@ const headline = (t: string) => {
 };
 
 type Props = {
-  /** APPLICATIONS indices to show, in order. Default: all eight. */
+  /** APPLICATIONS indices to show, in order. Default: all six. */
   apps?: number[];
   /** Older name for `apps`. */
   indices?: number[];
@@ -349,9 +349,9 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
             <h3 className="t-title-card application-title">
               <Swap text={demo.headline} render={headline} />
             </h3>
-            {/* What this application reads, one chip per source; they rise in turn as the application changes. */}
+            {/* The records this workflow needs, one chip each; they rise in turn as the workflow changes. */}
             <ul key={selected} className="application-reads" aria-label={APPLICATIONS_COPY.sources}>
-              {app.connects.map((c, i) => (
+              {demo.sources.split(" · ").map((c, i) => (
                 <li key={c} style={{ ["--i" as string]: i }}>
                   <SystemIcon id={sourceIcon(c)} size={16} />
                   {c}
@@ -388,7 +388,7 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
               <div className="application-fold application-summary" data-shut={open || undefined}>
                 <div className="application-fold-inner" inert={open}>
                   <p className="application-metric" data-done={done || undefined} onPointerEnter={() => setPin(moved)} onPointerLeave={() => setPin(null)}>
-                    <Swap text={demo.metric} className="application-metric-value t-num-lg" render={(t, live) => (live && done ? <CountUp key={`${t}:done`} value={t} duration={700} /> : t)} />
+                    <Swap text={demo.metric} className="application-metric-value t-num-lg" render={(t, live) => (live && done && /^[+₹]?\d[\d,]*( [a-z-]+)?$/.test(t) ? <CountUp key={`${t}:done`} value={t} duration={700} /> : t)} />
                     <Swap text={demo.metricLabel} className="application-metric-label t-small" />
                   </p>
                   <p id={sentenceId} role="tabpanel" className="application-sentence t-lede">
@@ -401,10 +401,25 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
                   {(open || drawer) && (
                     <>
                       <OperationEvidence kind={demo.kind} step={frame.step} onPin={setPin} />
-                      <p className="application-sources t-small">
-                        <span className="t-label">{APPLICATIONS_COPY.sources}</span> {app.connects.join(" · ")}
-                      </p>
-                      <p className="application-asset t-label">{demo.asset}</p>
+                      {/* The shared workflow record (handoff §7): what it needs, prepares and leaves to people. */}
+                      <dl className="application-record t-small">
+                        {(
+                          [
+                            [APPLICATIONS_COPY.labels.data, app.data],
+                            [APPLICATIONS_COPY.labels.output, app.output],
+                            [APPLICATIONS_COPY.labels.owner, app.reviewer],
+                            [APPLICATIONS_COPY.labels.measure, app.measure],
+                            [APPLICATIONS_COPY.labels.fit, app.fit],
+                            [APPLICATIONS_COPY.labels.limitation, app.example.limitation],
+                          ] as const
+                        ).map(([k, v]) => (
+                          <div key={k}>
+                            <dt className="t-label">{k}</dt>
+                            <dd>{v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <p className="application-asset t-label">{app.status}</p>
                     </>
                   )}
                 </div>

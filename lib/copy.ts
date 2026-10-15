@@ -1,329 +1,347 @@
-// The copy deck: every section and chapter string, keyed by slot (COPY-01..19, critic §2, D1 to D14).
+// The copy deck: every section and chapter string, keyed by slot (handoff 15 October 2026, §3 to §10).
 // Component lanes wire these in; each slot's comment names the component that renders it.
 // Rules for every string here:
-// - No em dashes. Curly apostrophes. British spelling.
-// - Headlines are [line1, line2]; line 2 is the accent line in the chapter tone (D6, D14).
+// - No em dashes. Curly apostrophes. Indian English.
+// - Headlines are [line1, line2]; line 2 is the accent line in the chapter tone.
 // - Body copy runs at most 2 lines on a screen.
-// - One CTA wording: CTA.primary.
-// - Figures about the running example come from lib/example.ts and read as an example, never as a result.
-// - No vendor names or logos (D8). No client names, quotes or result numbers.
-// Data lives elsewhere: applications, outcomes, paths, FAQ and system types in lib/content.ts, the five
-// areas in lib/areas.ts, the explorer scenarios in lib/application-demos.ts, the island panels in
-// components/ui/systems.tsx, form messages and booking states in lib/audit.ts (AUDIT_MESSAGES).
+// - One booking wording: CTA.primary, always to /#audit.
+// - The six applications are proposed workflows. Figures about the worked example come from
+//   lib/example.ts and read as illustrative, never as a result. Nothing is approved, sent or posted.
+// - Product names (SAP, Tally, Zoho) are prospect context only: no partner or connector claims.
+// Data lives elsewhere: workflows, audience, delivery, FAQ and record sources in lib/content.ts, the five
+// functions in lib/areas.ts, the explorer scenarios in lib/application-demos.ts, the island panels in
+// components/ui/systems.tsx, form messages and request states in lib/audit.ts (AUDIT_COPY), identity
+// facts in lib/placeholders.ts.
 
-import { APP_FACTS, EXAMPLE, inr, inrShort } from "./example";
+import { APP_FACTS, EXAMPLE, checklistCounts, inr, inrShort } from "./example";
+import { PLACEHOLDER } from "./placeholders";
 
 export type Headline = readonly [string, string];
 
-const T = EXAMPLE.transfer;
-const P1 = EXAMPLE.plant01;
-const P2 = EXAMPLE.plant02;
+const L = EXAMPLE.line;
+const C = EXAMPLE.cert;
+const PC = EXAMPLE.process;
+const COUNTS = checklistCounts();
+const ITEMS = EXAMPLE.checklist.items.length;
 
 /* ------------------------------------------------------------------ */
-/* Calls to action (COPY-07)                                           */
+/* Calls to action (handoff global)                                     */
 /* ------------------------------------------------------------------ */
 
 export const CTA = {
-  /** Every primary button: Nav, story hero card, final chapter, FAQ, footer, service pages. With an arrow. */
-  primary: "Book a free AI audit",
-  /** Nav under 640px and other tight spaces (Nav.tsx, the `sm:hidden` span). */
-  compact: "Book audit",
-  href: "#audit",
-  /** Secondary text links to the service pages (AreaRows, footer, ScaleApps, apps index). */
-  explore: (area: string) => `Explore ${area}`,
-  /** Final chapter secondary button (FinalEngine / StoryCard). */
-  applications: "See the 8 applications",
+  /** Every primary button: Nav, hero, final chapter, FAQ, footer, service pages. With an arrow. */
+  primary: "Book a workflow review",
+  /** Nav under 640px and other tight spaces (handoff global.mobile_primary_cta). */
+  compact: "Book a call",
+  href: "/#audit",
+  /** Secondary text links to the service pages (AreaRows, footer, ScaleApps, directory). */
+  explore: (area: string) => `Explore ${/^[A-Z][a-z]/.test(area) ? area[0].toLowerCase() + area.slice(1) : area}`,
+  /** Final chapter secondary button. */
+  applications: "Explore the workflows",
+  /** Per-workflow call to action (handoff workflows[].cta). */
+  workflow: "Discuss this workflow",
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* Metadata (COPY-06). lib/site.ts owns the constants; these are the words. */
+/* Metadata (handoff §10). lib/site.ts owns the constants; these are the words. */
 /* ------------------------------------------------------------------ */
 
 export const META = {
-  /** SITE_TITLE. */
-  title: "Decignal · Decision intelligence for operations",
-  /** SITE_DESCRIPTION (155 characters). */
+  /** SITE_TITLE: the homepage's browser and social title. */
+  title: "Decignal | AI for Manufacturing Distribution and Service",
+  /** SITE_DESCRIPTION. */
   description:
-    "Decignal reads the ERP, CRM, MES and WMS you already run, finds the decision that matters and sends it, with its evidence, to the right person to approve.",
+    "Custom AI applications for Indian manufacturers, industrial distributors and equipment service businesses. Start with a review of your existing workflow.",
   /** openGraph and twitter title. */
-  shareTitle: "Your operation. Seen as a whole.",
+  shareTitle: "Decignal | AI for Manufacturing Distribution and Service",
   /** SHARE_DESCRIPTION. */
-  shareDescription: "Decision intelligence for enterprises in India and Africa. Book a free 30-minute AI audit.",
+  shareDescription:
+    "Custom AI applications for Indian manufacturers, industrial distributors and equipment service businesses. Start with a review of your existing workflow.",
   /** OG image footer line (opengraph-image.tsx); its two headline lines are HERO.headline. */
-  ogFooter: "Decision intelligence for enterprises in India and Africa.",
+  ogFooter: "For Indian manufacturers, industrial distributors and equipment service businesses.",
+  solutions: {
+    title: "Operational Workflows to Assess | Decignal",
+    description:
+      "Explore proposed workflows for manufacturing, industrial distribution and equipment service, with customer fit and existing-software checks.",
+  },
+  privacy: {
+    title: "Privacy Notice | Decignal",
+    description: "Read how the Decignal website handles enquiry information and how to contact the operator with privacy questions.",
+  },
+  terms: {
+    title: "Website Terms | Decignal",
+    description: "Read the terms for using the Decignal website and how proposed workflows relate to separately scoped project services.",
+  },
 } as const;
 
 /* ------------------------------------------------------------------ */
 /* Story: hero and chapters (Story.tsx, StoryCard.tsx)                  */
 /* ------------------------------------------------------------------ */
 
-/** The quiet label in the StoryCard label row, on every chapter (COPY-01 10). */
+/** The quiet label in the StoryCard label row, on every chapter. */
 export const EXAMPLE_LABEL = EXAMPLE.label;
 
-/** 01: the only chapter besides the final one with the giant display headline (D14). */
+/** 01: the hero (handoff home.hero). */
 export const HERO = {
-  /** Story.tsx back layer, above the headline. */
-  eyebrow: "Decision intelligence · India and Africa",
-  /** The page h1 (critic §2 "Hero h1"): the visible back-layer line, promoted in place. */
-  headline: ["Your operation.", "Seen as a whole."] as Headline,
-  /** The hero's right column on wide screens, beside the h1: what Decignal does, in one sentence. */
-  lede: "Decignal reads the systems you already run, finds the decision that matters and sends it to the right person to approve.",
-  /** The quiet second action beside the CTA: the How it works section. */
-  secondary: "How it works",
-  /** The hero StoryCard: label row, one body line, the chips, the CTA (narrow screens; wide ones carry it
-   *  beside the h1). No second headline (D14). */
-  card: "Six systems, one shortage. Watch it become one approved decision.",
+  /** Story.tsx back layer, above the headline: two halves split by " · ". */
+  eyebrow: "For Indian industrial businesses · Manufacturing, distribution, service",
+  /** The page h1. Suggested break: AI applications / for industrial operations. */
+  headline: ["AI applications", "for industrial operations"] as Headline,
+  /** Phones: the audience sentence on the hero card, under the heading (handoff: on desktop and mobile). */
+  audience: "For Indian manufacturers, industrial distributors and equipment service businesses.",
+  /** The hero's right column: the full audience sentence. */
+  lede: "For Indian manufacturers, industrial distributors and equipment service businesses. We build around the supplier updates, sales enquiries, dispatch documents and service follow-ups your team still handles manually.",
+  /** The quiet second action beside the CTA. */
+  secondary: "Explore the workflows",
+  secondaryHref: "/solutions",
+  /** Under the actions: the offer, then the scroll cue. */
+  card: "A free 30-minute conversation about one workflow.",
+  /** The caption under the world on the first screen (handoff home.hero visual caption). */
+  caption: "Illustrative dispatch review · source records and questions for your team",
   scrollCue: "Scroll",
 } as const;
 
 type ChapterCopy = {
-  /** Two lines, line 2 in the chapter tone; red only when the line states a risk (S14). */
+  /** Two lines, line 2 in the chapter tone; red only when the line states a conflict. */
   title: Headline;
   /** At most 2 lines in the 440px card (95 characters or fewer). */
   body: string;
-  /** The one readout under the body: a number and what it counts. */
+  /** The one readout under the body: a figure and what it counts. */
   readout?: { value: string; label: string; risk?: boolean };
   /** Rows revealed by the card's "Details" disclosure. */
   details?: { label: string; value: string; risk?: boolean }[];
 };
 
 /**
- * Chapters 02 to 09, index-aligned with CHAPTERS in lib/story.ts (index 0 is the hero, above).
- * The StoryCard label row reads `0{i + 1} · {CHAPTERS[i].label}` plus EXAMPLE_LABEL.
+ * Chapters 02 to 09, index-aligned with CHAPTERS in lib/story.ts (index 0 is the hero, above). The
+ * story is one illustrative dispatch review (handoff home.example), then the same approach across
+ * the five functions and the industries in focus.
  */
 export const CHAPTER_COPY: (ChapterCopy | null)[] = [
   null,
   {
-    title: ["A part runs short.", "Six days to act."],
-    body: `${EXAMPLE.part} falls below safety stock at Plant 01 on day 6. Decignal flags it now.`,
-    readout: { value: "Day 6", label: "Below safety stock", risk: true },
+    title: ["A shipment is ready.", "One pack to check."],
+    body: `${EXAMPLE.shipment.id} has ${EXAMPLE.shipment.lines} delivery lines. Line ${L.n} is recorded against heat ${L.heat}.`,
+    readout: { value: `${ITEMS} documents`, label: `Required by checklist ${EXAMPLE.checklist.rev}` },
     details: [
-      { label: "On hand", value: `${P1.onHand} units` },
-      { label: "Safety stock", value: `${P1.safety} units` },
-      { label: "Breach", value: "Day 6", risk: true },
+      { label: "Shipment", value: EXAMPLE.shipment.id },
+      { label: `Line ${L.n}`, value: `${L.item} · ${L.pieces} pieces` },
+      { label: "Heat on record", value: L.heat },
     ],
   },
   {
-    title: ["Demand is rising.", "Stock is falling."],
-    body: "Orders are up 18%. The next supplier delivery lands on day 21, fifteen days too late.",
-    readout: { value: "21 days", label: "Until the next supplier delivery" },
+    title: ["Two records disagree.", "One is missing."],
+    body: `The certificate supplied says heat ${C.heat}. The ${PC.kind.toLowerCase()} is not in the supplied files.`,
+    readout: { value: `${L.heat} ≠ ${C.heat}`, label: "Conflicting reference", risk: true },
     details: [
-      { label: "Daily usage", value: `${P1.dailyUse} units` },
-      { label: "Open orders", value: "+18% in 3 weeks" },
-      { label: "Safety breach", value: "Day 6", risk: true },
+      { label: "Delivery line", value: L.heat },
+      { label: C.kind, value: C.heat, risk: true },
+      { label: PC.kind, value: "Not found", risk: true },
     ],
   },
   {
-    title: ["Every fact.", "One picture."],
-    body: "Six systems, checked together. Select one to see the evidence it adds.",
+    title: ["Every record.", "One review."],
+    body: "Six sources, checked against the customer’s checklist. Select one to see the record it adds.",
   },
   {
-    title: ["One clear", "decision."],
-    body: `Send ${T.units} units from Plant 02 to Plant 01. Plant 02 keeps its ${P2.ownPlan}-unit plan.`,
-    readout: { value: "2 days", label: "Until the transfer arrives" },
+    title: ["Flag the mismatch.", "Change nothing."],
+    body: `Request the correct certificate. Line ${L.n} stays marked for review; neither heat number is edited.`,
+    readout: { value: `${EXAMPLE.questions.length} questions`, label: "For the quality reviewer" },
     details: [
-      { label: "Arrives", value: "2 days" },
-      { label: "Plant 02 left", value: `${P2.ownPlan} units` },
-      { label: "Cost", value: inr(T.costINR) },
+      { label: "Supported", value: `${COUNTS.supported} of ${ITEMS}` },
+      { label: "Conflicting", value: `${COUNTS.conflicting}`, risk: true },
+      { label: "Missing", value: `${COUNTS.missing}`, risk: true },
     ],
   },
   {
-    title: ["You see why.", "You decide."],
-    body: "Check the evidence, change the quantity, approve or reject. Your policy sets who signs off.",
+    title: ["Your reviewer", "decides."],
+    body: "Check each source, request what is missing or record why it is not an issue. Dispatch stays with your team.",
   },
   {
-    title: ["One layer.", "Every function."],
-    body: "From stock transfers to service cases, every application reuses the same context and controls.",
+    title: ["Same approach.", "Five functions."],
+    body: "Supplier updates, dispatch documents, RFQs, service follow-ups and deductions: each a proposed workflow.",
   },
   {
     // Line 2 is the industry name: INDUSTRY.title(name).
     title: ["Built for", "your industry."],
-    body: "One foundation, configured around the systems and decisions of your industry.",
+    body: "Proposed workflows for manufacturers, industrial distributors and equipment service businesses.",
   },
   {
-    // 09 uses the giant display headline (D14) and FINAL below.
-    title: ["Turn information", "into decisions."],
-    body: "Decignal reads the systems you run, recommends one action and leaves the approval with your team.",
+    // 09 uses the giant display headline and FINAL below.
+    title: ["Tell us which workflow", "needs attention."],
+    body: "We check how it is handled today and whether your existing software can address it.",
   },
 ];
 
 /**
  * The chapter heads on wide screens (ChapterHeads.tsx): three figures beside each chapter's headline.
- * Each names the system it is read from and takes that system's tone; `risk` turns the figure red.
- * Figures come from the running example (lib/example.ts) and never repeat the card's own readout.
+ * Each names the record source it comes from and takes that source's tone; `risk` turns it red.
+ * Sources match CONNECTS (lib/content.ts): ERP cobalt, Customer violet, Quality emerald, Job work saffron,
+ * Suppliers tangerine, Files pink.
  */
 type ChapterFact = { value: string; unit?: string; label: string; source: string; tone: string; risk?: boolean };
 export const CHAPTER_FACTS: (ChapterFact[] | null)[] = [
   null,
   [
-    { value: `${P1.onHand}`, unit: "units", label: "On hand at Plant 01", source: "ERP", tone: "cobalt" },
-    { value: `${P1.dailyUse}`, unit: "/ day", label: `Drawn by ${EXAMPLE.line.name}`, source: "MES", tone: "emerald" },
-    { value: `${P1.safety}`, unit: "units", label: "Safety stock", source: "ERP", tone: "signal", risk: true },
+    { value: `${EXAMPLE.shipment.lines}`, unit: "lines", label: `Shipment ${EXAMPLE.shipment.id}`, source: "ERP", tone: "cobalt" },
+    { value: L.heat, label: `Heat recorded on line ${L.n}`, source: "ERP", tone: "cobalt" },
+    { value: `${ITEMS}`, unit: "documents", label: `Checklist ${EXAMPLE.checklist.rev}`, source: "Customer", tone: "violet" },
   ],
   [
-    { value: `+${EXAMPLE.demand.upPct}%`, label: `Open orders in ${EXAMPLE.demand.weeks} weeks`, source: "CRM", tone: "violet" },
-    { value: `${P1.day6Without}`, unit: "units", label: "Left at Plant 01 on day 6", source: "ERP", tone: "signal", risk: true },
-    { value: `${EXAMPLE.supplier.nextDeliveryDay - P1.breachDay}`, unit: "days", label: "Supplier relief arrives late", source: "Suppliers", tone: "tangerine" },
+    { value: C.heat, label: `On the ${C.kind.toLowerCase()}`, source: "Suppliers", tone: "signal", risk: true },
+    { value: "Not found", label: PC.kind, source: "Job work", tone: "signal", risk: true },
+    { value: `${EXAMPLE.files}`, unit: "files", label: "In the shipment folder", source: "Files", tone: "pink" },
   ],
   [
-    { value: "6", unit: "systems", label: "Read together, read-only", source: "All six", tone: "cobalt" },
-    { value: `${P2.transferable}`, unit: "units", label: "Free at Plant 02 above plan", source: "WMS", tone: "saffron" },
-    { value: `${EXAMPLE.lane.days}`, unit: "days", label: "By road, lane clear", source: "External", tone: "pink" },
+    { value: "6", unit: "sources", label: "Read from authorised exports", source: "All six", tone: "cobalt" },
+    { value: `${COUNTS.supported}`, unit: `of ${ITEMS}`, label: "Checklist items supported", source: "Quality", tone: "emerald" },
+    { value: `${COUNTS.conflicting + COUNTS.missing}`, unit: "items", label: "Missing or conflicting", source: "Customer", tone: "signal", risk: true },
   ],
   [
-    { value: `${T.units}`, unit: "units", label: "Plant 02 to Plant 01", source: "WMS", tone: "saffron" },
-    { value: `${T.pallets}`, unit: "pallets", label: `${T.perPallet} units each, one truck`, source: "WMS", tone: "saffron" },
-    { value: inrShort(T.costINR), label: "Freight for the transfer", source: "External", tone: "pink" },
+    { value: `${COUNTS.conflicting}`, unit: "conflict", label: `Line ${L.n}, ${L.heat} against ${C.heat}`, source: "Suppliers", tone: "tangerine" },
+    { value: `${COUNTS.missing}`, unit: "missing", label: PC.kind, source: "Job work", tone: "saffron" },
+    { value: "0", unit: "edits", label: "Neither record is changed", source: "Example", tone: "cobalt" },
   ],
   [
-    { value: `${EXAMPLE.policy.maxUnits}`, unit: "units", label: `${EXAMPLE.policy.approver}'s approval limit`, source: "Policy", tone: "violet" },
-    { value: "3 / 3", label: "Policy checks pass", source: "Policy", tone: "emerald" },
-    { value: T.approvedAt, label: `Approved by the ${T.approvedBy.toLowerCase()}`, source: "Example", tone: "cobalt" },
+    { value: "1", unit: "reviewer", label: "Owns the pack", source: "Quality", tone: "emerald" },
+    { value: `${EXAMPLE.questions.length}`, unit: "questions", label: "Left open for the reviewer", source: "Example", tone: "violet" },
+    { value: "Draft", label: "Dispatch has not been approved", source: "Example", tone: "cobalt" },
   ],
   [
-    { value: "8", unit: "applications", label: "In the catalogue", source: "Catalogue", tone: "emerald" },
-    { value: "5", unit: "areas", label: "From supply chain to finance", source: "Catalogue", tone: "violet" },
-    { value: "1", unit: "layer", label: "Shared context and controls", source: "Platform", tone: "cobalt" },
+    { value: "5", unit: "functions", label: "Supplier to service", source: "Proposed", tone: "emerald" },
+    { value: "6", unit: "workflows", label: "Proposed, not yet products", source: "Proposed", tone: "violet" },
+    { value: "1", unit: "check", label: "Your current software first", source: "Approach", tone: "cobalt" },
   ],
   [
-    { value: "6", unit: "industries", label: "One foundation for each", source: "Platform", tone: "cobalt" },
-    { value: "5 to 10", unit: "weeks", label: "Typical first release", source: "Catalogue", tone: "emerald" },
-    { value: "1", unit: "decision", label: "To start with, in any of them", source: "Audit", tone: "tangerine" },
+    { value: "3", unit: "segments", label: "Manufacturing, distribution, service", source: "Focus", tone: "cobalt" },
+    { value: "1", unit: "workflow", label: "To start with, in any of them", source: "Review", tone: "emerald" },
+    { value: "30", unit: "minutes", label: "Free first conversation", source: "Review", tone: "tangerine" },
   ],
   null,
 ];
 
 /** 02 Signal readout card (Story.tsx SignalReadout): its accessible summary. */
-export const SIGNAL_ARIA = `${EXAMPLE.part} at Plant 01: ${P1.onHand} units on hand, safety stock ${P1.safety}, breach on day 6`;
+export const SIGNAL_ARIA = `Shipment ${EXAMPLE.shipment.id}, line ${L.n}: recorded against heat ${L.heat}; ${ITEMS} documents required by the customer checklist`;
 
 /** 04 Context: the three checks, each linked to its island (Story.tsx EvidenceChecks). `island` is the SYSTEMS index. */
 export const EVIDENCE_CHECKS = {
-  aria: "Evidence behind this transfer",
+  aria: "Records behind this review",
   rows: [
-    { tone: "saffron", label: "Stock available", value: `${P2.stock} − ${P2.ownPlan} = ${P2.transferable} units`, island: 3, system: "WMS" },
-    { tone: "tangerine", label: "Supplier timing", value: "21 days · too late", island: 4, system: "Suppliers" },
-    { tone: "pink", label: "Transfer route", value: "2 days · lane clear", island: 5, system: "External" },
+    { tone: "saffron", label: PC.kind, value: "Not found", island: 3, system: "Job work" },
+    { tone: "tangerine", label: C.kind, value: `Heat ${C.heat} · conflicting`, island: 4, system: "Suppliers" },
+    { tone: "pink", label: "Shipment folder", value: `${EXAMPLE.files} files supplied`, island: 5, system: "Files" },
   ],
   /** Accessible name per row. */
-  rowAria: (label: string, value: string, system: string) => `${label}: ${value}. From ${system}. Open its evidence.`,
+  rowAria: (label: string, value: string, system: string) => `${label}: ${value}. From ${system}. Open its record.`,
 } as const;
 
-/** 05 Decision: the transfer order's progress (Story.tsx Stepper). */
-export const STEPPER = ["Approved", "Picking", "Loaded", "In transit", "Received"] as const;
+/** 05 Decision: the review's progress (Story.tsx Stepper). Ends with the reviewer, never "approved". */
+export const STEPPER = ["Assembled", "Matched", "Flagged", "Questions", "Reviewer"] as const;
 
-/** 06 Control: the approval panel (DecisionControls.tsx). Approval is the only claim: no write-back, no learning. */
+/** 06 Control: the reviewer's panel (DecisionControls.tsx). Nothing is approved; the reviewer decides. */
 export const CONTROL = {
   eyebrow: "Interactive example",
-  title: (qty: number) => `Transfer ${qty} units`,
-  sourceLeft: (left: number) => `Plant 02 · ${left} left`,
-  balanceAria: (left: number, qty: number) => `Plant 02 keeps ${left} units; Plant 01 receives ${qty} units`,
-  retained: "retained",
-  incoming: "incoming",
-  approve: "Approve",
-  adjust: "Adjust",
-  reject: "Reject",
-  approveQty: (qty: number) => `Approve ${qty}`,
+  title: `Line ${L.n} · heat ${L.heat}`,
+  side: `Checklist ${EXAMPLE.checklist.rev}`,
+  balanceAria: (ok: number, open: number) => `${ok} checklist items supported; ${open} left for review`,
+  supported: "Supported",
+  open: "For review",
+  ofItems: `of ${ITEMS}`,
+  /** The three choices. */
+  request: "Request certificate",
+  note: "Add a question",
+  dismiss: "Not an issue",
+  /** The question choices under "Add a question". */
+  notePrompt: "Which question should go with the pack?",
+  notes: [`Ask ${C.source} for the heat ${L.heat} certificate`, `Ask ${PC.source} for the ${PC.kind.toLowerCase()}`, "Ask stores to confirm the heat on line 12"],
   cancel: "Cancel",
-  /** Under the quantity slider. The slider runs 80 to 400 in steps of 20. */
-  note: (qty: number) =>
-    qty < 220
-      ? "Below the recommended quantity. Check the forecast before approving."
-      : qty <= T.units
-        ? "Matches the recommendation. Plant 02 keeps its 380-unit plan."
-        : qty <= EXAMPLE.policy.maxUnits
-          ? "Plant 02 would drop below its 380-unit plan."
-          : "Above the 300-unit transfer limit. Needs plant manager approval.",
-  rejectPrompt: "Why not? Pick the reason that fits.",
-  reasons: ["Plant 02 needs the stock", "Expedite instead", "Demand looks temporary"],
-  planLabel: "Example plan",
-  /** The approved chip: "240 units · Plant 02 → Plant 01". */
-  planChip: (qty: number) => `${qty} units · Plant 02 → Plant 01`,
-  approvedTitle: (qty: number) =>
-    `Approved in this example. In a live setup, your team releases a ${qty}-unit transfer order in your ERP.`,
-  approvedMeta: "Example · Planner approval → transfer order in your ERP",
-  rejectedTitle: "Rejected. No stock moves.",
-  rejectedMeta: (reason: string) => `Reason: ${reason}`,
+  dismissPrompt: "Why not? Pick the reason that fits.",
+  reasons: ["The ERP entry is wrong", "The customer waived this document", "Another certificate covers it"],
+  planLabel: "Review pack",
+  /** The chip that travels into the review pack. */
+  planChip: (what: string) => what,
+  requestChip: `Request · heat ${L.heat} certificate`,
+  requestedTitle: `Request drafted for ${C.source}. Line ${L.n} stays marked for review.`,
+  notedTitle: (q: string) => `Question added: ${q}.`,
+  requestedMeta: `${EXAMPLE.label} · ${EXAMPLE.status}`,
+  dismissedTitle: "Recorded as resolved by the reviewer. The reason stays with the pack.",
+  dismissedMeta: (reason: string) => `Reason: ${reason}`,
   undo: "Undo",
 } as const;
 
 /** 07 Scale: the function card (StoryCard / ScaleApps). */
 export const SCALE = {
-  apps: (n: number) => `${n} ${n === 1 ? "application" : "applications"}`,
-  /** One app row: "Inventory Intelligence · 4 to 6 weeks". */
-  appRow: (name: string, weeks: string) => `${name} · ${weeks} weeks`,
-  /** A delivery estimate on its own: "4 to 6 weeks". */
-  weeks: (w: string) => `${w} weeks`,
+  apps: (n: number) => `${n} proposed ${n === 1 ? "workflow" : "workflows"}`,
+  /** One workflow row: name · status. */
+  appRow: (name: string, status: string) => `${name} · ${status}`,
   link: (area: string) => CTA.explore(area),
 } as const;
 
 /** Labels and accessible names in the story's DOM (StoryCard, ScaleCard, LayerReadout, ScalePhone,
- *  DecisionControls, IslandPanel). Wired by the story lanes. */
+ *  DecisionControls, IslandPanel). */
 export const STORY_UI = {
   details: "Details",
   cardAria: "The story, chapter by chapter",
   functionsAria: "Business functions",
-  layers: "Layers behind the decision",
-  phoneAria: "Decisions by business function",
-  qtyAria: "Units to transfer",
-  qtyDown: "Decrease quantity",
-  qtyUp: "Increase quantity",
+  layers: "Layers behind the review",
+  phoneAria: "Proposed workflows by business function",
   /** IslandPanel: "Source 3 of 6". */
   source: (n: number, total = 6) => `Source ${n} of ${total}`,
-  synced: (time: string) => `Synced ${time}`,
-  readFor: "Read for this decision",
+  /** IslandPanel: what the source holds for this example (no live-sync claim). */
+  sample: "Sample record",
+  readFor: "Used in this review",
   close: "Close",
 } as const;
 
 /** 08 Industries (Story.tsx headline, IndustryDetail.tsx card). */
 export const INDUSTRY = {
-  title: (name: string) => ["Built for", `${name}.`] as Headline,
-  /** Was "Decisions Decignal makes": Decignal recommends, people decide (COPY-03). */
-  decisions: "What Decignal recommends",
-  startLink: (app: string, weeks: string) => `Typical start: ${app} · ${weeks} weeks`,
-  indexAria: "Industries",
-  /** IndustryCallout: the decision pinned to the place on wide screens. */
-  action: "Recommended action",
+  title: (name: string) => ["Built for", `${name.toLowerCase()}.`] as Headline,
+  decisions: "Where a workflow could help",
+  startLink: (app: string) => `Proposed start: ${app}`,
+  indexAria: "Industries in focus",
+  /** IndustryCallout: the example pinned to the place on wide screens. */
+  action: "Illustrative example",
 } as const;
 
-/** 09 Decide (D1 Option A): the 3D world, the giant headline, one line, the CTA pair and the example card. */
+/** 09 Final: the 3D world, the giant headline, one line, the CTA pair and the example card. */
 export const FINAL = {
-  headline: ["Turn information", "into decisions."] as Headline,
-  sub: "Decignal reads the systems you run, recommends one action and leaves the approval with your team.",
+  headline: ["Tell us which workflow", "needs attention."] as Headline,
+  sub: "Bring a recurring supplier, sales, dispatch, payment or service issue. We will check how it is handled today and whether your existing software can address it.",
   /** Under the primary CTA. */
-  ctaNote: "30 minutes. We pick one decision in your operation and show what Decignal would recommend.",
+  ctaNote: "A free 30-minute conversation about one workflow.",
   secondary: CTA.applications,
   /** The StoryCard in this chapter. */
-  cardTitle: `Example · Transfer ${T.id}`,
-  /** Three results of the same transfer (S69-14). Tone = the system the figure comes from (D6). No money figure. */
+  cardTitle: `${EXAMPLE.label} · ${EXAMPLE.shipment.id}`,
+  /** Three facts of the same review. Tone = the source the figure comes from. */
   outcomes: [
-    { value: "2 days", label: "Reaches Plant 01 before day 6", tone: "pink" },
-    { value: `${P2.ownPlan} units`, label: "Plant 02 keeps its own plan", tone: "saffron" },
-    { value: "Day 6", label: "Safety-stock breach avoided", tone: "cobalt" },
+    { value: `${COUNTS.supported} of ${ITEMS}`, label: "Checklist items supported", tone: "emerald" },
+    { value: `${EXAMPLE.questions.length} questions`, label: "Left for the quality reviewer", tone: "tangerine" },
+    { value: "Draft", label: "Dispatch has not been approved", tone: "cobalt" },
   ],
-  chipsAria: "The six systems behind this decision",
-  /** Before the row of system discs on the card. */
-  readFrom: "Read from six systems",
+  chipsAria: "The six record sources behind this review",
+  /** Before the row of source discs on the card. */
+  readFrom: "Records from six sources",
 } as const;
 
 /** The nav's story glance (NavPeek CHAPTER_INFO and its groups), index-aligned with CHAPTERS. */
 export const STORY_PEEK = {
   title: "The story in nine chapters",
-  sub: "One stock shortage, followed from the first signal to an approved transfer.",
+  sub: "One illustrative dispatch review, from a shipment ready to check to questions for the reviewer.",
   chapters: [
-    "Six systems, six partial views",
-    "One shortage worth acting on",
-    "Demand rises while stock runs low",
-    "Every fact, checked in one view",
-    "Move 240 units, Plant 02 to Plant 01",
-    "A named person approves it",
-    "The same layer, five functions",
-    "Configured for your industry",
-    "Information, turned into decisions",
+    "Records spread across six sources",
+    "A shipment ready for review",
+    "Two records disagree, one is missing",
+    "Every record, checked in one view",
+    "The mismatch flagged, nothing changed",
+    "The reviewer decides",
+    "The same approach, five functions",
+    "The industries in focus",
+    "Tell us which workflow needs attention",
   ],
   groups: [
     { name: "The problem", from: 0 },
-    { name: "The answer", from: 3 },
-    { name: "At scale", from: 6 },
+    { name: "The review", from: 3 },
+    { name: "Where it applies", from: 6 },
   ],
 } as const;
 
@@ -332,399 +350,278 @@ export const STORY_PEEK = {
 /* ------------------------------------------------------------------ */
 
 export const NAV = {
-  /** Nav.tsx section links: [id, label]. */
-  /** One link per home section, in page order; the audit is the CTA. */
+  /** Nav.tsx links: [id or href, label]. Ids are homepage anchors; a leading "/" is a route. */
   sections: [
-    ["systems", "Integrations"],
-    ["platform", "Platform"],
-    ["applications", "Solutions"],
-    ["trail", "Decision trail"],
-    ["outcomes", "Results"],
-    ["how", "How it works"],
-    ["faq", "FAQ"],
-    ["audit", "Free AI audit"],
+    ["/solutions", "Workflows"],
+    ["who-we-help", "Who we help"],
+    ["platform", "Approach"],
+    ["how", "How we work"],
   ],
   logoAria: "Decignal, back to top",
   menuOpen: "Open menu",
   menuClose: "Close menu",
-  /** NavPeek PEEKS blurbs: the glance side card and the phone menu. */
+  /** NavPeek blurbs: the glance side card and the phone menu. */
   blurbs: {
-    systems: "Reads the ERP, CRM, MES and WMS you already run.",
-    platform: "What Decignal does, in one sentence and five facts.",
-    trail: "Seven steps from one signal to a result.",
-    apps: "Eight applications across five business areas.",
-    outcomes: "Three example decisions and what they change.",
-    how: "One decision first, live in weeks.",
+    audience: "Manufacturers, industrial distributors and equipment service businesses.",
+    systems: "The records the proposed workflows use, from authorised exports.",
+    platform: "Check what your current software can solve first.",
+    trail: "One illustrative dispatch review, line by line.",
+    apps: "Six proposed workflows across five business functions.",
+    outcomes: "What we measure, agreed against your own baseline.",
+    how: "From a real exception to a tested workflow.",
     faq: "What teams ask before they start.",
   },
-  /** Glance footers: a figure and what it counts. No figure that reads as a result (NAV-15). */
+  /** Glance footers: a short fact. No figure that reads as a result. */
   foot: {
-    apps: { figure: "8", label: "applications in the catalogue" },
-    outcomes: { figure: "Read-only", label: "to start, nothing replaced" },
-    how: { label: "weeks to a first release" },
+    apps: { figure: "Proposed", label: "workflows, confirmed before a build" },
+    outcomes: { figure: "Baseline", label: "agreed for each workflow" },
+    how: { label: "Timing confirmed after the review" },
   },
-  /** The outcomes glance eyebrow: its numbers are the example's. */
-  outcomesEyebrow: "Example outcomes",
-  appsCount: (n: number) => `${n} ${n === 1 ? "app" : "apps"}`,
-  /** The Platform glance's side card: what Decignal does, in one line. */
+  outcomesEyebrow: "What we measure",
+  appsCount: (n: number) => `${n} ${n === 1 ? "workflow" : "workflows"}`,
+  /** The Approach glance's side card. */
   platformSide: {
-    label: "What Decignal does",
-    blurb: "Reads the systems you already run, finds the decision that matters and sends it, with its evidence, for approval.",
+    label: "Our approach",
+    blurb: "Your ERP, quality system or specialist software may already support the task. We review that option first.",
   },
   faqSide: {
-    label: "Free AI audit",
-    blurb: "Three decisions ranked, in 30 minutes. Free.",
-    all: (n: number) => `All ${n} questions`,
+    label: "Workflow review",
+    blurb: "A free 30-minute conversation about one workflow.",
+    all: () => "All questions",
   },
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* Editorial sections (Editorial.tsx and the sections it composes) */
+/* Homepage sections (Editorial.tsx and the sections it composes)       */
 /* ------------------------------------------------------------------ */
 
-/** The systems strip (E10, COPY-10, D8): system types from CONNECTS in lib/content.ts. */
-export const SYSTEMS_STRIP = {
-  eyebrow: "Works with what you run",
-  headline: ["Keep your systems.", "We read across them."] as Headline,
-  /** The three promises as chips in the glass panel (SystemsRing). */
-  promises: ["Read-only to start", "No migration", "No new data lake"],
-  footnote: "The audit confirms how we connect to the systems you run.",
-} as const;
-
-/** Applications section and explorer (Editorial.tsx, ApplicationExplorer.tsx). */
-export const APPLICATIONS_COPY = {
-  eyebrow: "Solutions",
-  headline: ["Eight applications.", "Five business areas."] as Headline,
-  intro: "From the first signal to the right action. Follow the decisions as you scroll.",
-  chaptersAria: "Application chapters",
-  stages: ["Signal", "Evidence", "Action"],
-  stageLabels: ["The signal", "Connected evidence", "Recommended action"],
-  showEvidence: "Show evidence",
-  hideEvidence: "Hide evidence",
-  sources: "Connected sources",
-  /** The explorer's one honesty label (COPY-08 6). */
-  example: "Illustrative examples",
-  /** The full list of applications (Editorial.tsx). */
-  listAria: "All eight applications",
-} as const;
-
-/** The static trail after the explorer (E04, COPY-02 8): every application runs the same seven steps. */
-export const TRAIL = {
-  label: "Every application runs the same trail",
-  /** The dial's head (TrailDial.tsx, Orvan's process dial). */
-  headline: ["One shortage.", "Seven steps to a result."] as Headline,
-  /** The dial's last turn, from Result back to Signal: the loop closes. */
-  loop: { k: "Loop", name: "Next signal", ex: "The result is measured against the plan, and the next signal starts the trail again." },
-  aria: "How one decision moves: signal, evidence, context, policy, decision, approval, result",
-  groups: ["Signal", "Evidence", "Action"],
-  steps: [
-    { step: "Signal", ex: `${EXAMPLE.part} short at Plant 01 on day 6`, tone: "signal", group: 0 },
-    { step: "Evidence", ex: "Open orders up 18% in 3 weeks", tone: "violet", group: 1 },
-    { step: "Context", ex: `Plant 02 has ${P2.transferable} units above plan`, tone: "saffron", group: 1 },
-    { step: "Policy", ex: "Max 300 units per transfer", tone: "cobalt", group: 1 },
-    { step: "Decision", ex: T.text, tone: "emerald", group: 2 },
-    // Emerald like the Control chapter: tangerine means suppliers (D6).
-    { step: "Approval", ex: `Planner approves at ${T.approvedAt}`, tone: "emerald", group: 2 },
-    { step: "Result", ex: "Arrives on day 2, before the day 6 breach", tone: "pink", group: 2 },
+/** Who we help (handoff home.audience): three segment cards. Items are AUDIENCE in lib/content.ts. */
+export const AUDIENCE_COPY = {
+  eyebrow: "Who we help",
+  headline: ["Who we are", "building for"] as Headline,
+  intro: "Our initial focus is engineering components, metal products, industrial machinery, electrical equipment and industrial supplies. The right application depends on the records, requirements and existing software in your business.",
+  listAria: "Customer segments",
+  workflows: "Proposed workflows",
+  link: "See the workflows",
+  photoAlt: [
+    "A machinist checking a machined part on a shop floor",
+    "Racks of boxed industrial components in a distributor’s warehouse",
+    "A service technician working on an industrial pump",
   ],
 } as const;
 
-/** Outcomes (Editorial.tsx). The cases are OUTCOMES in lib/content.ts. */
-export const OUTCOMES_COPY = {
-  eyebrow: "Example outcomes",
-  headline: ["Every decision", "ends in a number."] as Headline,
-  intro: "Three decisions from the scenes above, and the number each one changes.",
-  tabsAria: "Example outcomes",
-  /** The single disclaimer, under the intro. */
-  note: "Illustrative decisions from the scenes above. Your results are measured against your own baseline.",
-} as const;
-
-/** The statement after the systems ring (Statement.tsx, Orvan's "About"): one sentence that sharpens
- *  word by word as it scrolls in, then the five facts as cards. */
+/** The problem (handoff home.problem): Statement.tsx, the sentence that sharpens as it scrolls. */
 export const STATEMENT = {
-  eyebrow: "What Decignal does",
-  text: "Decignal reads your ERP, CRM, MES and WMS, finds the decision that matters and sends it, with its evidence, to whoever approves.",
-  approverAlt: "A planner reviewing a decision at a laptop",
-  /** The approver card's trail (Statement.tsx bento): the running example, minute by minute. */
+  eyebrow: "The problem",
+  headline: "A recorded transaction can still leave work unfinished",
+  text: "A shipment needs certificates from several suppliers. A distributor finds different specifications in a customer enquiry and supplier offer. A service recommendation remains in a report without an owner.",
+  closing: "The task is to gather the records and resolve what still needs attention. We look for a recurring problem with a clear owner and a practical way to measure improvement.",
+  reviewerAlt: "A quality reviewer checking documents at a desk",
+  /** The review card's trail (Statement.tsx bento): the worked example, minute by minute. */
   log: [
-    { t: "09:41", text: "Recommendation sent to the planner", tone: "cobalt" },
-    { t: T.approvedAt, text: `Approved, ${T.units} units`, tone: "emerald" },
-    { t: "09:44", text: "Your team releases the transfer in the ERP", tone: "tangerine" },
+    { t: "09:41", text: "Pack assembled from 11 files", tone: "cobalt" },
+    { t: "09:42", text: `Line ${L.n}: ${L.heat} against ${C.heat} flagged`, tone: "signal" },
+    { t: "09:44", text: "Two questions sent to the reviewer", tone: "emerald" },
   ],
 } as const;
 
-/**
- * The Also reads dial (ReadWheel.tsx): the nine other system types, in three groups, each with one read
- * from an application's illustrative scenario (lib/application-demos.ts, APP_FACTS). `compare` is two
- * figures side by side, f their bar length (0..1), `risk` the red one. `icon` is a SystemIcon id.
- */
-export type WheelItem = {
-  name: string;
-  title: string;
-  text: string;
-  app: string;
-  fig: string;
-  unit?: string;
-  caption: string;
-  icon: string;
-  compare: { label: string; value: string; f: number; risk?: boolean }[];
-};
-const MAINT = APP_FACTS.maintenance;
-export const ALSO_READS = {
-  label: "Also reads",
-  title: "Plus the rest of your stack.",
-  lede: "Nine more kinds of system, read the same way: read-only, mapped to your definitions, and used only by the applications that need them.",
-  example: "Example read",
-  usedBy: "Used by",
-  tabsAria: "Other systems Decignal reads, by group",
-  itemOf: (n: number, total: number) => `${n} of ${total}`,
+/** Our approach (handoff home.approach, #platform): the bento under the problem. */
+export const APPROACH = {
+  eyebrow: "Our approach",
+  headline: ["Check what your current", "software can solve first"] as Headline,
+  intro: "Your ERP, quality system or specialist software may already support the task. We review that option before proposing another application.",
+  items: [
+    { k: "Look", title: "Look at a real example", text: "Follow the records, the exception and the work needed to resolve it. Identify where the existing workflow falls short.", tone: "cobalt" },
+    { k: "Define", title: "Define the application around the gap", text: "Agree the inputs, output, customer requirements and reviewer. Keep transaction records in the systems that already own them.", tone: "emerald" },
+    { k: "Test", title: "Test against the current process", text: "Compare complete tasks, including corrections and review time. Use source references so your team can check each result.", tone: "saffron" },
+    { k: "Agree", title: "Agree responsibility after launch", text: "Set who handles changing document formats, business rules and support before the application goes live.", tone: "violet" },
+  ],
+  functions: "Five business functions",
+  functionsText: "Where the proposed workflows operate. Customer fit is shown on each one.",
+} as const;
+
+/** The directory (handoff §5, /solutions). */
+export const SOLUTIONS_INDEX = {
+  eyebrow: "What we build",
+  headline: ["Workflows to assess against", "your current setup"] as Headline,
+  body: "Explore proposed workflows for manufacturers, industrial distributors and equipment service businesses. Select a recurring task, check the relevant records and compare the proposed application with what your existing software can do.",
+  status: "Proposed workflows for assessment. No availability or outcome is implied.",
+  audienceTitle: "Who each workflow is for",
+  functionsTitle: "Business functions",
+  workflowsTitle: "All six proposed workflows",
+  audienceNote: "Supplier coordination, dispatch, RFQ review, service follow-up and deduction review are business functions. Customer fit is shown on each workflow; job-work reconciliation is specific to manufacturers using external processing.",
+  closingHeading: "Start with evidence of the problem",
+  closingBody: "Bring a recent example, explain what your existing system does and show what still has to happen outside it.",
+} as const;
+
+/** Record sources (handoff home.systems, #systems): the ring of six sources from CONNECTS. */
+export const SYSTEMS_STRIP = {
+  eyebrow: "Your existing setup",
+  headline: ["Use the relevant records", "from your existing setup"] as Headline,
+  /** The three notes as chips in the glass panel (SystemsRing). */
+  promises: ["Authorised exports first", "Sample documents to start", "Access confirmed before any connection"],
+  footnote: "A first assessment can use authorised exports and sample documents. We confirm the access method and integration work before promising a live connection.",
+  /** The three record groups (handoff home.systems.groups). */
   groups: [
     {
-      id: "ops",
-      label: "Operations",
-      tone: "emerald",
-      items: [
-        {
-          name: "CMMS",
-          title: "Maintenance system",
-          text: "Assets, work orders and maintenance history: which asset, when it was last serviced, and when it can stop.",
-          app: "Predictive Maintenance",
-          fig: MAINT.workOrder,
-          caption: `${MAINT.asset} · ${MAINT.line} · ${MAINT.window} window`,
-          icon: "cmms",
-          compare: [
-            { label: "Hours since last service", value: "3,900 h", f: 0.92, risk: true },
-            { label: "Service interval", value: "4,000 h", f: 0.95 },
-          ],
-        },
-        {
-          name: "SCADA and IoT",
-          title: "Sensors on the line",
-          text: "Readings such as vibration and temperature, as the machine runs. A trend here is often the first sign of a failure.",
-          app: "Predictive Maintenance",
-          fig: MAINT.peak.split(" ")[0],
-          unit: "mm/s",
-          caption: `Vibration peak · sensor ${MAINT.sensor} · ${MAINT.asset}`,
-          icon: "scada",
-          compare: [
-            { label: "Peak this week", value: MAINT.peak, f: 0.96, risk: true },
-            { label: "Running baseline", value: "2.1 mm/s", f: 0.42 },
-          ],
-        },
-        {
-          name: "QMS",
-          title: "Quality system",
-          text: "Inspections, non-conformances and batch holds, so no recommendation moves stock that quality has stopped.",
-          app: "Production Intelligence",
-          fig: "1",
-          unit: "batch held",
-          caption: `${APP_FACTS.qualityBatch} · held for inspection`,
-          icon: "qms",
-          compare: [
-            { label: "Lots inspected this week", value: "42", f: 1 },
-            { label: "Non-conformances", value: "3", f: 0.07, risk: true },
-          ],
-        },
-      ],
-    },
-    {
-      id: "com",
-      label: "Commercial",
-      tone: "violet",
-      items: [
-        {
-          name: "POS",
-          title: "Point of sale",
-          text: "Sell-through by store and region, the demand that reaches shelves before it reaches orders.",
-          app: "Demand & Replenishment",
-          fig: `+${APP_FACTS.demand.raiseUnits.toLocaleString("en-US")}`,
-          unit: "units",
-          caption: `${APP_FACTS.demand.dc} order raised · POS and orders agree`,
-          icon: "pos",
-          compare: [
-            { label: "West sell-through, this month", value: "9,600 units", f: 0.92 },
-            { label: "Replenishment plan", value: "7,800 units", f: 0.75 },
-          ],
-        },
-        {
-          name: "DMS",
-          title: "Dealer management",
-          text: "Dealer orders, stock and allocation, so supply follows the dealers who are actually selling.",
-          app: "Sales & Dealer Intelligence",
-          fig: `${APP_FACTS.sales.shiftPct}%`,
-          caption: "Allocation shifted to West dealers",
-          icon: "dms",
-          compare: [
-            { label: "West share of dealer orders", value: "38%", f: 0.76 },
-            { label: "West share of allocation", value: "26%", f: 0.52 },
-          ],
-        },
-        {
-          name: "Service desk",
-          title: "Service cases",
-          text: "Cases, SLAs and part history, so a pattern across many tickets reaches the one team that can fix its cause.",
-          app: "Customer Service Intelligence",
-          fig: `${APP_FACTS.customer.cases} → 1`,
-          caption: `Cases linked by ${APP_FACTS.customer.part} · owner: ${APP_FACTS.customer.owner}`,
-          icon: "desk",
-          compare: [
-            { label: "Open cases on the same part", value: `${APP_FACTS.customer.cases}`, f: 1 },
-            { label: "Escalations after grouping", value: "1", f: 0.07 },
-          ],
-        },
-      ],
-    },
-    {
-      id: "data",
-      label: "Logistics & data",
+      name: "ERP and accounting records",
+      text: "Delivery lines, material movements, purchase orders, invoices and receipts. Tell us the product, version and modules you use, including SAP or TallyPrime where relevant.",
       tone: "cobalt",
-      items: [
-        {
-          name: "TMS",
-          title: "Transport management",
-          text: "Shipments, lanes and carrier ETAs: when goods in transit will really arrive, and which routes are slipping.",
-          app: "Supply Chain Risk",
-          fig: `+${APP_FACTS.risk.laneDelayDays}`,
-          unit: "days",
-          caption: `Port lane delay · ${APP_FACTS.risk.parts.length} parts at risk`,
-          icon: "tms",
-          compare: [
-            { label: "Port lane, delayed", value: `+${APP_FACTS.risk.laneDelayDays} days`, f: 1, risk: true },
-            { label: `${APP_FACTS.risk.alternative} instead`, value: `${APP_FACTS.risk.alternativeDays} days`, f: 0.29 },
-          ],
-        },
-        {
-          name: "Data warehouse",
-          title: "Data warehouse",
-          text: "The history, forecasts and models you already keep. Decignal reads them; it does not ask for a new data lake.",
-          app: "Demand & Replenishment",
-          fig: "36",
-          unit: "months",
-          caption: `${EXAMPLE.part} demand history behind the forecast`,
-          icon: "dwh",
-          compare: [
-            { label: "Forecast, this month", value: "1,080 units", f: 0.86 },
-            { label: "Open orders, today", value: `${EXAMPLE.demand.now.toLocaleString("en-US")} units`, f: 0.9 },
-          ],
-        },
-        {
-          name: "Spreadsheets",
-          title: "Plans in spreadsheets",
-          text: "The shift plans and trackers that live outside any system, read as they are, with nothing to re-key.",
-          app: "Predictive Maintenance",
-          fig: MAINT.window,
-          caption: `Shift plan · the free window on ${MAINT.line}`,
-          icon: "sheet",
-          compare: [
-            { label: `${MAINT.line} load, ${MAINT.window}`, value: "40%", f: 0.4 },
-            { label: `${MAINT.line} load, other days`, value: "95%", f: 0.95 },
-          ],
-        },
-      ],
     },
-  ] as { id: string; label: string; tone: string; items: WheelItem[] }[],
+    {
+      name: "Quality and supplier documents",
+      text: "Customer checklists, material certificates, process certificates, job-work challans and supplier statements.",
+      tone: "emerald",
+    },
+    {
+      name: "Commercial and service records",
+      text: "Customer enquiries, supplier offers and datasheets, deduction advices and authorised service reports, together with the order, equipment and contract records needed to review them.",
+      tone: "violet",
+    },
+  ],
+  note: "System names describe inputs we can assess. They do not imply a native connector or partnership.",
 } as const;
 
-/** The facts band under the outcome card (Statement.tsx). No "0" figure (NAV-15), no readiness claim (COPY-09). */
-export const GLANCE = [
-  { n: "Read-only", label: "to start", text: "Decignal reads the ERP, MES, CRM and WMS you already run. Nothing is replaced.", tone: "cobalt" },
-  { n: "4 to 8", label: "weeks to a first release", text: "From the catalogue. A custom application takes 6 to 12 weeks.", tone: "emerald" },
-  { n: "8", label: "applications in the catalogue", text: "Inventory to finance, each fitted to your systems and policies.", tone: "saffron" },
-  { n: "5", label: "business areas", text: "Supply chain, operations, commercial, customer, finance and risk.", tone: "violet" },
-  { n: "1", label: "named approver per action", text: "Human approval can always be required. You set roles and thresholds.", tone: "tangerine" },
-] as const;
+/** Workflows section and explorer (Editorial.tsx, ApplicationExplorer.tsx; handoff home.examples_intro). */
+export const APPLICATIONS_COPY = {
+  eyebrow: "Workflows to assess",
+  headline: ["Examples from dispatch,", "distribution and service"] as Headline,
+  intro: "Explore a dispatch document review, a distributor’s RFQ clarification and a service-report handover. Each proposed application starts with sample records and a check against your existing software.",
+  note: "Proposed workflows. Scope and availability are confirmed before a build.",
+  all: "See all six proposed workflows",
+  chaptersAria: "Proposed workflows",
+  stages: ["Situation", "Source records", "For review"],
+  stageLabels: ["Situation", "Source records", "For review"],
+  showEvidence: "View source records",
+  hideEvidence: "Hide source records",
+  sources: "Records needed",
+  /** The explorer's one honesty label. */
+  example: "Illustrative example",
+  /** The full list of workflows (Editorial.tsx). */
+  listAria: "All six proposed workflows",
+  /** Shared workflow-card labels (handoff global.shared_labels). */
+  labels: {
+    data: "Data needed",
+    output: "Proposed output",
+    owner: "Who reviews it",
+    measure: "What to measure",
+    fit: "Customer fit",
+    limitation: "Scope note",
+  },
+} as const;
 
-/** How it works (Editorial.tsx, HowSteps.tsx). Routes and steps are PATHS in lib/content.ts. */
-export const HOW = {
-  eyebrow: "How it works",
-  headline: ["One decision first.", "Then build from there."] as Headline,
-  intro: "Two routes to production: build around your operation, or start from the catalogue.",
-  routeAria: "Two routes to production",
-  /** Each colour sheet's head (HowSteps.tsx): its place in the order, in words rather than numerals. */
-  stepWords: ["First.", "Second.", "Third.", "Then."],
-  youGet: "You get",
-  /** What each step delivers, index-aligned with PATHS[route].steps (HowSteps.tsx). */
-  delivers: {
-    custom: [
-      ["Decision map", "System inventory", "Constraints and owners"],
-      ["Value case", "Scope and controls", "Scorecard to measure"],
-      ["Production release", "Trained users", "Live scorecard"],
-      ["Next use case", "Reused context layer", "Shared controls"],
-    ],
-    catalogue: [
-      ["Chosen application", "Outcome to measure", "Named owner"],
-      ["Read-only connectors", "Mapped definitions", "Data checks"],
-      ["Approval rules", "Thresholds set", "Team sign-off"],
-      ["Next application", "Reused context layer", "Shared controls"],
+/** The worked example (handoff home.example, #example, kept at #trail): the review, step by step. */
+export const TRAIL = {
+  label: "Illustrative review",
+  headline: ["A dispatch pack with", "one mismatch left to resolve"] as Headline,
+  intro: "A quality reviewer is preparing the documents for a shipment. The pack needs to match the customer’s approved checklist and the actual delivery lines.",
+  /** The dial's last turn: back with the reviewer. */
+  loop: { k: "Reviewer", name: "Your team decides", ex: "The quality team checks the documents and decides whether the pack is acceptable." },
+  aria: "How the review moves: checklist, delivery line, certificate, process certificate, conflict, questions, reviewer",
+  groups: ["Situation", "Source records", "For review"],
+  steps: [
+    { step: "Checklist", ex: `Customer checklist ${EXAMPLE.checklist.rev}: ${ITEMS} documents per shipment`, tone: "violet", group: 0 },
+    { step: "Delivery line", ex: `Line ${L.n}: material recorded against heat ${L.heat}`, tone: "cobalt", group: 0 },
+    { step: "Certificate", ex: `Certificate supplied: heat ${C.heat}`, tone: "tangerine", group: 1 },
+    { step: "Process", ex: `${PC.kind}: not found in the supplied files`, tone: "saffron", group: 1 },
+    { step: "Conflict", ex: `${L.heat} and ${C.heat} kept side by side; neither is corrected`, tone: "signal", group: 2 },
+    { step: "Questions", ex: "Request the correct certificate and the missing process certificate", tone: "emerald", group: 2 },
+    { step: "Reviewer", ex: EXAMPLE.status, tone: "pink", group: 2 },
+  ],
+  /** The readable three-row review (handoff: delivery reference, supplied document, status). */
+  table: {
+    aria: "Illustrative dispatch review",
+    head: ["Delivery reference", "Supplied document", "Status"],
+    rows: [
+      { ref: `Line ${L.n} · heat ${L.heat}`, doc: `${C.kind} · heat ${C.heat}`, status: "Conflicting reference", risk: true },
+      { ref: `Line ${L.n} · heat ${L.heat}`, doc: PC.kind, status: "Document not found", risk: true },
+      { ref: `Line ${L.n} · ${L.item}`, doc: "Dimensional report", status: "Supported", risk: false },
     ],
   },
+  recommendation: "Review the heat-number mismatch and request the missing process certificate before approving the document pack.",
+  explanation: "The application would prepare the evidence index and highlight what needs attention. The quality team checks the documents and decides whether the pack is acceptable.",
+  review: EXAMPLE.status,
+  disclaimer: "Illustrative records. This example shows the proposed output, not a completed customer project.",
+} as const;
+
+/** What we measure (handoff home.delivery.measurement, kept at #outcomes). */
+export const OUTCOMES_COPY = {
+  eyebrow: "What we measure",
+  headline: ["Agree a baseline", "before anything is built"] as Headline,
+  intro: "Agree a baseline for the selected workflow: time to prepare a dispatch pack, clarify an RFQ, reconcile a job-work difference, review a deduction or assign a service follow-up.",
+  note: "Measure corrections and missed requirements as well as speed. Publish customer results only after they are verified.",
+  measures: [
+    { k: "Time", text: "Preparation and review time for the complete task, including corrections and source retrieval.", tone: "cobalt" },
+    { k: "Accuracy", text: "Missed requirements, critical mismatches found and unnecessary flags for the reviewer.", tone: "emerald" },
+    { k: "Rework", text: "Corrections the reviewer makes and documents that have to be requested again.", tone: "tangerine" },
+  ],
+} as const;
+
+/** How we work (Editorial.tsx, HowSteps.tsx; handoff home.delivery). Steps are PATHS in lib/content.ts. */
+export const HOW = {
+  eyebrow: "How we work",
+  headline: ["From a real exception", "to a tested workflow"] as Headline,
+  intro: "One sequence: review, scope, test and launch with an owner.",
+  routeAria: "From a real exception to a tested workflow",
+  /** Each colour sheet's head (HowSteps.tsx): its place in the order, in words rather than numerals. */
+  stepWords: ["First.", "Second.", "Third.", "Then."],
+  youGet: "Deliverable",
+} as const;
+
+/** About (handoff home.about, #about). Founder details are placeholders until supplied. */
+export const ABOUT = {
+  eyebrow: "About Decignal",
+  headline: ["Built for the work", "around your systems"] as Headline,
+  body: "We are building Decignal for Indian manufacturers, industrial distributors and equipment service businesses. Our focus is the operational work that still requires people to gather documents and resolve exceptions around their existing systems.",
+  second: "We start with a real workflow and the software already in place. A custom application is useful only when it improves a task that matters to the business.",
+  cta: "Talk to us about your workflow",
+  founder: PLACEHOLDER.founder,
+  founderLabel: "Founder",
+  linkedin: "LinkedIn profile",
 } as const;
 
 /** FAQ (Editorial.tsx). Questions are FAQ in lib/content.ts, topics FAQ_TOPICS. */
 export const FAQ_COPY = {
-  eyebrow: "FAQ",
-  headline: ["Questions teams", "ask us first."] as Headline,
+  eyebrow: "Questions",
+  headline: ["Questions", "before you start"] as Headline,
   helpTitle: "Still have a question?",
-  helpText: "Bring it to your free 30-minute AI audit.",
-  /** The one text link to the audit (E08), with an arrow. */
-  helpLink: "Ask it in your audit",
+  helpText: "Bring it to your free 30-minute workflow review.",
+  /** The one text link to the enquiry, with an arrow. */
+  helpLink: "Ask it on the call",
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* The free AI audit: lead magnet and booking (Audit.tsx)               */
-/* Field messages, consent, slot help and request states: lib/audit.ts.  */
+/* The enquiry (Audit.tsx; handoff §8). Field messages and request states: lib/audit.ts. */
 /* ------------------------------------------------------------------ */
 
 export const AUDIT = {
-  eyebrow: "Free AI audit",
-  headline: ["Bring one decision.", "Leave with a plan."] as Headline,
-  intro: "Thirty minutes on one workflow. Free, with no commitment.",
-  getTitle: "What you get",
-  get: [
-    { title: "Three decisions, ranked", text: "Scored on value, feasibility, risk and time to production." },
-    { title: "The data each one needs", text: "Which systems hold it, and which gaps matter." },
-    { title: "A first release you can plan", text: "Catalogue or custom, with a realistic timeline." },
-  ],
-  /** Facts row (dl). confirm: "Video call" is an owner promise (D11, README). No turnaround is promised
-   *  until the owner confirms one. */
+  eyebrow: "Start with a conversation",
+  headline: ["Talk through one workflow", "with us"] as Headline,
+  intro: "Tell us about one recurring workflow, the records involved and what your current software already does. We will use a 30-minute call to assess whether there is a gap worth investigating.",
+  /** Facts row (dl). */
   facts: [
+    { k: "Cost", v: "Free introductory call" },
     { k: "Length", v: "30 minutes" },
-    { k: "Cost", v: "Free" },
     { k: "Format", v: "Video call" },
-    { k: "Summary", v: "In writing, after the call" },
+    { k: "Booking", v: "Confirmed by email" },
   ],
   nextTitle: "What happens next",
-  /** In the form's order: step 2 asks the three questions (area, decision, systems), step 3 the times. */
-  next: ["Answer three short questions", "Choose two or three times", "Meet for 30 minutes", "Get your written summary"],
-  tail: "If there is a fit, we propose a scoped first release. If not, the summary is yours to keep.",
-  /** The three steps of the form: progress reads "Step 1 of 3 · About you". */
-  steps: ["About you", "Your decision", "Pick your times"],
-  progress: (n: number, total = 3) => `Step ${n} of ${total}`,
+  next: ["Tell us about one workflow", "We email you to arrange a time", "Talk it through for 30 minutes", "A proposal only once the scope is clear"],
+  cardTitle: "Request a call",
+  expectTitle: "What to expect",
+  expectations: "We will discuss the task, the existing software and the evidence needed for a useful assessment. If configuration or an established product appears to fit, we will say so. A build proposal follows only after the scope is understood.",
   fields: {
-    name: { label: "Full name", placeholder: "Your name" },
-    email: { label: "Work email", placeholder: "name@company.com" },
+    name: { label: "Your name", placeholder: "Full name" },
+    email: { label: "Work email", placeholder: "you@company.com" },
     company: { label: "Company", placeholder: "Company name" },
-    role: { label: "Role", placeholder: "Head of Supply Chain" },
-    country: { label: "Country", placeholder: "Select" },
-    phone: { label: "Phone (optional)", placeholder: "Country code and number" },
-    area: { label: "Business area" },
-    decision: {
-      label: "The decision you want to move faster",
-      placeholder: "For example: rebalancing stock between plants before shortages hit",
+    workflow: {
+      label: "What would you like to improve",
+      placeholder: "For example, checking dispatch certificates, clarifying a supplier offer against a customer enquiry, or following up on a service report.",
     },
-    systems: { label: "Systems you run" },
-    systemsOther: { label: "Which products? (optional)", placeholder: "For example: the ERP and WMS you use" },
+    systems: { label: "Systems you use (optional)", placeholder: "For example, TallyPrime, SAP, Zoho, Excel or a custom system." },
   },
-  continue: "Continue",
-  back: "Back",
-  toTimes: "Choose your times",
-  /** Accessible name of the step bars. */
-  progressAria: "Progress",
-  /** The chosen-times list: "Your times 2 of 3". */
-  picks: "Your times",
-  picksCount: (n: number, max: number) => `${n} of ${max}`,
-  /** Step 3, when CONTACT_EMAIL is set: text before and after the email link (COPY-12). */
-  timesAlt: ["None of these work? Email", "and we will find a time."],
+  privacyLine: "We will use these details to respond to your enquiry and arrange the call. Read our",
+  privacyLink: "Privacy notice",
   /** Notice fallback link when a send did not go through. */
   orEmail: (email: string) => `Or email ${email}`,
   /** Screen-reader suffix on links that open a new tab. */
@@ -738,128 +635,138 @@ export const AUDIT = {
 /* ------------------------------------------------------------------ */
 
 export const FOOTER = {
-  /** Footer display headline (COPY-04). */
-  headline: ["Start with", "one decision."] as Headline,
+  /** Footer display headline (handoff global.footer). */
+  headline: ["Tell us which workflow", "needs attention."] as Headline,
+  body: "Bring a recurring supplier, sales, dispatch, payment or service issue. We will check how it is handled today and whether your existing software can address it.",
   navTitle: "Explore",
-  /** Section cards (Footer.tsx NAV). Card 05 is dropped (critic §2). */
+  /** Explore links (handoff global.footer.groups). */
   nav: [
-    { label: "Platform", href: "#platform", blurb: "What Decignal does, in one sentence and five facts" },
-    { label: "Solutions", href: "#applications", blurb: "Eight applications across five business areas" },
-    { label: "How it works", href: "#how", blurb: "One decision first, live in weeks" },
-    { label: "FAQ", href: "#faq", blurb: "What teams ask before they start" },
+    { label: "What we build", href: "/solutions", blurb: "Six proposed workflows across five functions" },
+    { label: "Who we help", href: "/#who-we-help", blurb: "Manufacturers, distributors and service businesses" },
+    { label: "Our approach", href: "/#platform", blurb: "Check your current software first" },
+    { label: "How we work", href: "/#how", blurb: "From a real exception to a tested workflow" },
+    { label: "Questions", href: "/#faq", blurb: "What teams ask before they start" },
   ],
-  areasTitle: "Where Decignal works",
-  /** Area link text: "{Area}" with its count (COPY-19), linking to /solutions/{slug}. */
-  areaCount: (n: number) => `${n} ${n === 1 ? "application" : "applications"}`,
-  positioning: "Decision intelligence for enterprises across India and Africa.",
-  /** No legal entity is invented (D11): the owner replaces "Decignal" when it is known. */
-  copyright: "© 2026 Decignal",
+  companyTitle: "Company",
+  company: [
+    { label: "About Decignal", href: "/#about" },
+    { label: "Contact", href: "/#audit" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+  ],
+  areasTitle: "Business functions",
+  areaCount: (n: number) => `${n} proposed ${n === 1 ? "workflow" : "workflows"}`,
+  positioning: "Custom AI applications for Indian manufacturers, industrial distributors and equipment service businesses.",
+  identity: PLACEHOLDER.operator,
+  copyright: `© 2026 ${PLACEHOLDER.rightsHolder}. All rights reserved.`,
   privacy: "Privacy",
   terms: "Terms",
-  /** Rendered only when NEXT_PUBLIC_CONTACT_EMAIL is set (lib/site.ts CONTACT_EMAIL). */
   contact: (email: string) => email,
   top: "Back to top",
+  /** The large decorative wordmark's accessible description. */
+  wordmarkAria: "Decignal",
 } as const;
 
 /** Loader.tsx positioning line. */
 export const LOADER = {
-  positioning: "Decision intelligence for enterprises across India and Africa",
+  positioning: "Custom AI applications for industrial operations",
 } as const;
 
-/** app/not-found.tsx and the legal pages (COPY-19). */
+/** app/not-found.tsx and the legal pages (handoff §9). */
 export const PAGES = {
   notFound: {
     /** Document title (metadata). */
     title: "Page not found",
     eyebrow: "404",
-    headline: ["This page is not here.", "Your operation still is."] as Headline,
+    headline: ["This page is not here.", "Your workflow still is."] as Headline,
     body: "The link may be old or mistyped.",
     home: "Back to the start",
     cta: CTA.primary,
   },
-  /** Placeholders until the owner supplies the legal text (D11, PROD-11). */
+  /** Built from the facts in lib/placeholders.ts; replace those before launch. */
   privacy: {
     title: "Privacy notice",
-    lead: "We use the details you send us only to arrange and prepare your audit.",
-    draft: "This notice is a draft. The final text will name who we are and how to reach us.",
-    /**
-     * PROD-11 sections. Each states what the site does today (app/api/audit, lib/rate-limit.ts, Loader).
-     * confirm: retention and the delivery services in use, before launch; the owner adds the legal entity,
-     * registered address and grievance contact (India DPDP Act) when known. Nothing here is invented.
-     */
+    lead: `This notice explains how ${PLACEHOLDER.operator} handles personal information submitted through the Decignal website. For questions, contact ${PLACEHOLDER.privacyEmail}.`,
+    effective: `Effective ${PLACEHOLDER.effective}`,
     sections: [
       {
-        title: "What we collect",
-        text: "Your name, work email, company, role and country, and your phone number if you give one. Your answers about the decision, the systems you run and the times that suit you.",
+        title: "Who operates this website",
+        text: `This website is operated by ${PLACEHOLDER.operator}. You can reach us at ${PLACEHOLDER.email}.`,
       },
       {
-        title: "Why we collect it",
-        text: "To arrange your audit, prepare for it and follow up about it. We do not use it for anything else.",
+        title: "Information collected",
+        text: "When you send an enquiry we receive your name, work email, company, the workflow you describe and, if you add them, the systems you use. Our host keeps standard request logs. A short-lived setting in your browser stops the introduction from playing twice.",
       },
       {
-        title: "Who handles it",
-        text: "The form sends your request to our team by email or through a web hook we set up. We do not sell it.",
+        title: "How information is used",
+        text: "To reply to your enquiry, arrange the call and prepare for it. We do not use enquiry details for anything else and we do not sell them.",
       },
       {
-        title: "How long we keep it",
-        text: "Until your audit and any follow-up are complete, unless you ask us to delete it sooner.",
+        title: "Services that handle information",
+        text: `Enquiries are stored in ${PLACEHOLDER.privacy.formDestination}. The site is hosted on ${PLACEHOLDER.privacy.hosting}. We reply through ${PLACEHOLDER.privacy.email}. ${PLACEHOLDER.privacy.analytics}`,
       },
       {
-        title: "Cookies",
-        text: "This site sets no cookies and runs no analytics. Your browser keeps one setting for this visit, so the intro plays once.",
+        title: "Retention and deletion",
+        text: `${PLACEHOLDER.privacy.retention} Email ${PLACEHOLDER.privacyEmail} to ask for deletion.`,
       },
       {
-        title: "Your rights",
-        text: "You can ask to see, correct or delete your details at any time.",
+        title: "Questions and requests",
+        text: `You can ask to see, correct or delete your details by emailing ${PLACEHOLDER.privacyEmail}. We will confirm when the request is complete.`,
+      },
+      {
+        title: "Changes to this notice",
+        text: "We publish any update on this page with a new effective date.",
       },
     ],
-    /** How to reach us: the email when CONTACT_EMAIL is set. Without one, only what holds whether or not a
-     *  delivery channel is configured (a request may end in the download fallback, with no email sent). */
-    contact: (email?: string) =>
-      email
-        ? `Email ${email} with any question about your data.`
-        : "Contact details will be added here before launch. If we have emailed you about an audit, you can reply to that email.",
   },
   terms: {
-    title: "Terms of use",
-    lead: "These terms are being prepared.",
-    draft: "This page is a draft. The final text will name who we are and how to reach us.",
-    /** confirm: the owner replaces these with the legal terms before launch. */
+    title: "Website terms",
+    lead: `These terms cover use of the Decignal website operated by ${PLACEHOLDER.operator}. Project services are governed by a separate agreement.`,
+    effective: `Effective ${PLACEHOLDER.effective}`,
     sections: [
       {
-        title: "The examples on this site",
-        text: "The figures in the story, the applications and the outcomes describe an illustrative scenario. They are not results from a client.",
+        title: "Examples on this website",
+        text: "The workflows and figures shown on this website are illustrative unless explicitly identified as verified customer results.",
       },
       {
-        title: "The free AI audit",
-        text: "The audit is free and carries no commitment. Any work after it is agreed in a separate statement of work.",
+        title: "No guarantee of availability or outcomes",
+        text: "Website examples do not guarantee application availability, integration support, delivery dates or business outcomes.",
+      },
+      {
+        title: "The workflow review",
+        text: "The introductory workflow review is free. Assessment, implementation and ongoing support require a separately agreed scope.",
+      },
+      {
+        title: "Project agreements",
+        text: "Project fees, ownership, licences, support and responsibility for business actions are defined in the relevant project agreement.",
+      },
+      {
+        title: "Contact",
+        text: `Questions about these terms can be sent to ${PLACEHOLDER.email}.`,
       },
     ],
   },
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* Service pages: shared section copy (app/solutions/[slug]); per-area copy is in lib/areas.ts */
+/* Service pages: shared section copy (app/solutions/[slug]); per-function copy is in lib/areas.ts */
 /* ------------------------------------------------------------------ */
 
 export const SERVICE = {
-  breadcrumb: "Solutions",
-  expect: "What to expect",
-  apps: (area: string) => `Solutions in ${area}`,
-  get: "What you get",
-  how: "How it works",
-  why: "Why Decignal",
+  breadcrumb: "All solutions",
+  eyebrow: "Proposed workflows",
+  fit: "Customer fit",
+  status: "Scope and availability are confirmed after reviewing your current software and sample records.",
+  secondary: "Explore the examples",
+  apps: () => "Workflows to assess",
+  scope: "Scope note",
   example: "Illustrative example",
-  exampleNote: "Results are measured against your own baseline.",
-  faq: "Questions",
-  seeApps: (n: number) => (n === 1 ? "See the application" : "See the applications"),
-  ctaBand: {
-    headline: ["Bring one decision.", "Leave with a plan."] as Headline,
-    sub: (area: string) => `Free 30-minute AI audit on your ${area.toLowerCase()} decision. No commitment.`,
-    button: CTA.primary,
-  },
-  /** Page title suffix comes from the root layout template. */
-  others: "Other areas",
+  exampleNote: "Illustrative records, not a customer result.",
+  faq: "Questions about this workflow",
+  allQuestions: "All questions",
+  seeApps: (n: number) => (n === 1 ? "See the workflow" : "See the workflows"),
+  ctaBand: { button: CTA.primary },
+  others: "Other workflows",
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -868,61 +775,67 @@ export const SERVICE = {
 /* ------------------------------------------------------------------ */
 
 export const FACES = {
-  /** faces.ts decision(): the line under the buttons. No vendor names (D8). */
-  decisionFoot: "Creates a transfer order in your ERP",
-  /** faces.ts layer k = 3 (Policy) checklist. */
-  policyChecks: ["Max 300 units per transfer", "Plant 02 stays at plan", "Planner approval required"],
-  /** faces.ts finance function ledger rows: [invoice, amount, held]. */
+  /** faces.ts decision(): the line under the buttons. */
+  decisionFoot: "Your quality reviewer decides",
+  /** faces.ts layer k = 3 checklist. */
+  policyChecks: ["Exact heat numbers only", "No record is edited", "Reviewer signs off"],
+  /** faces.ts deduction function ledger rows: [document, value, flagged]. */
   ledger: [
-    [APP_FACTS.finance.matched[0], inrShort(APP_FACTS.finance.matched[1]), false],
-    ...APP_FACTS.finance.held.map(([id, , n]) => [id, inrShort(n), true] as const),
+    [APP_FACTS.deduction.invoice, "Linked", false],
+    [APP_FACTS.deduction.ack, "Linked", false],
+    [APP_FACTS.deduction.note, "Unclear", true],
+    [APP_FACTS.deduction.debit, inrShort(APP_FACTS.deduction.amount), true],
   ] as readonly (readonly [string, string, boolean])[],
   /** faces.ts hand faces: the status every function card in Scale's hand ends on. */
-  ready: "Ready for approval",
-  /** faces.ts hand art: each card's evidence graphic, headed by a label and its figure (functions in
-   *  order, then the glass layer card). */
+  ready: "Ready for review",
+  /** faces.ts hand art: each card's graphic, headed by a label and its figure (functions in order,
+   *  then the glass layer card). */
   art: {
-    labels: ["Stock", "Vibration", "Allocation", "Cases", "Invoices", "Functions"],
+    labels: ["Supplier update", "Dispatch pack", "RFQ", "Service report", "Deduction", "Functions"],
     figures: [
-      `${EXAMPLE.transfer.units} units`,
-      APP_FACTS.maintenance.peak,
-      `${APP_FACTS.sales.shiftPct}% to ${APP_FACTS.sales.region}`,
-      "1 cause",
-      `${APP_FACTS.finance.held.length} held`,
+      `${APP_FACTS.supplier.first} + ${APP_FACTS.supplier.rest}`,
+      `${L.heat} ≠ ${C.heat}`,
+      `${APP_FACTS.rfq.required} ≠ ${APP_FACTS.rfq.offered}`,
+      "1 follow-up",
+      inrShort(APP_FACTS.deduction.amount),
       "5",
     ],
-    limit: "Limit",
-    days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    regions: ["North", "West", "South", "East"],
-    layer: "Context · Policy · Approval",
+    limit: "Checklist",
+    days: ["Mat", "Dim", "Test", "Pack", "Cert", "Heat"],
+    regions: ["Material", "Size", "Pressure", "Ends"],
+    layer: "Sources · Rules · Reviewer",
   },
   /** faces.ts glass(): the layer card dealt last onto Scale's hand, over every function. */
   layer: {
-    title: "One layer",
-    body: "Shared context and controls under every function.",
+    title: "One approach",
+    body: "Source records, explicit rules and a named reviewer under every workflow.",
     foot: "Every function",
   },
-  /** faces.ts final(): the lead-magnet face (D1). */
+  /** faces.ts final(): the lead-magnet face. */
   final: {
-    title: "Bring one decision. Leave with a plan.",
-    pill: "Free AI audit · 30 minutes",
+    title: "Tell us which workflow needs attention.",
+    pill: "Free workflow review · 30 minutes",
   },
-  /** buildings.tsx bearing crate stencil. */
+  /** buildings.tsx shipment crate stencil. */
   crate: APP_FACTS.crate,
 } as const;
 
-/** OperationEvidence.tsx and OperationalScenes.tsx labels that carry scenario IDs and figures (COPY-01..03). */
+/** OperationEvidence.tsx and OperationalScenes.tsx labels that carry scenario IDs and figures. */
 export const EVIDENCE_LABELS = {
-  stages: ["Signal detected", "Evidence connected", "Action prepared"],
-  safety: "SAFETY STOCK · 175",
-  today: `TODAY · ${P1.onHand}`,
-  day6With: `DAY 6 · ${P1.day6With} (RESTORED)`,
-  day6Without: `DAY 6 · ${P1.day6Without} (SHORTFALL)`,
-  productionOrder: `ORDER ${APP_FACTS.production.order}`,
-  tooling: `${APP_FACTS.production.order}: TOOLING CHECKED ON LINE 02`,
-  workOrder: `WORK ORDER ${APP_FACTS.maintenance.workOrder}`,
-  cases: "14 SERVICE CASES",
-  /** Ledger rows: [invoice · vendor, amount]. Vendors are numbered, never company names. */
-  ledger: APP_FACTS.finance.held.map(([id, vendor, n]) => [`${id} · ${vendor.toUpperCase()}`, inr(n)] as const),
-  heldTotal: `${inr(APP_FACTS.finance.heldTotal)} HELD UNTIL GOODS ARRIVE`,
+  stages: ["Situation", "Source records", "For review"],
+  safety: `CHECKLIST ${EXAMPLE.checklist.rev.toUpperCase()}`,
+  today: `LINE ${L.n} · ${L.heat}`,
+  day6With: `CERTIFICATE · ${C.heat}`,
+  day6Without: "PROCESS CERTIFICATE · NOT FOUND",
+  productionOrder: `CHALLAN ${APP_FACTS.jobwork.challan}`,
+  tooling: `${APP_FACTS.jobwork.challan}: ${APP_FACTS.jobwork.open} PIECES FOR REVIEW`,
+  workOrder: `REPORT ${APP_FACTS.service.report}`,
+  cases: "SERVICE REPORT",
+  /** Ledger rows: [document, figure]. */
+  ledger: [
+    [`${APP_FACTS.deduction.debit} · DEBIT NOTE`, inr(APP_FACTS.deduction.amount)],
+    [`${APP_FACTS.deduction.invoice} · INVOICE`, "Linked"],
+    [`${APP_FACTS.deduction.ack} · ACKNOWLEDGEMENT`, "Linked"],
+  ] as readonly (readonly [string, string])[],
+  heldTotal: `${inr(APP_FACTS.deduction.amount)} PENDING FINANCE REVIEW`,
 } as const;

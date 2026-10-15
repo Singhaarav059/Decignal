@@ -10,7 +10,7 @@ import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShade
 import { Studio } from "./Studio";
 import { COLORS } from "./palette";
 import type { DemoKind } from "@/lib/application-demos";
-import { Logistics, Maintenance, Production, SupplyRisk, Distribution, DealerNetwork, Customer, Finance, type SceneProps } from "./OperationalScenes";
+import { Logistics, Maintenance, Production, SupplyRisk, DealerNetwork, Finance, type SceneProps } from "./OperationalScenes";
 import { FLOORS, phase, type Motion } from "./SceneKit";
 import { Warm } from "./Warm";
 import { ShadowGate } from "./Shadows";
@@ -26,7 +26,7 @@ export type Frame = { left: number; top: number; right: number; bottom: number }
 type Props = SceneProps & {
   kind: DemoKind;
   active: boolean;
-  /** Build only these worlds (a service page's applications). Default: all eight. */
+  /** Build only these worlds (a service page's applications). Default: all six. */
   kinds?: readonly DemoKind[];
   /** Where the subject goes: the canvas is full-bleed and the camera frames the free area. */
   frame?: RefObject<Frame>;
@@ -89,10 +89,10 @@ function Camera({ kind, motion, still, frame }: { kind: DemoKind; motion: Motion
     const close = kind === "maintenance" ? 1 + phase(p, 0.15, 0.45) * 0.06 : 1;
     // Phones are width-bound: frame the working area a little tighter so the models read.
     const fit = (kind === "inventory" ? 10.3 : kind === "maintenance" ? 8.4 : 9) * (size.width < 768 ? 0.9 : 1);
-    const viewHeight = kind === "risk" ? 5.8 : kind === "maintenance" ? 5.2 : kind === "finance" ? 4.2 : kind === "customer" ? 4.6 : kind === "inventory" ? 4.6 : 5.3;
+    const viewHeight = kind === "risk" ? 5.8 : kind === "maintenance" ? 5.2 : kind === "finance" ? 4.2 : kind === "inventory" ? 4.6 : 5.3;
     const c = camera as THREE.OrthographicCamera;
     c.position.set(kind === "maintenance" ? 4.2 : kind === "finance" ? 0.7 : 4.6, kind === "maintenance" ? 3.6 : kind === "finance" ? 7 : 5.4, 8.5);
-    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : kind === "customer" ? 0.45 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : kind === "finance" ? 0.45 : 0);
+    target.set(kind === "maintenance" ? -0.15 : 0, kind === "maintenance" ? 0.52 : kind === "risk" ? 0.65 : 0.25, kind === "inventory" ? -0.45 : kind === "risk" ? -0.4 : kind === "finance" ? 0.45 : 0);
     c.lookAt(target);
     let zoom = Math.min(w / fit, h / viewHeight, 120) * close;
     if (size.width < 768) zoom = Math.min(zoom, floorFit(c, target, size.width, w, h));
@@ -112,12 +112,12 @@ function Camera({ kind, motion, still, frame }: { kind: DemoKind; motion: Motion
   return null;
 }
 
-const KINDS: DemoKind[] = ["inventory", "demand", "production", "maintenance", "risk", "sales", "customer", "finance"];
-// Memoised: a chapter or stage change re-renders the world it touches, not all eight (a hidden world's
+const KINDS: DemoKind[] = ["inventory", "sales", "maintenance", "production", "finance", "risk"];
+// Memoised: a chapter or stage change re-renders the world it touches, not all six (a hidden world's
 // props never change).
-const MODELS: Record<DemoKind, React.ComponentType<SceneProps>> = { inventory: memo(Logistics), demand: memo(Distribution), production: memo(Production), maintenance: memo(Maintenance), risk: memo(SupplyRisk), sales: memo(DealerNetwork), customer: memo(Customer), finance: memo(Finance) };
+const MODELS: Record<DemoKind, React.ComponentType<SceneProps>> = { inventory: memo(Logistics), production: memo(Production), maintenance: memo(Maintenance), risk: memo(SupplyRisk), sales: memo(DealerNetwork), finance: memo(Finance) };
 const REST = { progress: 0, edge: 0 };
-/** A hidden world keeps its matrices as they were: three would otherwise walk all eight every frame. */
+/** A hidden world keeps its matrices as they were: three would otherwise walk all six every frame. */
 function updateIfShown(this: THREE.Object3D, force?: boolean) {
   if (this.visible) THREE.Group.prototype.updateMatrixWorld.call(this, force);
 }
@@ -261,8 +261,8 @@ function Ground({ kind, step, motion, active, phone, low, touch }: { kind: DemoK
       st.at = now;
     }
     const still = now - st.at;
-    // People walk on the clock in the demand and risk worlds: their shadows follow them at rest too.
-    const want = active && (still <= SETTLED || kind === "demand" || kind === "risk");
+    // People walk on the clock in the risk world: their shadows follow them at rest too.
+    const want = active && (still <= SETTLED || kind === "risk");
     // The stop: one more refresh where the world came to rest.
     if (st.want && !want) st.pending = true;
     st.want = want;

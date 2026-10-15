@@ -8,6 +8,10 @@ import { APPLICATIONS, CATEGORIES } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
 import { CTA, FOOTER } from "@/lib/copy";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { PLACEHOLDER } from "@/lib/placeholders";
+
+/** The monitored inbox: the configured one, else the placeholder until it is supplied. */
+const EMAIL = CONTACT_EMAIL ?? PLACEHOLDER.email;
 import { jumpTo } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
 import { LogoMark } from "../ui/Logo";
@@ -97,7 +101,7 @@ export function Footer() {
               <path d="M195 36.5l3.4 3.4 6.4-7" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </g>
           </svg>
-          <SectionTitle lines={[FOOTER.headline[0], FOOTER.headline[1]]} tone="ink" className="ed-title" id="footer-title" />
+          <SectionTitle lines={[FOOTER.headline[0], FOOTER.headline[1]]} lede={FOOTER.body} tone="ink" className="ed-title" id="footer-title" />
           {/* The same CTA as the nav's: on a page with the form it glides there and focuses the first field. */}
           <AuditLink className="btn btn-primary footer-cta">
             {CTA.primary}
@@ -110,7 +114,7 @@ export function Footer() {
           <ul className="footer-cards">
             {FOOTER.nav.map(({ label, href, blurb }) => (
               <li key={href}>
-                <SectionLink href={`/${href}`} className="footer-card">
+                <SectionLink href={href} className="footer-card">
                   <strong>{label}</strong>
                   <small>{blurb}</small>
                   <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>
@@ -120,7 +124,7 @@ export function Footer() {
           </ul>
 
           <p className="t-label footer-areas-title">{FOOTER.areasTitle}</p>
-          {/* Each area opens its service page. */}
+          {/* Each function opens its solution page. */}
           <ul className="footer-areas">
             {CATEGORIES.map((c) => {
               const area = areaOf(c);
@@ -142,12 +146,16 @@ export function Footer() {
       </div>
 
       <div className="page-wrap footer-legal">
-        <span>{FOOTER.positioning}</span>
+        <span>
+          {FOOTER.positioning} {FOOTER.identity} · <a href={`mailto:${EMAIL}`}>{FOOTER.contact(EMAIL)}</a>
+        </span>
         <ul className="footer-legal-links">
           <li>{FOOTER.copyright}</li>
-          <li><SectionLink href="/privacy">{FOOTER.privacy}</SectionLink></li>
-          <li><SectionLink href="/terms">{FOOTER.terms}</SectionLink></li>
-          {CONTACT_EMAIL && <li><a href={`mailto:${CONTACT_EMAIL}`}>{FOOTER.contact(CONTACT_EMAIL)}</a></li>}
+          {FOOTER.company.map((l) => (
+            <li key={l.href}>
+              <SectionLink href={l.href}>{l.label}</SectionLink>
+            </li>
+          ))}
           <li>
             <button onClick={() => jumpTo(0, { focus: ".nav-logo" })} className="footer-top">
               {FOOTER.top}

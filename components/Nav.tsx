@@ -19,17 +19,32 @@ import { darkAt } from "@/lib/on-dark";
 import { TONE, goToChapter } from "./story/chapters";
 import type { PeekId, SectionPeek } from "./NavPeek";
 
-const PEEK_OF: Record<string, SectionPeek> = { platform: "platform", applications: "apps", outcomes: "outcomes", how: "how", faq: "faq" };
-/** The bar keeps the four links people look for (the audit is the CTA); the other home sections light
- *  the link of the part of the page they belong to. */
-const PRIMARY = ["platform", "applications", "how", "faq"];
-const LINK_OF: Record<string, string> = { systems: "platform", platform: "platform", applications: "applications", trail: "applications", outcomes: "how", how: "how", faq: "faq" };
+const PEEK_OF: Record<string, SectionPeek> = { "/solutions": "apps", "who-we-help": "outcomes", platform: "platform", how: "how" };
+/** The bar keeps the four links of the handoff's navigation (the review is the CTA); the other home
+ *  sections light the link of the part of the page they belong to. A link starting "/" is a route. */
+const PRIMARY = ["/solutions", "who-we-help", "platform", "how"];
+const LINK_OF: Record<string, string> = {
+  "who-we-help": "who-we-help",
+  problem: "platform",
+  platform: "platform",
+  applications: "/solutions",
+  example: "/solutions",
+  systems: "how",
+  how: "how",
+  outcomes: "how",
+};
 /** Each link's colour from the palette: its hover tile takes it. */
-const TONE_OF: Record<string, string> = { platform: "violet", applications: "emerald", how: "tangerine", faq: "cobalt" };
+const TONE_OF: Record<string, string> = { "/solutions": "emerald", "who-we-help": "violet", platform: "cobalt", how: "tangerine" };
 const LINKS = NAV.sections
   .filter(([id]) => PRIMARY.includes(id))
   .map(([id, label]) => ({ id, label, peek: PEEK_OF[id] as SectionPeek | undefined, tone: TONE_OF[id] ?? "cobalt" }));
-const blurbOf = (id: string, peek?: SectionPeek) => NAV.blurbs[(peek ?? id) as keyof typeof NAV.blurbs] ?? "";
+const BLURB_OF: Record<string, string> = {
+  "/solutions": NAV.blurbs.apps,
+  "who-we-help": NAV.blurbs.audience,
+  platform: NAV.blurbs.platform,
+  how: NAV.blurbs.how,
+};
+const blurbOf = (id: string) => BLURB_OF[id] ?? "";
 
 const chapterTone = (i: number) => TONE[i] || "ink";
 const fine = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -315,7 +330,7 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
   const hidden = navHidden && !open;
 
   const hrefFor = useCallback(
-    (id: string) => (home || sections?.some((s) => s.id === id) ? `#${id}` : `/#${id}`),
+    (id: string) => (id.startsWith("/") ? id : home || sections?.some((s) => s.id === id) ? `#${id}` : `/#${id}`),
     [home, sections],
   );
 
@@ -621,12 +636,12 @@ const NavMenu = memo(function NavMenu({
             {FOOTER.navTitle}
           </p>
           <ul className="nav-menu-links">
-            {LINKS.map(({ id, label, peek: pid }) => (
+            {LINKS.map(({ id, label }) => (
               <li key={id}>
                 <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={link === id ? "location" : undefined}>
                   <span>
                     <span className="t-title-card block">{label}</span>
-                    <span className="t-small mt-1 block text-ink-soft">{blurbOf(id, pid)}</span>
+                    <span className="t-small mt-1 block text-ink-soft">{blurbOf(id)}</span>
                   </span>
                 </SectionLink>
               </li>

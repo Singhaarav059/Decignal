@@ -6,11 +6,11 @@ import { CONNECTS } from "@/lib/content";
 import { useSvgScale } from "./svgScale";
 
 /**
- * The How it works drawings, one product shot per step on the running example (Bearing X90, the
- * 240-unit transfer from Plant 02 to Plant 01). 01 maps the six systems onto one decision, 02 is the
- * signed blueprint of that decision's application, 03 is the same screen built and live, 04 is the
- * same connectors and controls serving the next decisions. 02 and 03 share one frame, so the step
- * change reads as the wireframe becoming the product. The caller sets `--tone` (the step colour, used
+ * The How we work drawings, one picture per step on the worked example (the dispatch review of line
+ * 12, heat H241 against H214). 01 maps the six record sources onto one task and checks the existing
+ * software, 02 is the agreed scope of that review as an annotated wireframe, 03 is the same screen
+ * tested on representative cases, 04 is the owners who keep it running after launch. 02 and 03 share
+ * one frame, so the step change reads as the wireframe becoming the tested review. The caller sets `--tone` (the step colour, used
  * for annotations and progress); systems and areas draw in their own colours. Labels stay 11px on
  * screen via useSvgScale and drop on thumbnails (the nav's glance). Entrance motion lives in
  * app/styles/decor-steps.css and only runs where the drawing is shown large.
@@ -61,11 +61,11 @@ function SysChip({ x, y, w, id, label, n }: { x: number; y: number; w: number; i
   );
 }
 
-/* ---- 01 Map the operation: six systems, one decision, its users and constraints ---- */
+/* ---- 01 Review the task: six record sources, one task, its people and the existing software ---- */
 function MapArt() {
   return (
     <>
-      <text x="12" y="14" className="sx-k sx-in" style={d(0)}>SYSTEMS</text>
+      <text x="12" y="14" className="sx-k sx-in" style={d(0)}>RECORDS</text>
       {CONNECTS.map((c, i) => {
         const cy = 38 + i * 34;
         const ey = 98 + i * 6.4;
@@ -78,11 +78,11 @@ function MapArt() {
       })}
 
       {/* Users sit on the decision card's left edge (x 150), like the systems on theirs (x 12). */}
-      <text x="150" y="14" className="sx-k sx-in" style={d(5)}>USERS</text>
+      <text x="150" y="14" className="sx-k sx-in" style={d(5)}>PEOPLE</text>
       <path d="M187 50V80M270 50V80" className="sx-hair sx-draw" pathLength={1} style={d(6)} />
       {[
-        { x: 150, w: 74, label: "Planner" },
-        { x: 230, w: 80, label: "Site lead" },
+        { x: 150, w: 74, label: "Quality" },
+        { x: 230, w: 80, label: "Dispatch" },
       ].map((u, i) => (
         <g key={u.label} className="sx-in" style={d(6 + i)}>
           <rect x={u.x} y="26" width={u.w} height="24" rx="6" className="sx-chip" />
@@ -93,14 +93,14 @@ function MapArt() {
 
       <g className="sx-in" style={d(4)}>
         <rect x="150" y="80" width="160" height="64" rx="10" className="sx-card" />
-        <text x="164" y="97" className="sx-k">DECISION</text>
-        <text x="164" y="116" className="sx-h">Transfer stock</text>
-        <text x="164" y="132" className="sx-h">between plants</text>
+        <text x="164" y="97" className="sx-k">TASK</text>
+        <text x="164" y="116" className="sx-h">Check a dispatch</text>
+        <text x="164" y="132" className="sx-h">document pack</text>
       </g>
 
       <path d="M158 144V209M158 183H166M158 209H166" className="sx-hair sx-draw" pathLength={1} style={d(7)} />
-      <text x="166" y="161" className="sx-k sx-in" style={d(7)}>CONSTRAINTS</text>
-      {["Max 300 per transfer", "Safety stock 175"].map((t, i) => (
+      <text x="166" y="161" className="sx-k sx-in" style={d(7)}>EXISTING SOFTWARE</text>
+      {["Quality module: checked", "Gap: external certs"].map((t, i) => (
         <g key={t} className="sx-in" style={d(8 + i)}>
           <rect x="166" y={172 + i * 26} width="144" height="22" rx="6" className="sx-chip" />
           <text x="176" y={183.5 + i * 26} className="sx-num">{t}</text>
@@ -110,29 +110,29 @@ function MapArt() {
   );
 }
 
-/* The decision application's screen, shared by 02 (wireframe) and 03 (built). Frame 18..190 x 18..222. */
+/* The review's screen, shared by 02 (wireframe) and 03 (tested). Frame 18..190 x 18..222. */
 const SOURCES = [
   { id: "erp", label: "ERP", x: 30, w: 45 },
-  { id: "crm", label: "CRM", x: 79, w: 47 },
-  { id: "wms", label: "WMS", x: 130, w: 50 },
+  { id: "mes", label: "QA", x: 79, w: 47 },
+  { id: "sup", label: "Cert", x: 130, w: 50 },
 ];
 
 function ScreenHeader({ n, children }: { n: number; children?: ReactNode }) {
   return (
     <g className="sx-in" style={d(n)}>
-      <text x="30" y="35" className="sx-k">STOCK TRANSFER</text>
+      <text x="30" y="35" className="sx-k">DISPATCH REVIEW</text>
       {children}
     </g>
   );
 }
 
-/* ---- 02 Deliver the blueprint: the decision's screen as a signed, annotated wireframe ---- */
+/* ---- 02 Agree the scope: the review's screen as an agreed, annotated wireframe ---- */
 function BlueprintArt({ grid }: { grid: string }) {
   const notes = [
-    { y: 78, label: "Decision" },
-    { y: 112, label: "Sources" },
-    { y: 148, label: "Rule" },
-    { y: 190, label: "Approver" },
+    { y: 78, label: "Output" },
+    { y: 112, label: "Inputs" },
+    { y: 148, label: "Checks" },
+    { y: 190, label: "Reviewer" },
   ];
   return (
     <>
@@ -151,8 +151,8 @@ function BlueprintArt({ grid }: { grid: string }) {
       </g>
       <ScreenHeader n={2} />
       <g className="sx-in" style={d(3)}>
-        <text x="30" y="70" className="sx-h">Transfer stock</text>
-        <text x="30" y="86" className="sx-h">between plants</text>
+        <text x="30" y="70" className="sx-h">Document index</text>
+        <text x="30" y="86" className="sx-h">per delivery line</text>
       </g>
       {SOURCES.map((s, i) => (
         <g key={s.id} className="sx-in" style={d(4 + i * 0.5, toneVars(SYS[s.id]))}>
@@ -162,15 +162,15 @@ function BlueprintArt({ grid }: { grid: string }) {
         </g>
       ))}
       <g className="sx-in" style={d(5)}>
-        <text x="30" y="141" className="sx-soft">Quantity</text>
-        <text x="178" y="141" textAnchor="end" className="sx-num">max 300</text>
+        <text x="30" y="141" className="sx-soft">Checklist</text>
+        <text x="178" y="141" textAnchor="end" className="sx-num">6 items</text>
         <rect x="30" y="152" width="148" height="8" rx="4" className="sx-wire" />
       </g>
       <g className="sx-in" style={d(6)}>
         <rect x="30" y="176" width="64" height="28" rx="14" className="sx-wire" />
-        <text x="62" y="190.5" textAnchor="middle" className="sx-soft">Approve</text>
+        <text x="62" y="190.5" textAnchor="middle" className="sx-soft">Review</text>
         <Person x={110} y={190} />
-        <text x="121" y="190.5">Planner</text>
+        <text x="121" y="190.5">Quality</text>
       </g>
 
       {notes.map((m, i) => (
@@ -185,7 +185,7 @@ function BlueprintArt({ grid }: { grid: string }) {
 
       <g className="sx-in" style={d(11)}>
         <rect x="206" y="18" width="98" height="28" rx="8" className="sx-chip" />
-        <text x="234" y="32.5">Signed off</text>
+        <text x="234" y="32.5">Agreed</text>
       </g>
       {/* On the notes' axis: tick centred over the numbers (x 220), label on their labels (x 234). */}
       <Tick x={220} y={32} n={11} />
@@ -193,7 +193,7 @@ function BlueprintArt({ grid }: { grid: string }) {
   );
 }
 
-/* ---- 03 Build and launch: the same screen, built, approved and live after validation ---- */
+/* ---- 03 Test on representative cases: the same screen, built and compared with reviewed results ---- */
 function LaunchArt() {
   return (
     <>
@@ -201,44 +201,44 @@ function LaunchArt() {
       <path d="M18 50H190" className="sx-hair sx-in" style={d(0)} />
       <ScreenHeader n={1}>
         <circle cx="152" cy="34" r="3.5" className="sx-ok sx-pulse" />
-        <text x="160" y="34.5" className="sx-ok-ink">Live</text>
+        <text x="160" y="34.5" className="sx-ok-ink">Test</text>
       </ScreenHeader>
       <g className="sx-in" style={d(2)}>
-        <text x="30" y="70" className="sx-h sx-num">Transfer 240 units</text>
-        <text x="30" y="87" className="sx-soft sx-num">Plant 02 to Plant 01</text>
+        <text x="30" y="70" className="sx-h sx-num">Line 12 · H241</text>
+        <text x="30" y="87" className="sx-soft sx-num">Certificate says H214</text>
       </g>
       {SOURCES.map((s, i) => (
         <SysChip key={s.id} x={s.x} y={100} w={s.w} id={s.id} label={s.label} n={3 + i * 0.5} />
       ))}
       <g className="sx-in" style={d(4)}>
-        <text x="30" y="141" className="sx-soft">Quantity</text>
-        <text x="178" y="141" textAnchor="end" className="sx-num">240 of 300</text>
+        <text x="30" y="141" className="sx-soft">Supported</text>
+        <text x="178" y="141" textAnchor="end" className="sx-num">4 of 6</text>
         <path d="M34 156H174" className="sx-track" />
       </g>
-      {/* 240 of the 300 allowed: 0.8 of the track. */}
-      <path d="M34 156H145.6" className="sx-bar sx-draw" pathLength={1} style={d(5)} />
+      {/* 4 of the 6 checklist items: two thirds of the track. */}
+      <path d="M34 156H127.3" className="sx-bar sx-draw" pathLength={1} style={d(5)} />
       <g className="sx-in" style={d(6)}>
         <rect x="30" y="176" width="64" height="28" rx="14" className="sx-ink" />
-        <text x="62" y="190.5" textAnchor="middle" className="sx-on-ink">Approve</text>
-        <text x="121" y="182.5">Planner</text>
-        <text x="121" y="198.5" className="sx-soft sx-num">09:42</text>
+        <text x="62" y="190.5" textAnchor="middle" className="sx-on-ink">Request</text>
+        <text x="121" y="182.5">Quality</text>
+        <text x="121" y="198.5" className="sx-soft sx-num">For review</text>
       </g>
       <Tick x={108} y={190} n={7} />
 
-      {/* Validation to production, beside the screen. */}
+      {/* Representative cases, beside the screen: complete, incomplete, conflicting. */}
       <path d="M214 70V190" className="sx-track thin sx-in" style={d(2)} />
       <path d="M214 70V190" className="sx-progress sx-draw" pathLength={1} style={d(3)} />
       {[
-        { y: 70, label: "Built", n: 3 },
-        { y: 124, label: "Validated", n: 5 },
-        { y: 190, label: "In production", n: 8 },
+        { y: 70, label: "Complete", n: 3 },
+        { y: 124, label: "Incomplete", n: 5 },
+        { y: 190, label: "Conflicting", n: 8 },
       ].map((m, i) => (
         <g key={m.label} className="sx-in" style={d(m.n)}>
           <circle cx="214" cy={m.y} r="5" className={i === 2 ? "sx-ok sx-ring" : "sx-dot sx-ring"} />
           <text x="226" y={m.y + 0.5} className={i === 2 ? undefined : "sx-soft"}>{m.label}</text>
         </g>
       ))}
-      {/* The planners who validated it. */}
+      {/* The reviewers whose results it is compared with. */}
       {[0, 1, 2].map((i) => (
         <g key={i} className="sx-in" style={d(6 + i * 0.5)}>
           <circle cx={233 + i * 15} cy="146" r="8" className="sx-chip" />
@@ -249,11 +249,11 @@ function LaunchArt() {
   );
 }
 
-/* ---- 04 Expand on the foundation: the next decisions plug into the same context and controls ---- */
+/* ---- 04 Launch with an owner: who uses it, who handles issues, who reviews performance ---- */
 const NEXT = [
-  { name: ["Stock", "transfer"], tone: "cobalt", status: "Live", reads: ["erp", "crm", "wms"], kind: "live" },
-  { name: ["Invoice", "matching"], tone: "violet", status: "Next", reads: ["erp", "sup"], kind: "next" },
-  { name: ["Service", "cases"], tone: "pink", status: "Later", reads: ["crm", "mes"], kind: "later" },
+  { name: ["Uses it", "Quality"], tone: "emerald", status: "Owner", reads: ["erp", "mes", "sup"], kind: "live" },
+  { name: ["Issues", "Support"], tone: "violet", status: "Agreed", reads: ["ext", "sup"], kind: "next" },
+  { name: ["Review", "Monthly"], tone: "cobalt", status: "Planned", reads: ["crm", "mes"], kind: "later" },
 ] as const;
 
 function ExpandArt() {
@@ -262,15 +262,15 @@ function ExpandArt() {
     <>
       <g className="sx-in" style={d(0)}>
         <rect x="12" y="188" width="296" height="30" rx="8" className="sx-chip" />
-        <text x="24" y="203.5" className="sx-k">CONTEXT LAYER</text>
+        <text x="24" y="203.5" className="sx-k">RECORD SOURCES</text>
         {CONNECTS.map((c, i) => (
           <circle key={c.id} cx={216 + i * 16} cy="203" r="4" className="sx-dot" style={toneVars(c.tone)} />
         ))}
       </g>
       <g className="sx-in" style={d(1)}>
         <rect x="12" y="150" width="296" height="30" rx="8" className="sx-chip" />
-        <text x="24" y="165.5" className="sx-k">SHARED CONTROLS</text>
-        <text x="296" y="165.5" textAnchor="end" className="sx-soft">Approvals and limits</text>
+        <text x="24" y="165.5" className="sx-k">ROLLOUT PLAN</text>
+        <text x="296" y="165.5" textAnchor="end" className="sx-soft">Named responsibilities</text>
       </g>
 
       {NEXT.map((a, i) => {

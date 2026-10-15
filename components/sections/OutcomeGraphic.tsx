@@ -1,153 +1,132 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { EXAMPLE, plant01Stock, units } from "@/lib/example";
+import { APP_FACTS, EXAMPLE } from "@/lib/example";
 import { useDrawOn } from "./AreaArt";
 import { useSvgScale } from "./svgScale";
 
 /**
- * Each outcome's colour is the system its figure comes from (D6): the transfer's timing rides the
- * route (external feeds, pink), Plant 02's own plan is warehouse stock (WMS, saffron), and the linked
- * service cases come from the CRM (violet). Index-aligned with OUTCOMES. Use with toneVars.
+ * Each audience card's colour is the function its main example sits in: dispatch documentation for
+ * manufacturers (emerald), RFQ review for distributors (tangerine), service follow-up for service
+ * businesses (pink). Index-aligned with AUDIENCE (lib/content.ts). Use with toneVars.
  */
-export const OUTCOME_TONE = ["pink", "saffron", "violet"] as const;
+export const OUTCOME_TONE = ["emerald", "tangerine", "pink"] as const;
 
-const { plant01: P1, plant02: P2, transfer: T } = EXAMPLE;
+const L = EXAMPLE.line;
+const C = EXAMPLE.cert;
+const R = APP_FACTS.rfq;
+const S = APP_FACTS.service;
 
 const LABELS = [
-  `Plant 01 stock by day. The ${units(T.units)} transfer lands on day ${T.arrivesDay}, so stock stays above safety stock; without it, stock falls below safety stock on day ${P1.breachDay}.`,
-  `Plant 02 holds ${units(P2.stock)}. It keeps ${units(P2.ownPlan)} for its own plan and sends the ${units(P2.transferable)} above it to Plant 01.`,
-  "Fourteen service cases share Bearing X90 and reach one owner in Quality as a single escalation.",
+  `Delivery line ${L.n}, heat ${L.heat}, linked to its documents: the dimensional report matches, the certificate says ${C.heat} and is flagged, the process certificate is missing.`,
+  `An enquiry line asks for ${R.required}; the supplier offer lists ${R.offered}. The difference is flagged and a clarification question drafted.`,
+  `A service report recommends a ${S.part.toLowerCase()} at the ${S.when.toLowerCase()}. An internal follow-up is prepared with the incomplete serial left open.`,
 ];
 
 /** Where an element enters the drawing's build: --t in ms, --i its place in a stagger. */
 const at = (t: number, i = 0) => ({ ["--t" as string]: t, ["--i" as string]: i }) as CSSProperties;
 
 /**
- * The picture behind each outcome, on white: the data in the outcome's colour (currentColor, which
- * .outcome-diagram sets from --tone), axes, ticks and labels neutral, risk in signal red. Every figure
- * comes from lib/example.ts. Used by Outcomes and by the nav's glance of it. It builds each time it
- * shows (app/styles/decor-art.css).
+ * The picture beside each audience card, on white: the record in the card's colour (currentColor, which
+ * .outcome-diagram sets from --tone), hairlines and labels neutral, a conflict in signal red. Every
+ * figure comes from lib/example.ts. Used by the audience cards and the nav's glance of them. It builds
+ * each time it shows (app/styles/decor-art.css).
  */
 export function OutcomeGraphic({ index }: { index: number }) {
   const ref = useSvgScale<SVGSVGElement>(300, 100);
   useDrawOn(ref);
   return (
     <svg ref={ref} className="outcome-diagram" viewBox="0 0 300 100" role="img" aria-label={LABELS[index]}>
-      {index === 0 ? <Forecast /> : index === 1 ? <Split /> : <Escalation />}
+      {index === 0 ? <Pack /> : index === 1 ? <Compare /> : <Handover />}
     </svg>
   );
 }
 
-/* ---- Act earlier: Plant 01's stock forecast, with and without the transfer ---- */
+/* ---- Manufacturers: one delivery line, three documents, each with its status ---- */
 
-const X = (day: number) => 20 + day * 44;
-/** Stock 100 to 600 units on y 74 to 14. */
-const Y = (v: number) => +(74 - (v - 100) * 0.12).toFixed(1);
-const DAYS = Array.from({ length: P1.breachDay + 1 }, (_, d) => d);
+const DOCS = [
+  { y: 8, name: "DIMENSIONAL", state: "ok" },
+  { y: 38, name: `CERT · ${C.heat}`, state: "risk" },
+  { y: 68, name: "HEAT TREAT", state: "missing" },
+] as const;
 
-function Forecast() {
-  const arrive = T.arrivesDay;
-  const last = P1.breachDay;
-  const before = plant01Stock(arrive);
-  const withT = `M${X(0)} ${Y(P1.onHand)}L${X(arrive)} ${Y(before)}V${Y(plant01Stock(arrive, true))}L${X(last)} ${Y(plant01Stock(last, true))}`;
-  const without = `M${X(arrive)} ${Y(before)}L${X(last)} ${Y(plant01Stock(last))}`;
+function Pack() {
   return (
     <>
-      <path d={`M${X(0)} 74H${X(last)}`} className="og-hair" />
-      {DAYS.map((d) => (
-        <path key={d} d={`M${X(d)} 74v4`} className="og-hair" />
-      ))}
-      <path d={`M${X(0)} ${Y(P1.safety)}H${X(last)}`} className="og-safety og-rise" style={at(0)} />
-      <text x={X(0)} y={Y(P1.safety) - 5} className="og-rise" style={at(80)}>
-        SAFETY <tspan className="og-strong">{P1.safety}</tspan>
-      </text>
-      <path d={without} className="og-without og-rise" style={at(560)} />
-      <path className="outcome-stroke og-data" pathLength="1" d={withT} style={at(120)} />
-      <circle cx={X(arrive)} cy={Y(plant01Stock(arrive, true))} r="4.5" className="og-dot og-rise" style={at(560)} />
-      <text x={X(arrive) - 8} y={Y(plant01Stock(arrive, true)) + 12} textAnchor="end" className="og-num og-rise" style={at(640)}>
-        +{T.units}
-      </text>
-      <circle cx={X(last)} cy={Y(plant01Stock(last))} r="4.5" className="og-risk og-rise" style={at(900)} />
-      {DAYS.map((d) => (
-        <text
-          key={d}
-          x={X(d)}
-          y="94"
-          textAnchor="middle"
-          className={d === arrive ? "og-num" : d === last ? "og-risk-ink" : undefined}
-        >
-          {d === 0 ? "NOW" : `D${d}`}
-        </text>
-      ))}
-    </>
-  );
-}
-
-/* ---- Protect both plants: Plant 02's stock, split at its own plan ---- */
-
-function Split() {
-  const kept = +((300 * P2.ownPlan) / P2.stock).toFixed(1);
-  return (
-    <>
-      <text x="0" y="12">PLANT 02 STOCK</text>
-      <text x="300" y="12" textAnchor="end" className="og-strong">{P2.stock}</text>
-      <rect className="outcome-bar" x="0" y="22" width={kept} height="22" rx="4" fill="currentColor" style={at(0)} />
-      <rect x={kept + 2.5} y="22.5" width={300 - kept - 3} height="21" rx="3.5" className="og-sent og-rise" style={at(520)} />
-      <path d={`M${kept + 1.25} 16V50`} className="og-mark" />
-      <path d={`M0.5 54v5H${kept - 2}v-5`} className="og-hair og-rise" style={at(600)} />
-      <path d={`M${kept + 4} 54v5H299.5v-5`} className="og-hair og-rise" style={at(680)} />
-      <text x={kept / 2} y="76" textAnchor="middle" className="og-rise" style={at(640)}>
-        <tspan className="og-strong">{P2.ownPlan}</tspan> OWN PLAN
-      </text>
-      <text x={(kept + 300) / 2 + 2} y="76" textAnchor="middle" className="og-rise" style={at(720)}>
-        <tspan className="og-strong">{P2.transferable}</tspan> TO PLANT 01
-      </text>
-    </>
-  );
-}
-
-/* ---- Fix the cause once: fourteen cases, one shared part, one owner ---- */
-
-const TILES = Array.from({ length: 14 }, (_, i) => ({ x: (i % 7) * 19, y: i < 7 ? 20 : 46 }));
-const HUB = { x: 196, y: 40 };
-const OWNER = 268;
-
-function Escalation() {
-  return (
-    <>
-      {TILES.map((t, i) => (
-        <path
-          key={`l${i}`}
-          d={`M${t.x + 12} ${t.y + 8}C${t.x + 50} ${t.y + 8} 160 ${HUB.y} ${HUB.x - 18} ${HUB.y}`}
-          className="og-link og-draw"
-          pathLength={1}
-          style={at(260, i)}
-        />
-      ))}
-      {TILES.map((t, i) => (
-        <rect key={`t${i}`} x={t.x} y={t.y} width="12" height="16" rx="2.5" fill="currentColor" className="og-rise" style={at(0, i)} />
-      ))}
-      <g className="og-rise" style={at(560)}>
-        <g transform={`translate(${HUB.x} ${HUB.y})`}>
-          <circle r="17" className="og-ring" />
-          <circle r="6.5" className="og-ring" />
-          {Array.from({ length: 8 }, (_, i) => {
-            const a = (i / 8) * Math.PI * 2;
-            return <circle key={i} cx={(11.75 * Math.cos(a)).toFixed(2)} cy={(11.75 * Math.sin(a)).toFixed(2)} r="2.6" fill="currentColor" />;
-          })}
+      <rect x="0" y="34" width="86" height="30" rx="7" fill="currentColor" className="og-rise" style={at(0)} />
+      <text x="43" y="53" textAnchor="middle" className="og-on og-rise" style={at(60)}>{`L${L.n} · ${L.heat}`}</text>
+      {DOCS.map((d, i) => (
+        <g key={d.name}>
+          <path
+            d={`M86 49C120 49 120 ${d.y + 11} 150 ${d.y + 11}`}
+            className={`${d.state === "missing" ? "og-without" : "og-link"} og-draw`}
+            pathLength={1}
+            style={at(220, i)}
+          />
+          <rect
+            x="150"
+            y={d.y}
+            width="128"
+            height="22"
+            rx="5"
+            className={`${d.state === "missing" ? "og-sent" : "og-ring"} og-rise`}
+            style={at(420, i)}
+          />
+          <text x="160" y={d.y + 15} className={d.state === "risk" ? "og-risk-ink og-rise" : "og-rise"} style={at(480, i)}>
+            {d.name}
+          </text>
+          {d.state === "ok" && (
+            <g className="og-rise" style={at(760)}>
+              <circle cx="291" cy={d.y + 11} r="7" fill="currentColor" />
+              <path d={`M287.6 ${d.y + 11}l2.3 2.3 4.3-4.6`} className="og-check" />
+            </g>
+          )}
+          {d.state === "risk" && <circle cx="291" cy={d.y + 11} r="7" className="og-risk og-rise" style={at(820)} />}
+          {d.state === "missing" && <path d={`M286.5 ${d.y + 6.5}l9 9m0-9-9 9`} className="og-safety og-rise" style={at(880)} />}
         </g>
-      </g>
-      <path className="outcome-stroke og-data" pathLength="1" d={`M${HUB.x + 18} ${HUB.y}H${OWNER - 16}`} style={at(720)} />
-      <g className="og-rise" style={at(1000)}>
-        <circle cx={OWNER} cy={HUB.y} r="15" fill="currentColor" />
-        <path d={`M${OWNER - 6.5} ${HUB.y}l4.5 4.5 8.5-9`} className="og-check" />
-      </g>
-      <text x="0" y="94">
-        <tspan className="og-strong">14</tspan> CASES
-      </text>
-      <text x={HUB.x} y="94" textAnchor="middle">X90</text>
-      <text x={OWNER} y="94" textAnchor="middle" className="og-strong">QUALITY</text>
+      ))}
+    </>
+  );
+}
+
+/* ---- Distributors: the requirement and the offer, side by side, one difference flagged ---- */
+
+function Compare() {
+  return (
+    <>
+      <text x="0" y="12">ENQUIRY</text>
+      <text x="300" y="12" textAnchor="end">OFFER</text>
+      <rect x="0" y="22" width="118" height="34" rx="7" fill="currentColor" className="og-rise" style={at(0)} />
+      <text x="59" y="44" textAnchor="middle" className="og-on og-rise" style={at(60)}>{R.required}</text>
+      <rect x="182" y="22" width="118" height="34" rx="7" className="og-ring og-rise" style={at(160)} />
+      <text x="241" y="44" textAnchor="middle" className="og-strong og-rise" style={at(200)}>{R.offered}</text>
+      <path className="outcome-stroke og-safety" pathLength="1" d="M122 39H178" style={at(360)} />
+      <circle cx="150" cy="39" r="9" className="og-risk og-rise" style={at(620)} />
+      <path d="M146 36.5h8m-8 5h8" className="og-check og-rise" style={at(660)} />
+      <rect x="62" y="70" width="176" height="22" rx="11" className="og-sent og-rise" style={at(820)} />
+      <text x="150" y="85" textAnchor="middle" className="og-num og-rise" style={at(880)}>CLARIFY FIRST</text>
+    </>
+  );
+}
+
+/* ---- Service businesses: a report's recommendation becomes an internal follow-up ---- */
+
+function Handover() {
+  return (
+    <>
+      <rect x="0" y="10" width="92" height="76" rx="7" className="og-ring og-rise" style={at(0)} />
+      <text x="12" y="28" className="og-strong og-rise" style={at(60)}>{S.report}</text>
+      {[40, 52, 64].map((y, i) => (
+        <path key={y} d={`M12 ${y}H${i === 1 ? 80 : 68}`} className={i === 1 ? "og-data og-draw" : "og-hair og-draw"} pathLength={1} style={at(160, i)} />
+      ))}
+      <path className="outcome-stroke og-data" pathLength="1" d="M96 48H176" style={at(420)} />
+      <path d="M170 43l6 5-6 5" className="og-data og-rise" style={at(700)} />
+      <rect x="184" y="20" width="116" height="56" rx="8" fill="currentColor" className="og-rise" style={at(760)} />
+      <text x="196" y="40" className="og-on og-rise" style={at(820)}>FOLLOW-UP</text>
+      <text x="196" y="56" className="og-on-soft og-rise" style={at(860)}>SEAL</text>
+      <rect x="196" y="61" width="72" height="11" rx="5.5" className="og-flag og-rise" style={at(960)} />
+      <text x="0" y="98">{S.equipment.toUpperCase()}</text>
+      <text x="300" y="98" textAnchor="end" className="og-risk-ink">SERIAL INCOMPLETE</text>
     </>
   );
 }

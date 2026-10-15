@@ -24,6 +24,8 @@
 .tr-art text.tg-key { fill: var(--tone-ink, var(--color-ink)); }
 .tr-art text.tg-ink { fill: var(--color-ink-2); }
 .tr-art text.tg-risk { fill: var(--color-signal-ink); }
+/* A figure printed on a filled record (the heat number on its tag). */
+.tr-art text.tg-on { fill: var(--color-on-ink); }
 .tr-art[data-small] text { display: none; }
 
 .tg-floor { fill: none; stroke: var(--color-line-strong); stroke-width: var(--w1); stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--a)); }

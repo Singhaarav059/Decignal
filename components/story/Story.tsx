@@ -192,14 +192,16 @@ export function Story() {
                 {CTA.primary}
                 <Arrow />
               </SectionLink>
-              <SectionLink href="#how" className="story-link hero-link">
+              <SectionLink href={HERO.secondaryHref} className="story-link hero-link">
                 {HERO.secondary}
                 <Arrow />
               </SectionLink>
             </div>
           </div>
           <div className="hero-meta intro-fade" data-frame>
-            <p className="t-small hero-meta-text">{HERO.card}</p>
+            <p className="t-small hero-meta-text">
+              {HERO.card} <span className="hero-caption">{HERO.caption}</span>
+            </p>
             <span className="hero-cue t-label" aria-hidden>
               <span className="story-cue-mouse">
                 <span className="story-cue-wheel" />

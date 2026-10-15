@@ -22,13 +22,13 @@ const TICKS = Array.from({ length: 84 }, (_, k) => {
 const angleOf = (k: number) => -90 + (k * 360) / N;
 
 /**
- * The seven steps every application runs, as a dial (Orvan's process): the section pins for one
+ * The worked dispatch review in seven steps, as a dial (Orvan's process): the section pins for one
  * screen while its scroll turns the hand from 01 to 07. The step under the hand lights, its drawing
  * draws itself in the dial's face with the scroll (--q, trail/TrailArt.tsx), and the left column reads
  * its number, phase, name and the running example. Below 1024px the steps run as a list, each drawn.
  */
 export function TrailDial() {
-  const root = useRef<HTMLElement>(null);
+  const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = root.current;
@@ -118,14 +118,17 @@ export function TrailDial() {
   }, []);
 
   return (
-    <section ref={root} id="trail" className="dial-band" aria-labelledby="trail-title">
+    <section id="example" className="dial-section" aria-labelledby="trail-title">
+      {/* Old links to the decision trail land on the worked example (handoff §11). */}
+      <div ref={root} id="trail" className="dial-band">
       <div className="dial-sticky">
         <div className="page-wrap dial-grid">
           <div className="dial-copy">
             <SectionTitle icon={<Waypoints size={13} strokeWidth={2.2} />} id="trail-title" label={TRAIL.label} lines={[TRAIL.headline[0], TRAIL.headline[1]]} tone="ink" className="ed-title" reveal="lines" />
             <p className="t-small dial-example">
-              {EXAMPLE_LABEL} <span aria-hidden>·</span> {EXAMPLE.part}
+              {EXAMPLE_LABEL} <span aria-hidden>·</span> {EXAMPLE.shipment.id}
             </p>
+            <p className="t-body dial-intro">{TRAIL.intro}</p>
             {/* The step under the hand, read large (wide screens). */}
             <div className="dial-reads" aria-hidden>
               {TRAIL.steps.map((s, i) => (
@@ -139,7 +142,7 @@ export function TrailDial() {
               ))}
               <div className="dial-read" data-loop style={toneVars(TRAIL.steps[0].tone)}>
                 <p className="dial-read-k t-label">
-                  <span className="tabular">07 → 01</span> / {TRAIL.loop.k}
+                  {TRAIL.loop.k}
                 </p>
                 <p className="dial-read-name">{TRAIL.loop.name}</p>
                 <p className="dial-read-ex">{TRAIL.loop.ex}</p>
@@ -194,6 +197,41 @@ export function TrailDial() {
               ))}
             </ol>
           </div>
+        </div>
+      </div>
+      </div>
+      {/* The review itself, readable without scrolling through the dial (handoff home.example). */}
+      <div className="page-wrap dial-review">
+        <table className="review-table" aria-label={TRAIL.table.aria}>
+          <thead>
+            <tr>
+              {TRAIL.table.head.map((h) => (
+                <th key={h} scope="col" className="t-label">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {TRAIL.table.rows.map((r) => (
+              <tr key={r.doc}>
+                <td>{r.ref}</td>
+                <td>{r.doc}</td>
+                <td>
+                  <span className="review-status" data-risk={r.risk || undefined}>
+                    <i aria-hidden />
+                    {r.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="review-notes">
+          <p className="t-subtitle review-rec">{TRAIL.recommendation}</p>
+          <p className="t-body review-expl">{TRAIL.explanation}</p>
+          <p className="t-label review-state">{TRAIL.review}</p>
+          <p className="t-small review-disclaimer">{TRAIL.disclaimer}</p>
         </div>
       </div>
     </section>

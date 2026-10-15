@@ -242,7 +242,7 @@ function Plant({ x, label }: { x: number; label: string }) {
   );
 }
 
-/** 05: the transfer, Plant 02 to Plant 01. The truck drives the road (CSS ca-drive, sampled from this
+/** 05: the shipment loaded and held at the bay. The truck drives the road (CSS ca-drive, sampled from this
  *  path at even steps of length) only while the tile is pointed at, like the other drawings' motion. */
 function Decision() {
   return (
@@ -265,7 +265,7 @@ function Decision() {
   );
 }
 
-/** 06: the action waits on a named person's approval. */
+/** 06: the review waits on a named person: request, question or resolve. */
 function Control() {
   return (
     <>
@@ -274,11 +274,11 @@ function Control() {
       <rect x="56" y="29" width="100" height="4" rx="2" className="ca-fill ca-soft" />
       <rect x="56" y="44" width="62" height="18" rx="9" fill="var(--color-ink)" className="ca-press" />
       <text x="87" y="57" textAnchor="middle" className="ca-on">
-        Approve
+        Request
       </text>
       <rect x="124" y="44" width="54" height="18" rx="9" fill="#fff" className="ca-edge" />
       <text x="151" y="57" textAnchor="middle">
-        Adjust
+        Ask
       </text>
       <circle cx="232" cy="38" r="17" className="ca-fill ca-soft" />
       <circle cx="232" cy="33" r="5.5" className="ca-fill" />
@@ -350,7 +350,7 @@ function Industries({ clip }: { clip: string }) {
   );
 }
 
-/** 09: the same six systems, now connected into one approved decision. */
+/** 09: the same six sources, now connected into one review for a person. */
 function Decide() {
   const at = [24, 52, 80, 200, 228, 256];
   return (

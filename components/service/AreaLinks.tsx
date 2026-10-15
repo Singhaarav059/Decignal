@@ -6,9 +6,9 @@ import { AreaArt } from "../sections/AreaArt";
 import { SectionLink } from "../ui/SectionLink";
 
 /**
- * The business areas as real links to their pages: tone dot, name, application count and lead line.
- * With `art` (the /solutions hub) each card leads with the area's drawing, and the first area, the one
- * with the most applications, takes a wide card with its drawing beside the copy.
+ * The business functions as real links to their pages: tone dot, name, proposed-workflow line and lead.
+ * With `art` (the /solutions hub) each card leads with the function's drawing, and the first takes a
+ * wide card with its drawing beside the copy.
  */
 export function AreaLinks({ areas, cta = "area-link", art = false }: { areas: Area[]; cta?: string; art?: boolean }) {
   return (
@@ -24,7 +24,7 @@ export function AreaLinks({ areas, cta = "area-link", art = false }: { areas: Ar
             <span className="svc-area-body">
               <span className="svc-area-top">
                 <span className="svc-dot" aria-hidden />
-                <span className="t-label tabular">{SCALE.apps(appsOf(a).length)}</span>
+                <span className="t-label">{SCALE.apps(appsOf(a).length)}</span>
               </span>
               <strong className="t-subtitle">{a.name}</strong>
               <span className="t-small svc-area-lead">{a.lead}</span>

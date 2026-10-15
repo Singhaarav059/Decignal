@@ -16,15 +16,15 @@ export const CHAPTERS: Chapter[] = [
   // The hero hands off almost at once (ts 0.12): a long hold read as the page sticking, then the camera
   // and the folding islands rushed through half the distance (a flash). Now the move starts with the
   // first scroll and spreads over nearly the whole chapter.
-  { id: "fragments", label: "Systems", len: 1.3, ts: 0.12 },
-  { id: "signal", label: "Signal", len: 1.3, ts: 0.5 },
-  { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
-  { id: "context", label: "Context", len: 1.5, ts: 0.55 },
-  { id: "decision", label: "Decision", len: 2.7, ts: 0.9 },
-  { id: "control", label: "Control", len: 1.7, ts: 0.62 },
-  { id: "scale", label: "Scale", len: 2.5, ts: 0.75 },
+  { id: "fragments", label: "Records", len: 1.3, ts: 0.12 },
+  { id: "signal", label: "Shipment", len: 1.3, ts: 0.5 },
+  { id: "problem", label: "Mismatch", len: 1.5, ts: 0.55 },
+  { id: "context", label: "Sources", len: 1.5, ts: 0.55 },
+  { id: "decision", label: "Flag", len: 2.7, ts: 0.9 },
+  { id: "control", label: "Reviewer", len: 1.7, ts: 0.62 },
+  { id: "scale", label: "Functions", len: 2.5, ts: 0.75 },
   { id: "industries", label: "Industries", len: 3.2, ts: 0.85 },
-  { id: "final", label: "Decide", len: 1, ts: 1 },
+  { id: "final", label: "Start", len: 1, ts: 1 },
 ];
 
 export const CH = Object.fromEntries(CHAPTERS.map((c, i) => [c.id, i])) as Record<string, number>;
@@ -263,80 +263,80 @@ function pinAt(g: number): string | null {
 /* Product truth: one running example, used everywhere.                 */
 /* ------------------------------------------------------------------ */
 
-export const SYSTEMS = ["ERP", "CRM", "MES", "WMS", "SUPPLIERS", "EXTERNAL"] as const;
+export const SYSTEMS = ["ERP", "CUSTOMER", "QUALITY", "JOB WORK", "SUPPLIERS", "FILES"] as const;
 
 // Figures follow the fact sheet in lib/example.ts; section and chapter strings live in lib/copy.ts.
 
+/** The layers behind the review (LayerReadout): what each one contributes. */
 export const LAYERS = [
-  { name: "Signal", text: "Plant 01 below safety stock on day 6" },
-  { name: "Evidence", text: "Orders up 18% in 3 weeks" },
-  { name: "Context", text: "Plant 02 holds 620 units, 240 above its plan" },
-  { name: "Policy", text: "Max 300 units, planner approves" },
-  { name: "Decision", text: "Transfer 240 units, Plant 02 to Plant 01" },
+  { name: "Situation", text: "Line 12 recorded against heat H241" },
+  { name: "Sources", text: "Certificate says H214; process certificate not found" },
+  { name: "Checklist", text: "Checklist Rev C: six documents per shipment" },
+  { name: "Rules", text: "Exact heat numbers only, nothing edited" },
+  { name: "For review", text: "Request the correct certificate, keep line 12 open" },
 ];
 
+/** The five functions in Scale's hand, each with its illustrative "for review" line (handoff global.areas). */
 export const FUNCTIONS = [
-  { name: "Supply Chain", decision: "Transfer 240 units, Plant 02 to Plant 01" },
-  { name: "Operations", decision: "Service Line 04 bearing by Friday" },
-  { name: "Commercial", decision: "Shift 12% of allocation to the West" },
-  { name: "Customer", decision: "Escalate 14 service cases, one root cause" },
-  { name: "Finance & Risk", decision: "Hold 3 invoices until goods arrive" },
+  { name: "Supplier coordination", decision: "60 Friday, 40 Wednesday: revised schedule for review" },
+  { name: "Dispatch documentation", decision: "Line 12: H241 against H214, kept for review" },
+  { name: "RFQ review", decision: "SS316 required, SS304 offered: clarification drafted" },
+  { name: "Service follow-up", decision: "Seal at next shutdown: follow-up for the service owner" },
+  { name: "Deduction review", decision: "₹75,000 deduction: evidence packet for finance" },
 ];
 
+/**
+ * The industries in focus (handoff §1 industry focus and customer segments), one per place on the road.
+ * Proposed workflows only: no delivery times, no claims of customers in any of them.
+ */
 export const INDUSTRIES = [
   {
-    name: "Manufacturing",
-    decision: "Reserve Friday’s service window for Line 04",
-    system: "MES · CMMS · IoT",
-    challenge: "Downtime, quality drift and schedule risk move faster than the morning review.",
-    decisions: ["Reserve Friday’s service window for Line 04", "Resequence Line 03 before the 14:00 shift", "Hold Batch 2214 for a seal inspection"],
-    start: "Predictive Maintenance",
-    weeks: "6 to 10",
+    name: "Engineering components",
+    decision: "Link line 12 to the certificate for heat H241",
+    system: "ERP · Quality · Suppliers",
+    challenge: "Machined parts and castings ship with customer-specific certificates, heat references and external-process reports.",
+    decisions: ["Flag a heat number that does not match", "Find a missing heat-treatment certificate", "Explain 40 pieces missing from a coating return"],
+    start: "Dispatch document pack review",
   },
   {
-    name: "Automotive",
-    decision: "Reserve 1,200 harnesses for the launch build",
-    system: "ERP · DMS · Supplier portal",
-    challenge: "A launch build depends on thousands of parts from hundreds of suppliers arriving on time.",
-    decisions: ["Reserve 1,200 harnesses for the launch build", "Dual-source 2 parts ahead of a port delay", "Shift 12% of dealer allocation to the West"],
-    start: "Supply Chain Risk",
-    weeks: "5 to 8",
+    name: "Metal products",
+    decision: "Reconcile a job-work return by challan",
+    system: "ERP · Job work · Challans",
+    challenge: "Material goes out for processing in kilograms and comes back in pieces, with scrap and rejections on separate records.",
+    decisions: ["Reconcile a challan against its returns", "Keep kilogram and piece quantities apart", "Draft a question for the job worker"],
+    start: "Job work discrepancy review",
   },
   {
-    name: "Retail",
-    decision: "Shift 3,400 units from North to West DC",
-    system: "POS · WMS · Planning",
-    challenge: "Demand moves by region and by week, faster than replenishment cycles can follow.",
-    decisions: ["Shift 3,400 units from North to West DC", "Raise the West DC order by 1,800 units", "Mark down 6 slow lines before season end"],
-    start: "Demand & Replenishment",
-    weeks: "5 to 7",
+    name: "Industrial machinery",
+    decision: "Show a supplier’s split delivery against the PO",
+    system: "ERP · Suppliers · Customer orders",
+    challenge: "One late part can hold a machine build, and supplier changes often arrive by email rather than in the schedule.",
+    decisions: ["Split a changed promise into schedule lines", "Show the customer order it touches", "Clarify a specification before quoting"],
+    start: "Supplier promise change review",
   },
   {
-    name: "Logistics",
-    decision: "Reroute 6 containers through Mombasa",
-    system: "TMS · Port feeds · ERP",
-    challenge: "Disruption at one port ripples through every lane, booking and promise date.",
-    decisions: ["Reroute 6 containers through Mombasa", "Rebook 14 shipments onto Tuesday’s sailing", "Warn 3 customers of a 2-day delay"],
-    start: "Supply Chain Risk",
-    weeks: "5 to 8",
+    name: "Electrical equipment",
+    decision: "Flag 415 V against 440 V before the quote",
+    system: "Enquiries · Datasheets · Offers",
+    challenge: "Enquiries arrive with schedules, specifications and revisions that do not always agree with each other.",
+    decisions: ["Flag a voltage conflict in an enquiry", "Link a revised specification to its line", "Prepare evidence for a customer deduction"],
+    start: "RFQ clarification pack",
   },
   {
-    name: "Financial Services",
-    decision: "Review 18 payments before settlement",
-    system: "Core banking · Risk · Docs",
-    challenge: "High-volume exceptions need fast review without loosening control.",
-    decisions: ["Review 18 payments before settlement", "Hold 3 invoices until goods arrive", "Escalate 2 accounts for a KYC refresh"],
-    start: "Finance & Risk Operations",
-    weeks: "6 to 8",
+    name: "Industrial supplies",
+    decision: "Compare SS316 required with SS304 offered",
+    system: "Enquiries · Supplier offers · Invoices",
+    challenge: "Distributors match customer requirements to supplier offers and answer deductions from a few large buyers.",
+    decisions: ["Compare a requirement with a supplier offer", "Assemble the evidence behind a deduction", "Review a supplier’s changed delivery"],
+    start: "RFQ clarification pack",
   },
   {
-    name: "Energy",
-    decision: "Send a crew to Feeder 7 before peak load",
-    system: "SCADA · GIS · Work orders",
-    challenge: "Peak load and asset health decide where a limited number of crews should go.",
-    decisions: ["Send a crew to Feeder 7 before peak load", "Defer a transformer swap to the weekend", "Pre-position spares at Substation 12"],
-    start: "Predictive Maintenance",
-    weeks: "6 to 10",
+    name: "Equipment service",
+    decision: "Turn a seal recommendation into a follow-up",
+    system: "Service reports · Installed base · Quotes",
+    challenge: "Recommendations sit in technicians’ and partners’ reports, and the next owner has to find the equipment again.",
+    decisions: ["Find a recommendation in a service report", "Leave an incomplete serial visible", "Check for an existing quote first"],
+    start: "Service to quote handover",
   },
 ];
 

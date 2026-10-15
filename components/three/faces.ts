@@ -4,7 +4,7 @@
 // sized, and detail lives in the page's own readouts beside the cards.
 import { FUNCTIONS, LAYERS } from "@/lib/story";
 import { CONTROL, FACES } from "@/lib/copy";
-import { EXAMPLE, inrShort } from "@/lib/example";
+import { APP_FACTS, EXAMPLE } from "@/lib/example";
 import { COLORS, TINTS } from "./palette";
 
 /** The reader's choice on the page's approval panel, which the decision face follows. */
@@ -149,24 +149,28 @@ function status(c: C, text: string, xRight: number, y: number, tone: string, sol
 
 /* ------------------------------------------------------------------ */
 
-const T = EXAMPLE.transfer;
+const LN = EXAMPLE.line;
+const CERT = EXAMPLE.cert;
+const ITEMS = EXAMPLE.checklist.items;
+const SUPPORTED = ITEMS.filter((i) => i.status === "supported").length;
 
-/** The decision: what it is, what it costs, and where it stands. The page's panel holds the real
- *  Approve, Adjust and Reject; the card only shows the state they leave it in. */
-function decision(c: C, qty: number = T.units, mode: DecisionMode = "idle") {
-  label(c, "Recommended action", 90, 138);
-  if (mode === "approved") status(c, `Approved · ${qty} units`, FACE_W - 90, 140, TINTS.emerald, true);
-  else if (mode === "rejected") status(c, "Rejected", FACE_W - 90, 140, COLORS.signal, true);
-  else status(c, "Ready for approval", FACE_W - 90, 140, TINTS.emerald, false);
-  title(c, CONTROL.title(qty), 330, 140, mode === "rejected" ? SOFT : INK);
+/** The review: what it flags, what the checklist shows, and where it stands. The page's panel holds
+ *  the real Request, Add a question and Not an issue; the card only shows the state they leave it in.
+ *  "approved" is the store's word for a request drafted: the shipment itself is never approved. */
+function decision(c: C, mode: DecisionMode = "idle") {
+  label(c, "For review", 90, 138);
+  if (mode === "approved") status(c, "Certificate requested", FACE_W - 90, 140, TINTS.emerald, true);
+  else if (mode === "rejected") status(c, "Resolved by reviewer", FACE_W - 90, 140, TINTS.cobalt, true);
+  else status(c, "Draft · not approved", FACE_W - 90, 140, TINTS.tangerine, false);
+  title(c, CONTROL.title, 330, 140, mode === "rejected" ? SOFT : INK);
   font(c, 62, 500);
   c.fillStyle = SOFT;
-  c.fillText(`from ${EXAMPLE.plant02.name} to ${EXAMPLE.plant01.name}`, 90, 428);
+  c.fillText(`Certificate says ${CERT.heat} · ${CERT.source}`, 90, 428);
 
   const stats = [
-    ["Units", `${qty}`],
-    ["Arrives", `${T.arrivesDay} days`],
-    ["Cost", inrShort(qty * T.perUnitINR)],
+    ["Supported", `${SUPPORTED} of ${ITEMS.length}`],
+    ["Conflicting", `${ITEMS.filter((i) => i.status === "conflicting").length}`],
+    ["Missing", `${ITEMS.filter((i) => i.status === "missing").length}`],
   ];
   const bw = (FACE_W - 180 - 48) / 3;
   stats.forEach(([k, v], i) => {
@@ -178,12 +182,12 @@ function decision(c: C, qty: number = T.units, mode: DecisionMode = "idle") {
     c.fillStyle = SOFT;
     c.fillText(k, x + 40, 574);
     font(c, 92, 650);
-    c.fillStyle = INK;
+    c.fillStyle = i === 0 ? INK : ink(COLORS.signal);
     c.fillText(v, x + 40, 678);
   });
 
-  // What approving does, as a quiet line: the ERP's dot, then the words.
-  dot(c, 108, 864, 13, TINTS.cobalt);
+  // Who decides, as a quiet line: the quality source's dot, then the words.
+  dot(c, 108, 864, 13, TINTS.emerald);
   font(c, 54, 500);
   c.fillStyle = SOFT;
   c.fillText(FACES.decisionFoot, 142, 882);
@@ -191,10 +195,10 @@ function decision(c: C, qty: number = T.units, mode: DecisionMode = "idle") {
 
 /** The fact each layer contributes, set large in the left column so it reads even when the cards fan out. */
 const LAYER_METRIC: [string, string][] = [
-  ["Day 6", "Plant 01 drops below safety stock"],
-  ["+18%", "Open orders in three weeks"],
-  ["240", "Transferable after reserving 380"],
-  ["3 / 3", "Policy checks passed"],
+  [LN.heat, `Heat recorded on line ${LN.n}`],
+  [CERT.heat, "Heat on the supplied certificate"],
+  [`${SUPPORTED} / ${ITEMS.length}`, `Checklist ${EXAMPLE.checklist.rev} items supported`],
+  ["3 / 3", "Rules applied, nothing edited"],
 ];
 
 /** Fanned, a layer card shows about its left 42%: every word sits there, the drawing to its right. */
@@ -206,9 +210,9 @@ function layer(c: C, k: number, fan = false) {
   const L = LAYERS[k];
   const [metric, caption] = LAYER_METRIC[k];
   label(c, L.name, 90, 138, ink(tone));
-  if (!fan) status(c, "Checked", FACE_W - 90, 140, TINTS.emerald, false);
+  if (!fan) status(c, k === 1 ? "Conflicting" : "Checked", FACE_W - 90, 140, k === 1 ? COLORS.signal : TINTS.emerald, false);
 
-  // Left column: the one number that matters, as large as the column allows.
+  // Left column: the one figure that matters, as large as the column allows.
   const colW = FAN_W - 140;
   let size = 230;
   c.letterSpacing = "-8px";
@@ -216,16 +220,15 @@ function layer(c: C, k: number, fan = false) {
     font(c, size, 650);
     if (c.measureText(metric).width <= colW) break;
   }
-  c.fillStyle = INK;
+  c.fillStyle = k === 1 ? ink(COLORS.signal) : INK;
   c.fillText(metric, 80, 430);
   c.letterSpacing = "0px";
-  // No accent rule under the number: the label above and the drawing carry the tone.
   font(c, 64, 500);
   c.fillStyle = SOFT;
   wrap(c, caption, 90, 556, colW, 78);
 
-  // Right column: the drawing. Its words (the statement, the figures on it) only where the whole
-  // card is in view; fanned, it is a drawing alone, so no word is ever cut by the card in front.
+  // Right column: the drawing. Its words only where the whole card is in view; fanned, it is a drawing
+  // alone, so no word is ever cut by the card in front.
   const x0 = fan ? FAN_W + 60 : 720;
   const x1 = FACE_W - 90;
   const w = x1 - x0;
@@ -240,80 +243,64 @@ function layer(c: C, k: number, fan = false) {
   const top = fan ? 300 : 500;
   const bottom = 900;
   if (k === 0) {
-    // Stock running down through safety stock.
-    const safety = bottom - 120;
-    const span = safety - top + 60;
-    c.strokeStyle = hexA(COLORS.signal, 0.8);
-    c.setLineDash([18, 16]);
-    c.lineWidth = 5;
-    c.beginPath();
-    c.moveTo(x0, safety);
-    c.lineTo(x1, safety);
-    c.stroke();
-    c.setLineDash([]);
-    c.strokeStyle = INK;
-    c.lineWidth = 11;
-    c.lineCap = "round";
-    c.beginPath();
-    for (let i = 0; i <= 24; i++) {
-      const x = x0 + (i / 24) * w;
-      const y = top + 20 + Math.pow(i / 24, 1.25) * span;
-      if (i) c.lineTo(x, y);
-      else c.moveTo(x, y);
-    }
-    c.stroke();
-    const cross = x0 + Math.pow((safety - top - 20) / span, 1 / 1.25) * w;
-    dot(c, cross, safety, 24, COLORS.signal);
-    if (!fan) {
-      font(c, 46, 650);
-      c.fillStyle = ink(COLORS.signal);
-      c.textAlign = "right";
-      c.fillText("Day 6", cross - 40, safety + 80);
-      c.textAlign = "left";
+    // The shipment's delivery lines, line 12 picked out in the tone.
+    const rows = 5;
+    const pitch = (bottom - top) / rows;
+    for (let r = 0; r < rows; r++) {
+      const y = top + r * pitch;
+      const on = r === 2;
+      rr(c, x0, y, w, pitch - 24, 24);
+      c.fillStyle = on ? tone : BG2;
+      c.fill();
+      if (!fan && on) {
+        font(c, 46, 650);
+        c.fillStyle = onTone(tone);
+        c.fillText(`Line ${LN.n} · ${LN.heat}`, x0 + 32, y + (pitch - 24) / 2 + 16);
+      }
     }
   } else if (k === 1) {
-    // Orders rising week on week.
-    const vals = [0.42, 0.48, 0.5, 0.58, 0.66, 0.78, 0.92];
-    const gap = 22;
-    const bw = (w - gap * (vals.length - 1)) / vals.length;
-    vals.forEach((v, i) => {
-      const h = v * (bottom - top);
-      rr(c, x0 + i * (bw + gap), bottom - h, bw, h, 16);
-      c.fillStyle = i === vals.length - 1 ? tone : hexA(tone, 0.25);
-      c.fill();
-    });
+    // The two references side by side, the difference marked in red.
+    const bw = (w - 120) / 2;
+    const y = top + 60;
+    const h = 220;
+    rr(c, x0, y, bw, h, 36);
+    c.fillStyle = TINTS.cobalt;
+    c.fill();
+    rr(c, x1 - bw, y, bw, h, 36);
+    c.fillStyle = "#fff";
+    c.fill();
+    c.strokeStyle = COLORS.signal;
+    c.lineWidth = 6;
+    c.stroke();
+    dot(c, x0 + w / 2, y + h / 2, 30, COLORS.signal);
+    if (!fan) {
+      font(c, 72, 650);
+      c.textAlign = "center";
+      c.fillStyle = "#fff";
+      c.fillText(LN.heat, x0 + bw / 2, y + h / 2 + 26);
+      c.fillStyle = ink(COLORS.signal);
+      c.fillText(CERT.heat, x1 - bw / 2, y + h / 2 + 26);
+      c.textAlign = "left";
+    }
   } else if (k === 2) {
-    // Plant 02 holds more than its plan; Plant 01 is short. The line marks each plant's plan.
-    const rows: [string, number][] = [
-      [EXAMPLE.plant02.name, EXAMPLE.plant02.stock],
-      [EXAMPLE.plant01.name, EXAMPLE.plant01.day6Without],
-    ];
-    const plan = EXAMPLE.plant02.ownPlan;
-    const pitch = fan ? 260 : 190;
-    rows.forEach(([n, v], i) => {
-      const y = top + 44 + i * pitch;
-      if (!fan) {
-        font(c, 44, 600);
-        c.fillStyle = SOFT;
-        c.fillText(n, x0, y);
-      }
-      const by = y + 28;
-      rr(c, x0, by, w, 84, 42);
+    // The checklist: each required document as a row, supported in the tone, open ones in red.
+    const pitch = (bottom - top) / ITEMS.length;
+    ITEMS.forEach((it, i) => {
+      const y = top + i * pitch;
+      const ok = it.status === "supported";
+      rr(c, x0 + 70, y + 8, w - 70, pitch - 28, 18);
       c.fillStyle = BG2;
       c.fill();
-      rr(c, x0, by, Math.max((v / 700) * w, 120), 84, 42);
-      c.fillStyle = i === 0 ? tone : COLORS.signal;
-      c.fill();
-      c.fillStyle = INK;
-      c.fillRect(x0 + (plan / 700) * w - 4, by - 16, 8, 116);
+      if (ok) check(c, x0 + 26, y + pitch / 2 - 8, TINTS.emerald);
+      else dot(c, x0 + 26, y + pitch / 2 - 8, 18, COLORS.signal);
       if (!fan) {
-        font(c, 46, 650);
-        c.fillStyle = i === 0 ? INK : "#fff";
-        c.fillText(`${v}`, x0 + 32, by + 58);
+        font(c, 40, 600);
+        c.fillStyle = ok ? INK : ink(COLORS.signal);
+        c.fillText(it.name, x0 + 100, y + pitch / 2 + 4);
       }
     });
   } else {
-    // Policy checks passed: the checks themselves where they can be read, else three ticked rows.
+    // The rules applied: the checks themselves where they can be read, else three ticked rows.
     FACES.policyChecks.forEach((t, i) => {
       const y = top + (fan ? 90 : 60) + i * (fan ? 170 : 130);
       check(c, x0 + 28, y - 4, i === 2 ? TINTS.cobalt : TINTS.emerald);
@@ -511,18 +498,19 @@ function artHead(c: C, k: number, P: Paint) {
   c.textAlign = "left";
 }
 
-/** Supply chain: both plants' stock of the part, Plant 02's spare 240 on its way to Plant 01, which
- *  would fall under its safety line (dashed) without it. */
+/** Supplier coordination: the confirmed PO line and the supplier's update, which lands short on Friday
+ *  (the confirmed level dashed); the message flows toward the buyer's review. */
 function artStock(c: C, P: Paint, p: number, t: number) {
   artHead(c, 0, P);
   const top = 86;
   const base = 312;
   const bw = 186;
-  const max = 700;
+  const U = APP_FACTS.supplier;
+  const max = 120;
   const m = seg(p, 0.3, 0.9);
   const plants = [
-    { x: 0, name: EXAMPLE.plant02.name, from: EXAMPLE.plant02.stock, to: EXAMPLE.plant02.ownPlan, right: false },
-    { x: AW - bw, name: EXAMPLE.plant01.name, from: EXAMPLE.plant01.day6Without, to: EXAMPLE.plant01.day6With, right: true },
+    { x: 0, name: "Confirmed", from: U.qty, to: U.qty, right: false },
+    { x: AW - bw, name: U.firstDay, from: U.qty, to: U.first, right: true },
   ];
   for (const pl of plants) {
     const u = lerp(pl.from, pl.to, m);
@@ -531,8 +519,8 @@ function artStock(c: C, P: Paint, p: number, t: number) {
     c.fill();
     const h = (u / max) * (base - top);
     rr(c, pl.x, base - h, bw, h, 30);
-    // Short of its safety stock, the bar is half there; it fills in as the transfer lands.
-    c.fillStyle = pl.right ? P.w(lerp(0.55, 1, clamp01((u - EXAMPLE.plant01.safety) / 60))) : P.w(1);
+    // The update's bar drops to what the supplier now promises for Friday.
+    c.fillStyle = pl.right ? P.w(lerp(1, 0.55, m)) : P.w(1);
     c.fill();
     c.textAlign = pl.right ? "right" : "left";
     const x = pl.right ? AW : 0;
@@ -542,8 +530,8 @@ function artStock(c: C, P: Paint, p: number, t: number) {
     label(c, pl.name, x, 446, P.a(0.78), ART_TYPE);
     c.textAlign = "left";
   }
-  // Plant 01's safety line.
-  const sy = base - (EXAMPLE.plant01.safety / max) * (base - top);
+  // The confirmed quantity, as a line across the update's bar.
+  const sy = base - (U.qty / max) * (base - top);
   c.strokeStyle = P.a(0.75);
   c.lineWidth = 5;
   c.setLineDash([14, 12]);
@@ -551,7 +539,7 @@ function artStock(c: C, P: Paint, p: number, t: number) {
   c.moveTo(AW - bw - 14, sy);
   c.lineTo(AW + 2, sy);
   c.stroke();
-  // The lane between them, flowing toward Plant 01, and the transfer on it.
+  // The message between them, flowing toward the update, and its icon on the way.
   const ly = 199;
   const x0 = bw + 34;
   const x1 = AW - bw - 34;
@@ -590,18 +578,19 @@ function artStock(c: C, P: Paint, p: number, t: number) {
   c.globalAlpha = 1;
 }
 
-/** Operations: the bearing's vibration, day by day, heading over its limit on Saturday (projected,
- *  dashed). Friday, the service day, is lit on the axis and as a band behind the line. */
+/** Dispatch documentation: the checklist's six documents as a rising line of evidence found; the
+ *  last two (the conflicting certificate and the missing process certificate) break it, and the
+ *  pack's open item is lit as a band behind the line. */
 function artVibration(c: C, P: Paint, p: number, t: number) {
   artHead(c, 1, P);
   const top = 100;
   const base = 352;
   const limit = 128;
-  const v = [0.12, 0.17, 0.25, 0.37, 0.55, 0.96];
+  const v = [0.2, 0.36, 0.52, 0.68, 0.62, 0.96];
   const xs = v.map((_, i) => 56 + i * 144);
   const ys = v.map((n) => base - n * (base - top));
   const sk = seg(p, 0.55, 0.9);
-  // The service window on Friday, behind the line, down to its day on the axis.
+  // The open item, behind the line, down to its document on the axis.
   c.globalAlpha = sk;
   rr(c, xs[4] - 60, top - 18, 120, 468 - top + 18, 32);
   c.fillStyle = P.w(0.26);
@@ -641,7 +630,7 @@ function artVibration(c: C, P: Paint, p: number, t: number) {
     c.beginPath();
     c.arc(sx, sy, 20, 0, Math.PI * 2);
     c.stroke();
-    // While read: a ring keeps spreading from the projected breach.
+    // While read: a ring keeps spreading from the missing document.
     if (t > 0) {
       const ph = (t % 1.8) / 1.8;
       c.strokeStyle = P.a((1 - ph) * 0.6);
@@ -656,15 +645,17 @@ function artVibration(c: C, P: Paint, p: number, t: number) {
   c.textAlign = "left";
 }
 
-/** Commercial: allocation by region, 12 points moving from North (its old share dashed) to West. */
+/** RFQ review: each specification the customer requires (the material's requirement dashed), with
+ *  the supplier's offer as the bar; the material falls short of what is asked. */
 function artAllocation(c: C, P: Paint, p: number, t: number) {
   artHead(c, 2, P);
   const base = 372;
   const maxH = 230;
   const cw = 166;
   const step = (AW - cw) / 3;
-  const today = [38, 22, 24, 16];
-  const next = [26, 34, 24, 16];
+  const today = [36, 26, 30, 20];
+  const next = [24, 26, 30, 20];
+  const OFFER = [APP_FACTS.rfq.offered, "DN50", "PN40", "FL"];
   const m = seg(p, 0.2, 0.85);
   const fill = [P.w(0.5), P.w(1), P.w(0.3), P.w(0.3)];
   today.forEach((v0, i) => {
@@ -691,7 +682,7 @@ function artAllocation(c: C, P: Paint, p: number, t: number) {
     c.textAlign = "center";
     font(c, 64, 650);
     c.fillStyle = P.fg;
-    c.fillText(`${Math.round(v)}%`, x + cw / 2, base - Math.max(h, i === 0 ? (v0 / 40) * maxH * m : 0) - 22);
+    c.fillText(OFFER[i], x + cw / 2, base - Math.max(h, i === 0 ? (v0 / 40) * maxH * m : 0) - 22);
     font(c, 60, 600);
     c.fillStyle = P.a(0.8);
     c.fillText(ART.regions[i], x + cw / 2, 444);
@@ -699,7 +690,7 @@ function artAllocation(c: C, P: Paint, p: number, t: number) {
   });
 }
 
-/** Customer: 14 cases that came in separately, each traced to the one part behind them. */
+/** Service follow-up: service visits that came in separately, each traced to the one pump and seal. */
 const CASES: [number, number][] = [
   [40, 130], [150, 104], [262, 140], [380, 116], [96, 222], [212, 206], [330, 232],
   [450, 200], [40, 318], [156, 300], [270, 330], [392, 306], [110, 404], [300, 410],
@@ -750,11 +741,12 @@ function artCases(c: C, P: Paint, p: number, t: number) {
     c.stroke();
   }
   c.textAlign = "center";
-  label(c, EXAMPLE.part, rx, 374, P.fg, ART_TYPE);
+  label(c, APP_FACTS.service.equipment, rx, 374, P.fg, ART_TYPE);
   c.textAlign = "left";
 }
 
-/** Finance and risk: the vendor's invoices; one matched to its receipt, three held until goods arrive. */
+/** Deduction review: the records behind one debit note; two linked, the receiver note and the
+ *  deduction itself left open for finance. */
 function artLedger(c: C, P: Paint, p: number, t: number) {
   artHead(c, 4, P);
   FACES.ledger.forEach(([id, amt, hold], r) => {
@@ -941,7 +933,7 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
   c.fillRect(0, 0, FACE_W, FACE_H);
   switch (spec.kind) {
     case "decision":
-      decision(c, spec.qty, spec.mode);
+      decision(c, spec.mode);
       break;
     case "layer":
       layer(c, spec.k, spec.fan);
@@ -959,7 +951,7 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
 export function faceKey(s: FaceSpec) {
   switch (s.kind) {
     case "decision":
-      return `decision-${s.qty ?? T.units}-${s.mode ?? "idle"}`;
+      return `decision-${s.qty ?? SUPPORTED}-${s.mode ?? "idle"}`;
     case "layer":
       return `layer-${s.k}${s.fan ? "-fan" : ""}`;
     case "final":

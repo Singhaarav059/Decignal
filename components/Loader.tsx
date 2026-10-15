@@ -9,9 +9,9 @@ import { Logo } from "./ui/Logo";
 const PLATES = ["cobalt", "violet", "emerald", "saffron", "tangerine", "pink"];
 const KEY = "decignal:intro";
 /** Shown at least this long once it starts counting, so the six systems can arrive. */
-const MIN = 600;
-/** Never covers the site longer than this: if the scene never reports ready, the curtain lifts anyway. */
-const CAP = 3500;
+const MIN = 400;
+/** Never covers the site longer than this (handoff: no blocking intro): if the scene is not ready by then, the page shows anyway. */
+const CAP = 1800;
 /** Survives client navigation: the intro plays once per visit. */
 let played = false;
 

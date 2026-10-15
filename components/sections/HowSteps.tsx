@@ -8,8 +8,6 @@ import { jumpTo, onStep } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
 import { StepArt } from "./StepArt";
 
-type Route = keyof typeof PATHS;
-const ROUTES = Object.keys(PATHS) as Route[];
 /** Each sheet's solid: calm, distinct, never pink, ink or dark green (the earlier band feedback). The
  * field is the soft bloom and grain laid over it (fields.css). */
 const SHEETS = [
@@ -21,15 +19,14 @@ const SHEETS = [
 ];
 
 /**
- * How it works as four numbered colour sheets (the Plinth steps): the head, then one full-width sheet
- * per step that slides up over the last as the page scrolls. Both routes read on every sheet, side by
- * side (a switch hid the catalogue route from anyone who only scrolled): custom on the left, the
- * catalogue on the right, each with its timing, sentence and what you get; the step's drawing sits on
- * a white plate and its number stands large in the corner. Below 900px the sheets simply stack.
+ * How we work as four colour sheets (the Plinth steps): the head, then one full-width sheet per step
+ * that slides up over the last as the page scrolls. Each sheet reads the step, its sentence and its
+ * deliverable (handoff home.delivery); no durations. The step's drawing sits on a white plate and its
+ * place in the order stands large in the corner. Below 900px the sheets simply stack.
  */
 export function HowSteps({ head }: { head: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
-  const steps = ROUTES.map((r) => PATHS[r].steps);
+  const steps = PATHS.steps;
 
   // The nav's How it works glance brings a step's sheet to the top.
   useEffect(
@@ -47,21 +44,10 @@ export function HowSteps({ head }: { head: ReactNode }) {
     <div ref={root} className="how-steps">
       <div className="page-wrap how-top">
         {head}
-        {/* The two routes, named once; every sheet below reads both. */}
-        <ul className="how-legend" aria-label={HOW.routeAria}>
-          {ROUTES.map((r, k) => (
-            <li key={r}>
-              <span className="how-legend-mark" data-k={k} aria-hidden />
-              <span>
-                <strong>{PATHS[r].label}</strong>
-                <span className="t-small">{PATHS[r].total}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <p className="t-small how-timing">{PATHS.timing}</p>
       </div>
       <ol className="how-sheets">
-        {steps[0].map((_, i) => {
+        {steps.map((x, i) => {
           const sheet = SHEETS[i];
           return (
             <li key={i} className="how-sheet" data-field={sheet.field} style={{ ["--sheet" as string]: sheet.bg, ["--sheet-fg" as string]: sheet.fg, ["--i" as string]: i }}>
@@ -70,30 +56,17 @@ export function HowSteps({ head }: { head: ReactNode }) {
                   <p className="how-n">{HOW.stepWords[i]}</p>
                 </div>
                 <div className="how-sheet-body">
-                  {ROUTES.map((r, k) => {
-                    const x = steps[k][i];
-                    return (
-                      <div key={r} className="how-route">
-                        <p className="how-route-label t-label">
-                          <span className="how-legend-mark" data-k={k} aria-hidden />
-                          <span>
-                            {PATHS[r].label} <span aria-hidden>·</span>{" "}
-                            <span className="whitespace-nowrap">{x.when}</span>
-                          </span>
-                        </p>
-                        <h3 className="how-sheet-title">{x.title}.</h3>
-                        <p className="how-text">{x.text}</p>
-                        <ul className="how-deliver" aria-label={HOW.youGet}>
-                          {HOW.delivers[r][i].map((d) => (
-                            <li key={d}>
-                              <Check size={15} strokeWidth={2.6} aria-hidden />
-                              {d}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
+                  <div className="how-route">
+                    <h3 className="how-sheet-title">{x.title}.</h3>
+                    <p className="how-text">{x.text}</p>
+                    <p className="how-route-label t-label">{HOW.youGet}</p>
+                    <ul className="how-deliver" aria-label={HOW.youGet}>
+                      <li>
+                        <Check size={15} strokeWidth={2.6} aria-hidden />
+                        {x.deliverable}
+                      </li>
+                    </ul>
+                  </div>
                   <div className="how-plate" style={toneVars(sheet.tone)}>
                     <StepArt index={i} />
                   </div>

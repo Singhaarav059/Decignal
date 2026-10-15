@@ -98,6 +98,11 @@
 .outcome-diagram .og-link { fill: none; stroke: color-mix(in srgb, var(--tone) 34%, white); stroke-width: 1; }
 .outcome-diagram .og-ring { fill: var(--color-surface); stroke: currentColor; stroke-width: 2; }
 .outcome-diagram .og-check { fill: none; stroke: var(--color-on-ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+/* Text on a filled record (the audience drawings): white, and a softer white for its second line. */
+.outcome-diagram .og-on { fill: var(--color-on-ink); }
+.outcome-diagram .og-on-soft { fill: color-mix(in srgb, var(--color-on-ink) 74%, transparent); }
+/* An open question on a filled record: a white pill with a signal-red rim. */
+.outcome-diagram .og-flag { fill: var(--color-surface); stroke: var(--color-signal); stroke-width: 1.5; }
 
 /* The outcome build runs each time its tab opens (data-on resets while the panel is hidden). The
    .outcome-stroke and .outcome-bar values here are !important so they, not the section's one-off

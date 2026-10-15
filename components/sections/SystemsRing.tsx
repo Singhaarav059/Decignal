@@ -2,6 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import { useEffect, useRef, type ReactNode } from "react";
+import { SYSTEMS } from "@/components/ui/systems";
 import { CONNECTS } from "@/lib/content";
 import { pageBox } from "@/lib/offsets";
 import { toneVars } from "@/lib/tone";
@@ -13,7 +14,7 @@ import wms from "@/assets/photos/sys-wms.jpg";
 import sup from "@/assets/photos/sys-sup.jpg";
 import ext from "@/assets/photos/sys-ext.jpg";
 
-/** The place each system type keeps its facts (assets/photos/CREDITS.md), shown as a duotone in its colour. */
+/** The place each record source keeps its documents (assets/photos/CREDITS.md), shown as a duotone in its colour. */
 const PHOTO: Record<string, { src: StaticImageData; alt: string }> = {
   erp: { src: erp, alt: "A data-centre aisle of server racks" },
   crm: { src: crm, alt: "Three colleagues reviewing charts at a desk" },
@@ -22,9 +23,6 @@ const PHOTO: Record<string, { src: StaticImageData; alt: string }> = {
   sup: { src: sup, alt: "Trailers parked in a truck yard, seen from above" },
   ext: { src: ext, alt: "A container port and a ship at the quay, from the air" },
 };
-
-/** Sync times shown beside each fact (lib/systems: the same freshness the island panels give). */
-const SYNC: Record<string, string> = { erp: "2 min ago", crm: "5 min ago", mes: "1 min ago", wms: "1 min ago", sup: "1 hr ago", ext: "15 min ago" };
 
 /**
  * A rounded rectangle traced at an even pace: the track the photographs travel round the panel.
@@ -196,11 +194,11 @@ export function SystemsRing({ children }: { children: ReactNode }) {
       </svg>
       <div className="orbit-copy" data-lens>
         {children}
-        {/* What the system at the front is giving up right now: one fact from the running example. */}
+        {/* The record the source at the front adds to the worked example: a sample, not a live feed. */}
         <div className="orbit-live" aria-hidden>
           <span className="orbit-live-label t-label">
             <i />
-            Reading
+            Sample record
           </span>
           <span className="orbit-live-stack">
             {CONNECTS.map((c, i) => (
@@ -210,13 +208,13 @@ export function SystemsRing({ children }: { children: ReactNode }) {
                   {c.name}
                 </span>
                 <span className="orbit-live-fact">{c.read}</span>
-                <span className="orbit-live-sync">Example · synced {SYNC[c.id]}</span>
+                <span className="orbit-live-sync">{SYSTEMS.find((x) => x.id === c.id)?.sync}</span>
               </span>
             ))}
           </span>
         </div>
       </div>
-      <ul className="orbit-tiles" aria-label="Systems Decignal reads">
+      <ul className="orbit-tiles" aria-label="Record sources in the worked example">
         {CONNECTS.map((c) => {
           const photo = PHOTO[c.id];
           return (

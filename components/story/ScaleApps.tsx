@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useState } from "react";
 import { CH, FUNCTIONS, localIn, scaleBeat, scaleSettle, setPinHint, store, subscribe, weight } from "@/lib/story";
+import { APPLICATION_DEMOS } from "@/lib/application-demos";
 import { APPLICATIONS, CATEGORY_TONE, type Category } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
 import { SCALE, STORY_UI } from "@/lib/copy";
@@ -21,14 +22,14 @@ const FN = FUNCTIONS.map((f) => {
     category,
     tone: CATEGORY_TONE[category],
     apps,
-    systems: [...new Set(apps.flatMap((a) => a.connects))].slice(0, 4),
+    systems: [...new Set(apps.flatMap((a) => APPLICATION_DEMOS[APPLICATIONS.indexOf(a)].sources.split(" · ")))].slice(0, 4),
     area: areaOf(category),
   };
 });
 
 /**
- * 07 Scale, inside the story card: the five functions as one selector, then the applications Decignal
- * offers in the selected one. The selection is the 3D card being read: the card under the pointer,
+ * 07 Scale, inside the story card: the five functions as one selector, then the proposed workflows in
+ * the selected one. The selection is the 3D card being read: the card under the pointer,
  * else the one the scroll brings forward. Pointing at a pill brings its card forward; clicking scrolls to it.
  */
 export function ScaleCard() {
@@ -81,11 +82,11 @@ export function ScaleCard() {
               <p className="t-label">{SCALE.apps(f.apps.length)}</p>
               <ul className="story-rows scale-rows">
                 {f.apps.map((a) => {
-                  const [name, weeks] = SCALE.appRow(a.name, a.weeks).split(" · ");
+                  const [name, status] = SCALE.appRow(a.name, a.status).split(" · ");
                   return (
                     <li key={a.name}>
                       <span className="scale-app">{name}</span>
-                      <span className="tabular">{weeks}</span>
+                      <span>{status}</span>
                     </li>
                   );
                 })}

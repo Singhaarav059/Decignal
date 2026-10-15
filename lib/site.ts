@@ -70,4 +70,4 @@ export const OG_BASE = { type: "website" as const, siteName: SITE_NAME };
 export const TWITTER_BASE = { card: "summary_large_image" as const };
 
 /** Date the public copy last changed; the sitemap uses it so its output stays deterministic. */
-export const CONTENT_UPDATED = "2026-10-12";
+export const CONTENT_UPDATED = "2026-10-15";

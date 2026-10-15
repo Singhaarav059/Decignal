@@ -28,7 +28,7 @@ export default function NotFound() {
           </h1>
           <p className="t-lede svc-hero-lede">{copy.body}</p>
           <div className="svc-actions">
-            <SectionLink href={`/${CTA.href}`} className="btn btn-primary" data-cta="404">
+            <SectionLink href={CTA.href} className="btn btn-primary" data-cta="404">
               {copy.cta}
               <Arrow />
             </SectionLink>

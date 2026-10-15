@@ -3,20 +3,18 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { APPLICATION_DEMOS, DEMO_PINS, type DemoKind } from "@/lib/application-demos";
 import { EVIDENCE_LABELS } from "@/lib/copy";
-import { APP_FACTS, EXAMPLE, plant01Stock } from "@/lib/example";
+import { APP_FACTS, DOC_STATUS, EXAMPLE, inr } from "@/lib/example";
 import { toneVars, type Tone } from "@/lib/tone";
 import { CountUp } from "../ui/CountUp";
 
-/** The system colour of the data each decision moves (the same accent as its 3D scene). */
+/** The colour of each workflow's function (the same accent as its 3D scene). */
 const ACCENT: Record<DemoKind, Tone> = {
   inventory: "saffron",
-  demand: "cobalt",
   production: "emerald",
-  maintenance: "emerald",
-  risk: "tangerine",
-  sales: "violet",
-  customer: "violet",
-  finance: "cobalt",
+  maintenance: "pink",
+  risk: "cobalt",
+  sales: "tangerine",
+  finance: "violet",
 };
 
 /** Charts are drawn 400 units wide. Text is sized in screen px: 11px / k, where k is the chart's
@@ -25,7 +23,6 @@ const W = 400;
 const RISK = "var(--color-signal)";
 const RISK_INK = "var(--color-signal-ink)";
 const OK = "var(--color-emerald)";
-const OK_INK = "var(--color-emerald-ink)";
 const SOFT = "var(--color-ink-soft)";
 const INK = "var(--color-ink)";
 const LINE = "var(--color-line-strong)";
@@ -59,278 +56,177 @@ function Tick({ x, y, ok }: { x: number; y: number; ok: boolean }) {
   );
 }
 
-/* ---- Plant 01 stock over the next six days, with and without the transfer ---- */
-function Inventory({ step }: { step: number }) {
-  const done = step === 2;
-  const x = (d: number) => 12 + d * (376 / 6);
-  const y = (v: number) => 108 - ((v - 100) / 500) * 80;
-  const days = Array.from({ length: 7 }, (_, d) => d);
-  const line = (vals: number[]) => vals.map((v, d) => `${d ? "L" : "M"}${x(d).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
-  const without = days.map((d) => plant01Stock(d));
-  const withT = days.map((d) => plant01Stock(d, true));
-  const arrive = EXAMPLE.transfer.arrivesDay;
-  const safe = EXAMPLE.plant01.safety;
-  // Where the stock line crosses safety stock: the start of the shortfall.
-  const cross = (EXAMPLE.plant01.onHand - safe) / EXAMPLE.plant01.dailyUse;
+/* ---- Dispatch: the customer checklist, one row per required document, with its status ---- */
+function Dispatch({ step }: { step: number }) {
+  const items = EXAMPLE.checklist.items;
   return (
     <>
-      {[300, 500].map((v) => <line key={v} x1={12} x2={388} y1={y(v)} y2={y(v)} className="chart-grid" />)}
-      <line x1={12} x2={388} y1={y(safe)} y2={y(safe)} stroke={RISK} strokeDasharray="3 4" strokeWidth="1.2" />
-      <text x={12} y={y(safe) + 17} fill={RISK_INK}>{EVIDENCE_LABELS.safety}</text>
-      {!done && <path d={`M${x(cross)} ${y(safe)} L${x(6)} ${y(safe)} L${x(6)} ${y(without[6])} Z`} fill={RISK} fillOpacity="0.16" />}
-      <path d={line(without)} stroke={RISK} strokeWidth="2" fill="none" opacity={done ? 0.3 : 1} className="evidence-draw" />
-      {step >= 1 && (
-        <g>
-          <line x1={x(arrive)} x2={x(arrive)} y1={y(without[arrive])} y2={y(withT[arrive])} stroke={OK} strokeWidth="1.5" strokeDasharray="2 3" />
-          <circle cx={x(arrive)} cy={y(withT[arrive])} r="3.5" fill={OK} />
-          <text x={x(arrive) + 8} y={26} fill={OK_INK}>+{EXAMPLE.transfer.units} · DAY {arrive}</text>
-        </g>
-      )}
-      {done && <path d={days.slice(arrive).map((d) => `${d === arrive ? "M" : "L"}${x(d).toFixed(1)} ${y(withT[d]).toFixed(1)}`).join(" ")} stroke={OK} strokeWidth="2.2" fill="none" className="evidence-draw" />}
-      <circle cx={x(6)} cy={y(done ? withT[6] : without[6])} r="4" fill={done ? OK : RISK} />
-      <text x={12} y={140}>{EVIDENCE_LABELS.today}</text>
-      <text x={388} y={140} textAnchor="end" fill={done ? OK_INK : RISK_INK}>{done ? EVIDENCE_LABELS.day6With : EVIDENCE_LABELS.day6Without}</text>
-    </>
-  );
-}
-
-/* ---- Two bars per row (a plan and what is happening), with the gap drawn where it is ---- */
-type Row = {
-  label: string;
-  /** Upper bar (neutral) and lower bar (the data's tone), in units of the 180-wide track. */
-  a: number;
-  b: number;
-  /** Draw the difference between the bars as a risk. */
-  gap?: boolean;
-  /** The action's change, from `from` to the bar's end, in emerald. */
-  change?: { bar: "a" | "b"; from: number };
-  note: string;
-  tone?: "risk" | "ok";
-};
-
-function Rows({ rows, legend }: { rows: Row[]; legend: [string, string] }) {
-  const x0 = 92;
-  return (
-    <>
-      {rows.map((r, i) => {
-        const top = 8 + i * 36;
+      <text x={0} y={12}>{`CHECKLIST ${EXAMPLE.checklist.rev.toUpperCase()}`}</text>
+      <text x={W} y={12} textAnchor="end">{`LINE ${EXAMPLE.line.n} · ${EXAMPLE.line.heat}`}</text>
+      <line x1={0} y1={20} x2={W} y2={20} className="chart-grid" />
+      {items.map((it, row) => {
+        // The situation shows the line; the source records reveal each document's status.
+        const shown = step >= 1 || it.status !== "supported";
+        const ok = it.status === "supported";
         return (
-          <g key={r.label} transform={`translate(0 ${top})`}>
-            <text x={0} y={22} fill={INK}>{r.label}</text>
-            <rect x={x0} y={6} width={180} height={8} rx={2} fill="var(--color-track)" />
-            <rect x={x0} y={6} width={r.a} height={8} rx={2} fill={LINE} className="evidence-bar" />
-            <rect x={x0} y={17} width={r.b} height={8} rx={2} fill="var(--tone)" className="evidence-bar" />
-            {r.change && <rect x={x0 + r.change.from} y={r.change.bar === "a" ? 6 : 17} width={(r.change.bar === "a" ? r.a : r.b) - r.change.from} height={8} rx={2} fill={OK} className="evidence-bar" />}
-            {r.gap && <rect x={x0 + Math.min(r.a, r.b)} y={3} width={Math.abs(r.b - r.a)} height={25} rx={3} fill={RISK} fillOpacity="0.12" stroke={RISK} strokeWidth="1" strokeDasharray="2 2" />}
-            <text x={W} y={22} textAnchor="end" fill={r.tone === "risk" ? RISK_INK : r.tone === "ok" ? OK_INK : SOFT}>{r.note}</text>
-          </g>
-        );
-      })}
-      <rect x={x0} y={121} width={10} height={6} rx={1.5} fill={LINE} />
-      <text x={x0 + 15} y={128}>{legend[0]}</text>
-      <rect x={x0 + 96} y={121} width={10} height={6} rx={1.5} fill="var(--tone)" />
-      <text x={x0 + 111} y={128}>{legend[1]}</text>
-    </>
-  );
-}
-
-function Demand({ step }: { step: number }) {
-  const done = step === 2;
-  const raise = `+${APP_FACTS.demand.raiseUnits.toLocaleString("en-US")}`;
-  return (
-    <Rows
-      legend={["PLAN", "ORDERS"]}
-      rows={[
-        { label: "NORTH", a: 150, b: 142, note: "ON PLAN" },
-        { label: "CENTRAL", a: 168, b: 160, note: "ON PLAN" },
-        { label: "WEST", a: done ? 178 : 118, b: 178, gap: !done, change: done ? { bar: "a", from: 118 } : undefined, note: done ? `${raise} UNITS` : `GAP ${raise}`, tone: done ? "ok" : "risk" },
-      ]}
-    />
-  );
-}
-
-function Sales({ step }: { step: number }) {
-  const done = step === 2;
-  return (
-    <Rows
-      legend={["ORDERS", "ALLOCATION"]}
-      rows={[
-        { label: "EAST", a: 128, b: done ? 150 : 172, note: done ? "SURPLUS MOVED" : "SURPLUS" },
-        { label: "CENTRAL", a: 150, b: 150, note: "BALANCED" },
-        { label: "WEST", a: 178, b: done ? 178 : 132, gap: !done, change: done ? { bar: "b", from: 132 } : undefined, note: done ? `+${APP_FACTS.sales.shiftPct}% ALLOCATED` : "ORDERS > STOCK", tone: done ? "ok" : "risk" },
-      ]}
-    />
-  );
-}
-
-/* ---- Lots per line before the shift ---- */
-function Production({ step }: { step: number }) {
-  const done = step === 2;
-  const f = APP_FACTS.production;
-  return (
-    <>
-      {[f.queuedAt, f.to].map((label, row) => {
-        const top = 8 + row * 40;
-        const queue = row === 0;
-        return (
-          <g key={label} transform={`translate(0 ${top})`}>
-            <text x={0} y={17} fill={INK}>{label.toUpperCase()}</text>
-            {Array.from({ length: 6 }, (_, i) => {
-              const full = queue ? (done ? i < 3 : true) : done && i < 3;
-              const over = queue && i >= 3 && !done;
-              return (
-                <rect key={i} x={92 + i * 32} y={2} width={26} height={20} rx={4}
-                  fill={full ? (over ? RISK : OK) : "none"} fillOpacity={full ? (over ? 0.18 : 0.85) : 0}
-                  stroke={full ? (over ? RISK : OK) : LINE} strokeWidth={1.2} strokeDasharray={full ? undefined : "3 3"} className="evidence-bar" />
-              );
-            })}
-            <text x={W} y={17} textAnchor="end" fill={queue ? (done ? OK_INK : RISK_INK) : done ? OK_INK : SOFT}>
-              {queue ? (done ? `${f.moved} LOTS` : `${f.queued} QUEUED`) : done ? `${f.moved} LOTS` : "FREE"}
+          <g key={it.name} transform={`translate(0 ${26 + row * 17})`}>
+            <text x={0} y={11} fill={INK}>{it.name.toUpperCase()}</text>
+            {shown && <Tick x={262} y={7} ok={ok} />}
+            <text x={W} y={11} textAnchor="end" fill={ok ? SOFT : RISK_INK}>
+              {shown ? DOC_STATUS[it.status].toUpperCase() : "CHECKING"}
             </text>
           </g>
         );
       })}
-      {step >= 1 && <path d="M 233 32 C 233 42, 140 40, 140 50" stroke={OK} strokeWidth="1.6" strokeDasharray="3 3" fill="none" />}
-      <text x={0} y={100}>{step === 1 ? EVIDENCE_LABELS.tooling : EVIDENCE_LABELS.productionOrder}</text>
-      {step !== 1 && <text x={W} y={100} textAnchor="end">SHIFT {f.shift}</text>}
+      <text x={0} y={142} fill={step === 2 ? INK : SOFT}>{step === 2 ? "2 QUESTIONS FOR THE QUALITY REVIEWER" : `${EXAMPLE.files} FILES SUPPLIED`}</text>
     </>
   );
 }
 
-/* ---- Vibration trace and the service window ---- */
-function Maintenance({ step }: { step: number }) {
-  const done = step === 2;
-  const m = APP_FACTS.maintenance;
+/* ---- Job work: sent, returned, rejected and the pieces still to explain, on one 1,000-piece bar ---- */
+function Jobwork({ step }: { step: number }) {
+  const j = APP_FACTS.jobwork;
+  const x0 = 0;
+  const w = W;
+  const k = w / j.sent;
+  const ret = j.returned * k;
+  const rej = j.rejected * k;
   return (
     <>
-      <line x1={0} y1={70} x2={220} y2={70} className="chart-grid" strokeDasharray="3 3" />
-      <path d="M0 70 L17 68 L34 72 L51 66 L68 70 L85 62 L102 74 L119 56 L136 66 L152 42 L165 26 L178 40 L195 60 L212 68 L220 70" fill="none" stroke={RISK} strokeWidth="1.8" className="evidence-draw" />
-      <circle cx={165} cy={26} r="3.5" fill={RISK} />
-      <text x={165} y={15} textAnchor="middle" fill={RISK_INK}>{m.sensor} · {m.peak}</text>
-      <text x={0} y={96}>DRIVE-END BEARING</text>
-      <line x1={232} y1={4} x2={232} y2={78} className="chart-grid" />
-      {["THU", "FRI", "SAT"].map((d, i) => {
-        const fri = i === 1;
-        const on = fri && step >= 1;
-        return (
-          <g key={d} transform={`translate(${244 + i * 52} 18)`}>
-            <rect width={44} height={44} rx={6} fill={on ? OK : "none"} fillOpacity={on ? (done ? 0.2 : 0.1) : 0} stroke={on ? OK : LINE} strokeWidth={on ? 1.6 : 1} className="evidence-bar" />
-            <text x={22} y={19} textAnchor="middle" fill={on ? OK_INK : INK}>{d}</text>
-            <text x={22} y={36} textAnchor="middle" fill={on ? OK_INK : SOFT}>{fri ? "OPEN" : "FULL"}</text>
-          </g>
-        );
-      })}
-      <text x={W} y={96} textAnchor="end" fill={done ? OK_INK : SOFT}>{done ? EVIDENCE_LABELS.workOrder : `${m.window.toUpperCase()} OPEN`}</text>
+      <text x={0} y={14} fill={INK}>{`CHALLAN ${j.challan} · ${j.process.toUpperCase()}`}</text>
+      <text x={W} y={14} textAnchor="end">{`${j.sent.toLocaleString("en-IN")} SENT`}</text>
+      <rect x={x0} y={28} width={w} height={22} rx={4} fill="var(--color-track)" />
+      <rect x={x0} y={28} width={ret} height={22} rx={4} fill="var(--tone)" className="evidence-bar" />
+      {step >= 1 && <rect x={x0 + ret} y={28} width={rej} height={22} fill={LINE} className="evidence-bar" />}
+      <rect x={x0 + ret + (step >= 1 ? rej : 0)} y={25} width={w - ret - (step >= 1 ? rej : 0)} height={28} rx={3} fill={RISK} fillOpacity="0.12" stroke={RISK} strokeWidth="1" strokeDasharray="2 2" />
+      <text x={0} y={74} fill={INK}>{`${j.returned} RETURNED`}</text>
+      {step >= 1 && <text x={200} y={74} textAnchor="middle">{`${j.rejected} REJECTIONS ON RECORD`}</text>}
+      <text x={W} y={74} textAnchor="end" fill={RISK_INK}>{`${step >= 1 ? j.open : j.sent - j.returned} TO EXPLAIN`}</text>
+      <text x={0} y={104} fill={step === 2 ? INK : SOFT}>{step === 2 ? `FOLLOW-UP FOR ${j.worker.toUpperCase()} · NOT DECLARED LOST` : "RETURN RECORDS LINKED TO THE CHALLAN"}</text>
     </>
   );
 }
 
-/* ---- The late primary lane and the second supplier ---- */
-function Risk({ step }: { step: number }) {
-  const done = step === 2;
-  const r = APP_FACTS.risk;
-  const alt = step >= 1;
+/* ---- RFQ: the customer requirement against the supplier offer, line by line ---- */
+function Rfq({ step }: { step: number }) {
+  const r = APP_FACTS.rfq;
+  const rows: [string, string, string, boolean][] = [
+    ["WETTED PARTS", r.required, r.offered, false],
+    ["SIZE", "DN50", "DN50", true],
+    ["PRESSURE CLASS", "PN40", "PN40", true],
+    ["END CONNECTION", "FLANGED", "FLANGED", true],
+  ];
   return (
     <>
-      <path d="M24 70 L196 30 L376 70" fill="none" stroke={RISK} strokeWidth="1.6" strokeDasharray="4 4" opacity={done ? 0.3 : 0.75} />
-      {alt && <path d="M196 104 L376 70" stroke={done ? OK : "var(--tone)"} strokeWidth="2.2" fill="none" className="evidence-draw" />}
-      {[
-        [24, 70, "var(--color-ink-muted)"],
-        [196, 30, RISK],
-        [196, 104, alt ? (done ? OK : "var(--tone)") : "var(--color-ink-muted)"],
-        [376, 70, "var(--color-ink-muted)"],
-      ].map(([cx, cy, c]) => (
-        <g key={`${cx}-${cy}`}>
-          <circle cx={cx} cy={cy} r="7" fill={String(c)} fillOpacity="0.18" />
-          <circle cx={cx} cy={cy} r="3.5" fill={String(c)} />
+      <text x={0} y={14}>{r.line.toUpperCase()}</text>
+      <text x={210} y={14} textAnchor="middle">ENQUIRY</text>
+      <text x={300} y={14} textAnchor="middle">OFFER</text>
+      <line x1={0} y1={22} x2={W} y2={22} className="chart-grid" />
+      {rows.map(([k, need, offer, ok], row) => (
+        <g key={k} transform={`translate(0 ${30 + row * 22})`}>
+          <text x={0} y={13} fill={INK}>{k}</text>
+          <text x={210} y={13} textAnchor="middle" fill={INK}>{need}</text>
+          <text x={300} y={13} textAnchor="middle" fill={step >= 1 && !ok ? RISK_INK : INK}>{step >= 1 ? offer : "·"}</text>
+          {step >= 1 && <Tick x={378} y={9} ok={ok} />}
         </g>
       ))}
-      <text x={0} y={94} fill={INK}>SUPPLIER 01</text>
-      <text x={196} y={16} textAnchor="middle" fill={RISK_INK}>PORT · +{r.laneDelayDays} DAYS</text>
-      <text x={196} y={130} textAnchor="middle" fill={alt ? (done ? OK_INK : "var(--tone-ink)") : INK}>{r.alternative.toUpperCase()} · {r.alternativeDays} DAYS</text>
-      <text x={W} y={94} textAnchor="end" fill={INK}>{EXAMPLE.plant01.name.toUpperCase()}</text>
+      <text x={0} y={128} fill={step === 2 ? INK : SOFT}>{step === 2 ? "CLARIFICATION DRAFTED · NO SUBSTITUTE CHOSEN" : r.item.toUpperCase()}</text>
     </>
   );
 }
 
-/* ---- Fourteen cases, one part, one escalation ---- */
-function Customer({ step }: { step: number }) {
-  const done = step === 2;
-  const hub = step >= 1 ? (done ? OK : RISK) : LINE;
+/* ---- Service: the report's recommendation and the equipment records it could belong to ---- */
+function Service({ step }: { step: number }) {
+  const sv = APP_FACTS.service;
+  const candidates = ["PX-4107", "PX-4117"];
   return (
     <>
-      {Array.from({ length: APP_FACTS.customer.cases }, (_, i) => {
-        const x = (i % 7) * 26;
-        const y = 22 + Math.floor(i / 7) * 34;
-        return (
-          <g key={i}>
-            {step >= 1 && <line x1={x + 10} y1={y + 13} x2={250} y2={50} stroke="var(--tone)" strokeOpacity="0.3" strokeDasharray="2 2" />}
-            <rect x={x} y={y} width={20} height={26} rx={3} fill="var(--color-surface)" stroke="var(--tone)" strokeOpacity="0.7" />
-            <line x1={x + 4} y1={y + 8} x2={x + 15} y2={y + 8} stroke="var(--tone)" strokeOpacity="0.7" />
-            <line x1={x + 4} y1={y + 14} x2={x + 11} y2={y + 14} stroke="var(--tone)" strokeOpacity="0.7" />
+      <rect x={0} y={4} width={170} height={74} rx={6} fill="var(--color-surface)" stroke={LINE} />
+      <text x={12} y={22} fill={INK}>{sv.report}</text>
+      <line x1={12} y1={34} x2={150} y2={34} className="chart-grid" />
+      <line x1={12} y1={46} x2={158} y2={46} stroke="var(--tone)" strokeWidth="2.2" className="evidence-draw" />
+      <line x1={12} y1={58} x2={128} y2={58} className="chart-grid" />
+      <text x={12} y={72} fill={RISK_INK}>{`SERIAL ${sv.serial}`}</text>
+      {step >= 1 &&
+        candidates.map((c, i) => (
+          <g key={c} transform={`translate(214 ${8 + i * 34})`}>
+            <path d={`M-40 ${30 - i * 34} C -20 ${30 - i * 34}, -20 14, 0 14`} stroke="var(--tone)" strokeOpacity="0.5" strokeDasharray="2 3" fill="none" />
+            <rect width={120} height={28} rx={5} fill="var(--color-surface)" stroke={LINE} />
+            <text x={10} y={18} fill={INK}>{c}</text>
+            <text x={110} y={18} textAnchor="end" fill={SOFT}>MATCH?</text>
           </g>
-        );
-      })}
-      <g transform="translate(250 50)">
-        <circle r="18" fill="none" stroke={hub} strokeWidth="1.5" strokeDasharray={step >= 1 ? undefined : "3 3"} />
-        <circle r="9" fill="var(--color-surface)" stroke={hub} strokeWidth="1.5" />
-        <circle r="2.5" fill={hub} />
-      </g>
-      <text x={250} y={22} textAnchor="middle" fill={step >= 1 ? (done ? OK_INK : RISK_INK) : SOFT}>{APP_FACTS.customer.part.toUpperCase()}</text>
-      {done && (
+        ))}
+      <text x={0} y={100} fill={INK}>{`${sv.part.toUpperCase()} · ${sv.when.toUpperCase()}`}</text>
+      <text x={W} y={100} textAnchor="end" fill={step === 2 ? INK : SOFT}>{step === 2 ? "FOLLOW-UP FOR THE OWNER" : "NO OWNER YET"}</text>
+    </>
+  );
+}
+
+/* ---- Supplier update: the confirmed line against the changed promise, on one week ---- */
+function Supplier({ step }: { step: number }) {
+  const u = APP_FACTS.supplier;
+  const days = ["MON", "TUE", "WED", "THU", "FRI", "MON", "TUE", "WED"];
+  const x = (i: number) => 24 + i * 50;
+  return (
+    <>
+      {days.map((d, i) => (
+        <text key={i} x={x(i)} y={124} textAnchor="middle">{d}</text>
+      ))}
+      <line x1={0} y1={110} x2={W} y2={110} className="chart-grid" />
+      <text x={0} y={14} fill={INK}>CONFIRMED ON THE PO</text>
+      <rect x={x(4) - 18} y={24} width={36} height={u.qty * 0.5} rx={4} fill={LINE} className="evidence-bar" opacity={step >= 1 ? 0.5 : 1} />
+      <text x={x(4)} y={20 + u.qty * 0.5 + 18} textAnchor="middle" fill={INK}>{u.qty}</text>
+      {step >= 1 && (
         <>
-          <path d="M 270 50 H 352" stroke={OK} strokeWidth="2" fill="none" className="evidence-draw" />
-          <g transform="translate(366 50)">
-            <circle r="13" fill="var(--color-surface)" stroke={OK} strokeWidth="1.5" />
-            <path d="M -4 0 L -1 3 L 5 -3" fill="none" stroke={OK} strokeWidth="1.8" />
-          </g>
+          <rect x={x(4) + 22} y={24 + (u.qty - u.first) * 0.5} width={36} height={u.first * 0.5} rx={4} fill="var(--tone)" className="evidence-bar" />
+          <rect x={x(7) - 18} y={24 + (u.qty - u.rest) * 0.5} width={36} height={u.rest * 0.5} rx={4} fill="var(--tone)" className="evidence-bar" />
+          <text x={x(4) + 40} y={20 + (u.qty - u.first) * 0.5} textAnchor="middle" fill="var(--tone-ink)">{u.first}</text>
+          <text x={x(7)} y={20 + (u.qty - u.rest) * 0.5} textAnchor="middle" fill={RISK_INK}>{u.rest}</text>
         </>
       )}
-      <text x={0} y={108}>{EVIDENCE_LABELS.cases}</text>
-      {done && <text x={W} y={108} textAnchor="end" fill={OK_INK}>ONE ESCALATION</text>}
+      <text x={W} y={14} textAnchor="end" fill={step === 2 ? INK : SOFT}>{step === 2 ? `ORDER ${u.order} TO CHECK` : u.po}</text>
     </>
   );
 }
 
-/* ---- Purchase order, goods receipt and invoice, row by row ---- */
-function Finance({ step }: { step: number }) {
-  const done = step === 2;
-  const f = APP_FACTS.finance;
+/* ---- Deduction: the debit note and the records behind it, row by row ---- */
+function Deduction({ step }: { step: number }) {
+  const d = APP_FACTS.deduction;
+  const rows: [string, string, boolean][] = [
+    ["INVOICE", d.invoice, true],
+    ["DELIVERY ACKNOWLEDGEMENT", d.ack, true],
+    ["RECEIVER NOTE", "AMBIGUOUS", false],
+  ];
   return (
     <>
-      <text x={0} y={14}>INVOICE</text>
-      <text x={196} y={14} textAnchor="middle">PO</text>
-      <text x={262} y={14} textAnchor="middle">RECEIPT</text>
-      <text x={W} y={14} textAnchor="end">AMOUNT</text>
+      <text x={0} y={14}>{`DEBIT NOTE ${d.debit}`}</text>
+      <text x={W} y={14} textAnchor="end" fill={INK}>{inr(d.amount)}</text>
       <line x1={0} y1={22} x2={W} y2={22} className="chart-grid" />
-      {EVIDENCE_LABELS.ledger.map(([inv, amount], row) => (
-        <g key={inv} transform={`translate(0 ${30 + row * 24})`}>
-          <text x={0} y={14} fill={INK}>{inv.split(" · ")[0]}</text>
-          <Tick x={196} y={9} ok />
-          <Tick x={262} y={9} ok={false} />
-          <text x={W} y={14} textAnchor="end" fill={INK}>{amount}</text>
+      {rows.map(([k, v, ok], row) => (
+        <g key={k} transform={`translate(0 ${30 + row * 24})`}>
+          <text x={0} y={14} fill={INK}>{k}</text>
+          {step >= 1 && <Tick x={262} y={9} ok={ok} />}
+          <text x={W} y={14} textAnchor="end" fill={step >= 1 && !ok ? RISK_INK : SOFT}>{step >= 1 ? v : "·"}</text>
           <line x1={0} y1={22} x2={W} y2={22} className="chart-grid" strokeDasharray="2 3" />
         </g>
       ))}
-      <text x={0} y={122} fill={done ? OK_INK : RISK_INK}>{done ? EVIDENCE_LABELS.heldTotal : `${f.receipt} MISSING`}</text>
+      <text x={0} y={118} fill={step === 2 ? INK : SOFT}>{step === 2 ? EVIDENCE_LABELS.heldTotal : d.reason.toUpperCase()}</text>
     </>
   );
 }
 
 const CHARTS: Record<DemoKind, { h: number; draw: (p: { step: number }) => ReactNode }> = {
-  inventory: { h: 148, draw: Inventory },
-  demand: { h: 134, draw: Demand },
-  production: { h: 106, draw: Production },
-  maintenance: { h: 104, draw: Maintenance },
-  risk: { h: 138, draw: Risk },
-  sales: { h: 134, draw: Sales },
-  customer: { h: 114, draw: Customer },
-  finance: { h: 128, draw: Finance },
+  production: { h: 148, draw: Dispatch },
+  inventory: { h: 110, draw: Jobwork },
+  sales: { h: 134, draw: Rfq },
+  maintenance: { h: 106, draw: Service },
+  risk: { h: 130, draw: Supplier },
+  finance: { h: 124, draw: Deduction },
 };
 
 /**
- * The evidence behind an application's decision, shown in the explorer card's drawer: one chart,
- * three readings and the stage's conclusion. Flat fills only. Pointing at a reading opens the pin
+ * The source records behind a workflow's review, shown in the explorer card's drawer: one chart,
+ * three readings and the tab's conclusion. Flat fills only. Pointing at a reading opens the pin
  * of its object in the 3D scene (onPin).
  */
 export function OperationEvidence({ kind, step, onPin }: { kind: DemoKind; step: number; onPin?: (pin: string | null) => void }) {

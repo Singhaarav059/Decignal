@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server";
-import { auditBrief, formatSlot, isLikelyBot, validateAudit, type AuditData, type AuditResponse } from "@/lib/audit";
+import { auditBrief, isLikelyBot, validateAudit, type AuditData, type AuditResponse } from "@/lib/audit";
 import { clientIp, createLimiter } from "@/lib/rate-limit";
 import { SITE_URL } from "@/lib/site";
 
-// Audit requests (PROD-02). Delivery is configured by env, any channel may be set:
+// Workflow review requests (handoff §8). Delivery is configured by env, any channel may be set:
 //   AUDIT_WEBHOOK_URL                                  POST JSON (Slack, Make, Zapier, n8n, CRM hook)
 //   RESEND_API_KEY + AUDIT_TO_EMAIL + AUDIT_FROM_EMAIL  email through the Resend REST API
 // With none set the route answers 503 not_configured and the form offers the brief download.
@@ -87,11 +87,14 @@ async function sendWebhook(url: string, data: AuditData, ref: string, submittedA
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       type: "audit_request",
-      version: 1,
+      version: 2,
       ref,
       submittedAt: submittedAt.toISOString(),
       ...data,
-      slotsLocal: data.slots.map((s) => formatSlot(s, data.timeZone)),
+      // The sheet script deployed before version 2 reads these columns; mapping the short form onto
+      // them keeps one row per request without redeploying it (scripts/audit-sheet.gs).
+      decision: data.workflow,
+      systemsOther: data.systems ?? "",
       // `text` makes the same payload readable in a Slack incoming webhook. &, < and > are
       // escaped as Slack asks, so visitor text cannot post <!channel> pings or disguised links.
       text: brief.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
@@ -128,7 +131,7 @@ async function sendEmail(
       from: cfg.from,
       to: cfg.to,
       reply_to: data.email,
-      subject: `AI audit request: ${data.company} (${ref})`,
+      subject: `Workflow review request: ${data.company} (${ref})`,
       text: brief,
     }),
     signal: AbortSignal.timeout(TIMEOUT),

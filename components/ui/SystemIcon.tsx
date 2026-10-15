@@ -7,14 +7,14 @@ const PATHS: Record<string, string> = {
   erp: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 9h16 M4 14.5h16 M10 9v11",
   // CRM: a contact and their card
   crm: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M3.5 19.5c.4-3 2.6-5 5.5-5s5.1 2 5.5 5 M16 7h4.5 M16 11h4.5 M17.5 15h3",
-  // MES: the plant
-  mes: "M3 20h18 M4 20v-9l5 3v-3l5 3V6.5h4.5L19.5 20 M7.5 17h1.5 M12 17h1.5",
-  // WMS: racking with stock
-  wms: "M4 4v16 M20 4v16 M4 10h16 M4 16h16 M7 10V7.5h3.5V10 M12.5 16v-3h4.5v3",
+  // Quality records (the "mes" source id): the inspection shield
+  mes: "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z M9 12l2 2 4-4",
+  // Job work (the "wms" source id): the processor's plant
+  wms: "M3 20h18 M4 20v-9l5 3v-3l5 3V6.5h4.5L19.5 20 M7.5 17h1.5 M12 17h1.5",
   // Suppliers: the inbound truck
   sup: "M2.5 6.5h11v9.5h-11z M13.5 9.5h4l3.5 3.5v3h-7.5 M5.4 18.5a1.6 1.6 0 1 0 3.2 0 1.6 1.6 0 1 0-3.2 0 M15.4 18.5a1.6 1.6 0 1 0 3.2 0 1.6 1.6 0 1 0-3.2 0",
-  // External feeds: the globe
-  ext: "M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M4 12h16 M12 4c2.6 2.4 2.6 13.6 0 16 M12 4c-2.6 2.4-2.6 13.6 0 16",
+  // Files (the "ext" source id): the shared folder
+  ext: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M3 10h18",
   // TMS: a lane between two stops
   tms: "M6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 18h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7",
   // CMMS: the wrench
@@ -35,11 +35,11 @@ const PATHS: Record<string, string> = {
   sheet: "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 10h16 M4 15h16 M10 4v16",
 };
 
-/** Icon key for a source an application reads (lib/content.ts APPLICATIONS connects). */
+/** Icon key for a record a workflow uses (lib/application-demos.ts sources). */
 const SOURCE_ICON: [RegExp, string][] = [
-  [/ERP/, "erp"], [/CRM/, "crm"], [/MES/, "mes"], [/WMS/, "wms"], [/TMS/, "tms"], [/CMMS/, "cmms"],
-  [/SCADA|IoT/, "scada"], [/QMS|Policy/, "qms"], [/POS|Payments|OMS/, "pos"], [/DMS/, "dms"],
-  [/desk/i, "desk"], [/Supplier/, "sup"], [/feeds|Marketing/i, "ext"], [/Knowledge/, "dwh"],
+  [/checklist|enquiry|allocation/i, "crm"], [/certificate|test|quality/i, "mes"], [/challan|return|rejection/i, "wms"],
+  [/supplier|offer|datasheet/i, "sup"], [/debit|invoice|acknowledgement/i, "pos"], [/service|report/i, "desk"],
+  [/installed|equipment/i, "cmms"], [/quote/i, "sheet"], [/delivery line|PO|purchase|ERP/i, "erp"], [/folder|file|message/i, "ext"],
 ];
 export const sourceIcon = (name: string) => SOURCE_ICON.find(([re]) => re.test(name))?.[1] ?? "sheet";
 

@@ -2,10 +2,10 @@
 
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Line, Text } from "@react-three/drei";
+import { Text } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import { CH, clamp01, smoothstep, store, weight } from "@/lib/story";
-import { signalCratePose, CONTEXT_CRATE_S, CRATE, ISLAND_TOP, ISO, DAYS, DAY_X, RING, SAFETY_UNITS, SAFETY_Y, STEP_Y, dayUnits } from "@/lib/scene";
+import { signalCratePose, CONTEXT_CRATE_S, CRATE, ISLAND_TOP, ISO, DAYS, DAY_X, RING, SAFETY_Y, STEP_Y } from "@/lib/scene";
 import { COLORS, FONTS, TINTS } from "./palette";
 import { SYSTEMS } from "@/components/ui/systems";
 import { concrete } from "./materials";
@@ -31,6 +31,8 @@ const FACE_CAMERA: [number, number, number] = [0, ISO.az, 0];
 const Z = CRATE.d / 2 + 0.16;
 /** Demand comes from the CRM (open orders up 18%), so the line and its figure are in the CRM's violet. */
 const DEMAND = TINTS.violet;
+/** The heat on record for lines 6 to 12; line 12 is the worked example's. */
+const HEATS = ["H236", "H237", "H237", "H238", "H239", "H240", "H241"];
 
 /** A right-pointing arrow drawn as a shape (3D text keeps to Latin-1 glyphs, which the bundled font
  *  carries, so the text renderer never fetches a fallback font from a CDN). Length 1, centred on y. */
@@ -50,14 +52,12 @@ const arrow = () =>
     return new THREE.ShapeGeometry(s);
   })());
 
-/** Demand curve, safety stock and day scale for the problem chapter. */
+/** The shipment's delivery lines for the problem chapter: each column a line staged for dispatch, its
+ *  heat on top, line 12 (the last, in red) the one whose certificate does not match. */
 export function ChartMarks() {
   // Phones fit seven columns into 390px, so labels grow and shorten to stay readable.
   const phone = useThree((st) => phoneWide(st.size.width));
   const narrow = useThree((st) => mediaWidth(st.size.width) < 1024 || tallTouch(st.size.width, st.size.height));
-  // Upright screens frame the chart on its columns alone (lib/scene.ts shotAt): the demand label stands
-  // over the line's end, as on phones, instead of past it where the frame cut it off.
-  const upright = useThree((st) => portraitWide(st.size.width, st.size.height) || tallTouch(st.size.width, st.size.height));
   // The chart's labels scale with it; on short screens the chart is framed smaller, so they grow back.
   const short = useThree((st) => THREE.MathUtils.clamp(900 / st.size.height, 1, 1.35));
   const k = phone ? 1.9 : short;
@@ -101,38 +101,18 @@ export function ChartMarks() {
     });
   });
 
-  const day = (d: number) => (d === 0 ? "TODAY" : `DAY ${d}`);
+  const line = (d: number) => `LINE ${6 + d}`;
   // Sized so the smallest label is at least 11 CSS px where the chapter frames the chart. Each label
   // turns to the camera's azimuth, so it reads square on instead of skewed along the chart's plane.
   const text = { font: FONTS.mono, fontSize: 0.12 * k, letterSpacing: phone ? 0.02 : 0.06 };
 
   return (
     <group ref={group} visible={false}>
-      <mesh geometry={tube.geo} material={tubeMat} />
-      <mesh ref={head} position={tube.end} material={tubeMat} scale={0}>
-        <sphereGeometry args={[0.05, 24, 24]} />
-      </mesh>
-      <Line
-        ref={lineRef as never}
-        points={[
-          [-3.7, SAFETY_Y, Z],
-          [3.7, SAFETY_Y, Z],
-        ]}
-        color={COLORS.signal}
-        lineWidth={1.6}
-        dashed
-        dashSize={0.09}
-        gapSize={0.06}
-        transparent
-      />
-      {/* Narrow screens have no margin left of the chart, so the label joins a legend row under the axis. */}
-      <Text {...text} rotation={FACE_CAMERA} color={COLORS.signal} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "top" : "middle"} material-depthTest={false} renderOrder={5} position={narrow ? [DAY_X(0) - 0.3, -0.3 * k, Z + 0.15] : [-3.8, SAFETY_Y, Z]}>
-        {narrow ? `- - SAFETY ${SAFETY_UNITS}` : `SAFETY STOCK  ${SAFETY_UNITS}`}
+      {/* Narrow screens have no margin left of the chart, so the legend joins a row under the axis. */}
+      <Text {...text} rotation={FACE_CAMERA} color={COLORS.ink} anchorX={narrow ? "left" : "right"} anchorY={narrow ? "top" : "middle"} material-depthTest={false} renderOrder={5} position={narrow ? [DAY_X(0) - 0.3, -0.3 * k, Z + 0.15] : [-3.8, SAFETY_Y, Z]}>
+        {narrow ? `SHP-0612` : `SHIPMENT SHP-0612`}
       </Text>
-      <Text {...text} rotation={FACE_CAMERA} color={DEMAND} anchorX={upright ? "right" : "left"} anchorY={upright ? "bottom" : "middle"} position={upright ? [tube.end.x, tube.end.y + 0.12, tube.end.z] : [tube.end.x + 0.16, tube.end.y, tube.end.z]}>
-        {phone ? "+18%" : "DEMAND +18%"}
-      </Text>
-      {/* Units on hand, read off the top of every column */}
+      {/* Each line's heat on record, read off the top of every column */}
       {DAYS.map((n, d) => (
         <Text
           key={`u${d}`}
@@ -145,10 +125,10 @@ export function ChartMarks() {
           anchorY="bottom"
           position={[DAY_X(d), unitsY(d, n), 0]}
         >
-          {d === 0 && !phone ? `${dayUnits(d)} ON HAND` : String(dayUnits(d))}
+          {d === 0 && !phone ? `HEAT ${HEATS[d]}` : HEATS[d]}
         </Text>
       ))}
-      {/* The day scale, painted on the floor in front of the columns */}
+      {/* The line numbers, painted on the floor in front of the columns */}
       {DAYS.map((_, d) => (
         <Text
           key={d}
@@ -163,13 +143,13 @@ export function ChartMarks() {
           renderOrder={5}
           position={[DAY_X(d), -0.04, Z + 0.15]}
         >
-          {phone ? (d === 0 ? "NOW" : `D${d}`) : day(d)}
+          {phone ? `L${6 + d}` : line(d)}
         </Text>
       ))}
-      {/* The gap that rules out waiting: the next supplier delivery lands far beyond the breach. */}
+      {/* What does not match: the certificate supplied for line 12 carries another heat. */}
       <group position={[DAY_X(6) + 0.3 - 0.19 * k, -0.3 * k, Z + 0.15]} rotation={FACE_CAMERA}>
-        <Text {...text} fontSize={0.12 * k} color={COLORS.ink} anchorX="right" anchorY="top" material-depthTest={false} renderOrder={5}>
-          {phone ? "SUPPLY D21" : "NEXT SUPPLY · DAY 21"}
+        <Text {...text} fontSize={0.12 * k} color={COLORS.signal} anchorX="right" anchorY="top" material-depthTest={false} renderOrder={5}>
+          {phone ? "CERT H214" : "CERTIFICATE · H214"}
         </Text>
         {/* ...and on past the chart's edge: an arrow drawn as geometry, not a font glyph */}
         <mesh geometry={arrow()} material={arrowMat} renderOrder={5} position={[0.055 * k, -0.06 * k, 0]} scale={[0.135 * k, 0.135 * k, 1]} />

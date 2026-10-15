@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { GLANCE, STATEMENT } from "@/lib/copy";
+import { APPROACH, STATEMENT } from "@/lib/copy";
+import { EXAMPLE } from "@/lib/example";
+import SectionTitle from "../ui/SectionTitle";
+import { Compass } from "lucide-react";
 import { AREAS, appsOf } from "@/lib/areas";
 import { toneVars } from "@/lib/tone";
-import { CountUp } from "../ui/CountUp";
 import { LogoMark } from "../ui/Logo";
 import { LiquidShapes } from "../ui/LiquidShapes";
 import decide from "@/assets/photos/decide.jpg";
@@ -17,12 +19,12 @@ gsap.registerPlugin(ScrollTrigger);
 
 const FLOW = [
   { id: "erp", name: "ERP", tone: "cobalt", y: 30 },
-  { id: "crm", name: "CRM", tone: "violet", y: 100 },
-  { id: "mes", name: "MES", tone: "emerald", y: 170 },
-  { id: "wms", name: "WMS", tone: "saffron", y: 240 },
+  { id: "crm", name: "Customer", tone: "violet", y: 100 },
+  { id: "mes", name: "Quality", tone: "emerald", y: 170 },
+  { id: "sup", name: "Suppliers", tone: "tangerine", y: 240 },
 ];
 
-/** The sentence, drawn: four systems feed Decignal, and one decision goes to the person who approves.
+/** The sentence, drawn: records from four sources come together, and one review goes to the person who decides.
  *  The threads draw in turn as the section arrives (data-on), then a pulse keeps travelling them: a
  *  round-capped dash of no length (a dot) run along the thread by a CSS animation, which holds still
  *  off screen. SMIL motion re-laid out the drawing on every frame of the page and could not be paused. */
@@ -76,17 +78,17 @@ function FlowArt() {
         <circle cx="400" cy="135" r="14" />
         <path d="M393 135 l5 5 9-10" />
         <text x="424" y="132">
-          Approve
+          For review
         </text>
         <text className="flow-sub" x="424" y="148">
-          Planner · 09:42
+          Quality · 2 questions
         </text>
       </g>
     </svg>
   );
 }
 
-/** Read-only: four system plates under a lens; nothing is written back (the write arrow is crossed). */
+/** Look at a real example: four record plates read under one bar; nothing is written back. */
 function ReadArt() {
   return (
     <svg className="bento-art" viewBox="0 0 220 90" aria-hidden>
@@ -114,67 +116,63 @@ function ReadArt() {
   );
 }
 
-/** 4 to 8 weeks: eight week marks; the release lands between week four and week eight. */
-function WeeksArt() {
+/** Define the scope: inputs on the left, the one output in the middle, the reviewer on the right. */
+function ScopeArt() {
+  const ins = ["Checklist", "Lines", "Certs"];
   return (
     <svg className="bento-art" viewBox="0 0 220 90" aria-hidden>
-      <path className="ba-axis" d="M10 60 H 210" />
-      {Array.from({ length: 8 }, (_, w) => (
-        <g key={w}>
-          <rect
-            className={`ba-week${w >= 3 ? " on" : ""}`}
-            x={12 + w * 25}
-            y="40"
-            width="21"
-            height="20"
-            rx="5"
-            style={{ ["--i" as string]: w } as CSSProperties}
-          />
-          <text className="ba-k" x={22 + w * 25} y="78">
-            {w + 1}
+      {ins.map((k, i) => (
+        <g key={k} style={{ ["--i" as string]: i } as CSSProperties}>
+          <rect className={`ba-week on`} x="4" y={8 + i * 26} width="58" height="20" rx="6" style={{ ["--i" as string]: i } as CSSProperties} />
+          <text className="ba-k" x="33" y={22 + i * 26}>
+            {k}
           </text>
+          <path className="ba-read" pathLength={1} d={`M62 ${18 + i * 26} C 84 ${18 + i * 26}, 84 44, 104 44`} style={{ ["--i" as string]: i } as CSSProperties} />
         </g>
       ))}
-      <path className="ba-span" d="M87 30 H 208" />
-      <circle className="ba-dot" cx="87" cy="30" r="4" />
-      <circle className="ba-dot" cx="208" cy="30" r="4" />
+      <rect className="ba-bar" x="104" y="30" width="58" height="28" rx="9" />
+      <text className="ba-k" x="133" y="48">
+        Pack
+      </text>
+      <path className="ba-span" d="M162 44 H 184" />
+      <circle className="ba-dot" cx="200" cy="44" r="12" />
     </svg>
   );
 }
 
-/** One named approver: the transfer waiting on one person; the approve press lands on a loop. */
+/** Test against the current process: the flagged line waiting on one reviewer; the press lands on a loop. */
 function ApproveArt() {
   return (
     <svg className="bento-art ba-approve" viewBox="0 0 260 96" aria-hidden>
       <rect className="ba-card" x="1" y="1" width="258" height="94" rx="14" />
       <text className="ba-t" x="16" y="28">
-        Transfer 240 units
+        Line {EXAMPLE.line.n} · {EXAMPLE.line.heat} against {EXAMPLE.cert.heat}
       </text>
       <text className="ba-s" x="16" y="46">
-        Plant 02 to Plant 01 · INR 38k
+        Source records attached · for review
       </text>
       <circle className="ba-face" cx="28" cy="72" r="10" />
       <text className="ba-s" x="46" y="76">
-        Planner
+        Quality reviewer
       </text>
       <g className="ba-btn">
         <rect x="150" y="58" width="94" height="28" rx="14" />
         <text x="197" y="77">
-          Approve
+          Request
         </text>
       </g>
       <g className="ba-done">
         <rect x="150" y="58" width="94" height="28" rx="14" />
-        <path d="M172 72 l5 5 9-10" />
+        <path d="M168 72 l5 5 9-10" />
         <text x="208" y="77">
-          Done
+          Asked
         </text>
       </g>
     </svg>
   );
 }
 
-/** Five areas: how the eight applications spread across them, a bar per area in its colour. */
+/** Five functions: how the six proposed workflows spread across them, a bar per function in its colour. */
 function AreasArt() {
   const counts = AREAS.map((a) => appsOf(a).length);
   return (
@@ -193,13 +191,13 @@ function AreasArt() {
   );
 }
 
-/** Roles and thresholds: a transfer up to 300 units goes to the planner, above it to the plant head. */
+/** Rules and people: an exact match is marked supported, anything else goes to the reviewer. */
 function ThresholdArt() {
   return (
     <svg className="bento-art ba-ladder" viewBox="0 0 300 92" aria-hidden>
       {[
-        { y: 4, k: "Up to 300 units", who: "Planner", on: true },
-        { y: 50, k: "Over 300 units", who: "Plant head", on: false },
+        { y: 4, k: "Exact match", who: "Supported", on: true },
+        { y: 50, k: "Missing or conflicting", who: "Reviewer", on: false },
       ].map((r, i) => (
         <g key={r.k} className="ba-rung" data-on={r.on || undefined} style={{ ["--i" as string]: i } as CSSProperties}>
           <rect x="1" y={r.y} width="298" height="38" rx="12" />
@@ -213,34 +211,31 @@ function ThresholdArt() {
   );
 }
 
-/** Eight applications: eight tiles that light one after another. */
+/** Agree responsibility: the four things someone owns after launch, lit one after another. */
+const OWNS = ["Formats", "Rules", "Support", "Review"];
 function AppsArt() {
   return (
     <svg className="bento-art" viewBox="0 0 220 90" aria-hidden>
-      {Array.from({ length: 8 }, (_, k) => (
-        <rect
-          key={k}
-          className="ba-app"
-          x={8 + (k % 4) * 52}
-          y={8 + Math.floor(k / 4) * 40}
-          width="44"
-          height="32"
-          rx="9"
-          style={{ ["--i" as string]: k } as CSSProperties}
-        />
+      {OWNS.map((k, i) => (
+        <g key={k}>
+          <rect className="ba-app" x={4 + i * 54} y="22" width="48" height="36" rx="9" style={{ ["--i" as string]: i } as CSSProperties} />
+          <text className="ba-k" x={28 + i * 54} y="76">
+            {k}
+          </text>
+        </g>
       ))}
     </svg>
   );
 }
 
 /**
- * What Decignal does, in one sentence and five facts (Orvan's "About"). The sentence comes up word by
- * word as it scrolls through the screen, tied to the scroll; the facts sit in a bento of glass cards
- * (two wear the references' slate and amber fields), each a label and a figure that counts up, with the
- * approver's photograph as a duotone beside them.
+ * The problem, then our approach (handoff home.problem and home.approach). The problem's sentences come
+ * up word by word as they scroll through the screen; the approach sits in a bento of glass cards (two
+ * wear the references' slate and amber fields), one per step, with the reviewer's photograph as a
+ * duotone among them and the five functions last.
  */
 export function Statement() {
-  const root = useRef<HTMLElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const [seen, setSeen] = useState(false);
 
   useEffect(() => {
@@ -282,111 +277,108 @@ export function Statement() {
     };
   }, []);
 
-  const [readOnly, weeks, apps, areas, approver] = GLANCE;
+  const [look, define, test, agree] = APPROACH.items;
   const words = STATEMENT.text.split(" ");
 
   return (
-    <section
-      ref={root}
-      id="platform"
-      className="stmt"
-      data-on={seen || undefined}
-      aria-labelledby="stmt-title"
-    >
-      <div className="page-wrap">
-        {/* The label is the section's heading; the sentence under it is a statement, not a headline. */}
-        <h2 id="stmt-title" className="t-label section-title-label stmt-label">
-          <span className="section-title-icon" aria-hidden>
-            <LogoMark className="stmt-mark" />
-          </span>
-          {STATEMENT.eyebrow}
-        </h2>
-        <div className="stmt-head">
-          <p className="stmt-text">
-            {words.map((w, i) => (
-              <span key={i} className="stmt-word">
-                {w}
-                {i < words.length - 1 ? " " : ""}
-              </span>
-            ))}
-          </p>
-          <FlowArt />
+    <div ref={root} className="stmt-pair" data-on={seen || undefined}>
+      <section id="problem" className="stmt" data-on={seen || undefined} aria-labelledby="stmt-title">
+        <div className="page-wrap">
+          {/* The label is the section's heading; the sentences under it are a statement, not a headline. */}
+          <h2 id="stmt-title" className="t-label section-title-label stmt-label">
+            <span className="section-title-icon" aria-hidden>
+              <LogoMark className="stmt-mark" />
+            </span>
+            {STATEMENT.eyebrow}
+          </h2>
+          <div className="stmt-head">
+            <div>
+              <p className="t-subtitle stmt-lead">{STATEMENT.headline}</p>
+              <p className="stmt-text">
+                {words.map((w, i) => (
+                  <span key={i} className="stmt-word">
+                    {w}
+                    {i < words.length - 1 ? " " : ""}
+                  </span>
+                ))}
+              </p>
+              <p className="t-body stmt-closing">{STATEMENT.closing}</p>
+            </div>
+            <FlowArt />
+          </div>
         </div>
+      </section>
 
-        <div className="bento-wrap">
-          <LiquidShapes preset="bento" />
-          <ul className="bento">
-            {[readOnly, weeks].map((g, i) => (
-              <li key={g.label} className="bento-card" data-field={i === 0 ? "slate" : undefined} style={toneVars(g.tone)}>
-                <p className="bento-k t-label">
-                  {g.label}
-                </p>
-                <p className="bento-text t-small">{g.text}</p>
-                {i === 0 ? <ReadArt /> : <WeeksArt />}
-                <p className="bento-n">{g.n}</p>
+      <section id="platform" className="stmt stmt-approach" data-on={seen || undefined} aria-labelledby="approach-title">
+        <div className="page-wrap">
+          <SectionTitle
+            icon={<Compass size={13} strokeWidth={2.2} />}
+            id="approach-title"
+            label={APPROACH.eyebrow}
+            lines={[APPROACH.headline[0], APPROACH.headline[1]]}
+            lede={APPROACH.intro}
+            tone="ink"
+            reveal="lines"
+            className="ed-title"
+          />
+          <div className="bento-wrap">
+            <LiquidShapes preset="bento" />
+            <ul className="bento">
+              {[look, define].map((g, i) => (
+                <li key={g.k} className="bento-card" data-field={i === 0 ? "slate" : undefined} style={toneVars(g.tone)}>
+                  <p className="bento-k t-label">{g.title}</p>
+                  <p className="bento-text t-small">{g.text}</p>
+                  {i === 0 ? <ReadArt /> : <ScopeArt />}
+                  <p className="bento-n">{g.k}</p>
+                </li>
+              ))}
+              <li className="bento-card bento-photo" style={toneVars(test.tone)}>
+                <figure className="bento-figure" data-tone={test.tone}>
+                  <Image
+                    src={decide}
+                    alt={STATEMENT.reviewerAlt}
+                    sizes="(min-width: 1024px) 360px, 90vw"
+                    className="bento-img"
+                  />
+                </figure>
+                <p className="bento-k t-label">{test.title}</p>
+                <p className="bento-text t-small">{test.text}</p>
+                <ApproveArt />
+                <ThresholdArt />
+                {/* The trail a review leaves: what was assembled, what was flagged, who has it now. */}
+                <ol className="bento-log">
+                  {STATEMENT.log.map((l, i) => (
+                    <li key={l.t} style={{ ...toneVars(l.tone), ["--i" as string]: i } as CSSProperties}>
+                      <span className="tabular">{l.t}</span>
+                      {l.text}
+                    </li>
+                  ))}
+                </ol>
+                <p className="bento-n">{test.k}</p>
               </li>
-            ))}
-            <li
-              className="bento-card bento-photo"
-              style={toneVars(approver.tone)}
-            >
-              <figure className="bento-figure" data-tone={approver.tone}>
-                <Image
-                  src={decide}
-                  alt={STATEMENT.approverAlt}
-                  sizes="(min-width: 1024px) 360px, 90vw"
-                  className="bento-img"
-                />
-              </figure>
-              <p className="bento-k t-label">
-                {approver.label}
-              </p>
-              <p className="bento-text t-small">{approver.text}</p>
-              <ApproveArt />
-              <ThresholdArt />
-              {/* The trail an approval leaves: who saw it, who approved it, what happened next. */}
-              <ol className="bento-log">
-                {STATEMENT.log.map((l, i) => (
-                  <li key={l.t} style={{ ...toneVars(l.tone), ["--i" as string]: i } as CSSProperties}>
-                    <span className="tabular">{l.t}</span>
-                    {l.text}
-                  </li>
-                ))}
-              </ol>
-              <p className="bento-n">
-                <CountUp value={approver.n} play={seen} />
-              </p>
-            </li>
-            <li className="bento-card" data-field="amber" style={toneVars(apps.tone)}>
-              <p className="bento-k t-label">
-                {apps.label}
-              </p>
-              <p className="bento-text t-small">{apps.text}</p>
-              <AppsArt />
-              <p className="bento-n">
-                <CountUp value={apps.n} play={seen} />
-              </p>
-            </li>
-            <li className="bento-card" style={toneVars(areas.tone)}>
-              <p className="bento-k t-label">
-                {areas.label}
-              </p>
-              <ul className="bento-areas" aria-label={areas.label}>
-                {AREAS.map((a) => (
-                  <li key={a.slug} style={toneVars(a.tone)}>
-                    <i aria-hidden />
-                    {a.name}
-                  </li>
-                ))}
-              </ul>
-              <AreasArt />
-              <p className="bento-n">
-                <CountUp value={areas.n} play={seen} />
-              </p>
-            </li>
-          </ul>
+              <li className="bento-card" data-field="amber" style={toneVars(agree.tone)}>
+                <p className="bento-k t-label">{agree.title}</p>
+                <p className="bento-text t-small">{agree.text}</p>
+                <AppsArt />
+                <p className="bento-n">{agree.k}</p>
+              </li>
+              <li className="bento-card" style={toneVars("violet")}>
+                <p className="bento-k t-label">{APPROACH.functions}</p>
+                <ul className="bento-areas" aria-label={APPROACH.functions}>
+                  {AREAS.map((a) => (
+                    <li key={a.slug} style={toneVars(a.tone)}>
+                      <i aria-hidden />
+                      {a.name}
+                    </li>
+                  ))}
+                </ul>
+                <p className="bento-text t-small">{APPROACH.functionsText}</p>
+                <AreasArt />
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

@@ -1,22 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
+  Building2,
   ChartNoAxesCombined,
   Database,
-  Eye,
+  FileCheck2,
+  FolderOpen,
   LayoutGrid,
   MessageCircleQuestion,
-  Plug,
   ShieldCheck,
+  Users,
   Workflow,
 } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { APPLICATIONS, FAQ, FAQ_TOPICS, OUTCOMES } from "@/lib/content";
-import { APPLICATION_DEMOS } from "@/lib/application-demos";
+import { APPLICATIONS, AUDIENCE, FAQ, FAQ_TOPICS, FEATURED, LEGACY_ANCHORS } from "@/lib/content";
 import {
+  ABOUT,
   APPLICATIONS_COPY,
+  AUDIENCE_COPY,
+  CTA,
   FAQ_COPY,
   HOW,
   OUTCOMES_COPY,
@@ -28,11 +32,11 @@ import { toneVars } from "@/lib/tone";
 import SectionTitle from "../ui/SectionTitle";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
-import { CountUp } from "../ui/CountUp";
-import { ReadWheel } from "./ReadWheel";
 import { SystemsRing } from "./SystemsRing";
 import { Statement } from "./Statement";
 import { OUTCOME_TONE, OutcomeGraphic } from "./OutcomeGraphic";
+import { AreaPhoto } from "./AreaPhoto";
+import { AREAS } from "@/lib/areas";
 import { AreaRows } from "./AreaRows";
 import { LiquidShapes } from "../ui/LiquidShapes";
 import { TrailDial } from "./TrailDial";
@@ -133,12 +137,14 @@ export function Editorial() {
   const ref = useReveal();
   return (
     <div ref={ref} className="editorial relative bg-bg">
-      <Systems />
+      <Audience />
       <Statement />
       <Applications />
       <TrailDial />
-      <Outcomes />
+      <Systems />
       <HowItWorks />
+      <Measure />
+      <About />
       <Faq />
       <Audit />
     </div>
@@ -166,7 +172,7 @@ function Systems() {
         {/* The three promises, each with its sign. */}
         <ul data-reveal className="orbit-promises">
           {SYSTEMS_STRIP.promises.map((p, i) => {
-            const Icon = [Eye, Plug, ShieldCheck][i];
+            const Icon = [FolderOpen, FileCheck2, ShieldCheck][i];
             return (
               <li key={p}>
                 <Icon size={15} strokeWidth={2.1} aria-hidden />
@@ -179,8 +185,23 @@ function Systems() {
           {SYSTEMS_STRIP.footnote}
         </p>
       </SystemsRing>
-      {/* The other kinds of system, on a dial the scroll turns. */}
-      <ReadWheel />
+      {/* The three groups of records the proposed workflows use (handoff home.systems). */}
+      <div className="page-wrap">
+        <ul className="record-groups">
+          {SYSTEMS_STRIP.groups.map((g) => (
+            <li key={g.name} data-reveal className="record-group" style={toneVars(g.tone)}>
+              <p className="record-group-k t-label">
+                <i aria-hidden />
+                {g.name}
+              </p>
+              <p className="t-body record-group-text">{g.text}</p>
+            </li>
+          ))}
+        </ul>
+        <p data-reveal className="t-small record-groups-note">
+          {SYSTEMS_STRIP.note}
+        </p>
+      </div>
     </section>
   );
 }
@@ -194,7 +215,7 @@ function Applications() {
       className="apps"
       aria-labelledby="applications-title"
     >
-      {/* The night band (Orvan's services): the head, then the five areas as numbered rows. */}
+      {/* The night band: the head, then the five functions as numbered rows. */}
       <div className="night-panel">
         <div className="page-wrap apps-head">
           <Head
@@ -207,100 +228,145 @@ function Applications() {
             <p data-reveal className="t-lede">
               {APPLICATIONS_COPY.intro}
             </p>
+            <p data-reveal className="t-small apps-note">
+              {APPLICATIONS_COPY.note}{" "}
+              <SectionLink href="/solutions" className="ed-link">
+                {APPLICATIONS_COPY.all}
+                <Arrow />
+              </SectionLink>
+            </p>
           </div>
         </div>
         <div className="page-wrap">
           <AreaRows />
         </div>
       </div>
-      {/* The explorer shows one application at a time; this list gives readers and crawlers all eight
-          (the area panels link to each entry). */}
+      {/* The explorer shows one workflow at a time; this list gives readers and crawlers all six (the
+          function rows link to each entry). Old #application-{kind} links land on the workflow that
+          replaced them (handoff legacy anchor mapping). */}
       <ol className="sr-only" aria-label={APPLICATIONS_COPY.listAria}>
-        {APPLICATIONS.map((a, i) => {
-          const d = APPLICATION_DEMOS[i];
-          return (
-            <li key={a.name} id={`application-${d.kind}`} tabIndex={-1}>
-              {a.name}, {a.category}. {d.headline.replace("\n", " ")}{" "}
-              {d.steps.join(" ")}
-            </li>
-          );
-        })}
+        {APPLICATIONS.map((a) => (
+          <li key={a.id} id={`application-${a.id}`} tabIndex={-1}>
+            {Object.entries(LEGACY_ANCHORS)
+              .filter(([, to]) => to === a.id)
+              .map(([from]) => (
+                <span key={from} id={`application-${from}`} />
+              ))}
+            {a.name}, {a.status.toLowerCase()} in {a.category.toLowerCase()}. {a.text} {APPLICATIONS_COPY.labels.fit}: {a.fit}
+          </li>
+        ))}
       </ol>
-      <ApplicationExplorer />
+      <ApplicationExplorer apps={[...FEATURED]} />
     </section>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
-function Outcomes() {
+/** The three customer segments as cards that stack as the page scrolls, each over the last. */
+function Audience() {
   const root = useRef<HTMLElement>(null);
-  const [seen, setSeen] = useState<boolean[]>(() => OUTCOMES.map(() => false));
-  // The nav's Outcomes glance brings its case to the front of the stack.
+  // The nav's audience glance brings its card to the front of the stack.
   useEffect(
     () =>
       onOutcome((i) => {
-        const card = root.current?.querySelectorAll<HTMLElement>(
-          ".outcome-stack-card",
-        )[i];
-        if (card)
-          void jumpTo(
-            card.offsetTop + (root.current?.offsetTop ?? 0) - 96 - i * 18,
-          );
+        const card = root.current?.querySelectorAll<HTMLElement>(".outcome-stack-card")[i];
+        if (card) void jumpTo(card.offsetTop + (root.current?.offsetTop ?? 0) - 96 - i * 18);
       }),
     [],
   );
   useEffect(() => {
-    const cards = Array.from(
-      root.current?.querySelectorAll<HTMLElement>(".outcome-stack-card") ?? [],
-    );
-    // Each number counts up once its card's top clears the lower quarter of the view.
-    const io = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((e) => {
-          if (!e.isIntersecting) return;
-          const i = cards.indexOf(e.target as HTMLElement);
-          setSeen((s) => (s[i] ? s : s.map((v, k) => v || k === i)));
-          io.unobserve(e.target);
-        }),
-      { threshold: 0, rootMargin: "0px 0px -25% 0px" },
-    );
-    cards.forEach((c) => io.observe(c));
-    if (!root.current || reduced()) return () => io.disconnect();
-    // The graphics draw themselves (decor-art.css .outcome-diagram, on data-on); only the stacking is
-    // tied to the scroll.
+    if (!root.current || reduced()) return;
+    const cards = Array.from(root.current.querySelectorAll<HTMLElement>(".outcome-stack-card"));
+    // A card steps back as the next one slides over it.
     const ctx = gsap.context(() => {
       cards.forEach((card, i) => {
-        // A card steps back as the next one slides over it (the stacked cards of the Koushik reference).
         const next = cards[i + 1];
         if (next) {
           gsap.to(card.querySelector(".outcome-figure"), {
             scale: 0.94,
             ease: "none",
-            scrollTrigger: {
-              trigger: next,
-              start: "top bottom",
-              end: "top 30%",
-              scrub: true,
-            },
+            scrollTrigger: { trigger: next, start: "top bottom", end: "top 30%", scrub: true },
           });
         }
       });
     }, root);
-    return () => {
-      io.disconnect();
-      ctx.revert();
-    };
+    return () => ctx.revert();
   }, []);
-  // The head, then the three cases as cards that stack as the page scrolls, each over the last.
   return (
     <section
       ref={root}
-      id="outcomes"
+      id="who-we-help"
       className="results band"
       data-band="mist"
-      aria-labelledby="outcomes-title"
+      aria-labelledby="who-we-help-title"
     >
+      <div className="page-wrap">
+        <div className="results-head">
+          <Head
+            icon={<Users size={13} strokeWidth={2.2} />}
+            id="who-we-help-title"
+            label={AUDIENCE_COPY.eyebrow}
+            headline={AUDIENCE_COPY.headline}
+          />
+          <div className="results-head-side">
+            <p data-reveal className="t-lede">
+              {AUDIENCE_COPY.intro}
+            </p>
+          </div>
+        </div>
+        <div className="outcome-wrap">
+          <LiquidShapes preset="outcomes" />
+          <ol className="outcome-stack" aria-label={AUDIENCE_COPY.listAria}>
+            {AUDIENCE.map((seg, i) => (
+              <li
+                key={seg.name}
+                className="outcome-stack-card"
+                style={{ ...toneVars(OUTCOME_TONE[i]), ["--i" as string]: i }}
+              >
+                <figure className="outcome-figure" aria-labelledby={`seg-${i}`}>
+                  <p className="outcome-top t-label">
+                    <span>{seg.industries}</span>
+                  </p>
+                  <div className="outcome-visual">
+                    <OutcomeGraphic index={i} />
+                  </div>
+                  <div className="outcome-copy">
+                    <h3 id={`seg-${i}`} className="outcome-number t-title-card">
+                      {seg.name}
+                    </h3>
+                    <p className="outcome-label t-subtitle">{seg.text}</p>
+                    <p className="outcome-description t-body">{seg.example}</p>
+                    <figcaption className="t-label segment-flows">
+                      <span>{AUDIENCE_COPY.workflows}</span>
+                      <ul>
+                        {seg.workflows.map((id) => {
+                          const w = APPLICATIONS.find((x) => x.id === id)!;
+                          return <li key={id}>{w.name}</li>;
+                        })}
+                      </ul>
+                      <SectionLink href={seg.href} className="ed-link">
+                        {AUDIENCE_COPY.link}
+                        <Arrow />
+                      </SectionLink>
+                    </figcaption>
+                  </div>
+                </figure>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/** What to measure (handoff home.delivery.measurement), kept at #outcomes for old links. */
+function Measure() {
+  return (
+    <section id="outcomes" className="results measure" aria-labelledby="outcomes-title">
       <div className="page-wrap">
         <div className="results-head">
           <Head
@@ -318,34 +384,67 @@ function Outcomes() {
             </p>
           </div>
         </div>
-        <div className="outcome-wrap">
-          <LiquidShapes preset="outcomes" />
-          <ol className="outcome-stack" aria-label={OUTCOMES_COPY.tabsAria}>
-            {OUTCOMES.map((o, i) => (
-              <li
-                key={o.sector}
-                className="outcome-stack-card"
-                style={{ ...toneVars(OUTCOME_TONE[i]), ["--i" as string]: i }}
-              >
-                <figure className="outcome-figure" aria-label={o.sector}>
-                  <p className="outcome-top t-label">
-                    <span>{o.sector}</span>
-                  </p>
-                  <div className="outcome-visual">
-                    <OutcomeGraphic index={i} />
-                  </div>
-                  <div className="outcome-copy">
-                    <p className="outcome-number t-num-lg">
-                      <CountUp value={o.value} play={seen[i]} duration={1100} />
-                    </p>
-                    <p className="outcome-label t-subtitle">{o.label}</p>
-                    <p className="outcome-description t-body">{o.quote}</p>
-                    <figcaption className="t-label">{o.context}</figcaption>
-                  </div>
-                </figure>
-              </li>
-            ))}
-          </ol>
+        <ul className="record-groups measure-list">
+          {OUTCOMES_COPY.measures.map((m) => (
+            <li key={m.k} data-reveal className="record-group" style={toneVars(m.tone)}>
+              <p className="record-group-k t-label">
+                <i aria-hidden />
+                {m.k}
+              </p>
+              <p className="t-body record-group-text">{m.text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/** About (handoff home.about). The founder card carries placeholder details until they are supplied. */
+function About() {
+  const f = ABOUT.founder;
+  const area = AREAS[1];
+  return (
+    <section id="about" className="results about band" data-band="mist" aria-labelledby="about-title">
+      <div className="page-wrap">
+        <div className="results-head">
+          <Head
+            icon={<Building2 size={13} strokeWidth={2.2} />}
+            id="about-title"
+            label={ABOUT.eyebrow}
+            headline={ABOUT.headline}
+          />
+          <div className="results-head-side">
+            <p data-reveal className="t-lede">
+              {ABOUT.body}
+            </p>
+          </div>
+        </div>
+        <div className="about-grid">
+          <div data-reveal className="about-photo">
+            <AreaPhoto area={area} sizes="(min-width: 1024px) 560px, 92vw" />
+          </div>
+          <div className="about-side">
+            <p data-reveal className="t-body about-second">
+              {ABOUT.second}
+            </p>
+            <div data-reveal className="about-founder bento-card" style={toneVars("cobalt")}>
+              <p className="bento-k t-label">{ABOUT.founderLabel}</p>
+              <p className="t-subtitle about-founder-name">{f.name}</p>
+              <p className="t-small about-founder-role">{f.role}</p>
+              <p className="t-body about-founder-text">{f.experience}</p>
+              <a className="ed-link about-founder-link" href={f.linkedin} rel="noopener">
+                {ABOUT.linkedin}
+                <Arrow />
+              </a>
+            </div>
+            <SectionLink href={CTA.href} className="btn btn-primary about-cta">
+              {ABOUT.cta}
+              <Arrow />
+            </SectionLink>
+          </div>
         </div>
       </div>
     </section>

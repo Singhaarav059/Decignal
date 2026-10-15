@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { ArrowRight, UserCheck, CalendarClock, Database, Layers, Lock, type LucideIcon } from "lucide-react";
-import { APPLICATIONS, CATEGORIES, FAQ, FAQ_PEEK, OUTCOMES, PATHS } from "@/lib/content";
+import { ArrowRight, CircleAlert, IndianRupee, Layers, Plug, Users, type LucideIcon } from "lucide-react";
+import { APPLICATIONS, AUDIENCE, CATEGORIES, FAQ, FAQ_PEEK, PATHS } from "@/lib/content";
 import { areaHref, areaOf } from "@/lib/areas";
-import { CTA, GLANCE, NAV, STORY_PEEK } from "@/lib/copy";
+import { APPROACH, AUDIENCE_COPY, CTA, HOW, NAV, STORY_PEEK } from "@/lib/copy";
 import { CHAPTERS, subscribe } from "@/lib/story";
 import { showOutcome, showQuestion, showStep } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
@@ -25,17 +25,17 @@ const LABEL: Record<string, string> = Object.fromEntries(NAV.sections);
 /** What each section is, in one line: the glance's foot and the phone menu both use it. */
 const PEEKS: Record<SectionPeek, { blurb: string; id: string; label: string }> = {
   platform: { blurb: NAV.blurbs.platform, id: "platform", label: LABEL.platform },
-  apps: { blurb: NAV.blurbs.apps, id: "applications", label: LABEL.applications },
-  outcomes: { blurb: NAV.blurbs.outcomes, id: "outcomes", label: LABEL.outcomes },
+  apps: { blurb: NAV.blurbs.apps, id: "/solutions", label: LABEL["/solutions"] },
+  outcomes: { blurb: NAV.blurbs.audience, id: "who-we-help", label: LABEL["who-we-help"] },
   how: { blurb: NAV.blurbs.how, id: "how", label: LABEL.how },
-  faq: { blurb: NAV.blurbs.faq, id: "faq", label: LABEL.faq },
+  faq: { blurb: NAV.blurbs.faq, id: "faq", label: "Questions" },
 };
 
-const HOME_ORDER: PeekId[] = ["story", "platform", "apps", "outcomes", "how", "faq"];
-const PAGE_ORDER: PeekId[] = ["platform", "apps", "outcomes", "how", "faq"];
+const HOME_ORDER: PeekId[] = ["story", "apps", "outcomes", "platform", "how", "faq"];
+const PAGE_ORDER: PeekId[] = ["apps", "outcomes", "platform", "how", "faq"];
 const STEP_TONES = ["cobalt", "violet", "tangerine", "emerald"];
-/** Icons for FAQ_PEEK, in its order: integration, data, security, control, delivery. Neutral (D6). */
-const FAQ_ICONS: LucideIcon[] = [Layers, Database, Lock, UserCheck, CalendarClock];
+/** Icons for FAQ_PEEK, in its order: existing software, audience, integration, exceptions, cost. Neutral. */
+const FAQ_ICONS: LucideIcon[] = [Layers, Users, Plug, CircleAlert, IndianRupee];
 
 /** The section glances under the nav. One panel morphs between them: its height follows the open
  *  glance, the content slides in from the side the pointer came from, and a caret tracks the link. */
@@ -190,20 +190,18 @@ function Foot({ id, ctx, figure, label }: { id: SectionPeek; ctx: Ctx; figure: s
   );
 }
 
-/** The platform in five facts, each a numbered row in its own colour, and what Decignal does
- *  beside them: the same shape as the FAQ glance. */
+/** The approach in four steps, each a row in its own colour, and the approach in one line beside
+ *  them: the same shape as the FAQ glance. */
 function PlatformPeek({ ctx }: { ctx: Ctx }) {
   const href = ctx.hrefFor(PEEKS.platform.id);
   return (
     <div className="peek-grid">
       <ul className="peek-list" aria-label={NAV.platformSide.label}>
-        {GLANCE.map((g, k) => (
-          <li key={g.label} style={{ ...toneVars(g.tone), ["--k" as string]: k }}>
+        {APPROACH.items.map((g, k) => (
+          <li key={g.k} style={{ ...toneVars(g.tone), ["--k" as string]: k }}>
             <SectionLink href={href} className="peek-row peek-fact" onDone={ctx.onDone}>
               <span className="peek-row-text">
-                <b>
-                  {g.n} {g.label}
-                </b>
+                <b>{g.title}</b>
                 <small>{g.text}</small>
               </span>
               <ArrowRight className="peek-arrow" size={14} strokeWidth={2.2} aria-hidden />
@@ -223,11 +221,11 @@ function PlatformPeek({ ctx }: { ctx: Ctx }) {
   );
 }
 
-/** Each business area as its own tile with its line art, linking to its service page. */
+/** Each business function as its own tile with its line art, linking to its solution page. */
 function AppsPeek({ ctx }: { ctx: Ctx }) {
   return (
     <div className="peek-visual">
-      <ul className="peek-areas" aria-label="Business areas">
+      <ul className="peek-areas" aria-label="Business functions">
         {CATEGORIES.map((c, i) => {
           const apps = APPLICATIONS.filter((a) => a.category === c);
           return (
@@ -238,7 +236,7 @@ function AppsPeek({ ctx }: { ctx: Ctx }) {
                   <b>{c}</b>
                   <span className="peek-tile-chip tabular">{NAV.appsCount(apps.length)}</span>
                 </span>
-                <small className="peek-tile-hint">{apps[0].example}</small>
+                <small className="peek-tile-hint">{areaOf(c).signal}</small>
               </Link>
             </li>
           );
@@ -249,35 +247,32 @@ function AppsPeek({ ctx }: { ctx: Ctx }) {
   );
 }
 
-/** Each example outcome as the diagram that proves it, with its number on top. */
+/** The three customer segments, each with the drawing of its example. */
 function OutcomesPeek({ ctx }: { ctx: Ctx }) {
   return (
     <div className="peek-visual">
       <p className="peek-eyebrow t-label" style={{ ["--k" as string]: 0 }}>
-        {NAV.outcomesEyebrow}
+        {AUDIENCE_COPY.eyebrow}
       </p>
       <ul className="peek-outcomes">
-        {OUTCOMES.map((o, i) => (
-          <li key={o.sector} style={{ ...toneVars(OUTCOME_TONE[i]), ["--k" as string]: i }}>
-            <Tile ctx={ctx} className="peek-tile peek-outcome" onOpen={() => showOutcome(i)} section="outcomes">
-              <span className="peek-outcome-sector">{o.sector}</span>
-              <span className="peek-outcome-value tabular">{o.value}</span>
+        {AUDIENCE.map((o, i) => (
+          <li key={o.name} style={{ ...toneVars(OUTCOME_TONE[i]), ["--k" as string]: i }}>
+            <Tile ctx={ctx} className="peek-tile peek-outcome" onOpen={() => showOutcome(i)} section="who-we-help">
+              <span className="peek-outcome-sector">{o.name}</span>
               <OutcomeGraphic index={i} />
-              <span className="peek-outcome-label">{o.label}</span>
+              <span className="peek-outcome-label">{o.text}</span>
             </Tile>
           </li>
         ))}
       </ul>
-      <Foot id="outcomes" ctx={ctx} figure={NAV.foot.outcomes.figure} label={NAV.foot.outcomes.label} />
+      <Foot id="outcomes" ctx={ctx} figure="3" label="customer segments" />
     </div>
   );
 }
 
-/** The route to production as four pictures, joined by the dotted line the roadmap uses. */
+/** The delivery process as four pictures, joined by the dotted line the roadmap uses. */
 function HowPeek({ ctx }: { ctx: Ctx }) {
-  const steps = PATHS.custom.steps;
-  // "4 to 8 weeks to the first production release" reads as 4–8.
-  const [lo, , hi] = PATHS.catalogue.total.split(" ");
+  const steps = PATHS.steps;
   return (
     <div className="peek-visual">
       <ol className="peek-route">
@@ -285,13 +280,13 @@ function HowPeek({ ctx }: { ctx: Ctx }) {
           <li key={s.title} style={{ ...toneVars(STEP_TONES[i]), ["--k" as string]: i }}>
             <Tile ctx={ctx} className="peek-tile peek-step" onOpen={() => showStep(i)} section="how">
               <StepArt index={i} />
-              <span className="peek-step-n tabular">{s.when}</span>
+              <span className="peek-step-n">{HOW.stepWords[i]}</span>
               <b>{s.title}</b>
             </Tile>
           </li>
         ))}
       </ol>
-      <Foot id="how" ctx={ctx} figure={`${lo}–${hi}`} label={NAV.foot.how.label} />
+      <Foot id="how" ctx={ctx} figure="4 steps" label={NAV.foot.how.label} />
     </div>
   );
 }
@@ -325,7 +320,7 @@ function FaqPeek({ ctx }: { ctx: Ctx }) {
           <ArrowRight size={14} strokeWidth={2.2} aria-hidden />
         </AuditLink>
         <SectionLink href={ctx.home ? "#faq" : "/#faq"} className="peek-go peek-go-quiet" onDone={ctx.onDone}>
-          {NAV.faqSide.all(FAQ.length)}
+          {NAV.faqSide.all()}
         </SectionLink>
       </div>
     </div>

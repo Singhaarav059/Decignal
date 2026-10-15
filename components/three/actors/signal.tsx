@@ -1,6 +1,6 @@
 "use client";
 
-// 02 Signal: the Bearing X90 tote, the one part that is about to run short.
+// 02 Signal: the tote holding line 12 of shipment SHP-0612, the line whose certificate does not match.
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
@@ -15,8 +15,8 @@ import { TOTE_LABEL } from "../parts";
 import { Actor, Rise } from "./core";
 import { portraitWide } from "@/lib/device";
 
-/** The bin label's two lines: the part and plant, then the stock the ERP holds for it. */
-const BIN = [`${EXAMPLE.part.split(" ").pop()} · ${EXAMPLE.plant01.name.toUpperCase()}`, `${EXAMPLE.plant01.onHand} ON HAND`];
+/** The bin label's two lines: the line and shipment, then the heat the ERP holds for it. */
+const BIN = [`LINE ${EXAMPLE.line.n} · ${EXAMPLE.shipment.id}`, `HEAT ${EXAMPLE.line.heat}`];
 const LABEL_PX = 384;
 
 /** The printed card in the tote's label holder: ink on white, in the page's label face. */
@@ -66,7 +66,7 @@ function BinLabel() {
   );
 }
 
-/** The one tote that matters: Bearing X90 at Plant 01. Its number is on its own bin label. */
+/** The one tote that matters: line 12 of shipment SHP-0612. Its heat is on its own bin label. */
 export function SignalCrate() {
   const portrait = useThree((state) => portraitWide(state.size.width, state.size.height));
   // Same moulded, ribbed plastic as every other tote; only its colour changes.
@@ -76,7 +76,7 @@ export function SignalCrate() {
   );
   const saffron = useMemo(() => new THREE.Color(TINTS.saffron), []);
   const red = useMemo(() => new THREE.Color(COLORS.signal), []);
-  const approved = useMemo(() => new THREE.Color(TINTS.emerald), []);
+  const reviewed = useMemo(() => new THREE.Color(TINTS.emerald), []);
   const hover = useRef<THREE.Group>(null);
 
   const hint = useRef(0);
@@ -86,11 +86,12 @@ export function SignalCrate() {
     // numbers and the object are one thing.
     hint.current = THREE.MathUtils.damp(hint.current, store.signalHint || activePin() === "signal" ? 1 : 0, 9, Math.min(dt, 1 / 30));
     if (hover.current) hover.current.position.y = hint.current * 0.08 * sigWeight;
-    // The colour is the signal: saffron stock turns red as the shortage is found. No glow.
+    // The colour is the signal: saffron stock turns red as the mismatch is found. No glow.
     const r = smoothstep(0.45, 0.95, store.g);
-    // Back on its island at the end, the same tote reads approved: the shortage is resolved.
+    // Back on its island at the end, the same tote reads as reviewed (emerald): its questions are with
+    // the reviewer. It never reads as dispatched.
     const ok = smoothstep(0.4, 0.95, weight(CH.final, store.g));
-    mat.color.copy(saffron).lerp(red, r).lerp(approved, ok);
+    mat.color.copy(saffron).lerp(red, r).lerp(reviewed, ok);
   });
 
   return (
@@ -98,7 +99,7 @@ export function SignalCrate() {
       {/* Rides in with the warehouse it sits on. */}
       <Rise delay={0.25 + WMS * 0.09} float={() => 0}>
         <group ref={hover}>
-          {/* An open tote of X90 bearings, 7 of its 12 pockets filled: the part that is running short */}
+          {/* An open tote of machined rings, 7 of its 12 pockets filled: the parts on line 12 */}
           <Crate material={mat} open>
             <BearingBed filled={7} />
             <BinLabel />

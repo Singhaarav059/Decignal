@@ -274,3 +274,22 @@
 @media (prefers-reduced-motion: reduce) {
   .svc-area-go svg { transition: none; }
 }
+
+/* ---- Handoff template map additions: eyebrow, customer fit, status and scope notes, the short
+   process block, the workflow record fields and the closing call to action. Existing tokens only. ---- */
+.svc-eyebrow { margin-top: 18px; color: var(--tone-ink, var(--color-ink-soft)); }
+.svc-fit { margin-top: var(--stack-label); max-width: 60ch; color: var(--color-ink-2); }
+.svc-fit .t-label, .svc-scope .t-label, .svc-app-foot .t-label { margin-right: 6px; color: var(--color-ink); }
+.svc-status { margin-top: 14px; max-width: 56ch; color: var(--color-ink-soft); }
+.svc-scope { margin-top: 20px; padding-top: 16px; max-width: 60ch; border-top: 1px solid var(--color-line); color: var(--color-ink-2); }
+.svc-process { display: grid; gap: 16px; align-content: start; }
+.svc-process .t-lede { max-width: 52ch; }
+.svc-process-link { justify-self: start; }
+.svc-app-fields { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--color-line); }
+.svc-app-fields dd { margin-top: 3px; color: var(--color-ink-2); }
+.svc-app-cta { justify-self: start; margin-top: 4px; }
+.svc-closing { display: grid; gap: 24px; justify-items: start; padding: var(--panel-pad); }
+.svc-closing .section-title-lede { max-width: 56ch; }
+@media (min-width: 1024px) {
+  .svc-closing { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+}

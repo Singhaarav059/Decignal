@@ -72,8 +72,10 @@
 .application-metric-label { color: var(--color-ink-soft); }
 /* Two lines held, so the card keeps its height from stage to stage. */
 .application-sentence { min-height: 3em; }
-.application-sources { color: var(--color-ink-2); }
-.application-sources .t-label { margin-right: 6px; }
+/* The workflow record under the chart: label over value, two columns where the card allows. */
+.application-record { display: grid; gap: 12px 20px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--color-line); color: var(--color-ink-2); }
+.application-record dt { color: var(--color-ink-soft); }
+.application-record dd { margin-top: 3px; }
 
 .application-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .application-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-left: -10px; padding: 0 12px 0 8px; border-radius: var(--radius-pill); font: 600 var(--fs-small) / 1 var(--font-sans); color: var(--color-ink); transition: background-color var(--dur-2) var(--ease); }

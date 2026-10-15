@@ -62,7 +62,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "Figtree", fontSize: 24, fontWeight: 600, color: BRAND.inkSoft }}>
             <div style={{ width: 14, height: 14, borderRadius: 999, background: tone }} />
-            {areaEyebrow(area)}
+            {area.name} · {areaEyebrow()}
           </div>
         </div>
 

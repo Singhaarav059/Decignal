@@ -115,7 +115,7 @@ export function IslandPanel() {
               </p>
               <span className="t-label inline-flex items-center gap-1.5 whitespace-nowrap text-emerald-ink">
                 <span className="size-1.5 rounded-full bg-current" />
-                {STORY_UI.synced(sys.sync)}
+                {sys.sync}
               </span>
             </div>
 

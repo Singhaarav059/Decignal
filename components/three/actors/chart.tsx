@@ -1,11 +1,11 @@
 "use client";
 
-// 03 Problem: stock as crates, day by day, with the day under the pointer labelled.
+// 03 Problem: the shipment's delivery lines as stacks of crates, the line under the pointer labelled.
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import { CH, store, weight } from "@/lib/story";
-import { CHART_CRATES, DAYS, DAY_X, SAFETY_UNITS, STEP_Y, WMS, dayUnits, crateFill, chartPos, chartSlot, islandPose, type Pose, type Vec3 } from "@/lib/scene";
+import { CHART_CRATES, DAYS, DAY_X, STEP_Y, WMS, crateFill, chartPos, chartSlot, islandPose, type Pose, type Vec3 } from "@/lib/scene";
 import { COLORS } from "../palette";
 import { Crate } from "../kit";
 import { ScreenTag } from "../ScreenTag";
@@ -105,15 +105,15 @@ function DayTag() {
     setDay(n);
     if (n >= 0) setShown(n);
   };
-  const units = d >= 0 ? dayUnits(d) : 0;
-  const short = units < SAFETY_UNITS;
+  // Line 12 (the last column) is the one whose certificate does not match.
+  const short = d === DAYS.length - 1;
   return (
     <>
       <ChartFocus onDay={onDay} />
       <group position={[DAY_X(Math.max(d, 0)), (DAYS[Math.max(d, 0)] + 0.9) * STEP_Y + 0.1, 0]}>
         <ScreenTag
-          title={d <= 0 ? "Today" : `Day ${d}`}
-          value={`${units} units · ${short ? "below safety stock" : `${units - SAFETY_UNITS} above safety`}`}
+          title={`Line ${6 + Math.max(d, 0)}`}
+          value={short ? "Heat H241 · certificate says H214" : "Certificate matches · supported"}
           tone={short ? COLORS.signal : COLORS.inkSoft}
           alert={short}
           rest="none"

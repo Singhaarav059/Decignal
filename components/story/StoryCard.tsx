@@ -21,7 +21,7 @@ import {
 } from "@/lib/story";
 import { transferredUnits } from "@/lib/scene";
 import { CHAPTER_COPY, CTA, EVIDENCE_CHECKS, EXAMPLE_LABEL, HERO, SIGNAL_ARIA, STEPPER, STORY_UI, type Headline } from "@/lib/copy";
-import { EXAMPLE, units } from "@/lib/example";
+import { EXAMPLE } from "@/lib/example";
 import { accentVars, toneVars } from "@/lib/tone";
 import { TONE } from "./chapters";
 import { SystemChips } from "./SystemChips";
@@ -172,10 +172,10 @@ export function StoryCard() {
         report();
       }
 
-      // Plant 02's stock counts down as each pallet goes onto the truck.
+      // The pallets loaded at the bay count up as each goes onto the truck.
       if (stock) {
         const t = g >= CH.decision + 1 ? 1 : localIn(CH.decision, g);
-        const v = units(EXAMPLE.plant02.stock - transferredUnits(t));
+        const v = `${transferredUnits(t) / 80} of 3`;
         if (v !== lastStock) {
           stock.textContent = v;
           lastStock = v;
@@ -287,7 +287,9 @@ export function ChapterBody({ ch }: { ch: number }) {
         <>
       <Label ch={CH.fragments} />
       <Rest>
-        <p className="t-body story-body">{HERO.card}</p>
+        <p className="t-body story-body">
+          {HERO.audience} {HERO.card}
+        </p>
         <SystemChips className="story-chips" />
         <div className="story-actions">
           {/* Phones and tablets only: wide screens hide the card in the hero (Story.tsx .hero-actions). */}
@@ -528,16 +530,16 @@ function DetailRows({ ch, skip = [] as string[] }: { ch: number; skip?: string[]
   );
 }
 
-/** 02: the alert's figures and the same six days the ring draws around the crate. */
+/** 02: the shipment's figures and the six documents its checklist asks for, the open ones in red. */
 function SignalDetails() {
   return (
     <div className="signal-detail" role="group" aria-label={SIGNAL_ARIA}>
       <DetailRows ch={CH.signal} />
       <ol className="signal-days" aria-hidden>
-        {Array.from({ length: EXAMPLE.plant01.breachDay }, (_, i) => i + 1).map((d) => (
-          <li key={d} data-risk={d === EXAMPLE.plant01.breachDay ? "" : undefined} style={{ ["--i" as string]: d - 1 }}>
+        {EXAMPLE.checklist.items.map((it, i) => (
+          <li key={it.name} data-risk={it.status !== "supported" ? "" : undefined} style={{ ["--i" as string]: i }}>
             <span />
-            <small>D{d}</small>
+            <small>{it.name.split(" ")[0].slice(0, 4)}</small>
           </li>
         ))}
       </ol>
@@ -545,16 +547,15 @@ function SignalDetails() {
   );
 }
 
-/** 05: what the transfer leaves at Plant 02 (live, as pallets load) and what it costs. */
+/** 05: the pallets loaded at the bay (live, as they load) and the checklist's statuses. */
 function DecisionDetails() {
   const rows = CHAPTER_COPY[CH.decision]?.details ?? [];
-  // "Arrives" is the readout itself; the rest move here (S7).
-  const left = rows.find((d) => d.label === "Plant 02 left");
-  const rest = rows.filter((d) => d !== left && d.label !== "Arrives");
+  const left = { label: "Pallets loaded, held", value: "0 of 3" };
+  const rest = rows;
   return (
     <dl className="story-rows">
       {left && (
-        <div onPointerEnter={() => setPinHint("plant02")} onPointerLeave={() => setPinHint(null)}>
+        <div onPointerEnter={() => setPinHint("truck")} onPointerLeave={() => setPinHint(null)}>
           <dt>{left.label}</dt>
           <dd className="tabular" data-stock="">
             {left.value}
@@ -654,13 +655,13 @@ function Stepper() {
       if (at !== lastAt) {
         lastAt = at;
         items.forEach((it, i) => (it.dataset.state = i < at ? "done" : i === at ? "now" : "next"));
-        if (label) label.textContent = `${EXAMPLE.transfer.id}: ${STEPPER[at]}`;
+        if (label) label.textContent = `${EXAMPLE.shipment.id}: ${STEPPER[at]}`;
       }
     });
   }, []);
   return (
     <div className="stepper-wrap">
-      <ol ref={root} className="stepper" aria-label={`Transfer ${EXAMPLE.transfer.id}`}>
+      <ol ref={root} className="stepper" aria-label={`Review of shipment ${EXAMPLE.shipment.id}`}>
         {STEPPER.map((name, i) => (
           <li key={name} data-step data-state="next" className="stepper-step">
             <span className="stepper-dot" aria-hidden />

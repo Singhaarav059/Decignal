@@ -958,3 +958,6 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
 @media (prefers-reduced-motion: reduce) {
   .hero-tag-sys { opacity: 1; scale: 1; animation: none !important; }
 }
+
+/* The hero's illustrative caption under the offer line (handoff home.hero visual caption). */
+.hero-caption { display: block; margin-top: 4px; color: var(--color-ink-soft); }

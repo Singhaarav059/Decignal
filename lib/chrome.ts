@@ -47,14 +47,17 @@ type ChromeState = {
 };
 
 export const HOME_SECTIONS: ChromeSection[] = [
-  { id: "systems", label: "Integrations", dock: false },
-  { id: "platform", label: "Platform", dock: false },
-  { id: "applications", label: "Solutions" },
-  { id: "trail", label: "Decision trail", short: "Trail", dock: false },
-  { id: "outcomes", label: "Results" },
-  { id: "how", label: "How it works", short: "How" },
-  { id: "faq", label: "FAQ" },
-  { id: "audit", label: "Free AI audit", short: "Audit" },
+  { id: "who-we-help", label: "Who we help", short: "Who" },
+  { id: "problem", label: "The problem", dock: false },
+  { id: "platform", label: "Approach" },
+  { id: "applications", label: "Workflows" },
+  { id: "example", label: "Illustrative review", short: "Example", dock: false },
+  { id: "systems", label: "Your records", dock: false },
+  { id: "how", label: "How we work", short: "How" },
+  { id: "outcomes", label: "What we measure", dock: false },
+  { id: "about", label: "About", dock: false },
+  { id: "faq", label: "Questions", short: "FAQ" },
+  { id: "audit", label: "Workflow review", short: "Review" },
 ];
 
 const INITIAL: ChromeState = {
