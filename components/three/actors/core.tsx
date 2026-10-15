@@ -8,6 +8,7 @@ import { useMemo, useRef } from "react";
 import { easing } from "maath";
 import { blendAt, clamp01, smootherstep, smoothstep, store } from "@/lib/story";
 import { type Pose, type Vec3 } from "@/lib/scene";
+import { hero } from "@/lib/hero-video";
 
 /* ------------------------------------------------------------------ */
 /* Actor: blends between its chapter poses; scales in and out of scenes */
@@ -156,6 +157,7 @@ export function Actor({ track, delay, damp, exit, arrive, leave, overshoot, ente
  * Each system rises onto the stage after the loader lifts. Models stand on the ground; `float` opts in
  * to a slow bob. Progress counts this component's own frame time, not the scene clock: the clock
  * restarts from 0 whenever the render loop is switched on again, which would hold a rise back.
+ * Taking over from the hero's film (lib/hero-video.ts), it starts as far risen as the film's islands.
  * Reduced motion: already in place.
  */
 export function Rise({ delay, float = () => 0, onRise, children }: { delay: number; float?: () => number; onRise?: (k: number) => void; children: React.ReactNode }) {
@@ -170,7 +172,7 @@ export function Rise({ delay, float = () => 0, onRise, children }: { delay: numb
         onRise?.(0);
         return;
       }
-      age.current = 0;
+      age.current = hero.rise ?? 0;
     }
     if (age.current < delay + 1.1) age.current += Math.min(dt, 0.1);
     const k = reducedMotion() ? 1 : clamp01((age.current - delay) / 1.1);

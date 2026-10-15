@@ -46,6 +46,8 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: security },
       // troika's label fonts. Not content-hashed: rename a file if it ever changes.
       { source: "/fonts/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+      // The hero's films (scripts/render-hero.mjs): each render is asked for under a new ?v=.
+      { source: "/hero/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     ];
   },
 };

@@ -117,8 +117,16 @@ if (typeof window !== "undefined")
   window.addEventListener(SCENE_READY, () => {
     setChrome({ sceneReady: true });
     // The world fades in only once it is built and its shaders are compiled (story.css .intro-stage).
-    document.documentElement.classList.add("scene-ready");
+    // scene-live: the scene truly drew (the loader's fallback adds only scene-ready); the hero's film
+    // hands over on it.
+    document.documentElement.classList.add("scene-ready", "scene-live");
   });
+
+let filmShown: () => void = () => {};
+/** Resolves once the hero's film (components/story/HeroVideo.tsx) has a frame to show: the loader
+ *  lifts on it rather than on the scene, which then starts after the curtain. */
+export const filmReady = new Promise<void>((r) => (filmShown = r));
+export const markFilmReady = () => filmShown();
 
 /** Resolves once the scene has drawn, or at once if it already has. */
 export function whenSceneReady() {

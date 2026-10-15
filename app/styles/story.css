@@ -63,6 +63,22 @@ html.ready .intro-fade { transition-delay: var(--d, 450ms); }
    stuttered in and then popped. Now the headline rises at once and the finished world fades in on the
    compositor. */
 html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
+/* The hero's film (components/story/HeroVideo.tsx) shows the world until the live scene has truly drawn
+   (scene-live; the loader's fallback adds only scene-ready). The live canvas then fades in over the
+   film, flat and quick: it starts on the film's own frame, so only the hand-off's last pixels change. */
+html.hero-film .intro-stage { transform: none; transition: opacity 450ms linear; }
+html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
+.hero-film-video {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  opacity: 0;
+  transition: opacity 300ms linear;
+  pointer-events: none;
+}
+.hero-film-video[data-on] { opacity: 1; }
 
 /* ---- Statements: the hero's h1 and the final headline, centred above the world (D14) ---- */
 .story-statement {
