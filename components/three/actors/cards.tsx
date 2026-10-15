@@ -6,13 +6,14 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { easing } from "maath";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CH, HOVER_REST, blendAt, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
-import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, ISO_DIR, bgAt, cardPose, handAxis, handPose, handRoll, handShift, setDeckEdge } from "@/lib/scene";
+import { CH, HOVER_REST, blendAt, controlLayer, controlSettle, localIn, scaleDeal, scaleF, store, weight } from "@/lib/story";
+import { CARD, CARDS, DECISION_CARD, HAND, HAND_TURN, ISO_DIR, LAYER_FOOT, bgAt, cardPose, handAxis, handPose, handRoll, handShift, setDeckEdge } from "@/lib/scene";
 import { WHITE, clay, useDisposeOnUnmount } from "../kit";
 import { aluminium } from "../materials";
 import { FACE_H, FACE_W, FUNCTION_TONE, LAYER_TONE, drawFace, drawHandArt, faceKey, handArtPlane, handArtSize, readFonts, type DecisionMode, type FaceSpec } from "../faces";
 import { reducedMotion, useActor } from "./core";
 import { goToFunction } from "@/components/story/ScaleApps";
+import { goToStory } from "@/components/story/chapters";
 import { phoneWide, portraitWide } from "@/lib/device";
 
 /* ------------------------------------------------------------------ */
@@ -212,7 +213,74 @@ const SWITCH_DWELL = 0.07;
 /** The reader's choice on the page's approval panel (DecisionControls writes it), if any. */
 const decisionNow = (): { mode: DecisionMode; qty: number } | undefined => store.decision;
 const readable = () => Math.max(weight(CH.control, store.g), weight(CH.scale, store.g)) > 0.9;
-const toneOf = (k: number) => (store.g < CH.scale - 0.5 ? LAYER_TONE[k] : FUNCTION_TONE[k]);
+// Control holds until well past g = CH.scale - 0.5 (its ts), so the hand-off decides, not g.
+const toneOf = (k: number) => (weight(CH.scale, store.g) > 0.5 ? FUNCTION_TONE[k] : LAYER_TONE[k]);
+
+/** Control's row is in charge while it holds the screen (Scale's hand reads under the pointer). */
+const inRow = () => weight(CH.control, store.g) > 0.5;
+const foot = new THREE.Vector3();
+
+/** Control's row: the scroll brings the layers to the front one by one (controlLayer), 1:1 with it. A
+ *  pill under the pointer or the approval panel shows its card in front for a moment, eased there and
+ *  back; a click on a card or a pill scrolls to its step. The cards are never read under a still
+ *  hover: they move, and that fed back. */
+function LayerRow() {
+  const ray = useMemo(() => new THREE.Raycaster(), []);
+  const ndc = useMemo(() => new THREE.Vector2(), []);
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  /** The card drawn under a point in normalised device coordinates, or -1. */
+  const under = (x: number, y: number) => {
+    ndc.set(x, y);
+    ray.setFromCamera(ndc, camera);
+    const live = bodies.filter((b): b is THREE.Mesh => !!b && b.parent?.parent?.visible !== false);
+    const hit = ray.intersectObjects(live, false)[0];
+    return hit ? bodies.indexOf(hit.object as THREE.Mesh) : -1;
+  };
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.button !== 0 || !inRow() || !readable() || (e.target instanceof Element && e.target.closest("a, button, input, select, textarea, label, [role=dialog]"))) return;
+      const k = under((e.clientX / size.width) * 2 - 1, -(e.clientY / size.height) * 2 + 1);
+      if (k >= 0) goToStory(CH.control, controlSettle(k));
+    };
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camera, size]);
+  const over = useRef(false);
+  const follow = useRef({ hint: -1, on: true });
+  useFrame((_, dt) => {
+    if (!inRow()) {
+      if (over.current) document.body.style.cursor = "";
+      over.current = false;
+      return;
+    }
+    const hint = store.focusHint;
+    const target = hint >= 0 ? hint : controlLayer(localIn(CH.control, store.g));
+    // Tied to the scroll, except on the way to or back from a pointed-at card.
+    if (hint !== follow.current.hint) follow.current = { hint, on: false };
+    if (follow.current.on || reducedMotion()) store.layer = target;
+    else {
+      store.layer = THREE.MathUtils.damp(store.layer, target, 7, Math.min(dt, 1 / 30));
+      if (Math.abs(store.layer - target) < 0.01) follow.current.on = true;
+    }
+    const front = Math.round(target);
+    const next = readable() ? front : -1;
+    if (next !== store.focus) store.focus = next;
+    // Under the row, for the pills (LayerPills).
+    foot.set(...LAYER_FOOT()).project(camera);
+    store.layerFoot.x = (foot.x * 0.5 + 0.5) * size.width;
+    store.layerFoot.y = (-foot.y * 0.5 + 0.5) * size.height;
+    // A card that is not in front shows it can be clicked.
+    const k = readable() && store.pointerIn ? under(store.pointer.x, store.pointer.y) : -1;
+    const want = k >= 0 && k !== front;
+    if (want !== over.current) {
+      over.current = want;
+      document.body.style.cursor = want ? "pointer" : "";
+    }
+  });
+  return null;
+}
 
 /** Finds the card under the pointer once per frame. In Scale a click on a card scrolls to its function. */
 function CardFocus() {
@@ -235,6 +303,7 @@ function CardFocus() {
     return () => window.removeEventListener("click", onClick);
   }, []);
   useFrame(({ camera }, dt) => {
+    if (inRow()) return;
     let hit = -1;
     // While the page scrolls, the scroll drives the deck: cards sliding under a still pointer must not
     // take focus (it read as the page sticking, and focus flicked between cards). Hover reading
@@ -263,9 +332,7 @@ function CardFocus() {
       const onCur = !!drawn && drawn.object === bodies[cur];
       // Scale's hand: the card being read keeps the pointer while it is the card drawn under it,
       // wherever it now stands; otherwise the card whose resting place is under the pointer takes it.
-      // Control's fan: the read card rises over its neighbours' strips, so there the resting places
-      // alone decide and every card stays reachable; the read card keeps the pointer only over a gap.
-      hit = weight(CH.scale, store.g) > 0.5 ? (onCur ? cur : restK) : restK >= 0 ? restK : onCur ? cur : -1;
+      hit = onCur ? cur : restK;
     }
     // Moving from one card to another, the new one takes over once the pointer has held on it a moment,
     // so a quick sweep across the stack does not set every card moving at once.
@@ -425,7 +492,6 @@ function Stand({ card, drive }: { card: React.RefObject<THREE.Group | null>; dri
 
 const WHITE_C = new THREE.Color(WHITE);
 const TONE_C = FUNCTION_TONE.map((t) => new THREE.Color(t));
-const axX = new THREE.Vector3();
 const axY = new THREE.Vector3();
 const toCam = new THREE.Vector3();
 // Face colour: white (an #F7F7F7 multiply read as a grey tint on the boards), dimmed when another card is being read.
@@ -439,7 +505,7 @@ function Card({ k }: { k: number }) {
   // A function still waiting to be dealt comes into the hand early while it is pointed at on the page.
   const peek = useRef(0);
   useActor(ref, (c, t) => cardPose(k, c, t, portrait, phone, peek.current), k * 0.05, 0.11);
-  const anim = useRef({ me: 0, other: 0, side: 0, shift: 0 });
+  const anim = useRef({ me: 0, other: 0, shift: 0 });
   // The card's turn about its own face in Scale's hand (upright, then its slot's roll), eased like its pose.
   const roll = useRef({ v: 0 });
   const restRef = useRef<THREE.Mesh | null>(null);
@@ -514,19 +580,12 @@ function Card({ k }: { k: number }) {
     const bump = pl.t < PULSE ? Math.sin((Math.PI * pl.t) / PULSE) * 0.6 : 0;
     a.me = THREE.MathUtils.damp(a.me, f === k ? 1 : 0, 9, d);
     a.other = THREE.MathUtils.damp(a.other, f >= 0 && f !== k ? 1 : 0, 7, d);
-    if (f >= 0 && f !== k) a.side = Math.sign(k - f);
     if (!g || !n) return;
-    // Which way the readable face points (stood up for layers, flipped for functions), and the
-    // card's turn about the vertical. Read from axes, not Euler angles: cards stand at exactly 90°.
-    axX.set(1, 0, 0).applyQuaternion(g.quaternion);
-    const ry = Math.atan2(-axX.z, axX.x);
-    // Control's fan: lift toward the viewer along the card's normal, square up to the camera, grow to
-    // reading size. Edge cards also drift toward the middle of the stack, clear of the copy and the
-    // screen edge. Cards to the left only shift a little: the copy column sits on that side.
-    const aside = a.side > 0 ? 0.4 : 0.26;
-    const fx = a.side * a.other * aside + (2 - k) * 0.3 * a.me;
-    const fy = s * (Math.max(a.me, bump) * 1.05 - a.other * 0.1);
-    const fs = 1 + Math.max(a.me, bump * 0.5) * 0.2 - a.other * 0.03;
+    // Control's row places the read card itself (lib/scene.ts layerRow); here only the approval's
+    // short lift and settle.
+    const fx = 0;
+    const fy = s * bump * 0.5;
+    const fs = 1 + bump * 0.06;
     // Scale's hand: the cards are square to the viewer and nothing may pass through a neighbour, so a
     // card stays in its own plane. The one being read grows a little, and the cards dealt after it
     // (lying over it) step right until it shows whole (handShift).
@@ -539,7 +598,7 @@ function Card({ k }: { k: number }) {
     // No rise in the hand: a card that rose from under the pointer handed it to the card below, which
     // dropped it back, and the two traded focus every frame near an edge. It only grows a little.
     n.position.set(L(fx, a.shift * CARD.h, lw), L(fy, s * a.me * 0.02, lw), 0);
-    n.rotation.set(0, roll.current.v, s * ry * a.me * (1 - lw));
+    n.rotation.set(0, roll.current.v, 0);
     restRef.current?.rotation.set(0, roll.current.v, 0);
     n.scale.setScalar(L(fs, 1 + a.me * 0.03, lw));
     body.color.copy(WHITE_C).lerp(TONE_C[k], lw);
@@ -769,8 +828,8 @@ type FaceState = { top: FaceSpec; topRotated?: boolean; bottom: FaceSpec; bottom
 const baseFaces = (k: number): FaceState => {
   const d = decisionNow();
   return {
-    // The layers are read fanned out (Control); the decision shows what the page's panel decided.
-    top: k === DECISION_CARD ? { kind: "decision", qty: d?.qty, mode: d?.mode } : { kind: "layer", k, fan: true },
+    // Control's row reads each layer whole in front; the decision shows what the page's panel decided.
+    top: k === DECISION_CARD ? { kind: "decision", qty: d?.qty, mode: d?.mode } : { kind: "layer", k },
     bottom: { kind: "function", k },
     bottomRotated: false,
   };
@@ -804,6 +863,7 @@ export function Cards() {
     <>
       <DeckEdge />
       <CardFocus />
+      <LayerRow />
       {Array.from({ length: CARDS }, (_, k) => (
         <Card key={k} k={k} />
       ))}

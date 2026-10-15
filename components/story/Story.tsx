@@ -15,7 +15,7 @@ import { StoryCard } from "./StoryCard";
 import { ChapterHeads } from "./ChapterHeads";
 import { FinalBar } from "./FinalCard";
 import { IslandPanel } from "./IslandPanel";
-import { LayerReadout } from "./LayerReadout";
+import { LayerPills, LayerReadout } from "./LayerReadout";
 import { ScalePhone } from "./ScalePhone";
 import { IndustryCallout } from "./IndustryCallout";
 import { HeroVideo } from "./HeroVideo";
@@ -229,6 +229,9 @@ export function Story() {
         <StoryCard />
         <div data-ch={CH.control} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.control})` }}>
           <LayerReadout />
+        </div>
+        <div data-ch={CH.control} data-stage className="layer-pills-stage">
+          <LayerPills />
         </div>
         <div data-ch={CH.scale} data-stage className="story-stage" style={{ ["--stage-card" as string]: `var(--story-card-h-${CH.scale})` }}>
           <ScalePhone />

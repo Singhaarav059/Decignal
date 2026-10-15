@@ -724,6 +724,13 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
     pointer-events: auto;
   }
 }
+/* Wide screens: Control's layer pills, at the foot of the 3D row's front card (LayerPills). */
+.layer-pills-stage { position: absolute; inset: 0; pointer-events: none; }
+.layer-pills { position: absolute; left: 0; top: 20px; pointer-events: auto; will-change: transform; }
+.layer-pills .story-seg { width: auto; margin-top: 0; flex-wrap: nowrap; white-space: nowrap; }
+@media (max-width: 767px) {
+  .layer-pills-stage { display: none; }
+}
 .layer-readout,
 .scale-phone {
   display: flex;

@@ -14,8 +14,7 @@ export type DecisionMode = "idle" | "confirmed" | "declined";
 export type FaceSpec =
   /** The follow-up: `qty` is the Friday quantity (60 to 100); the rest come on Wednesday. */
   | { kind: "decision"; qty?: number; mode?: DecisionMode }
-  /** `fan`: the card is read fanned out, with only its left part in view, so all its text sits there. */
-  | { kind: "layer"; k: number; fan?: boolean }
+  | { kind: "layer"; k: number }
   /** Drawn upright (portrait) in the function's colour, for Scale's hand of cards. */
   | { kind: "function"; k: number }
   /** The glass layer card's print: text only, on a clear ground, upright like the hand. */
@@ -198,7 +197,7 @@ function decision(c: C, qty: number = STORY.first.qty, mode: DecisionMode = "idl
   c.fillText(FACES.decisionFoot, 142, 882);
 }
 
-/** The fact each layer contributes, set large in the left column so it reads even when the cards fan out. */
+/** The fact each layer contributes, set large in the left column so it reads from across the row. */
 const LAYER_METRIC: [string, string][] = [
   [`${STORY.first.qty} + ${STORY.rest.qty}`, `The supplier’s new schedule`],
   [`${STORY.qty}`, `Due ${STORY.due} on ${STORY.po}`],
@@ -206,19 +205,19 @@ const LAYER_METRIC: [string, string][] = [
   [`${FACES.policyChecks.length} / ${FACES.policyChecks.length}`, "Checks in place"],
 ];
 
-/** Fanned, a layer card shows about its left 42%: every word sits there, the drawing to its right. */
-const FAN_W = 0.42 * FACE_W;
+/** The left column's width: the number and its caption. */
+const COL_W = 0.42 * FACE_W;
 
-function layer(c: C, k: number, fan = false) {
+function layer(c: C, k: number) {
   if (k === 4) return decision(c);
   const tone = LAYER_TONE[k];
   const L = LAYERS[k];
   const [metric, caption] = LAYER_METRIC[k];
   label(c, L.name, 90, 138, ink(tone));
-  if (!fan) status(c, "Checked", FACE_W - 90, 140, TINTS.emerald, false);
+  status(c, "Checked", FACE_W - 90, 140, TINTS.emerald, false);
 
   // Left column: the one number that matters, as large as the column allows.
-  const colW = FAN_W - 140;
+  const colW = COL_W - 140;
   let size = 230;
   c.letterSpacing = "-8px";
   for (; size > 130; size -= 10) {
@@ -232,21 +231,17 @@ function layer(c: C, k: number, fan = false) {
   c.fillStyle = SOFT;
   wrap(c, caption, 90, 556, colW, 78);
 
-  // Right column: the drawing with its labels. Fanned, the card in front covers this half at rest and
-  // it shows whole only when the card is read, so the labels are drawn there too; the column's heading
-  // stays for the unfanned card.
-  const x0 = fan ? FAN_W + 60 : 720;
+  // Right column: the layer's line, and under it the drawing with its labels.
+  const x0 = 720;
   const x1 = FACE_W - 90;
   const w = x1 - x0;
-  if (!fan) {
-    font(c, 60, 650);
-    c.fillStyle = INK;
-    c.letterSpacing = "-1.5px";
-    wrap(c, L.text, x0, 300, w, 72);
-    c.letterSpacing = "0px";
-  }
+  font(c, 60, 650);
+  c.fillStyle = INK;
+  c.letterSpacing = "-1.5px";
+  wrap(c, L.text, x0, 300, w, 72);
+  c.letterSpacing = "0px";
 
-  const top = fan ? 300 : 500;
+  const top = 500;
   const bottom = 900;
   if (k === 0) {
     // The promise (dashed, all 100 on Friday) and the new schedule: 60 until Wednesday, then 100.
@@ -314,9 +309,9 @@ function layer(c: C, k: number, fan = false) {
   } else {
     // The checks themselves, ticked.
     FACES.policyChecks.forEach((t, i) => {
-      const y = top + (fan ? 90 : 60) + i * (fan ? 170 : 130);
+      const y = top + 60 + i * 130;
       check(c, x0 + 28, y - 4, i === 2 ? TINTS.cobalt : TINTS.emerald);
-      font(c, fan ? 46 : 48, 550);
+      font(c, 48, 550);
       c.fillStyle = INK;
       wrap(c, t, x0 + 90, y + 14, w - 90, 56);
     });
@@ -890,7 +885,7 @@ export function drawFace(canvas: HTMLCanvasElement, spec: FaceSpec, rotate = fal
       decision(c, spec.qty, spec.mode);
       break;
     case "layer":
-      layer(c, spec.k, spec.fan);
+      layer(c, spec.k);
       break;
     default:
       final(c);
@@ -906,7 +901,7 @@ export function faceKey(s: FaceSpec) {
     case "decision":
       return `decision-${s.qty ?? STORY.first.qty}-${s.mode ?? "idle"}`;
     case "layer":
-      return `layer-${s.k}${s.fan ? "-fan" : ""}`;
+      return `layer-${s.k}`;
     case "final":
       return "final";
     case "glass":

@@ -3,7 +3,7 @@
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
 import { STORY } from "./example";
-import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, scaleDeal, SCALE_DEAL } from "./story";
+import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, scaleDeal, SCALE_DEAL, store } from "./story";
 
 export type Vec3 = [number, number, number];
 export type Pose = { p: Vec3; rx?: number; ry?: number; s?: number };
@@ -223,6 +223,41 @@ const standY = (s: number, lean: number) => (CARD.h / 2) * s * Math.cos(lean) + 
 const FAN: [number, number] = [2.8, -0.45];
 /** Size of the fanned layers: large enough that a layer's caption reads at 1440. */
 const FAN_S = 1.65;
+/**
+ * Control's row of layers, a carousel: the layer `a` (fractional while the row turns) stands in front,
+ * square to the viewer and at reading size, in the middle. Two layers stand back on each side in
+ * reading order, turned toward it like pages of an open book; the row wraps, so a layer leaving one
+ * end shrinks away there and grows back in at the other. The same five places are filled whichever
+ * layer is read, so the camera frames them once and the row fills its space at every step (a row
+ * that slid from end to end left half of its framed space empty). Nothing ever passes in front of the
+ * read card. u runs right along the screen, v toward the viewer (isoXZ), in world units.
+ */
+export function layerRow(k: number, a: number) {
+  const n = CARDS;
+  // k's offset from the front, wrapped into [-n/2, n/2).
+  const d = ((((k - a) % n) + n * 1.5) % n) - n / 2;
+  const sd = Math.sign(d);
+  const near = Math.min(Math.abs(d), 1);
+  const far = Math.min(Math.max(Math.abs(d) - 1, 0), 1.5);
+  // Past the second place out, the layer shrinks away to cross to the other end.
+  const gone = smootherstep(2, n / 2, Math.abs(d));
+  const u = sd * (near * LAYER_ROW.near + far * LAYER_ROW.far);
+  // Mid-turn the layer leaving the front and the one arriving stand at the same depth, turned into
+  // each other: the one on the left steps nearer and the other back (none at rest), so they pass.
+  const pass = sd * 4 * near * (1 - near) * LAYER_ROW.pass;
+  const v = -(near * LAYER_ROW.back + far * LAYER_ROW.farBack) - pass;
+  const s = FAN_S * (LAYER_ROW.front - near * 0.24 - far * 0.06) * (1 - gone);
+  return { u, v, turn: -sd * near * LAYER_ROW.turn, s };
+}
+/** The pages recede steeply (back, farBack): the camera looks down, so the row climbs as it goes back
+ *  and fills the height beside the card rather than lying as a low strip under empty sky. */
+const LAYER_ROW = { near: 1.45, far: 0.5, back: 1.1, farBack: 0.8, turn: 0.62, front: 1.12, pass: 0.6 };
+/** The ground a little in front of the read layer's lower edge, where the pills stand. Fixed while
+ *  the row turns: the pills must never move under a still pointer. */
+export const LAYER_FOOT = (): Vec3 => {
+  const [x, z] = isoXZ(0, 0.12, FAN[0], FAN[1]);
+  return [x, 0, z];
+};
 /** The audit board's size on portrait screens, where it is framed on its own: the Industries board's. */
 const FINAL_SP = 1.6;
 /** Scale's hand of functions stands about this point; its last function card becomes the Industries board. */
@@ -310,10 +345,10 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
   if (phone && (c === CH.control || c === CH.scale)) return null;
   switch (c) {
     case CH.control: {
-      // The decision opens into the layers it was built from: a fan, square to the viewer.
-      const s = FAN_S;
-      const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
-      return { p: [x, standY(s, LEAN), z], rx: UP - LEAN, ry: -0.4 - t * 0.04 + ISO.az, s };
+      // The decision opens into the layers it was built from: a row, the one being read in front.
+      const r = layerRow(k, store.layer);
+      const [x, z] = isoXZ(r.u, r.v, FAN[0], FAN[1]);
+      return { p: [x, standY(r.s, LEAN), z], rx: UP - LEAN, ry: r.turn - t * 0.03 + ISO.az, s: r.s };
     }
     case CH.scale:
       // Flip: the back of each card is a different business function, dealt into a hand one per step.
@@ -492,14 +527,16 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
       o.pan[0] = 0.15 * (truckX(t) - (TRUCK_X0 + TRUCK_X1) / 2);
       break;
     case CH.control:
+      // The five places of the row (the same whichever layer is read, so the camera holds still).
       for (let k = 0; k < CARDS; k++) {
-        // Each layer is turned 0.4 from square: about 0.92 of its half width either side on screen.
-        // The outer layers also budget the step aside a read neighbour gives them (cards.tsx).
-        const [x, z] = isoXZ((k - 2) * 0.78, (k - 2) * 0.62, FAN[0], FAN[1]);
-        const edge = k === 0 || k === CARDS - 1 ? 0.3 : 0;
-        pillar(o, x, z, (CARD.w / 2) * FAN_S * 0.92 + edge, 0, CARD.h * FAN_S + 0.1);
+        const r = layerRow(k, 0);
+        const [x, z] = isoXZ(r.u, r.v, FAN[0], FAN[1]);
+        pillar(o, x, z, (CARD.w / 2) * r.s * Math.cos(r.turn), 0, CARD.h * r.s + 0.1);
       }
-      o.dist = 13.3 * drift;
+      // The whole open space right of the card, under the head's figures: as large as it fits there
+      // (13.3 held it at a fixed size, which left a band of empty sky over it on most screens).
+      o.open = 1;
+      o.dist = 8 * drift;
       break;
     case CH.scale: {
       // Framed on the whole hand as dealt, so the camera holds still while cards land in it: the

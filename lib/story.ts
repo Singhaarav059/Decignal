@@ -24,7 +24,8 @@ export const CHAPTERS: Chapter[] = [
   { id: "problem", label: "Problem", len: 1.5, ts: 0.55 },
   { id: "context", label: "Context", len: 1.5, ts: 0.55 },
   { id: "decision", label: "Follow-up", len: 2.7, ts: 0.9 },
-  { id: "control", label: "Control", len: 1.7, ts: 0.62 },
+  // Long enough to scroll through its five layer cards one at a time (controlLayer), Scale's pace.
+  { id: "control", label: "Control", len: 2.5, ts: 0.74 },
   { id: "scale", label: "Functions", len: 2.6, ts: 0.75 },
   { id: "industries", label: "Industries", len: 2.4, ts: 0.85 },
   { id: "final", label: "Start", len: 1, ts: 1 },
@@ -57,6 +58,10 @@ export const store = {
   focus: -1,
   /** A card the page asks to bring forward (the approval panel points at the decision card). */
   focusHint: -1,
+  /** Control's layer in front of the row (0..4), eased: a fraction while the row slides (lib/scene.ts). */
+  layer: 0,
+  /** Screen position (CSS px) under the front layer's foot, where the layer pills stand on wide screens. */
+  layerFoot: { x: 0, y: 0 },
   /** The page points at the signal (hovering its readout: the supplier's message), so it lifts. */
   signalHint: false,
   /** performance.now() of the last frame the pointer read a card in 3D (pauses the tabs' autoplay). */
@@ -218,6 +223,13 @@ const steppedAt = (k: number, a: number, u: number, count: number, turn: number)
   const h = u / (count + (count - 1) * turn);
   return a + k * h * (1 + turn) + h / 2;
 };
+
+/** Control's row brings its five layers to the front one per scroll step, Signal to the follow-up:
+ *  the layer in front at local t (fractional while the row slides). */
+export const CONTROL_LAYERS = 5;
+export const controlLayer = (t: number) => stepped(t, 0.03, CHAPTERS[CH.control].ts - 0.06, CONTROL_LAYERS, 0.6);
+/** Local progress where layer k holds in front (for the pills and a click on a card). */
+export const controlSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.control].ts - 0.06, CONTROL_LAYERS, 0.6);
 
 /** Scale deals its hand one card per step: the five functions, then the glass layer card that lands on
  *  top of them. How many are dealt at local t (fractional while one is on its way). */
