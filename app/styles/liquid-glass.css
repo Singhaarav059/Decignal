@@ -153,7 +153,7 @@
 .bento-card[data-field="slate"] .bento-text { color: rgb(255 255 255 / 0.94); }
 .bento-card[data-field="slate"] .bento-n::after { color: rgb(255 255 255 / 0.55); }
 /* Its figure is a word: a size smaller and one line, or the hyphen breaks it in two. */
-.bento-card[data-field="slate"] .bento-n { font-size: clamp(40px, 4.3vw, 64px); white-space: nowrap; }
+.bento-card[data-field="slate"] .bento-n { font-size: min(clamp(40px, 4.3vw, 64px), 17cqi); white-space: nowrap; }
 .bento-card[data-field="slate"] .ba-plate { fill: rgb(255 255 255 / 0.2); stroke: rgb(255 255 255 / 0.4); stroke-width: 1; }
 .bento-card[data-field="slate"] .ba-bar { fill: #fff; }
 /* Amber, ink type: translucent like the references' "Credit Age" card. */
