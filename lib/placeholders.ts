@@ -13,12 +13,13 @@ export const PLACEHOLDER = {
   privacyEmail: "privacy@decignal.example",
   /** PLACEHOLDER: replace before launch. The date the legal pages take effect. */
   effective: "15 October 2026",
-  /** PLACEHOLDER: replace before launch. Verified founder details for the About section. */
+  /** Founder details for the About section, taken from demazetech.com (15 October 2026). */
   founder: {
-    name: "Founder name",
-    role: "Founder",
-    experience: "One sentence of verified, relevant experience goes here.",
-    linkedin: "#",
+    name: "Krupal Chaudhary",
+    role: "Founder & CEO",
+    experience:
+      "Founded Demaze Technologies in Ahmedabad, where a team of 35+ has delivered 45+ AI and software projects over six years.",
+    linkedin: "https://www.linkedin.com/in/krupalchaudhary",
   },
   /** PLACEHOLDER: replace before launch. What the website actually does with enquiry data (handoff §9). */
   privacy: {

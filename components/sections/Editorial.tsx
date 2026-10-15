@@ -435,7 +435,7 @@ function About() {
               <p className="t-subtitle about-founder-name">{f.name}</p>
               <p className="t-small about-founder-role">{f.role}</p>
               <p className="t-body about-founder-text">{f.experience}</p>
-              <a className="ed-link about-founder-link" href={f.linkedin} rel="noopener">
+              <a className="ed-link about-founder-link" href={f.linkedin} target="_blank" rel="noopener noreferrer">
                 {ABOUT.linkedin}
                 <Arrow />
               </a>
