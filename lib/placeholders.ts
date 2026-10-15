@@ -16,7 +16,7 @@ export const PLACEHOLDER = {
   /** Founder details for the About section, taken from demazetech.com (15 October 2026). */
   founder: {
     name: "Krupal Chaudhary",
-    role: "Founder & CEO",
+    role: "Founder",
     experience:
       "Founded Demaze Technologies, an AI and software company in Ahmedabad. Its team and track record:",
     /** The same Demaze figures, drawn as the founder card's facts (Editorial.tsx About). `n` is how many
