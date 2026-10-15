@@ -971,7 +971,8 @@ html.ready .hero-tag-sys { animation: hero-pop 700ms var(--ease-out-expo) calc(3
   .hero-meta { --d: 700ms; }
   /* The offer and its caption on a small frosted white glass card, so they read over the coloured field. */
   .hero-meta-text {
-    display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--radius-md); text-wrap: balance;
+    /* Left-set and filled to the card's width: right-set balanced lines left the card's left side empty. */
+    display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--radius-md); text-align: left; text-wrap: pretty;
     background-color: rgb(255 255 255 / 0.72);
     -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.7), 0 10px 24px -16px rgb(15 18 23 / 0.35);
