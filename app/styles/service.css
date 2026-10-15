@@ -39,24 +39,6 @@
   .svc-hero-card .area-photo { width: calc(100% + 16px); margin-inline: -8px; }
   .svc-hero-card .area-photo-frame { border-radius: var(--radius-sm); }
 }
-.svc-signal {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--color-sunken);
-}
-.svc-signal-dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-pill);
-  background: var(--color-signal);
-  box-shadow: 0 0 0 3px var(--color-surface);
-}
-.svc-signal .t-label { flex: none; color: var(--color-signal-ink); }
-.svc-signal-text { min-width: 0; font-size: var(--fs-body); font-weight: 600; line-height: 1.35; }
 .svc-moves { display: grid; }
 .svc-moves li { border-bottom: 1px solid var(--color-line); }
 /* Each move opens its application's chapter in the explorer below. */
@@ -74,11 +56,9 @@
 }
 @media (hover: hover) {
   .svc-move-link:hover { background: var(--color-wash); }
-  .svc-move-link:hover .svc-move-weeks { color: var(--color-ink); }
 }
 .svc-move { display: grid; gap: 4px; min-width: 0; }
 .svc-move-text { font-size: var(--fs-body); font-weight: 600; line-height: 1.35; }
-.svc-move-weeks { flex: none; color: var(--color-ink-soft); white-space: nowrap; }
 .svc-card-note { color: var(--color-ink-soft); }
 
 @media (min-width: 1024px) {
@@ -96,7 +76,6 @@
   /* The photo gives up height first: a wider crop; the drawing a little after. */
   .svc-hero-card .area-photo-frame { aspect-ratio: 16 / 7; }
   .svc-hero-art { height: 88px; }
-  .svc-signal { padding-block: 9px; }
   .svc-move-link { padding-block: 8px; }
 }
 /* 1280x680 and similar: the three-application card still ends above the fold. */
@@ -126,9 +105,6 @@
 .svc-app { display: grid; align-content: start; gap: 12px; }
 .svc-app .t-label { display: flex; align-items: center; gap: 8px; }
 .svc-app-line { color: var(--color-ink-2); max-width: 52ch; }
-.svc-app-steps { display: grid; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--color-line); }
-.svc-app-steps dd { margin-top: 4px; color: var(--color-ink-2); }
-.svc-app-foot { margin-top: 4px; color: var(--color-ink-soft); }
 @media (min-width: 768px) {
   .svc-app-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -164,45 +140,10 @@
   .svc-checks { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: calc(var(--col-gap) * 1.5); }
 }
 
-/* How it works: four steps on one hairline track, a tone dot where each begins. */
-.svc-steps { display: grid; gap: 40px; margin-top: var(--stack-content); }
-.svc-step { position: relative; padding-top: 26px; border-top: 1px solid var(--color-line-strong); }
-.svc-step-mark {
-  position: absolute;
-  top: -5px;
-  left: 0;
-  width: 9px;
-  height: 9px;
-  border-radius: var(--radius-pill);
-  background: var(--tone, var(--color-ink));
-  box-shadow: 0 0 0 4px var(--color-bg);
-}
-.svc-step-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.svc-step h3 { margin-top: 18px; }
-.svc-step-text { margin-top: 8px; color: var(--color-ink-2); }
-.svc-step-gets-label { margin-top: 22px; }
-.svc-gets { display: grid; gap: 8px; margin-top: 10px; }
-.svc-gets li { display: flex; align-items: center; gap: 8px; color: var(--color-ink-2); }
-.svc-gets svg { flex: none; color: var(--tone-ink, var(--color-ink)); }
-@media (min-width: 768px) {
-  .svc-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--col-gap); row-gap: 48px; }
-}
-@media (min-width: 1100px) {
-  .svc-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
 /* Why Decignal: the differentiator and its illustrative example, then the three shared points. */
 .svc-why { display: grid; gap: 40px; }
 .svc-example { display: grid; gap: 12px; }
 .svc-example .t-num-lg { margin-top: 8px; }
-.svc-example-text { color: var(--color-ink-2); }
-.svc-example-note { padding-top: 12px; border-top: 1px solid var(--color-line); color: var(--color-ink-soft); }
-.svc-points { display: grid; gap: 28px; margin-top: var(--stack-content); }
-.svc-points li { padding-top: 20px; border-top: 1px solid var(--color-line-strong); }
-.svc-points .t-body { margin-top: 8px; color: var(--color-ink-2); }
-@media (min-width: 768px) {
-  .svc-points { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--col-gap); }
-}
 @media (min-width: 1024px) {
   .svc-why { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
   .svc-why > .section-title { grid-column: 1 / span 7; }
@@ -285,8 +226,7 @@
 /* ---- Handoff template map additions: eyebrow, customer fit, status and scope notes, the short
    process block, the workflow record fields and the closing call to action. Existing tokens only. ---- */
 .svc-eyebrow { margin-top: 18px; color: var(--tone-ink, var(--color-ink-soft)); }
-.svc-fit { margin-top: var(--stack-label); max-width: 60ch; color: var(--color-ink-2); }
-.svc-fit .t-label, .svc-scope .t-label, .svc-app-foot .t-label { margin-right: 6px; color: var(--color-ink); }
+.svc-scope .t-label { margin-right: 6px; color: var(--color-ink); }
 .svc-status { margin-top: 14px; max-width: 56ch; color: var(--color-ink-soft); }
 .svc-scope { margin-top: 20px; padding-top: 16px; max-width: 60ch; border-top: 1px solid var(--color-line); color: var(--color-ink-2); }
 .svc-process { display: grid; gap: 16px; align-content: start; }

@@ -48,8 +48,6 @@
   }
   .t-num-lg { font-size: var(--fs-num-lg); line-height: 0.95; letter-spacing: -0.01em; }
   .t-num-md { font-size: var(--fs-num-md); line-height: 1; letter-spacing: -0.01em; }
-  /* Text in a tone: its text-safe ink (set with lib/tone.ts toneVars). */
-  .t-tone { color: var(--tone-ink, var(--color-ink)); }
   /* Two-line headline: the first line medium in ink, the second light in the section's text-safe ink
      (Plinth, Koushik). Light weights run a touch looser so the two lines share one measure. */
   :is(.t-display, .t-title, .t-title-card) .accent {
@@ -88,14 +86,6 @@
   }
   /* Anything holding a graphic or a whole section's content. */
   .card--panel { border-radius: var(--radius-lg); padding: var(--panel-pad); }
-  /* Rows, cells and readout items inside a card. */
-  .card-inset {
-    background: var(--color-sunken);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-  }
-  
-  
   .card[data-interactive] {
     transition: box-shadow var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
   }

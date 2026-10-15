@@ -110,15 +110,14 @@
 .nav-links a:hover, .nav-links a[aria-current] { color: var(--color-ink); }
 
 /* ---- Glass over content: cards and controls that float over the world, photos or colour ---- */
-:is(.story-card, .application-card, .ind-callout, .hero-tag, .section-title-label, .sys-chip, .btn-ghost, .story-details-btn, .dial-face,
-  .dial-node-chip, .faq-item, .faq-fig, .faq-help, .bento-card, .outcome-figure, .how-legend, .area-preview-name, .faq-plus) {
+:is(.story-card, .application-card, .ind-callout, .hero-tag, .section-title-label, .sys-chip, .btn-ghost, .story-details-btn, .dial-face, .dial-node-chip, .faq-item, .faq-fig, .faq-help, .bento-card, .outcome-figure, .area-preview-name, .faq-plus) {
   background-color: rgb(238 242 247 / 0.56);
   background-image: var(--lg-grain), var(--field-mist);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-rim), var(--lg-edge), var(--lg-lift-sm);
 }
-.seg[data-variant="selector"], .application-reads li, .application-index button:not([aria-current]), .orbit-promises li, .application-stepper button {
+.seg[data-variant="selector"], .application-reads li, .application-index button:not([aria-current]), .application-stepper button {
   background-color: rgb(238 242 247 / 0.56);
   background-image: var(--lg-grain), var(--field-mist);
   -webkit-backdrop-filter: var(--lg-blur);
@@ -185,7 +184,7 @@
 /* ---- Squircles: the references' continuous corners on the big glass cards. A squircle reads smaller
    than a circle of the same radius, so the radius grows where the browser draws one. ---- */
 @supports (corner-shape: squircle) {
-  :is(.story-card, .application-card, .ind-callout, .bento-card, .faq-fig, .outcome-figure, .how-plate, .how-legend, .orbit-copy, .nav-peek-body, .island-panel, .audit-card) {
+  :is(.story-card, .application-card, .ind-callout, .bento-card, .faq-fig, .outcome-figure, .how-plate, .orbit-copy, .nav-peek-body, .island-panel, .audit-card) {
     corner-shape: squircle;
     border-radius: 40px;
   }

@@ -202,8 +202,6 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .nav-peek-pane[data-on] { opacity: 1; transform: none; pointer-events: auto; transition-delay: 60ms, 0s; }
 .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: peekIn var(--dur-4) var(--ease) both; animation-delay: calc(40ms + var(--k) * 35ms); }
 @keyframes peekIn { from { opacity: 0; transform: translateY(8px); } }
-/* A closed glance, or a pane not shown, holds its live reading still: hidden, it restyled every frame. */
-:is(.nav-peek:not([data-open]), .nav-peek-pane:not([data-on])) .aa-live { animation-play-state: paused; }
 
 .peek-grid { display: grid; grid-template-columns: minmax(0, 1fr) 216px; gap: 10px; }
 .peek-list { display: grid; gap: 2px; align-content: start; }
@@ -256,7 +254,6 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .peek-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .peek-outcome { align-content: start; padding: 14px 16px 16px; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); }
 .peek-outcome-sector { font: 600 var(--fs-label) var(--font-heading); color: var(--tone-ink, var(--color-ink-soft)); }
-.peek-outcome-value { margin-top: 8px; font-family: var(--font-heading); font-size: var(--fs-num-md); font-weight: 600; line-height: 1; letter-spacing: -0.01em; color: var(--tone-ink, var(--color-ink)); }
 .peek-outcome .outcome-diagram { height: 74px; margin: 12px 0 10px; }
 .peek-outcome-label { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-2); }
 

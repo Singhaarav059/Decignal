@@ -96,8 +96,6 @@
   fill: var(--color-ink-2);
   font-variant-numeric: tabular-nums;
 }
-.faq-art .fa-num { letter-spacing: 0; font-variant-numeric: tabular-nums; }
-.faq-art .fa-rank { font-family: var(--font-heading); font-weight: 700; fill: var(--color-ink); }
 .faq-art text.fa-on-ink { fill: var(--color-on-ink); }
 .faq-art .fa-risk-text { fill: var(--color-signal-ink); }
 
@@ -106,22 +104,16 @@
 .faq-art .fa-ink { fill: var(--color-ink); }
 .faq-art .fa-hair { fill: none; stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .faq-art .fa-hair.strong { stroke: var(--color-line-strong); }
-.faq-art .fa-grid { fill: none; stroke: var(--color-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .faq-art .fa-axis { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
 .faq-art .fa-dashed { stroke-dasharray: 3 4; }
-.faq-art .fa-today { fill: none; stroke: var(--color-ink-muted); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
-.faq-art .fa-past { fill: none; stroke: var(--color-ink-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.faq-art .fa-past-dot { fill: var(--color-ink-muted); stroke: var(--color-sunken); stroke-width: 2; }
 .faq-art .fa-link { fill: none; stroke: var(--color-ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .faq-art .fa-line { fill: none; stroke: var(--tone); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .faq-art .fa-dot { fill: var(--tone); }
 .faq-art .fa-risk { fill: var(--color-signal); }
 .faq-art .fa-ok { fill: var(--color-emerald); }
 .faq-art .fa-track { fill: var(--color-track); }
-.faq-art .fa-limit { fill: none; stroke: var(--color-ink); stroke-width: 1.5; }
 .faq-art .fa-check { fill: none; stroke: var(--color-emerald); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .faq-art .fa-check.fa-on-ok { stroke: var(--color-on-ink); }
-.faq-art .fa-faded { opacity: 0.55; }
 
 /* ---- Draw-in: strokes draw, bars grow, results rise, each a stagger step after the last.
    Off, everything resets only once the figure has faded out, so nothing undraws on screen. ---- */

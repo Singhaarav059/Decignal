@@ -6,7 +6,6 @@
 /* ---- Area art: shared parts ---- */
 .area-art text { font-weight: 600; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; fill: var(--color-ink-soft); }
 .area-art .aa-strong { fill: var(--color-ink); }
-.area-art .aa-tone-ink { fill: var(--tone-ink, var(--color-ink)); }
 .area-art .aa-risk-ink { fill: var(--color-signal-ink); }
 .area-art .aa-on-tone, .area-art .aa-on-tag { font-family: var(--font-heading); letter-spacing: 0.02em; fill: var(--color-on-ink); }
 .area-art[data-small] .aa-tag { display: none; }
@@ -16,7 +15,6 @@
 .area-art .aa-solid { fill: var(--tone); }
 .area-art .aa-line { fill: none; stroke: var(--tone); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .area-art .aa-ground { fill: none; stroke: var(--color-line-strong); stroke-width: 1; }
-.area-art .aa-tick { fill: none; stroke: var(--color-line-strong); stroke-width: 1; }
 .area-art .aa-rule { fill: none; stroke: var(--color-line); stroke-width: 1; }
 .area-art .aa-link { fill: none; stroke: color-mix(in srgb, var(--tone) 38%, white); stroke-width: 1; }
 .area-art .aa-slat { fill: none; stroke: var(--color-surface); stroke-width: 1.5; }
@@ -26,19 +24,9 @@
 .area-art .aa-check { fill: none; stroke: var(--color-on-ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .area-art .aa-check--tone { stroke: var(--tone); stroke-width: 2; }
 
-/* Operations: motor, bearing, readings against the stoppage line, Friday's window. */
-.area-art .aa-fin { fill: none; stroke: color-mix(in srgb, var(--tone) 40%, white); stroke-width: 1.5; stroke-linecap: round; }
-.area-art .aa-shaft { fill: var(--color-ink-muted); }
-.area-art .aa-bearing { fill: var(--tone); stroke: var(--color-surface); stroke-width: 2; }
-.area-art .aa-limit { fill: none; stroke: var(--color-signal); stroke-width: 1; stroke-dasharray: 3 3; }
-.area-art .aa-proj { fill: none; stroke: var(--tone); stroke-width: 1.5; stroke-dasharray: 2 4; stroke-linecap: round; }
-.area-art .aa-dot { fill: var(--tone); stroke: var(--color-surface); stroke-width: 2; }
-.area-art .aa-window { fill: color-mix(in srgb, var(--tone) 12%, white); stroke: color-mix(in srgb, var(--tone) 45%, white); stroke-width: 1; }
-
 /* Commercial: allocation bars, orders levels in ink, the block that moves. */
 .area-art .aa-orders { fill: none; stroke: var(--color-ink); stroke-width: 2; stroke-linecap: round; }
 .area-art .aa-ghost { fill: none; stroke: var(--tone); stroke-width: 1.5; stroke-dasharray: 3 3; }
-.area-art .aa-chunk { stroke: var(--color-surface); stroke-width: 1.5; }
 
 /* Customer: the cases and the bearing they share. */
 .area-art .aa-case { fill: color-mix(in srgb, var(--tone) 14%, white); stroke: var(--tone); stroke-width: 1.5; }
@@ -50,14 +38,12 @@
 .area-art .aa-doc-missing { fill: none; stroke: var(--color-ink-muted); stroke-width: 1.25; stroke-dasharray: 2 2; }
 .area-art .aa-match { fill: none; stroke: var(--tone); stroke-width: 1.5; stroke-linecap: round; }
 .area-art .aa-nomatch { fill: none; stroke: var(--color-line-strong); stroke-width: 1; stroke-dasharray: 2 3; }
-.area-art .aa-hold { fill: var(--color-signal); }
 
 /* Thumbnails (the nav's glance) keep the picture and drop the labels; a touch heavier so it still reads. */
 .area-art[data-small] .aa-ground { stroke: var(--color-line-strong); stroke-width: 1.5; }
 
 /* Signal focus: pointing at the area's signal row singles out the part of the drawing it describes. */
 .area-art > * { transition: fill-opacity var(--dur-3) var(--ease), stroke-opacity var(--dur-3) var(--ease); }
-.svc-hero-card:has(.svc-signal:hover) .area-art > :not(.aa-sig) { fill-opacity: 0.22; stroke-opacity: 0.22; }
 
 /* The home panels carry the drawing at the top of the signal card, under the area's duotone photograph; the service hero card sets it between the photograph and the signal (editorial.css, service.css). */
 
@@ -77,12 +63,7 @@
   /* The truck leaves Plant 02's dock and drives to Plant 01's door, easing in and out like a vehicle. */
   .area-art .aa-truck { opacity: 0; transform: translateX(-104px); transition: opacity var(--dur-3) var(--ease) 360ms, transform calc(var(--dur-5) * 2) var(--ease-in-out-quart) 560ms, fill-opacity var(--dur-3) var(--ease), stroke-opacity var(--dur-3) var(--ease); }
   .area-art[data-on] .aa-truck { opacity: 1; transform: none; }
-
-  /* The one idle motion in Operations: today's reading breathes, as a live value does. */
-  .area-art[data-on] .aa-live { animation: aa-live 2.4s ease-in-out 1.6s infinite; }
-  .area-art[data-far] .aa-live { animation-play-state: paused; }
 }
-@keyframes aa-live { 50% { opacity: 0.4; } }
 
 /* ---- Outcome drawings ---- */
 .outcome-diagram text { font-variant-numeric: tabular-nums; }
@@ -93,7 +74,6 @@
 .outcome-diagram .og-data { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .outcome-diagram .og-without { fill: none; stroke: var(--color-ink-muted); stroke-width: 1.5; stroke-dasharray: 3 3; stroke-linecap: round; }
 .outcome-diagram .og-safety { fill: none; stroke: var(--color-signal); stroke-width: 1; stroke-dasharray: 2 3; }
-.outcome-diagram .og-dot { fill: currentColor; stroke: var(--color-surface); stroke-width: 2; }
 .outcome-diagram .og-sent { fill: var(--color-track); stroke: var(--color-line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
 .outcome-diagram .og-link { fill: none; stroke: color-mix(in srgb, var(--tone) 34%, white); stroke-width: 1; }
 .outcome-diagram .og-ring { fill: var(--color-surface); stroke: currentColor; stroke-width: 2; }
@@ -111,8 +91,6 @@
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   .outcome-diagram .outcome-stroke { stroke-dasharray: 1 !important; stroke-dashoffset: 1 !important; transition: stroke-dashoffset var(--dur-5) var(--ease); transition-delay: calc(var(--t, 0) * 1ms); }
   .outcome-diagram[data-on] .outcome-stroke { stroke-dashoffset: 0 !important; }
-  .outcome-diagram .outcome-bar { transform: scaleX(0) !important; transform-box: fill-box; transform-origin: 0 50%; transition: transform var(--dur-5) var(--ease); transition-delay: calc(var(--t, 0) * 1ms); }
-  .outcome-diagram[data-on] .outcome-bar { transform: scaleX(1) !important; }
   .outcome-diagram .og-draw { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--dur-4) var(--ease); transition-delay: calc(var(--t, 0) * 1ms + var(--i, 0) * 24ms); }
   .outcome-diagram[data-on] .og-draw { stroke-dashoffset: 0; }
   .outcome-diagram .og-rise { opacity: 0; transform: translateY(4px); transition: opacity var(--dur-4) var(--ease), transform var(--dur-4) var(--ease); transition-delay: calc(var(--t, 0) * 1ms + var(--i, 0) * 24ms); }

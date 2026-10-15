@@ -80,9 +80,6 @@
 /* ---- Works with what you run: the copy on a glass panel the six photographs orbit behind, each
    joined to the middle by a thread in its colour; the three promises as chips. ---- */
 .orbit-threads { display: none; }
-.orbit-promises { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
-.orbit-promises li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 12px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; color: var(--color-ink); }
-.orbit-promises svg { color: var(--color-cobalt); }
 @media (min-width: 768px) {
   .orbit-threads { display: block; position: absolute; left: 50%; top: 50%; width: 1px; height: 1px; overflow: visible; z-index: 1; pointer-events: none; }
   .orbit-thread { fill: none; stroke: var(--tone); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 0.006 0.018; opacity: 0.7; animation: orbit-flow 3.6s linear infinite; transition: opacity var(--dur-3) var(--ease), stroke-width var(--dur-3) var(--ease); }
@@ -228,7 +225,6 @@
 .outcome-visual { display: flex; align-items: center; min-width: 0; }
 .outcome-number { color: var(--tone-ink, var(--color-ink)); }
 .outcome-label { margin-top: 12px; max-width: 30ch; }
-.outcome-description { margin-top: var(--stack-label); max-width: 46ch; color: var(--color-ink-2); }
 .outcome-figure figcaption { margin-top: var(--stack-lede); padding-top: 14px; border-top: 1px solid var(--color-line); }
 @media (min-width: 900px) {
   .outcome-figure { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 64px; row-gap: 24px; align-items: center; min-height: min(440px, calc(100svh - 220px)); }
@@ -241,14 +237,12 @@
 .outcome-stack-card .outcome-figure { transform-origin: 50% 0; box-shadow: var(--edge-line), 0 30px 60px -40px rgb(15 18 23 / 0.4); }
 .outcome-top { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--color-line); color: var(--color-ink); }
 .outcome-n { color: var(--tone-ink, var(--color-ink)); }
-.outcome-of { color: var(--color-ink-soft); }
 @media (max-width: 899px) { .outcome-stack-card { position: static; } }
 /* The drawing behind each outcome: data in the outcome's colour (currentColor), the rest neutral. */
 .outcome-diagram { display: block; width: 100%; height: auto; overflow: visible; color: var(--tone, var(--color-ink)); }
 .outcome-diagram text { font-family: var(--font-heading); font-size: calc(11px / var(--svg-k, 1)); font-weight: 600; letter-spacing: .07em; fill: var(--color-ink-soft); }
 .outcome-diagram[data-small] text { display: none; }
 .outcome-diagram .og-risk { fill: var(--color-signal); }
-.outcome-diagram .og-mark { stroke: var(--color-ink-muted); stroke-dasharray: 3 3; fill: none; }
 .outcome-diagram .og-link { stroke: var(--color-line); fill: none; }
 
 /* ---- How it works: a pinned stage on wide screens, the steps as cards on phones ---- */
@@ -452,11 +446,6 @@
 .bento-photo { display: flex; flex-direction: column; overflow: hidden; }
 .bento-photo .bento-n { margin-top: auto; padding-top: 18px; }
 .bento-figure { position: relative; margin: calc(-1 * var(--card-pad)) calc(-1 * var(--card-pad)) 20px; overflow: hidden; aspect-ratio: 16 / 8; background: var(--tone); }
-.bento-log { display: grid; gap: 2px; margin-top: 14px; }
-.bento-log li { display: grid; grid-template-columns: 3.4em 1fr; align-items: baseline; gap: 10px; padding: 7px 0 7px 14px; position: relative; font-size: 13px; line-height: 1.35; color: var(--color-ink-2); box-shadow: inset 0 -1px 0 var(--color-line); }
-.bento-log li:last-child { box-shadow: none; }
-.bento-log li::before { content: ""; position: absolute; left: 0; top: 13px; width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
-.bento-log span { font-weight: 600; color: var(--color-ink); }
 .bento-img { display: block; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(0.95) brightness(1.12); transition: transform 1200ms var(--ease); }
 .bento-figure::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--tone) 62%, white); mix-blend-mode: multiply; }
 @media (hover: hover) { .bento-photo:hover .bento-img { transform: scale(1.05); } }
@@ -740,15 +729,7 @@
 /* ---- How it works (components/sections/HowSteps.tsx, the Plinth steps): four full-width colour
    sheets, each sticking to the top while the next slides up over it. Both routes on every sheet. ---- */
 .how-top { display: grid; gap: 28px; align-items: end; }
-.how-legend { display: grid; gap: 10px; padding: 14px 16px; border-radius: var(--radius-lg); }
-.how-legend li { display: flex; align-items: flex-start; gap: 12px; }
-.how-legend li > span:last-child { display: grid; gap: 2px; }
-.how-legend strong { font-size: var(--fs-body); font-weight: 600; }
-.how-legend .t-small { color: var(--color-ink-soft); }
-/* The routes' marks: a solid disc for custom, a ring for the catalogue, in the sheet's own ink. */
-.how-legend-mark { flex: none; width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; background: currentColor; }
-.how-legend-mark[data-k="1"] { background: none; box-shadow: inset 0 0 0 2px currentColor; }
-@media (min-width: 1024px) { .how-top { grid-template-columns: minmax(0, 1fr) auto; } .how-legend { padding: 18px 22px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--edge-line); } }
+@media (min-width: 1024px) { .how-top { grid-template-columns: minmax(0, 1fr) auto; } }
 .how-sheets { display: grid; gap: 12px; margin-top: var(--ed-gap); padding-inline: 12px; }
 .how-sheet { color: var(--sheet-fg); background: var(--sheet); border-radius: var(--radius-xl); }
 .how-sheet-inner { display: grid; gap: 24px; padding: clamp(24px, 3.4vw, 48px) max(24px, calc(var(--edge) - 12px)); padding-inline: calc(max(var(--gutter), (100% + 2 * var(--panel-inset) - var(--grid-max)) / 2) - var(--panel-inset)); }
@@ -759,7 +740,6 @@
 /* The text is one item, so a narrow column wraps it as a line of text (as separate runs it broke into
    side-by-side columns); the mark keeps to the first line. */
 .how-route-label { display: flex; align-items: flex-start; gap: 10px; color: inherit; }
-.how-route-label .how-legend-mark { margin-top: calc((1lh - 10px) / 2); width: 10px; height: 10px; }
 .how-sheet-title { font-size: clamp(26px, 2.6vw, 40px); font-weight: 500; line-height: 1.02; letter-spacing: -0.011em; }
 .how-text { max-width: 34ch; font-size: clamp(16px, 1.25vw, 18px); line-height: 1.45; opacity: 0.92; }
 .how-deliver { display: grid; gap: 7px; margin-top: 6px; }
