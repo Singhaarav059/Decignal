@@ -221,7 +221,7 @@ export function SystemsRing({ children }: { children: ReactNode }) {
           const photo = PHOTO[c.id];
           return (
             <li key={c.id} className="orbit-tile" style={toneVars(c.tone)} tabIndex={0}>
-              <figure className="orbit-photo">
+              <figure className="orbit-photo" data-tone={c.tone}>
                 <Image src={photo.src} alt={photo.alt} sizes="(min-width: 768px) 240px, 45vw" className="orbit-photo-img" />
               </figure>
               <p className="orbit-cap">

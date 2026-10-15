@@ -330,7 +330,7 @@ export function Statement() {
               className="bento-card bento-photo"
               style={toneVars(approver.tone)}
             >
-              <figure className="bento-figure">
+              <figure className="bento-figure" data-tone={approver.tone}>
                 <Image
                   src={decide}
                   alt={STATEMENT.approverAlt}

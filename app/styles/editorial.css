@@ -184,8 +184,9 @@
 /* ---- The place (AreaPhoto): a duotone in the area's colour, nothing over it ----
    The photograph is greyscale, lifted a little, under a pale solid of the tone (multiply), so its
    highlights take the pale tone and its shadows a deep grey of it: one flat solid, no gradient, and
-   no tone mixed with ink (that reads brown on the warm tones). The frame clips a slightly taller inner
-   layer, and the picture eases a little closer under the pointer. */
+   no tone mixed with ink (that reads brown on the warm tones). Saffron and tangerine screen instead
+   (below). The frame clips a slightly taller inner layer, and the picture eases a little closer
+   under the pointer. */
 .area-photo { position: relative; margin: 0; }
 .area-photo-frame { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border-radius: var(--radius-md); background: var(--tone); }
 .area-photo-move { position: absolute; inset: -10% 0; isolation: isolate; }
@@ -195,6 +196,14 @@
   .svc-hero-card:hover .area-photo-img { transform: scale(1.045); }
 }
 @media (prefers-reduced-motion: reduce) { .area-photo-img { transition: none; } }
+/* The warm tones turn the duotone over (all three photo treatments: area rows, systems ring, bento).
+   A pale saffron or tangerine multiplied onto grey lands in the dark warm range and reads brown, so
+   their photograph is screened over a solid of the tone instead: the tone in the shadows, white in
+   the light. The figure says its tone in data-tone. */
+:is(.orbit-photo, .bento-figure):is([data-tone="saffron"], [data-tone="tangerine"])::after,
+.area-photo:is([data-tone="saffron"], [data-tone="tangerine"]) .area-photo-move::before { display: none; }
+.area-photo:is([data-tone="saffron"], [data-tone="tangerine"]) .area-photo-move { background: var(--tone); }
+:is(.orbit-photo, .area-photo, .bento-figure):is([data-tone="saffron"], [data-tone="tangerine"]) img { mix-blend-mode: screen; filter: grayscale(1) contrast(1.05) brightness(1); }
 
 /* Area line art: drawn in the area's colour on white. Labels hold 11px on screen (F-10). */
 .area-art { display: block; width: 100%; max-width: 420px; height: auto; overflow: visible; }
