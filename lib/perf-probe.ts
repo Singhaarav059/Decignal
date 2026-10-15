@@ -7,7 +7,7 @@
 // errors and lost contexts since the page loaded. The result is text to copy or screenshot.
 import { probe, type GlTally } from "./pace";
 import { jumpTo } from "./jump";
-import { gToProgress } from "./story";
+import { CH, gToProgress } from "./story";
 import { canvasQuality } from "./device";
 import { deviceTier } from "./tier";
 import type { ProbeLog } from "@/components/PerfProbe";
@@ -158,7 +158,8 @@ function places() {
   const list: [string, number][] = [
     // Swayed about a point past the nav's compact line (48px), so the hero is measured, not the nav's flip.
     ["hero", Math.round(window.innerHeight * 0.36)],
-    ["decision", at(4.415)],
+    // The heaviest 3D hold since revision 3: the function hand, dealt.
+    ["functions", at(CH.scale + 0.415)],
   ];
   if (apps) list.push(["apps", apps.getBoundingClientRect().top + window.scrollY + window.innerHeight * 0.6]);
   return list;
