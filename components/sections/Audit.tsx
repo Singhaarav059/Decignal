@@ -305,7 +305,6 @@ export function Audit({ area, source }: { area?: AreaSlug; source?: string }) {
               <SectionTitle
                 icon={<CalendarCheck size={13} strokeWidth={2.2} />}
                 id={fid("title")}
-                index={areaTone ? undefined : "08"}
                 label={AUDIT.eyebrow}
                 lines={[AUDIT.headline[0], AUDIT.headline[1]]}
                 tone={areaTone ?? "cobalt"}

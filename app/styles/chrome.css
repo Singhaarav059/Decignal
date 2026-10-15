@@ -84,7 +84,6 @@ a.skip-link { left: var(--edge); }
 .nav-readout[data-show] { max-width: 260px; margin-left: 8px; opacity: 1; }
 .nav-readout[data-mode="story"] { display: inline-flex; padding-right: 2px; }
 .nav-readout-rule { flex: none; width: 1px; height: 12px; margin-right: 4px; background: var(--color-line-strong); }
-.nav-readout-n { color: var(--tone-ink, var(--color-ink)); }
 .nav-readout-label { color: var(--color-ink-2); }
 .nav-roll { display: inline-block; animation: navRoll var(--dur-3) var(--ease) both; }
 @keyframes navRoll {
@@ -102,7 +101,7 @@ a.skip-link { left: var(--edge); }
    in sentence case; tapping it opens the menu's chapter list. Past the story the dock names sections. */
 @media (max-width: 639px) {
   .nav-pill[data-mini] .logo-word { max-width: 0; margin-left: 0; opacity: 0; }
-  .nav-readout[data-mode="story"] { gap: 6px; font-family: var(--font-sans); font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; }
+  .nav-readout[data-mode="story"] { gap: 6px; font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; }
   .nav-readout[data-mode="story"][data-show] { margin-left: 2px; }
   .nav-readout-rule, .nav-readout-caret { display: none; }
 }
@@ -251,12 +250,12 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .peek-area:hover .area-art { transform: scale(1.04); }
 .peek-tile-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .peek-tile-meta b { font-family: var(--font-heading); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.011em; }
-.peek-tile-chip { flex: none; padding: 2px 8px; border-radius: var(--radius-pill); font: 600 11px var(--font-heading); }
+.peek-tile-chip { flex: none; padding: 2px 8px; border-radius: var(--radius-pill); font: 600 13px var(--font-heading); }
 .peek-tile-hint { overflow: hidden; font-size: var(--fs-small); color: var(--color-ink-soft); text-overflow: ellipsis; white-space: nowrap; }
 
 .peek-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .peek-outcome { align-content: start; padding: 14px 16px 16px; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); }
-.peek-outcome-sector { font: 600 11px var(--font-heading); letter-spacing: 0.1em; text-transform: uppercase; color: var(--tone-ink, var(--color-ink-soft)); }
+.peek-outcome-sector { font: 600 var(--fs-label) var(--font-heading); color: var(--tone-ink, var(--color-ink-soft)); }
 .peek-outcome-value { margin-top: 8px; font-family: var(--font-heading); font-size: var(--fs-num-md); font-weight: 600; line-height: 1; letter-spacing: -0.01em; color: var(--tone-ink, var(--color-ink)); }
 .peek-outcome .outcome-diagram { height: 74px; margin: 12px 0 10px; }
 .peek-outcome-label { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-2); }
@@ -266,7 +265,7 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .peek-step .step-art { margin-bottom: 6px; padding: 6px; border-radius: var(--radius-sm); }
 .peek-step .peek-step-n, .peek-step b { padding-inline: 6px; }
 .peek-step b { font-family: var(--font-heading); font-size: var(--fs-body); font-weight: 600; line-height: 1.2; letter-spacing: -0.011em; }
-.peek-step-n { font-family: var(--font-heading); font-size: 11px; font-weight: 600; color: var(--tone-ink, var(--color-ink)); }
+.peek-step-n { font-family: var(--font-heading); font-size: 13px; font-weight: 600; color: var(--tone-ink, var(--color-ink)); }
 
 .peek-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 4px 2px 8px; }
 .peek-foot p { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -280,13 +279,13 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .peek-story-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 8px 8px 14px; border-bottom: 1px solid var(--color-line); }
 .peek-story-title { font-family: var(--font-heading); font-size: var(--fs-subtitle); font-weight: 600; letter-spacing: -0.011em; line-height: 1.25; }
 .peek-story-sub { margin-top: 3px; font-size: var(--fs-small); color: var(--color-ink-soft); }
-.peek-story-progress { flex: none; display: grid; justify-items: end; gap: 6px; font-family: var(--font-heading); font-size: 12px; font-weight: 600; color: var(--color-ink); }
+.peek-story-progress { flex: none; display: grid; justify-items: end; gap: 6px; font-family: var(--font-heading); font-size: 13px; font-weight: 600; color: var(--color-ink); }
 .peek-story-bar { display: block; width: 132px; height: 4px; overflow: hidden; border-radius: var(--radius-pill); background: var(--color-line); }
 .peek-story-bar span { display: block; height: 100%; background: var(--color-ink); transform: scaleX(var(--fill, 0)); transform-origin: left; }
 .peek-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
 .peek-act + .peek-act { border-left: 1px solid var(--color-line); padding-left: 6px; }
 .peek-act-name { display: flex; align-items: baseline; gap: 8px; padding: 2px 10px 8px; font-size: var(--fs-small); font-weight: 600; color: var(--color-ink-2); }
-.peek-act-name span { font-family: var(--font-heading); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+.peek-act-name span { font-family: var(--font-heading); font-size: var(--fs-label); font-weight: 600; color: var(--color-ink-soft); }
 .peek-act ol { display: grid; gap: 6px; }
 .peek-act button { position: relative; display: grid; gap: 7px; width: 100%; padding: 6px 6px 11px; border-radius: var(--radius-md); text-align: left; color: var(--tone); background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-3) var(--ease); }
 .peek-act button:hover, .peek-act button:focus-visible { background: var(--color-bg); box-shadow: var(--edge-strong); }
@@ -294,7 +293,7 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .peek-act [data-here] button { background: var(--color-bg); box-shadow: var(--edge-selected); }
 .peek-chapter-top { display: flex; align-items: baseline; gap: 7px; padding-inline: 6px; }
 .peek-chapter-top b { font-family: var(--font-heading); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.011em; color: var(--color-ink); }
-.peek-chapter-now { display: none; margin-left: auto; padding: 1px 7px; border-radius: var(--radius-pill); font: normal 600 11px var(--font-heading); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-on-ink); background: var(--color-ink); }
+.peek-chapter-now { display: none; margin-left: auto; padding: 1px 7px; border-radius: var(--radius-pill); font: normal 600 12px var(--font-heading); color: var(--color-on-ink); background: var(--color-ink); }
 .peek-act [data-here] .peek-chapter-now { display: inline-block; }
 .peek-act [data-read] .chapter-art { opacity: .78; }
 
@@ -373,10 +372,8 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 .nav-menu-chapters button { display: grid; align-content: center; gap: 3px; width: 100%; min-height: 52px; padding: 6px 12px; border-radius: var(--radius-sm); text-align: left; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
 .nav-menu-chapters button[aria-current] { background: var(--color-sunken); box-shadow: none; }
 .nav-menu-chapters button:active { background: var(--color-sunken); }
-.nav-menu-n { font-family: var(--font-heading); font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--tone-ink, var(--color-ink-soft)); }
 .nav-menu-links li { border-bottom: 1px solid var(--color-line); }
 .nav-menu-link { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
-.nav-menu-link .nav-menu-n { align-self: flex-start; margin-top: 6px; color: var(--color-ink-soft); }
 .nav-menu-areas li { border-bottom: 1px solid var(--color-line); }
 .nav-menu-area { display: flex; align-items: center; gap: 12px; min-height: 52px; font-size: var(--fs-lede); font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
 .nav-menu-area i { flex: none; width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--tone, var(--color-ink)); }
@@ -439,7 +436,7 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 }
 .phone-dock .seg { flex: 1; display: flex; min-width: 0; padding: 0; }
 .phone-dock .seg-pill { top: 0; bottom: 0; }
-.phone-dock .seg-item { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 44px; padding: 0 4px; font-size: 12.5px; }
+.phone-dock .seg-item { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 44px; padding: 0 4px; font-size: 13px; }
 .phone-dock-cta { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 44px; padding: 0 14px 0 16px; border-radius: var(--radius-pill); font-size: var(--fs-small); font-weight: 600; color: var(--color-on-ink); background: var(--color-ink); }
 .phone-dock .seg-item:active, .phone-dock-cta:active { scale: .97; }
 
@@ -464,6 +461,4 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 }
 
 /* The Platform glance (NavPeek PlatformPeek): each fact numbered on a chip in its own colour. */
-.peek-fact-n { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-sm); font: 600 12px/1 var(--font-heading); color: var(--tone-ink, var(--color-ink)); background: var(--color-sunken); transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
-.peek-fact:hover .peek-fact-n, .peek-fact:focus-visible .peek-fact-n { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); }
 .peek-fact .peek-row-text small { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-2); }

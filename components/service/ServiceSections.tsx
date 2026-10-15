@@ -12,7 +12,6 @@ import { ServiceAppsBoundary } from "./ServiceAppsBoundary";
 import { ExpectArt } from "./ExpectArt";
 import { WhyArt } from "./WhyArt";
 
-const two = (n: number) => String(n).padStart(2, "0");
 
 /** "What to expect": three cards, each a small drawing of what it promises, a title and one line. */
 export function ServiceExpect({ area }: { area: Area }) {
@@ -26,7 +25,6 @@ export function ServiceExpect({ area }: { area: Area }) {
               <ExpectArt slug={area.slug} index={i} />
             </div>
             <div className="svc-expect-copy">
-              <span className="svc-n t-label t-tone tabular">{two(i + 1)}</span>
               <h3 className="t-subtitle">{e.title}</h3>
               <p className="t-body">{e.text}</p>
             </div>

@@ -14,7 +14,6 @@ import decide from "@/assets/photos/decide.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const pad = (n: number) => String(n).padStart(2, "0");
 
 const FLOW = [
   { id: "erp", name: "ERP", tone: "cobalt", y: 30 },
@@ -240,7 +239,7 @@ function AppsArt() {
  * (two wear the references' slate and amber fields), each a label and a figure that counts up, with the
  * approver's photograph as a duotone beside them.
  */
-export function Statement({ index }: { index: string }) {
+export function Statement() {
   const root = useRef<HTMLElement>(null);
   const [seen, setSeen] = useState(false);
 
@@ -295,24 +294,22 @@ export function Statement({ index }: { index: string }) {
       aria-labelledby="stmt-title"
     >
       <div className="page-wrap">
-        <p className="t-label section-title-label stmt-label">
-          <span className="section-title-index tabular" aria-hidden>
-            {index}
-          </span>
+        {/* The label is the section's heading; the sentence under it is a statement, not a headline. */}
+        <h2 id="stmt-title" className="t-label section-title-label stmt-label">
           <span className="section-title-icon" aria-hidden>
             <LogoMark className="stmt-mark" />
           </span>
           {STATEMENT.eyebrow}
-        </p>
+        </h2>
         <div className="stmt-head">
-          <h2 id="stmt-title" className="stmt-text">
+          <p className="stmt-text">
             {words.map((w, i) => (
               <span key={i} className="stmt-word">
                 {w}
                 {i < words.length - 1 ? " " : ""}
               </span>
             ))}
-          </h2>
+          </p>
           <FlowArt />
         </div>
 
@@ -322,7 +319,7 @@ export function Statement({ index }: { index: string }) {
             {[readOnly, weeks].map((g, i) => (
               <li key={g.label} className="bento-card" data-field={i === 0 ? "slate" : undefined} style={toneVars(g.tone)}>
                 <p className="bento-k t-label">
-                  <span className="tabular">{pad(i + 1)}</span> / {g.label}
+                  {g.label}
                 </p>
                 <p className="bento-text t-small">{g.text}</p>
                 {i === 0 ? <ReadArt /> : <WeeksArt />}
@@ -342,7 +339,7 @@ export function Statement({ index }: { index: string }) {
                 />
               </figure>
               <p className="bento-k t-label">
-                <span className="tabular">05</span> / {approver.label}
+                {approver.label}
               </p>
               <p className="bento-text t-small">{approver.text}</p>
               <ApproveArt />
@@ -362,7 +359,7 @@ export function Statement({ index }: { index: string }) {
             </li>
             <li className="bento-card" data-field="amber" style={toneVars(apps.tone)}>
               <p className="bento-k t-label">
-                <span className="tabular">03</span> / {apps.label}
+                {apps.label}
               </p>
               <p className="bento-text t-small">{apps.text}</p>
               <AppsArt />
@@ -372,7 +369,7 @@ export function Statement({ index }: { index: string }) {
             </li>
             <li className="bento-card" style={toneVars(areas.tone)}>
               <p className="bento-k t-label">
-                <span className="tabular">04</span> / {areas.label}
+                {areas.label}
               </p>
               <ul className="bento-areas" aria-label={areas.label}>
                 {AREAS.map((a) => (

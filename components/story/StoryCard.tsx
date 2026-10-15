@@ -406,7 +406,7 @@ const Rest = ({ children }: { children: ReactNode }) => <div className="story-pa
 
 /**
  * The card's head, on every chapter: a strip of nine segments (one per chapter, each in its own
- * colour, filled up to this one), then "02 / 09 Signal" and the honesty label for the running example.
+ * colour, filled up to this one), then the chapter's name and the honesty label for the running example.
  */
 function Label({ ch, example = true }: { ch: number; example?: boolean }) {
   return (
@@ -417,10 +417,6 @@ function Label({ ch, example = true }: { ch: number; example?: boolean }) {
         ))}
       </ol>
       <p className="story-label t-label">
-        <span className="story-label-n tabular">
-          {String(ch + 1).padStart(2, "0")}
-          <span className="story-label-of"> / {String(CHAPTERS.length).padStart(2, "0")}</span>
-        </span>
         <span className="story-label-name">{CHAPTERS[ch].label}</span>
         {example && <span className="story-label-note">{EXAMPLE_LABEL}</span>}
       </p>

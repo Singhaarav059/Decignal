@@ -40,7 +40,7 @@
     transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);
   }
   .rw-tab i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); transition: background-color var(--dur-3) var(--ease); }
-  .rw-tab span { font-size: 12px; color: var(--color-ink-soft); }
+  .rw-tab span { font-size: 13px; color: var(--color-ink-soft); }
   .rw-tab[aria-pressed="true"] { color: var(--tone-on); background: var(--tone); box-shadow: none; }
   .rw-tab[aria-pressed="true"] i { background: currentColor; }
   .rw-tab[aria-pressed="true"] span { color: inherit; opacity: 0.8; }

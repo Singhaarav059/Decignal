@@ -31,7 +31,6 @@ const LINKS = NAV.sections
   .map(([id, label]) => ({ id, label, peek: PEEK_OF[id] as SectionPeek | undefined, tone: TONE_OF[id] ?? "cobalt" }));
 const blurbOf = (id: string, peek?: SectionPeek) => NAV.blurbs[(peek ?? id) as keyof typeof NAV.blurbs] ?? "";
 
-const pad = (n: number) => String(n).padStart(2, "0");
 const chapterTone = (i: number) => TONE[i] || "ink";
 const fine = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const wide = () => window.matchMedia("(min-width: 1024px)").matches;
@@ -226,7 +225,6 @@ function Readout({
       </span>
     );
   }
-  const n = pad(chapter + 1);
   return (
     <button
       type="button"
@@ -238,7 +236,7 @@ function Readout({
       onPointerLeave={onLeave}
       onClick={onOpen}
       aria-expanded={expanded}
-      aria-label={`Chapter ${n}, ${CHAPTERS[chapter].label}. Show all chapters`}
+      aria-label={`Chapter ${chapter + 1}, ${CHAPTERS[chapter].label}. Show all chapters`}
       tabIndex={show ? 0 : -1}
     >
       <span className="nav-readout-rule" aria-hidden />
@@ -246,9 +244,6 @@ function Readout({
         <circle cx="10" cy="10" r="7.5" className="nav-ring-track" />
         <circle ref={ring} cx="10" cy="10" r="7.5" pathLength={1} className="nav-ring-fill" />
       </svg>
-      <span key={`n${chapter}`} className="nav-roll nav-readout-n tabular">
-        {n}
-      </span>
       <span key={`l${chapter}`} className="nav-roll nav-readout-label">
         {CHAPTERS[chapter].label}
       </span>
@@ -614,7 +609,6 @@ const NavMenu = memo(function NavMenu({
                     aria-label={`Chapter ${i + 1}: ${c.label}. ${STORY_PEEK.chapters[i]}`}
                     style={toneVars(chapterTone(i))}
                   >
-                    <span className="nav-menu-n tabular">{pad(i + 1)}</span>
                     {c.label}
                   </button>
                 </li>
@@ -627,14 +621,13 @@ const NavMenu = memo(function NavMenu({
             {FOOTER.navTitle}
           </p>
           <ul className="nav-menu-links">
-            {LINKS.map(({ id, label, peek: pid }, i) => (
+            {LINKS.map(({ id, label, peek: pid }) => (
               <li key={id}>
                 <SectionLink href={hrefFor(id)} className="nav-menu-link" onDone={closeAll} aria-current={link === id ? "location" : undefined}>
                   <span>
                     <span className="t-title-card block">{label}</span>
                     <span className="t-small mt-1 block text-ink-soft">{blurbOf(id, pid)}</span>
                   </span>
-                  <span className="nav-menu-n tabular">{pad(i + 1)}</span>
                 </SectionLink>
               </li>
             ))}

@@ -12,7 +12,6 @@ import { Arrow } from "../ui/Arrow";
 import { AreaPhoto } from "./AreaPhoto";
 import { AreaArt } from "./AreaArt";
 
-const pad = (n: number) => String(n).padStart(2, "0");
 
 /** A plain left click stays on the page; modifier and middle clicks keep the link's own behaviour. */
 const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
@@ -127,7 +126,7 @@ export function AreaRows() {
                   aria-controls={body}
                   onClick={() => setOpen(isOpen ? -1 : i)}
                 >
-                  <span className="area-row-n tabular">{pad(i + 1)}</span>
+                  <span className="area-row-dot" aria-hidden />
                   <span className="area-row-name">{area.name}</span>
                   <span className="area-row-lead">{area.lead}</span>
                   <span className="area-row-count tabular">

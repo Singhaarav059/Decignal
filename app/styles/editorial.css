@@ -135,7 +135,7 @@
   height: 30px;
   padding: 0 11px 0 9px;
   border-radius: var(--radius-pill);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 650;
   color: var(--tone-on);
   background: var(--tone);
@@ -143,7 +143,7 @@
 /* White on the raw violet is 4.35:1 at 12.5px; the deeper violet passes AA. */
 .orbit-live-sys[data-tone="violet"] { background: var(--color-violet-deep); }
 .orbit-live-fact { overflow: hidden; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; color: var(--color-ink); }
-.orbit-live-sync { font-size: 12px; line-height: 1.2; color: var(--color-ink-soft); }
+.orbit-live-sync { font-size: 13px; line-height: 1.2; color: var(--color-ink-soft); }
 @media (max-width: 767px) { .orbit-live { display: none; } }
 @media (prefers-reduced-motion: reduce) { .orbit-live-label i { animation: none; } .orbit-live-item { transition: none; } }
 
@@ -165,7 +165,7 @@
 .area-ui-art { display: flex; justify-content: center; align-items: center; height: 112px; padding: 8px 14px; background: color-mix(in srgb, var(--tone) 8%, var(--color-surface)); }
 .area-ui-art .area-art { flex: none; width: auto; max-width: 100%; height: 100%; margin: 0; }
 .area-ui-signal-card .area-ui-signal { border-radius: 0; }
-.area-ui-label { display: block; margin-bottom: 2px; font-family: var(--font-heading); font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+.area-ui-label { display: block; margin-bottom: 2px; font-family: var(--font-heading); font-size: var(--fs-label); font-weight: 600; color: var(--color-ink-soft); }
 .area-ui-signal { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-sm); font-size: var(--fs-body); font-weight: 600; line-height: 1.4; background: var(--color-sunken); }
 .area-ui-dot { flex: none; width: 8px; height: 8px; margin-top: 5px; border-radius: var(--radius-pill); background: var(--color-signal); }
 .area-ui-apps { display: grid; gap: 8px; }
@@ -262,13 +262,11 @@
   /* The head is not sticky: held beside the list's end it would share the screen with the audit head. */
   .faq-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-areas: "head help" "fig list"; column-gap: 48px; row-gap: 40px; align-items: stretch; }
 }
-/* Questions as a ruled list: hairlines between rows, a neutral number. */
+/* Questions as a list of surfaces; the plus fills in the question's colour. */
 .faq-list { display: grid; align-content: start; gap: 8px; border-top: 0; }
 .faq-item { border-bottom: 0; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--edge-line); transition: box-shadow var(--dur-3) var(--ease), transform var(--dur-3) var(--ease); }
 .faq-h { font: inherit; }
 .faq-q { display: flex; align-items: center; gap: 18px; width: 100%; padding: 20px 2px; text-align: left; }
-.faq-n { flex: none; font-family: var(--font-heading); transition: color var(--dur-2) var(--ease); width: auto; min-width: 2.2ch; font-size: clamp(28px, 2.6vw, 40px); font-weight: 300; line-height: 1; letter-spacing: -0.011em; color: var(--tone-ink, var(--color-ink)); }
-.faq-item[data-open] .faq-n { color: var(--tone-ink, var(--color-ink)); }
 .faq-q-text { flex: 1; display: grid; gap: 2px; }
 .faq-q-title { font-family: var(--font-heading); line-height: 1.25; font-size: clamp(16px, 1.25vw, 19px); font-weight: 500; letter-spacing: -0.011em; }
 .faq-plus { position: relative; display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-pill); box-shadow: var(--edge-strong); transition: transform var(--dur-4) var(--ease), background var(--dur-3) var(--ease), color var(--dur-3) var(--ease); }
@@ -331,8 +329,7 @@
 .footer-nav > .t-label { margin-bottom: var(--stack-label); }
 /* Footer links as a ruled list: a neutral number, name, one line, an arrow that turns on hover. */
 .footer-cards { display: grid; border-top: 1px solid var(--color-line-strong); border-top-color: var(--on-line); }
-.footer-card { display: grid; grid-template-columns: 2.4ch minmax(0, 1fr) auto; grid-template-areas: "n title go" "n blurb go"; align-items: center; column-gap: 16px; row-gap: 1px; width: 100%; padding: 14px 2px; border-bottom: 1px solid var(--color-line); text-align: left; transition: background var(--dur-2) var(--ease); border-bottom-color: var(--on-line); }
-.footer-card-n { grid-area: n; align-self: start; padding-top: 4px; font-family: var(--font-heading); font-size: 12px; font-weight: 600; color: var(--color-ink-soft); }
+.footer-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title go" "blurb go"; align-items: center; column-gap: 16px; row-gap: 1px; width: 100%; padding: 14px 2px; border-bottom: 1px solid var(--color-line); text-align: left; transition: background var(--dur-2) var(--ease); border-bottom-color: var(--on-line); }
 .footer-card strong { grid-area: title; font-family: var(--font-heading); font-size: var(--fs-subtitle); font-weight: 600; letter-spacing: -0.011em; line-height: 1.25; color: var(--on); }
 .footer-card small { grid-area: blurb; font-size: var(--fs-small); line-height: 1.4; color: var(--color-ink-soft); }
 .footer-card-go { grid-area: go; display: grid; place-items: center; width: 30px; height: 30px; border-radius: var(--radius-pill); transition: color var(--dur-2) var(--ease), background var(--dur-2) var(--ease), transform var(--dur-3) var(--ease), box-shadow var(--dur-2) var(--ease); color: var(--on); box-shadow: inset 0 0 0 1px var(--on-line); }
@@ -383,7 +380,7 @@
 .site-footer .footer-cta { color: var(--color-ink); background: var(--color-surface); }
 .site-footer .footer-cta::before { background: var(--color-ink); }
 @media (hover: hover) { .site-footer .footer-cta:hover { color: var(--color-on-ink); } }
-.footer-card-n, .footer-card small { color: var(--on-2); }
+.footer-card small { color: var(--on-2); }
 .footer-area:hover, .footer-area:focus-visible { color: var(--color-on-ink); background: var(--color-night); }
 /* A white halo outside each system dot (stroke painted under the fill), so the cobalt dot reads whole
    on the cobalt footer and the six stay one set. */
@@ -394,11 +391,11 @@
 .stmt { padding-block: var(--section-y); }
 .stmt-text {
   margin-top: 28px;
-  max-width: 24ch;
+  max-width: 30ch;
   font-family: var(--font-heading);
-  font-size: clamp(30px, 4vw, 58px);
+  font-size: clamp(24px, 2.5vw, 36px);
   font-weight: 400;
-  line-height: 1.08;
+  line-height: 1.18;
   letter-spacing: -0.01em;
   text-wrap: pretty;
 }
@@ -419,7 +416,7 @@
   .bento-card:hover { transform: translateY(-4px); box-shadow: var(--edge-line), 0 24px 48px -28px rgb(15 18 23 / 0.35); }
 }
 .bento-k { color: var(--color-ink); }
-.bento-k .tabular { color: var(--tone-ink, var(--color-ink)); }
+.bento-k::first-letter { text-transform: uppercase; }
 .bento-text { margin-top: 8px; max-width: 30ch; color: var(--color-ink-soft); }
 .bento-n {
   align-self: end;
@@ -541,7 +538,6 @@
 .night-panel { margin-inline: 12px; padding-block: var(--section-y); border-radius: var(--radius-xl); color: #fff; background: var(--color-night); }
 @media (max-width: 599px) { .night-panel { margin-inline: 6px; border-radius: var(--radius-lg); } }
 .night-panel .section-title-label { color: #fff; background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px var(--color-night-line); }
-.night-panel .section-title-index { color: #fff; }
 .night-panel .section-title-dot { background: #fff; }
 .night-panel :is(.t-title, .t-title-card) { color: #fff; }
 .night-panel .ed-title .accent { --accent-ink: #9fb3ff; }
@@ -563,7 +559,7 @@
   cursor: pointer;
 }
 .area-row-head:focus-visible { outline: 2px solid #9fb3ff; outline-offset: 4px; border-radius: var(--radius-sm); }
-.area-row-n { font-size: 14px; font-weight: 600; color: var(--tone); }
+.area-row-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--tone); transition: background-color var(--dur-3) var(--ease); }
 .area-row-name { font-size: clamp(22px, 2.3vw, 34px); font-weight: 500; line-height: 1.05; letter-spacing: -0.013em; transition: translate var(--dur-3) var(--ease); }
 .area-row-lead { grid-column: 2; font-size: var(--fs-body); line-height: 1.45; color: var(--color-on-night-2); }
 .area-row-count { display: none; font-size: var(--fs-small); color: var(--color-on-night-2); white-space: nowrap; }
@@ -600,11 +596,12 @@
 @media (hover: hover) {
   .area-row:not([data-open]):hover::before { transform: scaleY(1); }
   .area-row:not([data-open]):hover .area-row-head { color: var(--tone-on, #fff); }
-  .area-row:not([data-open]):hover :is(.area-row-n, .area-row-lead, .area-row-count) { color: var(--tone-on, #fff); }
+  .area-row:not([data-open]):hover :is(.area-row-lead, .area-row-count) { color: var(--tone-on, #fff); }
+  .area-row:not([data-open]):hover .area-row-dot { background: var(--tone-on, #fff); }
   .area-row:not([data-open]):hover .area-row-thumb { opacity: 0; }
 }
 .area-row-head { padding-inline: 12px; }
-.area-row-n, .area-row-lead, .area-row-count { transition: color var(--dur-3) var(--ease); }
+.area-row-lead, .area-row-count { transition: color var(--dur-3) var(--ease); }
 /* Rows draw in: each slides up out of a mask, its rule drawing from the left. */
 .area-rows:not([data-in]) .area-row-head > * { opacity: 0; translate: 0 26px; }
 .area-row-head > * { transition: opacity 700ms var(--ease), translate 900ms var(--ease-out-expo), color var(--dur-3) var(--ease); transition-delay: calc(var(--i, 0) * 90ms); }
@@ -642,7 +639,7 @@
 .dial-nodes { display: grid; gap: 12px; }
 .dial-node { display: grid; gap: 6px; padding: 18px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--edge-line); }
 .dial-node-chip { display: flex; align-items: baseline; gap: 10px; }
-.dial-node-n { font-size: var(--fs-small); font-weight: 600; color: var(--tone-ink, var(--color-ink)); }
+.dial-node-dot { display: none; }
 .dial-node-name { font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
 .dial-node-ex { color: var(--color-ink-soft); }
 .dial-node-art { display: block; max-width: 220px; margin-top: 6px; }
@@ -689,12 +686,13 @@
   /* The nodes sit on the ring, upright; the one under the hand lights in its colour. */
   .dial-nodes { display: block; position: absolute; inset: 0; z-index: 2; }
   .dial-node { position: absolute; left: 50%; top: 50%; width: 0; height: 0; padding: 0; background: none; box-shadow: none; transform: rotate(var(--a)) translateX(var(--r)) rotate(calc(-1 * var(--a))); }
-  .dial-node-chip { position: absolute; translate: -50% -50%; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: var(--radius-pill); white-space: nowrap; background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), scale var(--dur-4) var(--ease); }
-  .dial-node-n { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; color: var(--color-ink-soft); background: var(--color-sunken); transition: inherit; }
+  .dial-node-chip { position: absolute; translate: -50% -50%; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 14px; border-radius: var(--radius-pill); white-space: nowrap; background: var(--color-surface); box-shadow: var(--edge-line); transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), scale var(--dur-4) var(--ease); }
+  /* Done steps keep a dot in their colour; the one under the hand turns it white. */
+  .dial-node-dot { display: block; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--color-sunken); transition: inherit; }
   .dial-node-name { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-  .dial-node[data-past] .dial-node-n { color: var(--tone-on); background: var(--tone); }
+  .dial-node[data-past] .dial-node-dot { background: var(--tone); }
   .dial-node[data-on] .dial-node-chip { scale: 1.08; color: var(--tone-on); background: var(--tone); box-shadow: 0 12px 24px -12px rgb(15 18 23 / 0.45); }
-  .dial-node[data-on] .dial-node-n { color: var(--tone); background: var(--tone-on); }
+  .dial-node[data-on] .dial-node-dot { background: var(--tone-on); }
   .dial-node-ex, .dial-node-art { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -735,10 +733,8 @@
 .how-sheets { display: grid; gap: 12px; margin-top: var(--ed-gap); padding-inline: 12px; }
 .how-sheet { color: var(--sheet-fg); background: var(--sheet); border-radius: var(--radius-xl); }
 .how-sheet-inner { display: grid; gap: 24px; padding: clamp(24px, 3.4vw, 48px) max(24px, calc(var(--edge) - 12px)); padding-inline: calc(max(var(--gutter), (100% + 2 * var(--panel-inset) - var(--grid-max)) / 2) - var(--panel-inset)); }
-.how-sheet-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
-/* Small labels at full strength: at 80% their white fell under AA on the coloured sheets. */
-.how-when { color: inherit; }
-.how-n { font-size: clamp(56px, 8vw, 128px); font-weight: 300; line-height: 0.85; letter-spacing: -0.016em; }
+.how-sheet-head { display: flex; align-items: flex-start; gap: 24px; }
+.how-n { font-family: var(--font-heading); font-size: var(--fs-display); font-weight: 300; line-height: 0.9; letter-spacing: -0.016em; }
 .how-sheet-body { display: grid; gap: 28px; padding-top: 24px; border-top: 1px solid color-mix(in srgb, var(--sheet-fg) 22%, transparent); }
 .how-route { display: grid; align-content: start; gap: 12px; }
 /* The text is one item, so a narrow column wraps it as a line of text (as separate runs it broke into

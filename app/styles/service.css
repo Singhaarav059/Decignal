@@ -11,7 +11,6 @@
   border-radius: var(--radius-pill);
   background: var(--tone, var(--color-ink));
 }
-.svc-n { color: var(--tone-ink, var(--color-ink)); }
 
 /* ---- Hero: breadcrumb, two-line headline, value line and CTAs, the area's decision card ---- */
 .svc-hero { padding-top: calc(68px + clamp(32px, 7vh, 88px)); }

@@ -108,10 +108,9 @@ export function Footer() {
         <nav aria-label="Footer" className="footer-nav">
           <p className="t-label">{FOOTER.navTitle}</p>
           <ul className="footer-cards">
-            {FOOTER.nav.map(({ label, href, blurb }, i) => (
+            {FOOTER.nav.map(({ label, href, blurb }) => (
               <li key={href}>
                 <SectionLink href={`/${href}`} className="footer-card">
-                  <span className="footer-card-n tabular" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
                   <strong>{label}</strong>
                   <small>{blurb}</small>
                   <span className="footer-card-go" aria-hidden><ArrowUpRight size={16} strokeWidth={2.2} /></span>

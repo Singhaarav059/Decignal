@@ -267,8 +267,8 @@ export const STORY_UI = {
   qtyAria: "Units to transfer",
   qtyDown: "Decrease quantity",
   qtyUp: "Increase quantity",
-  /** IslandPanel: "Source 03 / 06". */
-  source: (n: number, total = 6) => `Source ${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
+  /** IslandPanel: "Source 3 of 6". */
+  source: (n: number, total = 6) => `Source ${n} of ${total}`,
   synced: (time: string) => `Synced ${time}`,
   readFor: "Read for this decision",
   close: "Close",
@@ -443,7 +443,7 @@ export const OUTCOMES_COPY = {
  *  word by word as it scrolls in, then the five facts as cards. */
 export const STATEMENT = {
   eyebrow: "What Decignal does",
-  text: "Decignal reads the ERP, CRM, MES and WMS you already run, finds the one decision that matters, and sends it with its evidence to the person who approves it.",
+  text: "Decignal reads your ERP, CRM, MES and WMS, finds the decision that matters and sends it, with its evidence, to whoever approves.",
   approverAlt: "A planner reviewing a decision at a laptop",
   /** The approver card's trail (Statement.tsx bento): the running example, minute by minute. */
   log: [
@@ -477,7 +477,7 @@ export const ALSO_READS = {
   example: "Example read",
   usedBy: "Used by",
   tabsAria: "Other systems Decignal reads, by group",
-  itemOf: (n: number, total: number) => `${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
+  itemOf: (n: number, total: number) => `${n} of ${total}`,
   groups: [
     {
       id: "ops",
@@ -640,8 +640,8 @@ export const HOW = {
   headline: ["One decision first.", "Then build from there."] as Headline,
   intro: "Two routes to production: build around your operation, or start from the catalogue.",
   routeAria: "Two routes to production",
-  /** Each colour sheet's label (HowSteps.tsx): "Step 01". */
-  stepWord: "Step",
+  /** Each colour sheet's head (HowSteps.tsx): its place in the order, in words rather than numerals. */
+  stepWords: ["First.", "Second.", "Third.", "Then."],
   youGet: "You get",
   /** What each step delivers, index-aligned with PATHS[route].steps (HowSteps.tsx). */
   delivers: {
@@ -697,9 +697,9 @@ export const AUDIT = {
   /** In the form's order: step 2 asks the three questions (area, decision, systems), step 3 the times. */
   next: ["Answer three short questions", "Choose two or three times", "Meet for 30 minutes", "Get your written summary"],
   tail: "If there is a fit, we propose a scoped first release. If not, the summary is yours to keep.",
-  /** The three steps of the form: progress reads "01 / 03 · About you". */
+  /** The three steps of the form: progress reads "Step 1 of 3 · About you". */
   steps: ["About you", "Your decision", "Pick your times"],
-  progress: (n: number, total = 3) => `0${n} / 0${total}`,
+  progress: (n: number, total = 3) => `Step ${n} of ${total}`,
   fields: {
     name: { label: "Full name", placeholder: "Your name" },
     email: { label: "Work email", placeholder: "name@company.com" },

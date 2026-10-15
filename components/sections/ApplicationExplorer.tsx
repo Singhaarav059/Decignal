@@ -28,7 +28,6 @@ const CHAPTER_LENGTHS = [1.35, 0.9, 1.1, 1.2, 1.1, 0.9, 0.95, 0.95];
 const STAGE_AT = [0.18, 0.48, 0.84];
 const ALL = APPLICATIONS.map((_, i) => i);
 const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ssr: false });
-const pad = (n: number) => String(n).padStart(2, "0");
 
 /**
  * Text that changes in place: the old words fade up and out while the new ones rise in (opacity and
@@ -333,14 +332,14 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
             <div className="application-head-row">
               <p className="application-label t-label">
                 <span className="application-dot" aria-hidden />
-                <Swap text={`${pad(frame.chapter + 1)} · ${app.name}`} />
+                <Swap text={app.name} />
               </p>
               {count > 1 && (
                 <nav className="application-stepper" aria-label={APPLICATIONS_COPY.chaptersAria}>
                   <button type="button" disabled={frame.chapter === 0} aria-label={frame.chapter > 0 ? `Previous: ${name(frame.chapter - 1)}` : "Previous"} onClick={() => jump(frame.chapter - 1)}>
                     <ChevronLeft size={16} strokeWidth={2} aria-hidden />
                   </button>
-                  <span className="application-count" aria-current="step">{pad(frame.chapter + 1)} / {pad(count)}</span>
+                  <span className="application-count" aria-current="step">{frame.chapter + 1} of {count}</span>
                   <button type="button" disabled={frame.chapter === count - 1} aria-label={frame.chapter < count - 1 ? `Next: ${name(frame.chapter + 1)}` : "Next"} onClick={() => jump(frame.chapter + 1)}>
                     <ChevronRight size={16} strokeWidth={2} aria-hidden />
                   </button>
@@ -368,7 +367,6 @@ export function ApplicationExplorer({ apps, indices, compact = false, pace }: Pr
               {list.map((k, n) => (
                 <li key={k}>
                   <button type="button" aria-current={n === frame.chapter ? "step" : undefined} onClick={() => jump(n)}>
-                    <span className="tabular">{pad(n + 1)}</span>
                     {APPLICATIONS[k].name}
                   </button>
                 </li>

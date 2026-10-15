@@ -368,7 +368,7 @@ function FrRanked() {
       <text x="8" y="12">RISK</text>
       <text x="44" y="12">VALUE</text>
       {rows.map((_, i) => (
-        <text key={i} x={W - 8} y={32 + i * step + 4} textAnchor="end" className="k-val">{String(i + 1).padStart(2, "0")}</text>
+        <text key={i} x={W - 8} y={32 + i * step + 4} textAnchor="end" className="k-val">{i + 1}</text>
       ))}
       {rows.map((r, i) => (
         <g key={`r${i}`} className="xa-row" style={{ ["--from" as string]: `${(r.arrived - i) * step}px`, ...d(200 + i * 40) }}>

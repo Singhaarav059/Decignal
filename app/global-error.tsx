@@ -43,7 +43,7 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
         <title>Decignal</title>
         {/* The site grid (.page-wrap): --gutter clamp(20px, 5vw, 72px), --grid-max 71rem. */}
         <main style={{ width: "min(100% - 2 * clamp(20px, 5vw, 72px), 71rem)", margin: "0 auto", padding: "64px 0" }}>
-          <p style={{ margin: 0, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555D6B" }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#555D6B" }}>
             Error
           </p>
           <h1 style={{ margin: "20px 0 0", fontSize: "clamp(40px, min(6.2vw, 10.5vh), 96px)", fontWeight: 600, lineHeight: 0.98, letterSpacing: "-0.032em", textWrap: "balance" }}>

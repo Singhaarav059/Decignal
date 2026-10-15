@@ -137,10 +137,9 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 .story-label-note {
   margin-left: auto;
   white-space: nowrap;
-  letter-spacing: 0.06em;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--color-ink-soft);
   background: var(--color-sunken);
 }
@@ -329,7 +328,6 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 .signal-days small {
   font-family: var(--font-heading);
   font-size: var(--fs-label);
-  letter-spacing: 0.1em;
   color: var(--color-ink-soft);
 }
 .signal-days li[data-risk] small { color: var(--color-signal-ink); }
@@ -386,8 +384,6 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
   font-family: var(--font-heading);
   font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   white-space: nowrap;
   color: var(--color-ink-soft);
   transition: color var(--dur-3) var(--ease);
@@ -412,8 +408,10 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 }
 @media (max-width: 479px) {
   /* Narrow cards set the stages in the body face, wrapping under their dot. */
-  .stepper-label { font-family: var(--font-sans); font-size: var(--fs-label); letter-spacing: 0; text-transform: none; white-space: normal; line-height: 1.2; padding-right: 4px; }
+  .stepper-label { font-family: var(--font-sans); font-size: var(--fs-label); white-space: normal; line-height: 1.2; padding-right: 4px; }
 }
+/* Five stages in a 360px card: at 13px "Approved" filled its column and met "Picking". */
+@media (max-width: 399px) { .stepper-label { font-size: 12px; } }
 
 /* 06: the approval panel inside the card. */
 .decision-panel {
@@ -481,7 +479,7 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 .roll-col { position: absolute; inset: 0 0 auto; display: flex; flex-direction: column; transition: transform var(--dur-3) var(--ease); }
 .roll-col > span { display: block; height: 1.15em; text-align: center; }
 .decision-plan { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 8px 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--color-sunken); }
-.decision-plan-label { font-family: var(--font-heading); font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+.decision-plan-label { font-family: var(--font-heading); font-size: var(--fs-label); font-weight: 600; color: var(--color-ink-soft); }
 .decision-plan-slot { grid-column: 2 / 4; justify-self: start; }
 .decision-plan-chip { display: inline-flex; align-items: center; gap: 2px; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--color-ink); color: var(--color-on-ink); font-size: var(--fs-label); font-weight: 600; animation: plan-travel var(--dur-4) var(--ease) both; }
 .decision-plan-track { grid-column: 1 / 3; height: 4px; border-radius: var(--radius-pill); background: var(--color-line); overflow: hidden; }
@@ -507,8 +505,6 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 .story-progress li { height: 4px; border-radius: 2px; background: var(--color-sunken); }
 .story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 45%, var(--color-surface)); }
 .story-progress li[data-on] { background: var(--tone); }
-.story-label-n { color: var(--tone-ink, var(--color-ink)); font-weight: 700; }
-.story-label-of { color: var(--color-ink-muted); font-weight: 600; }
 .story-label-name { color: var(--color-ink); }
 /* The readout's figure reads in ink unless it marks a risk. */
 .story-readout-figure strong:not([data-risk]) { color: var(--color-ink); }
@@ -641,8 +637,6 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 .story-card[data-night] .story-progress li[data-past] { background: color-mix(in srgb, var(--tone) 70%, var(--color-night)); }
 .story-card[data-night] .story-progress li[data-on] { background: #fff; }
 .story-card[data-night] :is(.story-label-name, .story-label) { color: #fff; }
-.story-card[data-night] .story-label-n { color: #9fb3ff; }
-.story-card[data-night] .story-label-of { color: rgb(255 255 255 / 0.45); }
 .final-lead { margin-top: 14px; font-size: clamp(19px, 1.6vw, 23px); font-weight: 500; line-height: 1.25; letter-spacing: -0.01em; color: #fff; text-wrap: balance; }
 .final-card-title { margin-top: 18px; color: rgb(255 255 255 / 0.6); }
 .final-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
@@ -650,7 +644,7 @@ html.ready.scene-ready .intro-stage { opacity: 1; transform: none; }
 .final-outcomes li:hover { background: rgb(255 255 255 / 0.12); transform: translateY(-2px); }
 .final-outcomes i { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
 .final-outcomes strong { font-size: clamp(20px, 1.8vw, 26px); font-weight: 500; line-height: 1; letter-spacing: -0.013em; color: #fff; white-space: nowrap; }
-.final-outcomes span { font-size: 12px; line-height: 1.35; color: rgb(255 255 255 / 0.7); }
+.final-outcomes span { font-size: 13px; line-height: 1.35; color: rgb(255 255 255 / 0.7); }
 .final-outcomes .t-small { color: var(--color-ink-2); }
 .final-systems { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); }
 .final-systems .t-label { color: rgb(255 255 255 / 0.6); }

@@ -81,8 +81,6 @@ dd.tabular, p.tabular.font-semibold {
   font-family: var(--font-label);
   font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--color-ink-soft);
 }
 

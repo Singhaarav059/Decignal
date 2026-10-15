@@ -19,7 +19,6 @@ const SHEETS = [
   { bg: "var(--color-saffron)", fg: "var(--color-ink)", tone: "tangerine", field: "saffron" },
   { bg: "var(--color-night)", fg: "#fff", tone: "emerald", field: "night" },
 ];
-const n2 = (i: number) => String(i + 1).padStart(2, "0");
 
 /**
  * How it works as four numbered colour sheets (the Plinth steps): the head, then one full-width sheet
@@ -68,8 +67,7 @@ export function HowSteps({ head }: { head: ReactNode }) {
             <li key={i} className="how-sheet" data-field={sheet.field} style={{ ["--sheet" as string]: sheet.bg, ["--sheet-fg" as string]: sheet.fg, ["--i" as string]: i }}>
               <div className="how-sheet-inner">
                 <div className="how-sheet-head">
-                  <p className="t-label how-when">{HOW.stepWord} {n2(i)}</p>
-                  <p className="how-n tabular" aria-hidden>{n2(i)}</p>
+                  <p className="how-n">{HOW.stepWords[i]}</p>
                 </div>
                 <div className="how-sheet-body">
                   {ROUTES.map((r, k) => {

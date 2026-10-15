@@ -200,9 +200,6 @@ function PlatformPeek({ ctx }: { ctx: Ctx }) {
         {GLANCE.map((g, k) => (
           <li key={g.label} style={{ ...toneVars(g.tone), ["--k" as string]: k }}>
             <SectionLink href={href} className="peek-row peek-fact" onDone={ctx.onDone}>
-              <span className="peek-fact-n tabular" aria-hidden>
-                {String(k + 1).padStart(2, "0")}
-              </span>
               <span className="peek-row-text">
                 <b>
                   {g.n} {g.label}
@@ -288,9 +285,7 @@ function HowPeek({ ctx }: { ctx: Ctx }) {
           <li key={s.title} style={{ ...toneVars(STEP_TONES[i]), ["--k" as string]: i }}>
             <Tile ctx={ctx} className="peek-tile peek-step" onOpen={() => showStep(i)} section="how">
               <StepArt index={i} />
-              <span className="peek-step-n tabular">
-                0{i + 1} · {s.when}
-              </span>
+              <span className="peek-step-n tabular">{s.when}</span>
               <b>{s.title}</b>
             </Tile>
           </li>
@@ -400,7 +395,6 @@ function StoryPeek({ act }: { act: Act }) {
                     <button type="button" onClick={act(() => goToChapter(i))} title={blurb}>
                       <ChapterArt i={i} />
                       <span className="peek-chapter-top">
-                        <span className="peek-step-n tabular">{String(i + 1).padStart(2, "0")}</span>
                         <b>{c.label}</b>
                         <em className="peek-chapter-now">Now</em>
                         <span className="sr-only">: {blurb}</span>

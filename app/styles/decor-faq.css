@@ -14,8 +14,6 @@
 }
 @media (min-width: 1024px) {
   .faq-fig { display: block; }
-  /* The question the figure shows keeps its number in ink, so the two read as one control. */
-  .faq-item[data-shown] .faq-n { color: var(--tone-ink, var(--color-ink)); }
 }
 .faq-fig-stage { display: grid; }
 .faq-fig-stage > .faq-art {
@@ -57,7 +55,6 @@
   transition: opacity var(--dur-3) var(--ease) var(--stagger), transform var(--dur-3) var(--ease) var(--stagger), visibility 0s;
 }
 .faq-fig-topic { display: flex; gap: 10px; color: var(--color-ink); }
-.faq-fig-n { color: var(--color-ink-soft); }
 .faq-fig-text { max-width: 46ch; color: var(--color-ink-2); text-wrap: pretty; }
 
 /* ---- Inside the opened answer (phones and tablets) ---- */

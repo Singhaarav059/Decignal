@@ -95,7 +95,6 @@
 }
 .band[data-band="night"] .audit-panel { background: transparent; padding-inline: 0; }
 .audit-copy .section-title-label { color: var(--color-on-ink); background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px var(--on-ink-line, rgb(255 255 255 / 0.16)); }
-.audit-copy .section-title-index { color: var(--color-on-ink); }
 .band[data-band="night"] .audit-copy .t-title .accent { color: #9fb3ff; }
 
 /* Section label pills on colour bands: a quiet glass-free tint of the band's own text colour. */
@@ -120,14 +119,14 @@
 
 /* FAQ: a question's button fills with the question's colour on hover; the open one stays filled
    (the row itself lifts, editorial.css). */
-:is(.faq-n, .faq-q-text) { transition: transform var(--dur-3) var(--ease), color var(--dur-2) var(--ease); }
+.faq-q-text { transition: transform var(--dur-3) var(--ease), color var(--dur-2) var(--ease); }
 @media (hover: hover) {
   .faq-item:hover .faq-plus { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); box-shadow: none; }
 }
 .faq-item[data-open] .faq-plus { color: var(--tone-on, var(--color-on-ink)); background: var(--tone, var(--color-ink)); }
 
 @media (prefers-reduced-motion: reduce) {
-  .area-ui-app, .faq-n, .faq-q-text { transition: none; transform: none !important; }
+  .area-ui-app, .faq-q-text { transition: none; transform: none !important; }
 }
 
 /* The area panels' index: a solid pill in the area's colour. */

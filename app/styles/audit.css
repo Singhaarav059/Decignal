@@ -99,7 +99,7 @@
   border-radius: var(--radius-pill);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.32);
   font-family: var(--font-heading);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   transition: background-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease);

@@ -102,13 +102,11 @@ function ChapterHead({ c }: { c: number }) {
   const facts = CHAPTER_FACTS[c] ?? [];
   const Icon = ICON[c];
   if (!copy) return null;
-  const n = String(c + 1).padStart(2, "0");
   return (
     <div data-ch={c} className="story-statement chapter-head" aria-hidden>
       <div className="chapter-head-in" data-head style={toneVars(TONE[c])}>
         <p className="chapter-kicker t-label">
           <span className="chapter-kicker-in" data-roll="1.4">
-            <span className="chapter-kicker-n tabular">{n}</span>
             {Icon && (
               <span className="chapter-kicker-icon">
                 <Icon size={12} strokeWidth={2.4} />

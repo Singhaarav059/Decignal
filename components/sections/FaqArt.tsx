@@ -423,7 +423,6 @@ export function FaqFigure({ index }: { index: number }) {
           {LINES.map((line, i) => (
             <span key={i} className="faq-fig-line" data-on={i === index || undefined} aria-hidden={i !== index}>
               <span className="faq-fig-topic t-label">
-                <span className="faq-fig-n tabular">{String(i + 1).padStart(2, "0")}</span>
                 {FAQ_TOPICS[i]}
               </span>
               <span className="faq-fig-text t-small">{line}</span>

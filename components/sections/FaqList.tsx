@@ -66,7 +66,6 @@ export function FaqList({
           >
             <h3 className="faq-h">
               <button id={q} onClick={() => setOpen(on ? null : i)} onFocus={onPreview && (() => onPreview(i, "focus"))} aria-expanded={on} aria-controls={a} className="faq-q">
-                <span className="faq-n tabular" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
                 <span className="faq-q-text">
                   {f.topic && <span className="sr-only">{f.topic}: </span>}
                   <span className="faq-q-title">{f.q}</span>

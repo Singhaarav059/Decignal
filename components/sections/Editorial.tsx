@@ -98,7 +98,6 @@ const two = (h: Headline): [string, string] => [h[0], h[1]];
  *  included (TrailDial.tsx, Audit.tsx). */
 function Head({
   id,
-  index,
   label,
   headline,
   lede,
@@ -107,7 +106,6 @@ function Head({
   icon,
 }: {
   id: string;
-  index: string;
   label: string;
   headline: Headline;
   lede?: string;
@@ -118,7 +116,6 @@ function Head({
   return (
     <SectionTitle
       id={id}
-      index={index}
       label={label}
       lines={two(headline)}
       lede={lede}
@@ -137,9 +134,9 @@ export function Editorial() {
   return (
     <div ref={ref} className="editorial relative bg-bg">
       <Systems />
-      <Statement index="02" />
+      <Statement />
       <Applications />
-      <TrailDial index="04" />
+      <TrailDial />
       <Outcomes />
       <HowItWorks />
       <Faq />
@@ -162,7 +159,6 @@ function Systems() {
         <Head
           icon={<Database size={13} strokeWidth={2.2} />}
           id="systems-title"
-          index="01"
           label={SYSTEMS_STRIP.eyebrow}
           headline={SYSTEMS_STRIP.headline}
           align="center"
@@ -204,7 +200,6 @@ function Applications() {
           <Head
             icon={<LayoutGrid size={13} strokeWidth={2.2} />}
             id="applications-title"
-            index="03"
             label={APPLICATIONS_COPY.eyebrow}
             headline={APPLICATIONS_COPY.headline}
           />
@@ -311,7 +306,6 @@ function Outcomes() {
           <Head
             icon={<ChartNoAxesCombined size={13} strokeWidth={2.2} />}
             id="outcomes-title"
-            index="05"
             label={OUTCOMES_COPY.eyebrow}
             headline={OUTCOMES_COPY.headline}
           />
@@ -335,16 +329,7 @@ function Outcomes() {
               >
                 <figure className="outcome-figure" aria-label={o.sector}>
                   <p className="outcome-top t-label">
-                    <span>
-                      <span className="tabular outcome-n">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>{" "}
-                      / {o.sector}
-                    </span>
-                    <span className="outcome-of tabular">
-                      {String(i + 1).padStart(2, "0")} of{" "}
-                      {String(OUTCOMES.length).padStart(2, "0")}
-                    </span>
+                    <span>{o.sector}</span>
                   </p>
                   <div className="outcome-visual">
                     <OutcomeGraphic index={i} />
@@ -377,7 +362,6 @@ function HowItWorks() {
           <Head
             icon={<Workflow size={13} strokeWidth={2.2} />}
             id="how-title"
-            index="06"
             label={HOW.eyebrow}
             headline={HOW.headline}
             lede={HOW.intro}
@@ -412,7 +396,6 @@ function Faq() {
           <Head
             icon={<MessageCircleQuestion size={13} strokeWidth={2.2} />}
             id="faq-title"
-            index="07"
             label={FAQ_COPY.eyebrow}
             headline={FAQ_COPY.headline}
           />

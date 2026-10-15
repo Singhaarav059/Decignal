@@ -10,7 +10,6 @@ import SectionTitle from "../ui/SectionTitle";
 import { TrailArt } from "./trail/TrailArt";
 
 const N = TRAIL.steps.length;
-const pad = (n: number) => String(n + 1).padStart(2, "0");
 /** The dial's 84 ticks, a long one on each of the seven steps (from the top), rounded so the server
  *  and the browser write the same numbers. */
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -28,7 +27,7 @@ const angleOf = (k: number) => -90 + (k * 360) / N;
  * draws itself in the dial's face with the scroll (--q, trail/TrailArt.tsx), and the left column reads
  * its number, phase, name and the running example. Below 1024px the steps run as a list, each drawn.
  */
-export function TrailDial({ index }: { index: string }) {
+export function TrailDial() {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -123,7 +122,7 @@ export function TrailDial({ index }: { index: string }) {
       <div className="dial-sticky">
         <div className="page-wrap dial-grid">
           <div className="dial-copy">
-            <SectionTitle icon={<Waypoints size={13} strokeWidth={2.2} />} id="trail-title" index={index} label={TRAIL.label} lines={[TRAIL.headline[0], TRAIL.headline[1]]} tone="ink" className="ed-title" reveal="lines" />
+            <SectionTitle icon={<Waypoints size={13} strokeWidth={2.2} />} id="trail-title" label={TRAIL.label} lines={[TRAIL.headline[0], TRAIL.headline[1]]} tone="ink" className="ed-title" reveal="lines" />
             <p className="t-small dial-example">
               {EXAMPLE_LABEL} <span aria-hidden>·</span> {EXAMPLE.part}
             </p>
@@ -132,7 +131,7 @@ export function TrailDial({ index }: { index: string }) {
               {TRAIL.steps.map((s, i) => (
                 <div key={s.step} className="dial-read" style={toneVars(s.tone)} data-on={i === 0 || undefined}>
                   <p className="dial-read-k t-label">
-                    <span className="tabular">{pad(i)}</span> / {TRAIL.groups[s.group]}
+                    {TRAIL.groups[s.group]}
                   </p>
                   <p className="dial-read-name">{s.step}</p>
                   <p className="dial-read-ex">{s.ex}</p>
@@ -183,7 +182,7 @@ export function TrailDial({ index }: { index: string }) {
                   style={{ ...toneVars(s.tone), ["--a" as string]: `${angleOf(i)}deg` }}
                 >
                   <span className="dial-node-chip">
-                    <span className="dial-node-n tabular">{pad(i)}</span>
+                    <span className="dial-node-dot" aria-hidden />
                     <span className="dial-node-name">{s.step}</span>
                   </span>
                   {/* Below 1024px: the list reads each step in full, with its drawing. */}

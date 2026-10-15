@@ -7,8 +7,6 @@ type Props = {
   lines: [ReactNode] | [ReactNode, ReactNode];
   /** Label above the title, with a dot in the tone. */
   label?: ReactNode;
-  /** The section's place on the page ("01" to "07"), before the label. Decoration: not read aloud. */
-  index?: string;
   /** A small icon in the label pill, in place of the dot. */
   icon?: ReactNode;
   /** The chapter's or area's system colour (dot and accent line). */
@@ -35,7 +33,6 @@ const SIZE = { display: "t-display", title: "t-title", card: "t-title-card" } as
 export default function SectionTitle({
   lines,
   label,
-  index,
   icon,
   tone = "cobalt",
   size = "title",
@@ -56,7 +53,6 @@ export default function SectionTitle({
     >
       {label && (
         <p className="t-label section-title-label">
-          {index && <span className="section-title-index tabular" aria-hidden>{index}</span>}
           {icon ? <span className="section-title-icon" aria-hidden>{icon}</span> : <span className="section-title-dot" aria-hidden />}
           {label}
         </p>

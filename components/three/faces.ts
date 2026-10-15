@@ -205,7 +205,7 @@ function layer(c: C, k: number, fan = false) {
   const tone = LAYER_TONE[k];
   const L = LAYERS[k];
   const [metric, caption] = LAYER_METRIC[k];
-  label(c, `0${k + 1}  ${L.name}`, 90, 138, ink(tone));
+  label(c, L.name, 90, 138, ink(tone));
   if (!fan) status(c, "Checked", FACE_W - 90, 140, TINTS.emerald, false);
 
   // Left column: the one number that matters, as large as the column allows.
@@ -435,15 +435,9 @@ function fnHand(c: C, k: number) {
   const tone = FUNCTION_TONE[k];
   const f = FUNCTIONS[k];
   const fg = onTone(tone);
-  const soft = fg === INK ? hexA(INK, 0.72) : "rgba(255,255,255,0.82)";
   c.fillStyle = tone;
   c.fillRect(0, 0, PW, PH);
   badge(c, FN_ICON[k], "#FFFFFF", ink(tone));
-  font(c, 60, 600, true);
-  c.fillStyle = soft;
-  c.textAlign = "right";
-  c.fillText(String(k + 1).padStart(2, "0"), PW - HAND_PAD, HAND_PAD + 96);
-  c.textAlign = "left";
   handName(c, f.name, fg);
   handText(c, f.decision, fg, (y) => {
     // The status, as on every decision in the story: a white pill, an emerald dot.
