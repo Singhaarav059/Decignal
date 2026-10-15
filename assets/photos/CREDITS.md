@@ -21,3 +21,4 @@ client site. Shown as duotones in the area's colour (components/sections/AreaPho
 The six `sys-` photographs in the systems ring stand for the record sources (`sys-files.jpg` is the files source); `machining.jpg`, `distributor.jpg` and `service.jpg` are the dispatch, RFQ and service function photos; `decide.jpg` is the reviewer.
 
 No photograph shows a legible brand, logo or company name (checked 2026-10-13: the earlier showroom and port pictures did, and were replaced).
+| founder.jpg | Founder portrait, from https://www.demazetech.com/ (not stock) |

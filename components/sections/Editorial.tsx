@@ -13,6 +13,8 @@ import {
   Users,
   Workflow,
 } from "lucide-react";
+import Image from "next/image";
+import founderPhoto from "@/assets/photos/founder.jpg";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { APPLICATIONS, AUDIENCE, FAQ, FAQ_TOPICS, FEATURED, LEGACY_ANCHORS } from "@/lib/content";
@@ -402,38 +404,41 @@ function Measure() {
 
 /* ------------------------------------------------------------------ */
 
-/** About (handoff home.about). The founder card carries placeholder details until they are supplied. */
+/** About (handoff home.about): head and lede, then the place beside the second paragraph, the founder and the call to action, on one pair of columns. */
 function About() {
   const f = ABOUT.founder;
   const area = AREAS[1];
   return (
     <section id="about" className="results about band" data-band="mist" aria-labelledby="about-title">
       <div className="page-wrap">
-        <div className="results-head">
+        <div className="about-grid">
           <Head
             icon={<Building2 size={13} strokeWidth={2.2} />}
             id="about-title"
             label={ABOUT.eyebrow}
             headline={ABOUT.headline}
           />
-          <div className="results-head-side">
-            <p data-reveal className="t-lede">
-              {ABOUT.body}
-            </p>
-          </div>
-        </div>
-        <div className="about-grid">
+          <p data-reveal className="t-lede about-lede">
+            {ABOUT.body}
+          </p>
           <div data-reveal className="about-photo">
-            <AreaPhoto area={area} sizes="(min-width: 1024px) 560px, 92vw" />
+            <AreaPhoto area={area} sizes="(min-width: 1024px) 640px, 92vw" />
           </div>
           <div className="about-side">
             <p data-reveal className="t-body about-second">
               {ABOUT.second}
             </p>
             <div data-reveal className="about-founder bento-card" style={toneVars("cobalt")}>
-              <p className="bento-k t-label">{ABOUT.founderLabel}</p>
-              <p className="t-subtitle about-founder-name">{f.name}</p>
-              <p className="t-small about-founder-role">{f.role}</p>
+              <div className="about-founder-head">
+                <div className="about-founder-photo">
+                  <Image src={founderPhoto} alt={f.photoAlt} sizes="180px" />
+                </div>
+                <div className="about-founder-id">
+                  <p className="bento-k t-label">{ABOUT.founderLabel}</p>
+                  <p className="t-subtitle about-founder-name">{f.name}</p>
+                  <p className="t-small about-founder-role">{f.role}</p>
+                </div>
+              </div>
               <p className="t-body about-founder-text">{f.experience}</p>
               <a className="ed-link about-founder-link" href={f.linkedin} target="_blank" rel="noopener noreferrer">
                 {ABOUT.linkedin}

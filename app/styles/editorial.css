@@ -839,25 +839,22 @@
 .about-photo .area-photo { height: 100%; }
 .about-side { display: grid; gap: 24px; align-content: start; }
 .about-second { max-width: 46ch; color: var(--color-ink-2); }
-.about-founder { grid-template-columns: 112px minmax(0, 1fr); grid-template-rows: none; gap: 20px; align-items: start; min-height: 0; }
-.about-founder-photo { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--edge-line); }
-.about-founder-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; transform: scale(1.5); transform-origin: 50% 24%; }
-.about-founder-body { display: grid; gap: 6px; align-content: start; }
+.about-founder { grid-template-rows: none; gap: 6px; align-content: start; min-height: 0; }
+.about-founder-head { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 20px; align-items: center; }
+.about-founder-photo { overflow: hidden; aspect-ratio: 4 / 5; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--edge-line); }
+.about-founder-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.7); transform-origin: 51% 27%; }
+.about-founder-id { display: grid; gap: 4px; }
 .about-founder-name { margin-top: 6px; color: var(--color-ink); }
 .about-founder-role { color: var(--color-ink-soft); }
-.about-founder-text { margin-top: 6px; color: var(--color-ink-2); }
+.about-founder-text { margin-top: 18px; color: var(--color-ink-2); }
 .about-founder-link { margin-top: 10px; justify-self: start; }
 .about-cta { justify-self: start; }
-@media (max-width: 479px) {
-  .about-founder { grid-template-columns: 1fr; }
-  .about-founder-photo { width: 120px; }
-}
 @media (min-width: 900px) {
   .about-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); column-gap: clamp(40px, 4.5vw, 64px); row-gap: var(--ed-gap); align-items: end; }
   .about-photo { margin-top: 0; align-self: stretch; }
   .about-photo .area-photo-frame { height: 100%; min-height: 420px; aspect-ratio: auto; }
   .about-side { align-self: start; }
-  .about-founder { grid-template-columns: clamp(108px, 30%, 168px) minmax(0, 1fr); gap: clamp(20px, 2vw, 28px); }
+  .about-founder-head { grid-template-columns: 104px minmax(0, 1fr); gap: 24px; }
 }
 
 /* The problem's lead line and closing, around the sentence that sharpens as it scrolls. */

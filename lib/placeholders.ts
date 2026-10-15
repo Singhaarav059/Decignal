@@ -20,6 +20,8 @@ export const PLACEHOLDER = {
     experience:
       "Founded Demaze Technologies in Ahmedabad, where a team of 35+ has delivered 45+ AI and software projects over six years.",
     linkedin: "https://www.linkedin.com/in/krupalchaudhary",
+    /** The portrait is assets/photos/founder.jpg, from the same page. */
+    photoAlt: "Portrait of Krupal Chaudhary",
   },
   /** PLACEHOLDER: replace before launch. What the website actually does with enquiry data (handoff §9). */
   privacy: {
