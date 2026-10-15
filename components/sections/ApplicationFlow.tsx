@@ -73,7 +73,7 @@ export function ApplicationFlow({ list }: { list: number[] }) {
       io.disconnect();
     }, { rootMargin: "200% 0px" });
     io.observe(el);
-    const cancel = whenStill(() => void import("../three/ApplicationScene"));
+    const cancel = whenStill(() => void import("../three/ApplicationScene"), 6000);
     return () => {
       io.disconnect();
       cancel();

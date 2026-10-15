@@ -180,23 +180,32 @@ function Atmosphere() {
  *  part built in a single synchronous pass); each is now its own low-priority render, which React
  *  splits into short slices, and its own commit. Nothing draws until all are in and warm. */
 const ACTORS = [Islands, SignalCrate, ChartCrates, Transfer, Cards, IndustriesRoad, FinalMark, ChartMarks];
-/** The longest an actor waits for a pause in the scroll before it builds anyway (ms). */
+/** The longest an actor waits for a pause in the scroll before it builds anyway (ms), and the most all
+ *  of them wait together (MOUNT_BY from the world's mount): eight waits of 3 s each kept a reader who
+ *  never paused on a still world for half a minute. */
 const MOUNT_LATEST = 3000;
-/** The warm-up's uploads wait for the scroll to rest this long (ms), and at most WARM_WAIT each. */
+const MOUNT_BY = 5000;
+/** The warm-up's uploads wait for the scroll to rest this long (ms), at most WARM_WAIT each and
+ *  WARM_PATIENCE in all. The world is some 300 pieces: a wait per piece, with a reader scrolling on, held
+ *  a phone's story on its posters for two to three minutes. */
 const WARM_QUIET = 400;
 const WARM_WAIT = 1500;
+const WARM_PATIENCE = 3000;
 
 /**
- * Resolves once a touch screen's scroll has rested WARM_QUIET (or after WARM_WAIT). The uploads draw
- * each piece and its shadow map: on a phone that GPU work shares one process with the page's own
- * frames, and a swipe in the first seconds stuttered under it.
+ * Resolves once a touch screen's scroll has rested WARM_QUIET (or after WARM_WAIT), while the warm-up's
+ * `budget` (ms of waiting left) lasts; once spent, at once. The uploads draw each piece and its shadow
+ * map: on a phone that GPU work shares one process with the page's own frames, and a swipe in the first
+ * seconds stuttered under it.
  */
-async function scrollRest() {
-  if (!isTouch()) return;
+async function scrollRest(budget: { left: number }) {
+  if (!isTouch() || budget.left <= 0) return;
   const t0 = performance.now();
-  while (performance.now() - store.scrollAt < WARM_QUIET && performance.now() - t0 < WARM_WAIT) {
+  const most = Math.min(WARM_WAIT, budget.left);
+  while (performance.now() - store.scrollAt < WARM_QUIET && performance.now() - t0 < most) {
     await new Promise((r) => window.setTimeout(r, WARM_QUIET - (performance.now() - store.scrollAt) + 10));
   }
+  budget.left -= performance.now() - t0;
 }
 
 function World() {
@@ -204,6 +213,7 @@ function World() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
+  const t0 = useRef(0);
   useEffect(() => {
     // Each actor's programs are requested as soon as it is in, so the browser links them while the
     // next one builds.
@@ -212,7 +222,9 @@ function World() {
     // A transition: React renders it in its own short tasks, so the page gets its turn between them.
     // Each at a pause in the scroll (never later than MOUNT_LATEST): building an actor mid-swipe was a
     // phone's heaviest moment of the first seconds.
-    return whenStill(() => startTransition(() => setN(n + 1)), MOUNT_LATEST);
+    if (!t0.current) t0.current = performance.now();
+    const latest = Math.min(MOUNT_LATEST, Math.max(0, MOUNT_BY - (performance.now() - t0.current)));
+    return whenStill(() => startTransition(() => setN(n + 1)), latest);
   }, [n, gl, scene, camera]);
   return (
     <Sliced value={true}>
@@ -422,8 +434,9 @@ async function upload(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE
     while (t.parent && t.parent !== scene) t = t.parent;
     return t;
   };
+  const budget = { left: WARM_PATIENCE };
   for (let k = 0; k < roots.length; ) {
-    await scrollRest();
+    await scrollRest(budget);
     await yieldTask();
     if (!live()) return;
     const end = performance.now() + 8;

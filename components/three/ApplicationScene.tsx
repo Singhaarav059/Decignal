@@ -141,6 +141,9 @@ const REST = { progress: 0, edge: 0 };
 function updateIfShown(this: THREE.Object3D, force?: boolean) {
   if (this.visible) THREE.Group.prototype.updateMatrixWorld.call(this, force);
 }
+/** The longest a world waits for a pause in the scroll before it builds anyway (ms). */
+const BUILD_LATEST = 4000;
+
 /**
  * Every world on the list stays built; only the current one is shown. Switching chapters then costs
  * nothing, where rebuilding a world (geometry, textures, shaders) stalled the scroll for a fifth of a
@@ -155,7 +158,9 @@ function Stages(props: Props) {
   const [count, setCount] = useState(1);
   useEffect(() => {
     if (count >= order.length) return;
-    return whenStill(() => setCount((c) => c + 1));
+    // At most BUILD_LATEST into a scroll that never pauses: otherwise each world built only when its
+    // section came up, and the reader met it still while it warmed.
+    return whenStill(() => setCount((c) => c + 1), BUILD_LATEST);
   }, [count, order.length]);
   const built = new Set([...order.slice(0, count), props.kind]);
   const groups = useRef(new Map<DemoKind, THREE.Group>());
