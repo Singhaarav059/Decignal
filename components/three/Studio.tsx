@@ -2,12 +2,16 @@
 
 // The studio the story is shot in: softbox lighting built in code, one key light with a
 // sharp shadow. Contact shadows (in the scene) ground every object.
+import { memo } from "react";
 import { Environment, Lightformer } from "@react-three/drei";
 import { COLORS } from "./palette";
 import { isTouchPhone } from "@/lib/device";
 import { deviceTier } from "@/lib/tier";
 
-export function Studio({ resolution = 1024 }: { resolution?: number }) {
+/** Memoised: drei's Environment rebuilds its cube map (6 scene renders and ~20 PMREM passes) whenever its
+ *  children are new elements, so a parent re-render rebuilt it. The explorer re-renders on every stage
+ *  change: 8 rebuilds in 1.5 s of scrolling, over half its draws, on a phone's GPU. The map never changes. */
+export const Studio = memo(function Studio({ resolution = 1024 }: { resolution?: number }) {
   return (
     <Environment resolution={resolution} frames={1}>
       <color attach="background" args={[COLORS.envBase]} />
@@ -23,7 +27,7 @@ export function Studio({ resolution = 1024 }: { resolution?: number }) {
       <Lightformer form="rect" color="#3A3B40" intensity={1} position={[0, 0.6, -10]} scale={[30, 0.8, 1]} />
     </Environment>
   );
-}
+});
 
 /** Where the key light stands; it aims at the origin. The shadow floor (Shadows.tsx) casts along it. */
 export const KEY_POS = [6, 10, 7] as const;
