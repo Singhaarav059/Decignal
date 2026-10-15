@@ -44,7 +44,18 @@ export function HowSteps({ head }: { head: ReactNode }) {
     <div ref={root} className="how-steps">
       <div className="page-wrap how-top">
         {head}
-        <p className="t-small how-timing">{PATHS.timing}</p>
+        {/* The promise: a panel of its own so it isn't read as a footnote. */}
+        <div className="how-timing">
+          <p className="how-timing-lead">{PATHS.timing.lead}</p>
+          <ul className="how-timing-list">
+            {PATHS.timing.items.map((t) => (
+              <li key={t}>
+                <Check size={15} strokeWidth={2.6} aria-hidden />
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
       <ol className="how-sheets">
         {steps.map((x, i) => {

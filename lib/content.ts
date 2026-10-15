@@ -363,7 +363,10 @@ export const PATHS = {
       deliverable: "A clear owner and a plan for improvement.",
     },
   ],
-  timing: "Project scope, delivery time and support are agreed before work begins.",
+  timing: {
+    lead: "Agreed before work begins",
+    items: ["Project scope", "Delivery time", "Support"],
+  },
 };
 
 /** The homepage FAQ (handoff §8). FAQ_TOPICS is index-aligned. */

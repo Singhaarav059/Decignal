@@ -766,7 +766,15 @@
 @media (min-width: 1024px) {
   .how-sheet-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 56px; }
 }
-.how-timing { max-width: 40ch; color: var(--color-ink-soft); align-self: end; }
+.how-timing {
+  align-self: end; justify-self: start; padding: 18px 22px;
+  border: 1px solid var(--color-line); border-left: 3px solid var(--color-cobalt);
+  border-radius: var(--radius-md); background: var(--color-surface);
+}
+.how-timing-lead { font-weight: 600; color: var(--color-ink); }
+.how-timing-list { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 10px; }
+.how-timing-list li { display: inline-flex; align-items: center; gap: 7px; color: var(--color-ink-2); }
+.how-timing-list svg { flex: none; color: var(--color-cobalt); }
 .how-sheet-title { max-width: 22ch; }
 .how-text { max-width: 46ch; }
 .bento-photo .bento-art { width: 100%; }
