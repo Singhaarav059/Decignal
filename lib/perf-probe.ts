@@ -22,7 +22,6 @@ const NO_SHADOWS = "*, *::before, *::after { box-shadow: none !important; filter
 
 const CONFIGS: Config[] = [
   { name: "Normal" },
-  { name: "Fixed 2x", dpr: 2 },
   { name: "3D at 1.5x", dpr: 1.5 },
   { name: "Effects off", css: NO_EFFECTS },
   { name: "Blur off", css: NO_BLUR },
@@ -212,8 +211,6 @@ export function startProbe(log: ProbeLog) {
         const cfg = CONFIGS[c];
         style.textContent = cfg.css ?? "";
         probe.off3d = !!cfg.off3d;
-        // A fixed density turns the motion density off for the run, so "Normal" vs "Fixed 2x" is its A/B.
-        probe.fixedDpr = cfg.dpr !== undefined;
         probe.dprSetters.forEach((set) => set(cfg.dpr ?? quality.dpr));
         const cells: string[] = [];
         const a = performance.now();
@@ -238,7 +235,6 @@ export function startProbe(log: ProbeLog) {
     } finally {
       style.remove();
       probe.off3d = false;
-      probe.fixedDpr = false;
       probe.dprSetters.forEach((set) => set(quality.dpr));
       delete html.dataset.jump;
       window.scrollTo({ top: 0, behavior: "instant" });

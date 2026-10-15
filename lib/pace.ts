@@ -90,8 +90,6 @@ export function resting(now = performance.now()) {
  *  or drawn at another density. Inert unless the page was opened with ?perf. */
 export const probe = {
   off3d: false,
-  /** The probe holds one density for a run: the touch canvases' motion density steps aside. */
-  fixedDpr: false,
   dprSetters: new Set<(dpr: number | [number, number]) => void>(),
   /** Each canvas's draws since the probe last read them: main-thread ms in render(), render calls,
    *  draw calls and triangles. Filled only with ?perf (probeGl). */
