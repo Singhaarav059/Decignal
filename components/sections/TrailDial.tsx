@@ -202,35 +202,57 @@ export function TrailDial() {
       </div>
       {/* The example itself, readable without scrolling through the dial. */}
       <div className="page-wrap dial-review">
-        <table className="review-table" aria-label={TRAIL.table.aria}>
-          <thead>
-            <tr>
-              {TRAIL.table.head.map((h) => (
-                <th key={h} scope="col" className="t-label">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {TRAIL.table.rows.map((r) => (
-              <tr key={r.doc}>
-                <td>{r.ref}</td>
-                <td>{r.doc}</td>
-                <td>
-                  <span className="review-status" data-risk={r.risk || undefined}>
-                    <i aria-hidden />
-                    {r.status}
-                  </span>
-                </td>
-              </tr>
+        <div className="review-sheet">
+          <div className="review-sheet-head">
+            <p className="review-sheet-title">
+              <span className="t-label">{TRAIL.sheet.title}</span>
+              <span className="review-sheet-po">{APP_FACTS.order.po}</span>
+            </p>
+            <span className="review-pill" data-wait>
+              <i aria-hidden />
+              {TRAIL.sheet.state}
+            </span>
+          </div>
+          <ul className="review-tally">
+            {TRAIL.tally.map((t) => (
+              <li key={t.k} data-risk={t.risk || undefined}>
+                <span className="review-tally-n">{t.n}</span>
+                <span className="review-tally-k">{t.k}</span>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+          <table className="review-table" aria-label={TRAIL.table.aria}>
+            <thead>
+              <tr>
+                {TRAIL.table.head.map((h) => (
+                  <th key={h} scope="col" className="t-label">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TRAIL.table.rows.map((r) => (
+                <tr key={r.doc}>
+                  <td className="review-ref">
+                    <span className="review-line">{r.line}</span>
+                    <span className="review-item">{r.ref}</span>
+                  </td>
+                  <td className="review-doc">{r.doc}</td>
+                  <td className="review-st">
+                    <span className="review-pill" data-risk={r.risk || undefined}>
+                      <i aria-hidden />
+                      {r.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div className="review-notes">
           <p className="t-subtitle review-rec">{TRAIL.recommendation}</p>
           <p className="t-body review-expl">{TRAIL.explanation}</p>
-          <p className="t-label review-state">{TRAIL.review}</p>
           <p className="t-small review-disclaimer">{TRAIL.disclaimer}</p>
         </div>
       </div>

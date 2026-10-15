@@ -556,14 +556,20 @@ export const TRAIL = {
     aria: "Illustrative order intake",
     head: ["Order line", "Matched to", "Status"],
     rows: [
-      { ref: "Line 3 · Switch 16A", doc: "Catalogue item SW-16A", status: "Matched", risk: false },
-      { ref: "Line 7 · old item code", doc: "Two possible catalogue items", status: "Confirm item", risk: true },
-      { ref: "Line 12 · 20 boxes", doc: "Pack unit not stated", status: "Clarify unit", risk: true },
+      { line: "Line 3", ref: "Switch 16A", doc: "Catalogue item SW-16A", status: "Matched", risk: false },
+      { line: "Line 7", ref: "Old item code", doc: "Two possible catalogue items", status: "Confirm item", risk: true },
+      { line: "Line 12", ref: "20 boxes", doc: "Pack unit not stated", status: "Clarify unit", risk: true },
     ],
   },
   recommendation: `Confirm the ${ORDER_COUNTS.item} items and ${ORDER_COUNTS.unit} units before the draft goes to the order system.`,
   explanation: "The application prepares the draft and keeps uncertain lines visible. The order desk checks them and approves the order.",
-  review: "Draft order · not yet approved",
+  /** The sheet's head and its tally of the 40 lines. */
+  sheet: { title: "Draft order", state: "Not yet approved" },
+  tally: [
+    { n: ORDER_COUNTS.matched, k: "Lines matched", risk: false },
+    { n: ORDER_COUNTS.item, k: "Items to confirm", risk: true },
+    { n: ORDER_COUNTS.unit, k: "Units to clarify", risk: true },
+  ],
   disclaimer: "Illustrative records. This example shows what an application could prepare, not a completed customer project.",
 } as const;
 
