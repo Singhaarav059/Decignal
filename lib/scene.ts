@@ -36,16 +36,20 @@ export const CARD = { w: 1.6, t: 0.05, h: 1.0 }; // face is w x h, t thick
 export const HUB: [number, number] = [0, -1.2];
 
 // x, z, rotation y, drawn square to the viewer about the hub, then turned to the camera's angle.
-// A level hexagon around the hub: three near, three far, nothing hidden. Close-set and deeper than it
-// is wide, so it fills the stage beside the card at a larger size; the ending's board stands at the
-// hub with the near pair clear of its face and the outer pair clear of its edges.
+// A regular hexagon round the hub: every system the same distance from its neighbours and from the
+// hub, every pad at the same angle, a clear gap between any two. Placed by hand, the store's pad ran into
+// the rack's and the spacing read as uneven. HEX: centre to centre, so a pad (1.9 x 1.6 at 1.1, about 2.6
+// across at this angle) leaves well over half a pad of ground to the next. The ending's mark stands at the
+// hub, inside the ring.
+const HEX = 3.8;
+const HEX_H = HEX * Math.sqrt(3) / 2;
 const HERO_LAYOUT: [number, number, number][] = [
-  [-3.2, -1.9, 0.3],
-  [-1.7, 0.4, 0.12],
-  [3.2, -1.9, -0.3],
-  [1.7, 0.4, -0.12],
-  [-1.7, -4.2, 0.2],
-  [1.7, -4.2, -0.2],
+  [-HEX, HUB[1], 0],
+  [-HEX / 2, HUB[1] + HEX_H, 0],
+  [HEX, HUB[1], 0],
+  [HEX / 2, HUB[1] + HEX_H, 0],
+  [-HEX / 2, HUB[1] - HEX_H, 0],
+  [HEX / 2, HUB[1] - HEX_H, 0],
 ];
 // Portrait (phones, upright tablets): a tidy two by three grid, every pad square to the viewer and the
 // columns close, so the six fill a phone's tall stage larger. Each turned its own way, the six read as
