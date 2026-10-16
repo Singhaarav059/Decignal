@@ -49,14 +49,6 @@ export const BRAND = {
   signal: "#F2361F",
 } as const;
 
-/** The three plates of the logo mark (components/ui/Logo.tsx) in paint order, bottom plate first, 32 unit box. */
-export const LOGO_PLATES = [
-  { d: "M16 21.5 4 15.6l12-5.9 12 5.9z", fill: BRAND.cobalt },
-  { d: "M16 16.8 4 10.9 16 5l12 5.9z", fill: BRAND.saffron },
-  { d: "M16 12.1 4 6.2 16 .3l12 5.9z", fill: BRAND.signal },
-] as const;
-/** viewBox that centres the mark in a square with a little air. */
-export const LOGO_ICON_VIEWBOX = "3 -2.1 26 26";
 
 /** The site's share card, drawn by app/opengraph-image.tsx. */
 export const SHARE_IMAGE_ALT = `${SITE_NAME}: ${HERO_LINES.join(" ")} ${OG_FOOTER}`;

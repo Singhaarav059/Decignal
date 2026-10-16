@@ -2,24 +2,9 @@
    and the chapter pictures (components/Nav, NavPeek, CtaPill, PhoneDock, ChapterArt, ui/Logo). Every fixed layer takes its z from the token scale. */
 
 /* ---------------- Logo ---------------- */
-.logo .logo-mark {
-  width: round(calc(var(--logo, 26px) * 0.95), 1px);
-  height: round(calc(var(--logo, 26px) * 0.95), 1px);
-  overflow: visible;
-  transform: translateY(round(calc(var(--logo, 26px) * 0.12), 1px));
-}
-.logo .logo-mark path { transition: transform var(--dur-4) var(--ease); }
-@media (hover: hover) {
-  .logo:hover .lm-1 { transform: translateY(-3px); }
-  .logo:hover .lm-3 { transform: translateY(3px); }
-}
 .logo-word {
   display: inline-block;
-  max-width: 6em;
-  margin-left: 10px;
-  overflow-x: clip;
   font-size: var(--logo, 26px);
-  transition: max-width var(--dur-3) var(--ease), margin var(--dur-3) var(--ease), opacity var(--dur-2) var(--ease);
 }
 
 /* ---------------- Skip link (styles in infra.css): on the page grid's left edge ---------------- */
@@ -97,10 +82,9 @@ a.skip-link { left: var(--edge); }
 .nav-readout-caret { flex: none; width: 11px; height: 11px; fill: none; stroke: var(--color-ink-soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--dur-3) var(--ease); }
 .nav-readout[aria-expanded="true"] .nav-readout-caret { transform: rotate(180deg); }
 .nav-readout:hover .nav-readout-caret { stroke: var(--color-ink); }
-/* Phones (NAV-13): in the story the compact bar folds the wordmark to the mark and reads the chapter
+/* Phones (NAV-13): in the story the compact bar keeps the wordmark and reads the chapter
    in sentence case; tapping it opens the menu's chapter list. Past the story the dock names sections. */
 @media (max-width: 639px) {
-  .nav-pill[data-mini] .logo-word { max-width: 0; margin-left: 0; opacity: 0; }
   .nav-readout[data-mode="story"] { gap: 6px; font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; }
   .nav-readout[data-mode="story"][data-show] { margin-left: 2px; }
   .nav-readout-rule, .nav-readout-caret { display: none; }
@@ -165,7 +149,7 @@ a.skip-link { left: var(--edge); }
   .nav-cta-icon, .nav-pill[data-compact] .nav-cta-icon { width: 28px; height: 28px; }
   .nav-logo { padding-inline: 2px 4px; }
 }
-/* Phones keep one bar height when it goes compact (the logo folds and the readout still animate). The
+/* Phones keep one bar height when it goes compact (the readout still animates). The
    bar shrinking by 8px resized its glass, and a phone re-rastered the pill and the CTA, with their
    blurred rims, on every frame of the 320 ms change: a stutter each time the page left the top
    (raster 330 to 79 ms/s on the probe's sway, 2026-10-14, the user's choice). Tablets keep it too: their
@@ -439,7 +423,7 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 
 @media (prefers-reduced-motion: reduce) {
   html.ready .nav-pill, html.ready .nav-links a, html.ready .nav-pill > .nav-cta, .nav-roll, .nav-peek[data-open] .nav-peek-pane[data-on] [style*="--k"] { animation: none; }
-  .nav-shell, .nav-pill, .nav-readout, .nav-peek, .nav-peek-body, .nav-peek-pane, .nav-peek-caret, .nav-links-hl[data-glide], .logo-word,
+  .nav-shell, .nav-pill, .nav-readout, .nav-peek, .nav-peek-body, .nav-peek-pane, .nav-peek-caret, .nav-links-hl[data-glide],
   .nav-menu, .nav-menu[data-open], .nav-menu-group, .nav-menu[data-open] .nav-menu-group { transition-duration: 0ms; transition-delay: 0ms; }
   .cta-pill, .cta-pill[data-show] { translate: -50% 0; transition: opacity var(--dur-1) linear, visibility 0s; }
   .phone-dock, .phone-dock[data-show] { translate: 0 0; transition: opacity var(--dur-1) linear, visibility 0s; }

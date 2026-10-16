@@ -13,7 +13,6 @@ import { CONTACT_EMAIL } from "@/lib/site";
 const EMAIL = CONTACT_EMAIL;
 import { jumpTo } from "@/lib/jump";
 import { toneVars } from "@/lib/tone";
-import { LogoMark } from "../ui/Logo";
 import { Arrow } from "../ui/Arrow";
 import { SectionLink } from "../ui/SectionLink";
 import { AuditLink } from "../CtaPill";
@@ -174,9 +173,6 @@ export function Footer() {
 
       {/* The wordmark, set across the full width */}
       <div ref={word} className="footer-wordmark" aria-hidden>
-        <span data-letter className="inline-block">
-          <LogoMark className="footer-wordmark-mark" />
-        </span>
         <span className="footer-wordmark-word">
           {"decignal".split("").map((ch, i) => (
             <span key={i} data-letter className="inline-block">

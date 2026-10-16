@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { BRAND, HERO_LINES, LOGO_ICON_VIEWBOX, LOGO_PLATES, OG_FOOTER, SHARE_IMAGE_ALT } from "@/lib/site";
+import { BRAND, HERO_LINES, OG_FOOTER, SHARE_IMAGE_ALT } from "@/lib/site";
 
 export const alt = SHARE_IMAGE_ALT;
 export const size = { width: 1200, height: 630 };
@@ -32,12 +32,7 @@ export default async function OpengraphImage() {
           fontFamily: "Bricolage",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
-          <svg width={50} height={50} viewBox={LOGO_ICON_VIEWBOX}>
-            {LOGO_PLATES.map((p) => (
-              <path key={p.d} d={p.d} fill={p.fill} />
-            ))}
-          </svg>
+        <div style={{ display: "flex", alignItems: "center", fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
           decignal
         </div>
         <div

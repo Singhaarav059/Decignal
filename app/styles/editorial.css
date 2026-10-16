@@ -386,7 +386,6 @@
 /* The wordmark, set across the full width; a logo, not a heading. 20vw so the word always fits the
    width; the token caps it on very wide screens. */
 .footer-wordmark { display: flex; align-items: flex-end; justify-content: center; gap: max(1.5vw, 12px); overflow: hidden; margin-top: 40px; padding: 1vw 0 4.5vw; --mark: min(20vw, var(--wordmark)); }
-.footer-wordmark-mark { display: block; width: calc(var(--mark) * 0.65); height: calc(var(--mark) * 0.65); }
 .footer-wordmark-word { display: flex; font-family: var(--font-heading); font-size: var(--mark); line-height: 0.9; color: #fff; font-weight: 500; letter-spacing: -0.014em; }
 
 .footer-motif .footer-thread { stroke-dasharray: 1; stroke-dashoffset: 0; stroke: rgb(255 255 255 / 0.85); }

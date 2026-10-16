@@ -820,25 +820,10 @@ export function drawHandArt(canvas: HTMLCanvasElement, spec: FaceSpec, p: number
 
 /** The ending: the lead magnet, standing where the six systems meet. */
 function final(c: C) {
-  // Logo mark
-  const marks: [string, number][] = [
-    [TINTS.cobalt, 70],
-    [TINTS.saffron, 40],
-    [COLORS.signal, 10],
-  ];
-  marks.forEach(([col, y]) => {
-    c.fillStyle = col;
-    c.beginPath();
-    c.moveTo(150, 90 + y);
-    c.lineTo(90, 120 + y);
-    c.lineTo(150, 150 + y);
-    c.lineTo(210, 120 + y);
-    c.closePath();
-    c.fill();
-  });
+  // The name alone
   font(c, 80, 650);
   c.fillStyle = INK;
-  c.fillText("decignal", 240, 206);
+  c.fillText("decignal", 90, 206);
   // The six systems that feed it, one dot each, as the threads arrive on the ground around it.
   [TINTS.cobalt, TINTS.violet, TINTS.emerald, TINTS.saffron, TINTS.tangerine, TINTS.pink].forEach((t, i) => dot(c, FACE_W - 110 - (5 - i) * 56, 178, 17, t));
   title(c, FACES.final.title, 440, 136, INK, FACE_W - 180);

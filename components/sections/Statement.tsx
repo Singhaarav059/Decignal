@@ -11,7 +11,6 @@ import SectionTitle from "../ui/SectionTitle";
 import { Compass } from "lucide-react";
 import { AREAS, appsOf } from "@/lib/areas";
 import { toneVars } from "@/lib/tone";
-import { LogoMark } from "../ui/Logo";
 import { LiquidShapes } from "../ui/LiquidShapes";
 import decide from "@/assets/photos/decide.jpg";
 
@@ -287,9 +286,6 @@ export function Statement() {
         <div className="page-wrap">
           {/* The label is the section's heading; the sentences under it are a statement, not a headline. */}
           <h2 id="stmt-title" className="t-label section-title-label stmt-label">
-            <span className="section-title-icon" aria-hidden>
-              <LogoMark className="stmt-mark" />
-            </span>
             {STATEMENT.eyebrow}
           </h2>
           <div className="stmt-head">
