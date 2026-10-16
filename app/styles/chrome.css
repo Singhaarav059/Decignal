@@ -60,8 +60,9 @@ a.skip-link { left: var(--edge); }
 .nav-surface { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--color-surface); box-shadow: var(--edge-line); transition: box-shadow var(--dur-3) var(--ease); }
 .nav-pill[data-solid] .nav-surface { box-shadow: var(--edge-strong); }
 .nav-logo { flex: none; padding: 4px 6px; border-radius: var(--radius-pill); }
+/* Wide: the pill's own padding centres the word; the 4px flex gap to the (empty) readout is counted in. */
 @media (min-width: 1024px) {
-  .nav-logo { padding-left: 0; }
+  .nav-logo { padding-inline: 0; }
 }
 .nav-burger { border-radius: var(--radius-pill); }
 .nav-burger-bar { position: absolute; inset: 0 0 auto; height: 1.5px; background: var(--color-ink); transition: transform var(--dur-3) var(--ease); }
@@ -141,7 +142,7 @@ a.skip-link { left: var(--edge); }
   .nav-pill { height: 66px; padding: 0; }
   .nav-pill[data-compact] { height: 54px; padding: 0; }
   .nav-surface { display: none; }
-  .nav-brand { height: 52px; padding: 0 16px 0 14px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line), var(--shadow-float); transition: height var(--dur-3) var(--ease); }
+  .nav-brand { height: 52px; padding: 0 16px 0 22px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line), var(--shadow-float); transition: height var(--dur-3) var(--ease); }
   .nav-pill[data-compact] .nav-brand { height: 46px; }
   .nav-cta { height: 52px; padding-left: 22px; padding-right: 6px; box-shadow: var(--shadow-float); }
   .nav-cta-icon { width: 40px; height: 40px; }
