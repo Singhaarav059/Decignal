@@ -96,8 +96,14 @@
   text-decoration: none;
   transition: background-color var(--dur-2) var(--ease);
 }
+/* The arrow and its hover twin, as on .ed-link. */
+.svc-source-name .arrow { display: inline-grid; overflow: hidden; width: 14px; }
+.svc-source-name .arrow > span { grid-area: 1 / 1; transition: transform var(--dur-4) var(--ease); }
+.svc-source-name .arrow > span + span { transform: translateX(-120%); }
 @media (hover: hover) {
   .svc-source-name:hover { background: color-mix(in srgb, var(--tone) 18%, var(--color-surface)); }
+  .svc-source-name:hover .arrow > span:first-child { transform: translateX(120%); }
+  .svc-source-name:hover .arrow > span + span { transform: none; }
 }
 /* Narrow: the application first, its records under it, no bracket. */
 @media (max-width: 767px) {

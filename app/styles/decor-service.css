@@ -137,3 +137,5 @@
 .svc-art.sa .k-risk-bar { fill: var(--color-signal); }
 .svc-art.sa .k-tone-ink { fill: var(--tone); }
 .svc-why-art { margin-top: clamp(24px, 3vh, 36px); }
+/* Phones: a thinner well, so the drawing keeps more of the width. */
+@media (max-width: 599px) { .svc-split-art { padding: 12px 10px; } }
