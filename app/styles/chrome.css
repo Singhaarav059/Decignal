@@ -3,9 +3,26 @@
 
 /* ---------------- Logo ---------------- */
 .logo-word {
+  position: relative;
+  isolation: isolate;
   display: inline-block;
   font-size: var(--logo, 26px);
 }
+/* A highlighter stroke behind the name: flat saffron over the lower half, rising to the cap height on hover. */
+.logo-word::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 38% -0.16em -0.04em;
+  border-radius: 0.12em;
+  background: var(--color-saffron);
+  transition: inset var(--dur-3) var(--ease);
+}
+@media (hover: hover) {
+  .logo:hover .logo-word::before { inset-block-start: 4%; }
+}
+/* The swatch carries the word on dark bars too, so it stays ink there. */
+.nav-shell[data-dark] .nav-logo .logo-word { color: var(--color-ink); }
 
 /* ---------------- Skip link (styles in infra.css): on the page grid's left edge ---------------- */
 a.skip-link { left: var(--edge); }
