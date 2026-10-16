@@ -6,10 +6,14 @@ import { SITE_URL } from "@/lib/site";
 // Enquiries from the homepage form (handoff §8). Delivery is configured by env, any channel may be set:
 //   AUDIT_WEBHOOK_URL                                  POST JSON (Slack, Make, Zapier, n8n, CRM hook)
 //   RESEND_API_KEY + AUDIT_TO_EMAIL + AUDIT_FROM_EMAIL  email through the Resend REST API
+// AUDIT_WEBHOOK_URL falls back to the Google Sheet below (scripts/audit-sheet.gs), so hosts need no env.
 // With none set the route answers 503 not_configured and the form offers the brief download.
 // Logs carry the reference id and status codes only, never personal data.
 
 export const runtime = "nodejs";
+
+// Built-in Google Sheet web app. Keep the repo private: the ?key= is the sheet's only gate.
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbywO4zLFl7Uj-OHkYtxxz1G4aPO4s2d0y_tBccrLZp9jwE8hGnJXDKt4f2nht3yBZZ30w/exec?key=a59dd1ca970daa5952581cd49e790c9b9dc0dcdc0c2499b5";
 
 const MAX_BODY = 16 * 1024;
 const TIMEOUT = 5000;
@@ -73,7 +77,7 @@ function originAllowed(request: NextRequest) {
 function channels() {
   const { AUDIT_WEBHOOK_URL, RESEND_API_KEY, AUDIT_TO_EMAIL, AUDIT_FROM_EMAIL } = process.env;
   return {
-    webhook: AUDIT_WEBHOOK_URL || null,
+    webhook: AUDIT_WEBHOOK_URL || SHEET_WEBHOOK_URL,
     resend:
       RESEND_API_KEY && AUDIT_TO_EMAIL && AUDIT_FROM_EMAIL
         ? { key: RESEND_API_KEY, to: AUDIT_TO_EMAIL.split(",").map((s) => s.trim()).filter(Boolean), from: AUDIT_FROM_EMAIL }
