@@ -73,9 +73,21 @@ export function TrailDial() {
         const lead = Math.max(NAV + 26, NAV + (room - NAV - block) / 2);
         const next = Math.max(0, Math.round(d.top - s.top - lead));
         if (next !== off) el.style.setProperty("--dial-off", `${(off = next)}px`);
+        // A pill that would leave the screen (a long name, a large text size) moves in just enough.
+        const cx = d.left + d.width / 2;
+        const r = d.width / 2;
+        nodes.forEach((n, i) => {
+          const chip = n.firstElementChild as HTMLElement | null;
+          const a = (angleOf(i) * Math.PI) / 180;
+          const half = ((chip?.offsetWidth ?? 0) * 1.08) / 2;
+          const x = cx + Math.cos(a) * r;
+          const nx = Math.min(0, window.innerWidth - 6 - (x + half)) + Math.max(0, 6 - (x - half));
+          n.style.setProperty("--nx", `${Math.round(nx)}px`);
+        });
       } else if (off) {
         off = 0;
         el.style.removeProperty("--dial-off");
+        nodes.forEach((n) => n.style.removeProperty("--nx"));
       }
       stickH = sticky.offsetHeight;
       lastHead = "";

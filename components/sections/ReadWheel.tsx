@@ -131,14 +131,15 @@ export function ReadWheel() {
       let crown = Math.max(vh * 0.46, 320, under);
       if (narrow.matches && tabs && stage) {
         // Phones: the head scrolls away until the tabs sit under the nav; the crown sits under the card,
-        // its pill clear of it, and the rim is tight enough that the items either side of the crown
-        // stay on the screen.
+        // its pill clear of it. The dome is cut as on wide screens: its rim leaves by both sides and its
+        // centre lies below the screen, so the items either side of the crown sit well under its pill
+        // (held at the screen's edges) and only those three show.
         const card = el.querySelector<HTMLElement>(".rw-card");
         const st = stage.getBoundingClientRect().top;
         const next = Math.max(0, Math.round(tabs.getBoundingClientRect().top - st - (NAV + 14)));
         if (next !== off) el.style.setProperty("--rw-off", `${(off = next)}px`);
         crown = (card ? card.getBoundingClientRect().bottom - st : under) + 66;
-        R = Math.max(180, (vw / 2 - 64) / Math.sin((STEP * Math.PI) / 180) - 34);
+        R = Math.min(560, Math.max(320, vh - crown + 40));
         horizon = 0.6;
         reach = labels.map((l) => Math.max(0, vw / 2 - 10 - l.offsetWidth / 2));
       } else {

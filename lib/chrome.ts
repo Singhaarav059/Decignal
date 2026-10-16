@@ -161,7 +161,8 @@ function getRefs(): Refs {
     hero: story ? null : (document.getElementById("main")?.firstElementChild ?? null),
     audit: document.getElementById("audit"),
     footer: document.querySelector("footer"),
-    journeys: Array.from(document.querySelectorAll(".application-journey")),
+    // The held stages: the nav stays up over them (their heads leave room for it).
+    journeys: Array.from(document.querySelectorAll(".application-journey, .dial-band, .rw-track")),
     docks: Array.from(document.querySelectorAll<HTMLElement>("[data-dock]")),
     starts: sections.map((s) => ({ s, el: (s.start && document.querySelector(s.start)) || document.getElementById(s.id) })),
   });

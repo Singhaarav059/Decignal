@@ -80,13 +80,14 @@ export const flowBandCss = (ch: number) => {
 
 /**
  * How far a stepped window has played, 0..1, from its top's place on the screen (`at`, px): from its
- * centre on the focus line (the moment it becomes the window in view) to half of it gone under the nav.
- * Its steps play while it is the one being read, tied to the thumb: none of them runs before it
- * arrives or after it has gone.
+ * centre on the focus line (the moment it becomes the window in view) to its top reaching the nav.
+ * Its steps play while it is the one being read, tied to the thumb, and the last one lands while the
+ * whole window, the label band at its top included, is still on the screen.
  */
 export function windowPlayed(at: number, h: number, vh: number, focus: number, nav: number) {
   const from = focus * vh - h / 2;
-  const to = nav - h / 2;
+  // At least a quarter screen of scroll for a tall window.
+  const to = Math.min(nav + 8, from - vh * 0.25);
   return Math.min(Math.max((from - at) / Math.max(from - to, 1), 0), 1);
 }
 

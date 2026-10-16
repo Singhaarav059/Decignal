@@ -719,7 +719,8 @@
   .dial-sticky { top: calc(-1 * var(--dial-off, 0px)); height: calc(var(--dial-off, 0px) + 100svh); align-items: start; }
   .dial-grid { display: flex; flex-direction: column; }
   .dial-copy { display: contents; }
-  .dial { order: 1; --d: min(100vw - 2 * var(--gutter) - 92px, 320px, 40svh); align-self: center; margin-top: 64px; }
+  /* As wide as the pills on its sides allow (TrailDial nudges any that would still leave the screen). */
+  .dial { order: 1; --d: min(100vw - 96px, 380px, 46svh); align-self: center; margin-top: 64px; }
   .dial-reads { order: 2; margin-top: 40px; }
   .dial-strip { order: 3; }
   .dial-read-name { margin-top: 8px; font-size: clamp(32px, 9.4vw, 44px); }
@@ -727,12 +728,25 @@
   .dial-hand > span { height: calc(var(--r) - 26px); width: 2.5px; margin-left: -1.25px; }
   .dial-hand > span::after { width: 12px; height: 12px; top: -6px; margin-left: -6px; box-shadow: 0 0 0 3px var(--color-bg); }
   .dial-hand::after { width: 12px; height: 12px; margin: -6px 0 0 -6px; }
-  .dial-face { inset: 16%; box-shadow: var(--edge-line), inset 0 0 0 7px color-mix(in srgb, var(--dial-tone, #fff) 10%, #fff), 0 20px 40px -26px rgb(15 18 23 / 0.35); }
-  .dial-face-art { width: 78%; gap: 4px; }
+  .dial-face { inset: 13%; box-shadow: var(--edge-line), inset 0 0 0 7px color-mix(in srgb, var(--dial-tone, #fff) 10%, #fff), 0 20px 40px -26px rgb(15 18 23 / 0.35); }
+  /* Centred on the drawing (its step label rides above), so its floor row stays inside the circle. */
+  .dial-face-art { width: 70%; gap: 4px; translate: 0 -11px; }
+  /* The drawing's figures a size down so they fit their marks, and kept on a narrow screen's small
+     drawing (8.5px at the least) rather than dropped as a thumbnail's are. */
+  .dial-face .tr-art text { font-size: calc(clamp(8.5px, 11px * var(--svg-k, 1), 9.5px) / var(--svg-k, 1)); letter-spacing: 0.04em; }
+  .dial-face .tr-art[data-small] text { display: inline; }
   /* Small pills on the ring, solid (a live blur over a held layer costs a phone's GPU for nothing). */
-  .dial-band .dial-node-chip { gap: 6px; height: 30px; padding: 0 11px 0 9px; background: rgb(255 255 255 / 0.92); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: var(--edge-line), 0 6px 14px -10px rgb(15 18 23 / 0.3); }
+  .dial-band .dial-node-chip { translate: calc(-50% + var(--nx, 0px)) -50%; gap: 6px; height: 30px; padding: 0 11px 0 9px; background: rgb(255 255 255 / 0.92); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: var(--edge-line), 0 6px 14px -10px rgb(15 18 23 / 0.3); }
   .dial-node-dot { width: 8px; height: 8px; }
   .dial-node-name { font-size: 12.5px; }
+}
+/* Narrow phones (Android display zoom): smaller pills, so the dial can grow between them and the
+   drawing's floor row clears the pills on its sides. */
+@media (max-width: 359px) {
+  .dial { --d: min(100vw - 80px, 46svh); }
+  .dial-band .dial-node-chip { gap: 5px; height: 28px; padding: 0 9px 0 8px; }
+  .dial-node-dot { width: 7px; height: 7px; }
+  .dial-node-name { font-size: 11.5px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dial-hand, .dial-read, .dial-face-art { transition: none; }

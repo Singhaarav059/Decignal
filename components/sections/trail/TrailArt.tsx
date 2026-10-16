@@ -72,7 +72,7 @@ function Alias() {
       <Floor />
       <rect x="34" y="34" width="72" height="46" rx="4" className="tg-hollow" />
       <path d="M34 50H106M34 64H106" className="tg-line" pathLength={1} />
-      <rect x="44" y="42" width="52" height="16" rx="3" className="tg-solid tg-mark" />
+      <rect x="38" y="42" width="64" height="16" rx="3" className="tg-solid tg-mark" />
       <text x="70" y="54" textAnchor="middle" className="tg-on">OLD CODE</text>
       <text x="0" y={LABEL} className="tg-al">LINE 7</text>
       <text x={W} y={LABEL} textAnchor="end" className="tg-ink">20 BOXES</text>
