@@ -2,6 +2,10 @@
    and the chapter pictures (components/Nav, NavPeek, CtaPill, PhoneDock, ChapterArt, ui/Logo). Every fixed layer takes its z from the token scale. */
 
 /* ---------------- Logo ---------------- */
+@property --fill { syntax: '<number>'; inherits: true; initial-value: 0.5; }
+@property --wave-x { syntax: '<length>'; inherits: true; initial-value: 0px; }
+@property --brand-h { syntax: '<length>'; inherits: true; initial-value: 52px; }
+@keyframes brand-fill { from { --fill: 0; --wave-x: -28px; } }
 .logo-word {
   position: relative;
   isolation: isolate;
@@ -143,7 +147,35 @@ a.skip-link { left: var(--edge); }
   .nav-pill[data-compact] { height: 54px; padding: 0; }
   .nav-surface { display: none; }
   .nav-brand { height: 52px; padding: 0 16px 0 22px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line), var(--shadow-float); transition: height var(--dur-3) var(--ease); }
-  .nav-pill[data-compact] .nav-brand { height: 46px; }
+  .nav-pill[data-compact] .nav-brand { height: 46px; --brand-h: 46px; }
+  /* Wide: the pill itself is the highlight, filled halfway with light cobalt like water, a wave on its
+     surface. It rises once as the page arrives and the wave slides on hover. The word drops its stroke. */
+  .nav-brand { isolation: isolate; --brand-h: 52px; }
+  .nav-brand::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+    clip-path: inset(0 round var(--radius-pill));
+    pointer-events: none;
+    background: var(--water);
+    --water: color-mix(in srgb, var(--color-cobalt) 40%, #fff);
+    --h: calc(var(--brand-h) * var(--fill));
+    -webkit-mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--h) - 1px) / 28px 6px repeat-x,
+      linear-gradient(#000, #000) left 0 bottom 0 / 100% var(--h) no-repeat;
+    mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--h) - 1px) / 28px 6px repeat-x,
+      linear-gradient(#000, #000) left 0 bottom 0 / 100% var(--h) no-repeat;
+    animation: brand-fill 1.4s var(--ease) 0.3s both;
+    transition: --wave-x 0.9s var(--ease), --brand-h var(--dur-3) var(--ease);
+  }
+  @media (hover: hover) { .nav-brand:has(.nav-logo:hover)::before { --wave-x: 14px; } }
+  @media (prefers-reduced-motion: reduce) { .nav-brand::before { animation: none; transition: none; } }
+  .nav-brand .logo-word::before { display: none; }
+  .nav-shell[data-dark] .nav-brand::before { --water: var(--color-cobalt); }
+  .nav-shell[data-dark] .nav-brand .logo-word { color: #fff; }
   .nav-cta { height: 52px; padding-left: 22px; padding-right: 6px; box-shadow: var(--shadow-float); }
   .nav-cta-icon { width: 40px; height: 40px; }
   .nav-pill[data-compact] .nav-cta { height: 46px; }
