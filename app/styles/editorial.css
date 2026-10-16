@@ -17,6 +17,11 @@
   --ed-gap: clamp(32px, calc(100svh - 736px), 64px);
   scroll-margin-top: max(0px, calc(96px - var(--section-y)));
 }
+/* Phones: a page of narrow sections read one after another, where 80px either side (160px between two
+   sections) read as empty screens. A head sits closer to its content too. */
+@media (max-width: 767px) {
+  :is(.works-with-section, .stmt, .apps, .results, .how, .faq, .demos, .dial-band, .audit) { --section-y: 56px; --ed-gap: 28px; }
+}
 
 /* Section heads: neutral label dot, the brand's cobalt ink on the accent line. */
 .ed-title .accent { --accent-ink: var(--color-cobalt-ink); }
@@ -52,6 +57,12 @@
 .orbit { position: relative; display: grid; gap: 40px; padding-inline: var(--gutter); }
 .orbit-copy { position: relative; z-index: 5; display: grid; justify-items: center; text-align: center; }
 .orbit-copy .section-title-lede { max-width: 34ch; }
+/* Phones: the head reads from the left like every other section's; the orbit it centres over on wider
+   screens is a plain grid of tiles here. */
+@media (max-width: 767px) {
+  .orbit-copy, .orbit-copy .section-title[data-align="center"] { justify-items: start; text-align: left; }
+  .orbit-copy .section-title[data-align="center"] .section-title-label { margin-inline: 0; }
+}
 .orbit-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
 .orbit-tile { position: relative; outline: none; }
 .orbit-photo { position: relative; margin: 0; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 22px; background: var(--tone); }

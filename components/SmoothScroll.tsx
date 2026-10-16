@@ -11,6 +11,7 @@ import { getChrome, startChrome, type ChromeSection } from "@/lib/chrome";
 import { startStill } from "@/lib/still";
 import { flowMode, onFlowMode } from "@/lib/flow";
 import { dropEmptyRafLoops } from "@/lib/idle-raf";
+import { whenStill } from "@/lib/idle";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -126,6 +127,20 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
       }, 80);
     });
 
+    // The page's height changes after the triggers are measured (the phone explorer swapping in its
+    // flowing sections, fonts, images): every trigger below the change then fired late or never, and
+    // sections stayed blank until the page happened to refresh. Measure again once the page rests.
+    let pageH = document.documentElement.scrollHeight;
+    let cancelRefresh = () => {};
+    const heightRo = new ResizeObserver(() => {
+      const h = document.documentElement.scrollHeight;
+      if (Math.abs(h - pageH) < 2) return;
+      pageH = h;
+      cancelRefresh();
+      cancelRefresh = whenStill(() => ScrollTrigger.refresh(), 1500);
+    });
+    heightRo.observe(document.body);
+
     let px = NaN;
     let py = NaN;
     const onPointer = (e: PointerEvent) => {
@@ -171,6 +186,8 @@ export function SmoothScroll({ sections }: { sections?: ChromeSection[] }) {
       gone = true;
       storyOff();
       offMode();
+      heightRo.disconnect();
+      cancelRefresh();
       clearTimeout(modeTimer);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
