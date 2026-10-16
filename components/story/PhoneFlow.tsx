@@ -36,10 +36,9 @@ const holdEnd = (i: number) => CHAPTERS[i].ts - 0.015;
 const EASE = 0.1;
 /** The least time a stepped chapter takes to play through (s): only a flick ever meets it. */
 const MIN_PLAY = 1.2;
-/** The focus line, as a share of the screen's height from its top, and the lead the window already
- *  showing keeps (px), so the canvas never swaps back and forth at the midpoint. */
+/** The focus line, as a share of the screen's height from its top: the section across it is the chapter
+ *  being read. */
 const FOCUS = 0.62;
-const HOLD = 40;
 /** The nav's bottom edge, which the windows scroll under. */
 const NAV = 72;
 
@@ -98,10 +97,23 @@ export function PhoneFlow({ live }: { live: boolean }) {
       const { top, h } = wGeo[k];
       return windowPlayed(top - y, h, vh, FOCUS, NAV);
     };
-    // A tab picked in a card (a function, an industry) moves that chapter's steps, not the page: the
-    // offset holds while the chapter stays, so scrolling on carries on from the picked step.
-    const offs = new Map<number, number>();
-    const playedAt = (k: number, y: number) => Math.min(Math.max(played(k, y) + (offs.get(k) ?? 0), 0), 1);
+    // A tab picked in a card (a function, an industry) sets that chapter's step and holds it while the
+    // chapter is read: the scroll no longer moves it on. (As an offset on the scroll's own position, the
+    // reader's next swipe carried it to the last step, and the card's tabs fought the thumb.)
+    const picked = new Map<number, number>();
+    const playedAt = (k: number, y: number) => picked.get(k) ?? played(k, y);
+    /** The section across the reading line (the focus line) at scroll y: the chapter being read. */
+    const readAt = (y: number) => {
+      const line = y + vh * FOCUS;
+      let k = 0;
+      sGeo.forEach(({ top }, n) => {
+        if (top <= line) k = n;
+      });
+      return k;
+    };
+    // A tab used in a card above the reading line (the next section already across it) keeps its own
+    // chapter on until the reader scrolls on into another section.
+    let pin: { ch: number; base: number } | null = null;
 
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // The eased step position (local progress) and where the scroll puts it.
@@ -139,39 +151,20 @@ export function PhoneFlow({ live }: { live: boolean }) {
 
     const update = () => {
       const y = window.scrollY;
-      // The chapter whose window is nearest the focus line (a little below the screen's middle), among
-      // those on screen: the canvas reaches a window as it comes in, so its world arrives with it rather
-      // than once it is half read. Between windows, the section at the screen's middle.
-      let best = -1;
-      let most = 1;
-      let near = Infinity;
-      const focus = y + vh * FOCUS;
-      wGeo.forEach(({ top, h }, k) => {
-        const seen = Math.min(top + h, y + vh) - Math.max(top, y + NAV);
-        if (seen <= 1) return;
-        const d = Math.abs(top + h / 2 - focus) - (k === at ? HOLD : 0);
-        if (d < near) {
-          near = d;
-          best = k;
-          most = seen;
-        }
-      });
-      if (best < 0) {
-        const line = y + vh * 0.5;
-        best = 0;
-        sGeo.forEach(({ top }, k) => {
-          if (top <= line) best = k;
-        });
-      }
-
-      const ch = best;
-      const three = !DECK.has(ch) && most > 1;
+      // The chapter being read: the section across the focus line (a little below the screen's middle),
+      // window and card alike. Picked by the nearest window, the next chapter took over as soon as its
+      // window peeked in under a card still being read, and that card jumped to its last step.
+      const read = readAt(y);
+      if (pin && pin.base !== read) pin = null;
+      const ch = pin ? pin.ch : read;
+      const w = wGeo[ch];
+      const three = !DECK.has(ch) && !!w && Math.min(w.top + w.h, y + vh) - Math.max(w.top, y + NAV) > 1;
       // Leaving a 3D window (to another, or to a deck): its picture stays as a copy.
       if (held >= 0 && (held !== ch || !three) && flow.live) keep(held);
       if (ch !== at) {
         at = ch;
         flow.cut++;
-        for (const k of offs.keys()) if (k !== ch) offs.delete(k);
+        for (const k of picked.keys()) if (k !== ch) picked.delete(k);
       }
       const local = STEPPED.has(ch) ? playedAt(ch, y) * holdEnd(ch) : restAt(ch);
       const jumped = ch !== easeCh;
@@ -251,16 +244,16 @@ export function PhoneFlow({ live }: { live: boolean }) {
     // Links and tabs that go to a story moment scroll to its section (lib/flow.ts flowSeek).
     setFlowSeek((ch, local) => {
       measure();
-      const w = wGeo[ch];
       const s = sGeo[ch];
-      if (!w || !s) return;
+      if (!s) return;
       const y = window.scrollY;
-      // Already in view (a tab in its own card): the page stays where the reader is.
-      const inView = w.top + w.h > y + NAV && w.top < y + vh;
-      const to = inView ? y : Math.max(0, s.top - NAV - 8);
-      if (local !== null && STEPPED.has(ch)) offs.set(ch, Math.min(Math.max(local / holdEnd(ch), 0), 1) - played(ch, to));
-      if (inView) schedule();
-      else void jumpTo(to, { focus: false });
+      if (local !== null && STEPPED.has(ch)) picked.set(ch, Math.min(Math.max(local / holdEnd(ch), 0), 1));
+      // On screen (a tab in its own card, its window, or both): the page stays where the reader is.
+      if (s.top + s.h > y + NAV && s.top < y + vh) {
+        const base = readAt(y);
+        pin = base === ch ? null : { ch, base };
+        schedule();
+      } else void jumpTo(Math.max(0, s.top - NAV - 8), { focus: false });
     });
 
     return () => {

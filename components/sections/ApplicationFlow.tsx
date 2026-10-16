@@ -29,9 +29,8 @@ const NAV = 72;
  *  through: only a flick ever meets it. */
 const EASE = 0.1;
 const MIN_PLAY = 1;
-/** The focus line (share of the screen's height) and the lead of the window already showing (px). */
+/** The focus line (share of the screen's height): the section across it is the application being read. */
 const FOCUS = 0.62;
-const HOLD = 40;
 /** The camera's free area in a window: the window is the world's alone, under a band at its top for
  *  the labels (ScreenTag caption), so a label never sits on the world it names. */
 const FRAME: Frame = { left: 8, right: 8, top: 62, bottom: 10 };
@@ -106,7 +105,21 @@ export function ApplicationFlow({ list }: { list: number[] }) {
       const { top, h } = geo[k];
       return windowPlayed(top - y, h, vh, FOCUS, NAV);
     };
-    const offs = new Map<number, number>();
+    // A stage picked on a card holds while its application is read: the scroll no longer moves it on.
+    // (As an offset on the scroll's own position, it was wiped as soon as the next window peeked in.)
+    const picked = new Map<number, number>();
+    /** The section across the focus line at scroll y: the application being read. */
+    const readAt = (y: number) => {
+      const line = y + vh * FOCUS;
+      let k = -1;
+      sGeo.forEach(({ top, h }, n) => {
+        if (top <= line && line < top + h + 56) k = n;
+      });
+      return k;
+    };
+    // A stage picked on a card above the focus line keeps its application on until the reader scrolls
+    // into another section.
+    let pin: { n: number; base: number } | null = null;
 
     let cur = -1;
     let held = -1;
@@ -149,33 +162,26 @@ export function ApplicationFlow({ list }: { list: number[] }) {
     let isLive = false;
     const update = () => {
       const y = window.scrollY;
-      // The window nearest the focus line among those on screen (as the story's PhoneFlow).
-      let best = -1;
-      let near = Infinity;
-      const focus = y + vh * FOCUS;
-      geo.forEach(({ top, h }, k) => {
-        const seen = Math.min(top + h, y + vh) - Math.max(top, y + NAV);
-        if (seen <= 1) return;
-        const d = Math.abs(top + h / 2 - focus) - (k === cur ? HOLD : 0);
-        if (d < near) {
-          near = d;
-          best = k;
-        }
-      });
-      const nowLive = best >= 0;
+      // The application being read: the section across the focus line (as the story's PhoneFlow), drawn
+      // while its window is on screen.
+      const read = readAt(y);
+      if (pin && pin.base !== read) pin = null;
+      const best = pin ? pin.n : read;
+      const g = geo[best];
+      const nowLive = !!g && Math.min(g.top + g.h, y + vh) - Math.max(g.top, y + NAV) > 1;
       if (!nowLive) {
         if (isLive && held >= 0) keep(held);
         if (isLive) setLive((isLive = false));
         return;
       }
       if (held >= 0 && held !== best && isLive) keep(held);
-      const target = Math.min(Math.max(played(best, y) + (offs.get(best) ?? 0), 0), 1);
+      const target = picked.get(best) ?? played(best, y);
       if (best !== cur) {
         // Scrolled down onto an application: it plays from its first stage.
         eased = best > cur && !reduce ? 0 : target;
         goal = target;
         cur = best;
-        for (const k of offs.keys()) if (k !== best) offs.delete(k);
+        for (const k of picked.keys()) if (k !== best) picked.delete(k);
         shownStep = -1;
         setAt(best);
       }
@@ -226,10 +232,12 @@ export function ApplicationFlow({ list }: { list: number[] }) {
     pick.current = (n, stage) => {
       measure();
       const y = window.scrollY;
-      offs.set(n, STAGE_AT[stage] - played(n, y));
+      picked.set(n, STAGE_AT[stage]);
+      const base = readAt(y);
+      pin = base === n ? null : { n, base };
       if (n !== cur) schedule();
       else {
-        goal = Math.min(Math.max(played(n, y) + (offs.get(n) ?? 0), 0), 1);
+        goal = STAGE_AT[stage];
         if (!easing) {
           easeT = performance.now();
           easing = requestAnimationFrame(ease);
