@@ -11,7 +11,7 @@ import * as THREE from "three";
 import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
 import { store } from "@/lib/story";
-import { windowed } from "@/lib/flow";
+import { flow, windowed } from "@/lib/flow";
 
 type ScreenTagProps = {
   title: string;
@@ -50,6 +50,8 @@ type Entry = {
   side: Side;
   /** Last written style values, so a still tag writes nothing. */
   last: Record<string, string>;
+  /** On the phone story's canvas, whose window shows only a band of it (flow.inset). */
+  story: boolean;
 };
 
 const entries = new Set<Entry>();
@@ -213,9 +215,11 @@ function place(side: Side, x: number, y: number, e: Entry, size: { width: number
 /** The label at [left, top] would leave the screen, slip under the nav, or sit on the copy. */
 function hits([l, t]: [number, number], e: Entry, size: { width: number; height: number }) {
   // In the flowing phone story the canvas is a window of the page, under no nav and beside no panel.
-  const top = windowed() ? FLOW_EDGE : TOP_SAFE;
+  // The phone story's window clips its canvas's top and foot: a label there would be cut off.
+  const inset = e.story ? flow.inset : 0;
+  const top = windowed() ? FLOW_EDGE + inset : TOP_SAFE;
   const edge = windowed() ? FLOW_EDGE : EDGE;
-  if (t < top || t + e.h > size.height - edge || l < edge || l + e.w > size.width - edge) return true;
+  if (t < top || t + e.h > size.height - edge - inset || l < edge || l + e.w > size.width - edge) return true;
   return blocks.some((b) => l < b.right + 8 && l + e.w > b.left - 8 && t < b.bottom + 8 && t + e.h > b.top - 8);
 }
 
@@ -298,6 +302,8 @@ function tick() {
     put(e, root, "r.vis", "visibility", "visible");
     put(e, root, "r.tf", "transform", `translate3d(${x}px, ${y}px, 0)`);
     put(e, root, "r.op", "opacity", e.p > 0.995 ? "1" : e.p.toFixed(3));
+    // An open label rides above the other pins: a dot drawn later in the layer sat on its text.
+    put(e, root, "r.z", "z-index", e.k > 0.01 ? "1" : "");
     put(e, dot, "d.op", "opacity", dotO.toFixed(3));
     // An update gives the dot one small pulse; the text itself never scales at rest.
     const bump = Math.sin(Math.min(1, (1 - e.pop) * 2) * Math.PI) * e.pop;
@@ -339,7 +345,7 @@ export function ScreenTag(props: ScreenTagProps) {
     dpr = window.devicePixelRatio || 1;
     const built = build(layerFor(gl.domElement), () => entry.current);
     els.current = built;
-    const e: Entry = { anchor, props: latest, get, els: built, p: 0, k: 0, pop: 0, w: 0, h: 0, blocked: false, side: "up", last: {} };
+    const e: Entry = { anchor, props: latest, get, els: built, p: 0, k: 0, pop: 0, w: 0, h: 0, blocked: false, side: "up", last: {}, story: !!gl.domElement.closest(".pflow-gl") };
     entry.current = e;
     entries.add(e);
     if (!stop) {

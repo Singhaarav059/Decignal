@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { CH, CHAPTERS, setG, store } from "@/lib/story";
 import { FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
-import { flow, setFlowSeek, setSky } from "@/lib/flow";
+import { flow, flowBandCss, setFlowSeek, setSky, stepToward } from "@/lib/flow";
 import { jumpTo } from "@/lib/jump";
 import { SceneBoundary } from "../three/SceneBoundary";
 import { SystemIcon } from "../ui/SystemIcon";
@@ -34,11 +34,13 @@ const holdEnd = (i: number) => CHAPTERS[i].ts - 0.015;
 /** A stepped window plays its steps from its top at START of the screen to its top at END of its own
  *  height above the nav (half gone): over a screen of plain scrolling, the window in view throughout,
  *  so a step is never squeezed into a short stretch of the thumb's travel. */
-const START = 0.86;
-const END = 0.55;
+const START = 0.9;
+const END = 0.45;
 /** The steps follow the scroll through a short ease (s): a flick no longer flips several at once, and
  *  each move lands softly with the thumb instead of jumping by the scroll's own steps. */
-const EASE = 0.16;
+const EASE = 0.22;
+/** The least time a stepped chapter takes to play through (s), however fast the page is flicked. */
+const MIN_PLAY = 4.5;
 /** The focus line, as a share of the screen's height from its top, and the lead the window already
  *  showing keeps (px), so the canvas never swaps back and forth at the midpoint. */
 const FOCUS = 0.62;
@@ -79,7 +81,11 @@ export function PhoneFlow({ live }: { live: boolean }) {
     let wGeo: Geo = [];
     let sGeo: Geo = [];
     let vh = window.innerHeight;
+    // The canvas's own height (one for every window): each window shows a band of it.
+    let hostH = 0;
+    const inset = (k: number) => (hostH && wGeo[k] ? Math.max(0, (hostH - wGeo[k].h) / 2) : 0);
     const measure = () => {
+      if (host.isConnected) hostH = host.offsetHeight;
       const y = window.scrollY;
       vh = window.innerHeight;
       wGeo = wins.map((w) => {
@@ -113,8 +119,7 @@ export function PhoneFlow({ live }: { live: boolean }) {
     const ease = (t: number) => {
       const dt = Math.min((t - easeT) / 1000, 0.05);
       easeT = t;
-      eased += (goal - eased) * (1 - Math.exp(-dt / EASE));
-      if (Math.abs(goal - eased) < 1e-4) eased = goal;
+      eased = stepToward(eased, goal, dt, EASE, holdEnd(easeCh) / MIN_PLAY);
       // Still arriving: the 3D keeps its full frame rate (lib/pace.ts resting).
       store.scrollAt = t;
       setG(easeCh + eased);
@@ -176,13 +181,17 @@ export function PhoneFlow({ live }: { live: boolean }) {
       }
       const local = STEPPED.has(ch) ? playedAt(ch, y) * holdEnd(ch) : restAt(ch);
       const jumped = ch !== easeCh;
+      // Scrolled down into a stepped chapter: it plays from its first step, whatever the scroll has passed.
+      const fresh = jumped && ch > easeCh && STEPPED.has(ch) && !still;
       easeCh = ch;
       goal = local;
-      if (jumped || still || !STEPPED.has(ch)) eased = local;
+      if (fresh) eased = 0;
+      else if (jumped || still || !STEPPED.has(ch)) eased = local;
       if (three && held !== ch) {
         // Hidden until the new chapter has drawn: the canvas still holds the last window's picture.
         veil(host, true);
         wins[ch].appendChild(host);
+        if (!hostH) hostH = host.offsetHeight;
         held = ch;
         flow.cut++;
         const m = ++moves;
@@ -191,6 +200,7 @@ export function PhoneFlow({ live }: { live: boolean }) {
         }));
       }
       flow.live = three;
+      if (held >= 0) flow.inset = inset(held);
       // A still chapter holds one g: its readers hear nothing until the story moves.
       if (Math.abs(store.g - (ch + eased)) > 1e-6) setG(ch + eased);
       if (Math.abs(goal - eased) > 1e-4 && !easing) {
@@ -348,7 +358,7 @@ function Window({ ch }: { ch: number }) {
   // the live world has drawn here or left its own copy: the 3D builds after the page is up.
   const first = ch === CH.fragments;
   return (
-    <div className="pflow-win" data-win={ch} aria-hidden>
+    <div className="pflow-win" data-win={ch} aria-hidden style={{ height: flowBandCss(ch) }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- a fixed-size poster, served as baked */}
       <img className="pflow-poster" src={`/flow/${ch}.webp`} alt="" width={780} height={794} loading={first ? "eager" : "lazy"} fetchPriority={first ? "high" : "auto"} decoding="async" />
       <canvas className="pflow-still" />

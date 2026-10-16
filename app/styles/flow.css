@@ -36,9 +36,12 @@ html:not([data-flow="phone"]) #story-flow { display: none; }
   height: var(--win-h);
   margin-inline: calc(-1 * var(--gutter));
 }
-.pflow-gl { position: absolute; inset: 0; }
+/* A 3D window shows the band of the canvas its subject needs (lib/flow.ts flowBand, set inline): the
+   canvas keeps --win-h, centred, and the window clips its empty top and foot. */
+.pflow-win:not(.pflow-deck) { overflow: clip; }
+.pflow-gl, .pflow-win > .pflow-still, .pflow-win > .pflow-poster { position: absolute; left: 0; right: 0; top: calc(50% - var(--win-h) / 2); width: 100%; height: var(--win-h); }
 /* The copy of a window's last picture, shown once the canvas has moved on. */
-.pflow-still { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.pflow-still { opacity: 0; pointer-events: none; }
 .pflow-still[data-kept]:not([data-under]) { opacity: 1; }
 /* The decks keep the gutter and fill the window's height (story.css .phone-deck, .phone-hand). */
 .pflow-deck {
@@ -70,9 +73,31 @@ html:not([data-flow="phone"]) #story-flow { display: none; }
 .pflow-card .ind-roll { height: auto; margin-bottom: 0; white-space: normal; }
 .pflow-card .ind-roll > span { height: auto; }
 
+/* The hero's card: what Decignal does as its lead, the six systems the islands above stand for (each
+   opens its island's panel), the offer in its own tile, then one full-width call to action. The pinned
+   story hides the chips on phones for the world's room; a page that scrolls has the room. */
+.pflow-hero .pflow-card .story-pane-rest { display: flex; flex-direction: column; margin-top: 14px; }
+.pflow-hero .story-body { display: contents; font-size: 17px; line-height: 1.5; color: var(--color-ink); }
+.pflow-hero .story-chips { display: grid; order: 1; margin-top: 18px; }
+.pflow-hero .story-chips .sys-chip { height: 34px; justify-content: center; }
+.pflow-hero .story-body .hero-offer {
+  order: 2;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--color-bg);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.pflow-hero .story-actions { order: 3; margin-top: 16px; }
+.pflow-hero .story-hero-cta { flex: 1 1 auto; justify-content: center; }
+
+/* Control's deck: the tabs and one card, at the card's own 16:10, with no empty band above or below. */
+.pflow-deck[data-win="5"] { height: calc((100vw - 2 * var(--gutter)) / 1.6 + 108px); }
+
 /* The baked poster shows the window's world from the first paint; the live canvas (or the copy it left)
    takes over once it has drawn here. */
-.pflow-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; transition: opacity 300ms linear; }
+.pflow-poster { object-fit: cover; pointer-events: none; transition: opacity 300ms linear; }
 html.scene-live .pflow-win[data-held] .pflow-poster,
 .pflow-win[data-kept] .pflow-poster { opacity: 0; }
 /* The live canvas in a phone's window fades in flat over its poster (no scale: they match). */
@@ -93,7 +118,7 @@ html.scene-live .pflow-win[data-held] .pflow-poster,
   height: clamp(250px, 40svh, 360px);
   margin: 4px calc(-1 * var(--gutter)) 0;
 }
-.aflow-gl { position: absolute; inset: 0; }
+.aflow-gl, .aflow-win > .pflow-still, .aflow-win > .pflow-poster { position: absolute; inset: 0; width: 100%; height: 100%; }
 .aflow-gl canvas { opacity: 0; transition: opacity 300ms linear; }
 .aflow-gl canvas[data-ready] { opacity: 1; }
 .aflow-win[data-held]:has(canvas[data-ready]) .pflow-poster,

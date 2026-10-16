@@ -3,6 +3,7 @@
 // A pose with s: 0 is a point the actor folds into (or grows out of), so a hand-off reads as cause
 // and effect: the islands fold into the tote, the tote leaves for Plant 01 (see actors/core).
 import { STORY } from "./example";
+import { flow } from "./flow";
 import { BEATS, CH, blendAt, clamp01, finalExit, smootherstep, scaleDeal, SCALE_DEAL, store } from "./story";
 
 export type Vec3 = [number, number, number];
@@ -459,6 +460,9 @@ export function industryTrack(t: number) {
  * after framing (the truck follow). Scene.tsx fits the pillars into the screen area the copy leaves
  * free, at the one ISO angle, so only the distance and target ever change between chapters.
  */
+/** How much wider than its footprint a place is framed in a phone's flowing window. */
+const IND_FLOW_ROOM = 1.45;
+
 export type Shot = { n: number; pil: Float32Array; dist: number; pan: Vec3; exit: number; steady: boolean; open: number };
 export const makeShot = (): Shot => ({ n: 0, pil: new Float32Array(5 * 16), dist: 10, pan: [0, 0, 0], exit: 0, steady: false, open: 0.5 });
 
@@ -573,7 +577,9 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
       // while the camera glides from one industry to the next.
       const track = industryTrack(t);
       const x = indX(track);
-      pillar(o, x, IND.siteZ, IND.siteR, 0, portrait ? indTop(track) : IND.siteH);
+      // A phone's flowing window shows the place with room round it: framed by its footprint alone, the
+      // place's buildings and vehicles ran off the window's sides.
+      pillar(o, x, IND.siteZ, IND.siteR * (flow.on ? IND_FLOW_ROOM : 1), 0, portrait ? indTop(track) : IND.siteH);
       for (const r of indReach(track)) pillar(o, x + r * ISO_R[0], IND.siteZ + r * ISO_R[2], 0.05, 0, 0.6);
       o.dist = IND.dist * (1 - 0.02 * t);
       break;

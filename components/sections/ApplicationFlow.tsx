@@ -9,7 +9,7 @@ import { APPLICATION_DEMOS } from "@/lib/application-demos";
 import { APPLICATIONS_COPY } from "@/lib/copy";
 import { jumpTo, onApplication } from "@/lib/jump";
 import { accentVars, toneVars } from "@/lib/tone";
-import { flow } from "@/lib/flow";
+import { flow, stepToward } from "@/lib/flow";
 import { store } from "@/lib/story";
 import { whenStill } from "@/lib/idle";
 import type { Frame } from "../three/ApplicationScene";
@@ -27,10 +27,12 @@ const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ss
 const NAV = 72;
 /** A window plays its three stages from its top at START of the screen to its top at END of its own
  *  height above the nav: about a screen of plain scrolling, the world in view throughout. */
-const START = 0.86;
-const END = 0.55;
-/** The stages follow the scroll through a short ease (s), as the story's steps do (PhoneFlow). */
-const EASE = 0.16;
+const START = 0.9;
+const END = 0.45;
+/** The stages follow the scroll through a short ease (s), as the story's steps do (PhoneFlow), and take
+ *  at least MIN_PLAY (s) to play through. */
+const EASE = 0.22;
+const MIN_PLAY = 3.6;
 /** The focus line (share of the screen's height) and the lead of the window already showing (px). */
 const FOCUS = 0.62;
 const HOLD = 40;
@@ -129,8 +131,7 @@ export function ApplicationFlow({ list }: { list: number[] }) {
     const ease = (t: number) => {
       const dt = Math.min((t - easeT) / 1000, 0.05);
       easeT = t;
-      eased += (goal - eased) * (1 - Math.exp(-dt / EASE));
-      if (Math.abs(goal - eased) < 1e-4) eased = goal;
+      eased = stepToward(eased, goal, dt, EASE, 1 / MIN_PLAY);
       store.scrollAt = t;
       apply();
       easing = eased === goal ? 0 : requestAnimationFrame(ease);
@@ -173,9 +174,11 @@ export function ApplicationFlow({ list }: { list: number[] }) {
       if (held >= 0 && held !== best && isLive) keep(held);
       const target = Math.min(Math.max(played(best, y) + (offs.get(best) ?? 0), 0), 1);
       if (best !== cur) {
+        // Scrolled down onto an application: it plays from its first stage.
+        eased = best > cur && !reduce ? 0 : target;
+        goal = target;
         cur = best;
         for (const k of offs.keys()) if (k !== best) offs.delete(k);
-        eased = goal = target;
         shownStep = -1;
         setAt(best);
       }

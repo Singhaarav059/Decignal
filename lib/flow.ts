@@ -47,9 +47,48 @@ export const flow = {
   /** Draws the world's current picture now and returns its canvas, to copy into the window it leaves
    *  (Scene.tsx FlowSnap); null until the scene is up and warm. */
   snap: null as (() => HTMLCanvasElement | null) | null,
+  /** How much of the story canvas's top and foot its current window clips (px; flowBand). */
+  inset: 0,
   /** Flowing windows of other canvases on the page (the phone explorer, ApplicationFlow). */
   windows: 0,
 };
+
+/* ---------------- The 3D windows' heights ---------------- */
+// The canvas keeps one size (--win-h, flow.css) so it never resizes as it moves; each window shows the
+// band of it its subject needs, centred, and clips the rest. A wide subject (the road, the chart) fills
+// the width and needed a third of the window's height: the rest was empty sky above and below it.
+
+/** The room a window keeps above its subject (a pin's label) and below it, and the air between (px). */
+export const FLOW_TOP = 40;
+export const FLOW_FOOT = 10;
+const FLOW_AIR = 16;
+/** The sides' margin in a window (px). */
+export const FLOW_SIDE = 16;
+/** Each 3D chapter's subject height for the window's width (its framed size, lib/framing.ts), by
+ *  chapter index. Missing: the whole canvas (the hero's islands fill it). */
+export const FLOW_FIT: Readonly<Record<number, number>> = { 1: 0.7, 2: 0.58, 3: 0.56, 4: 0.56, 7: 0.8, 8: 0.6 };
+/** A window's visible height (px) for a canvas vw wide and vh tall; flow.css computes the same. */
+export function flowBand(ch: number, vw: number, vh: number) {
+  const r = FLOW_FIT[ch];
+  return r === undefined ? vh : Math.min(vh, FLOW_TOP + FLOW_FOOT + FLOW_AIR + r * (vw - 2 * FLOW_SIDE));
+}
+/** The CSS for that height (PhoneFlow's windows): FLOW_TOP + FLOW_FOOT + FLOW_AIR, then the fit. */
+export const flowBandCss = (ch: number) => {
+  const r = FLOW_FIT[ch];
+  return r === undefined ? undefined : `min(var(--win-h), calc(${FLOW_TOP + FLOW_FOOT + FLOW_AIR}px + ${r} * (100vw - ${2 * FLOW_SIDE}px)))`;
+};
+
+/**
+ * Moves a window's step position toward where the scroll puts it: an ease of `tau` seconds, never faster
+ * than `rate` per second. A flick past a window used to flip through its steps in a few frames, and the
+ * reader saw none of them; now each step gets its moment, and the window catches up as it is read.
+ */
+export function stepToward(from: number, to: number, dt: number, tau: number, rate: number) {
+  const want = (to - from) * (1 - Math.exp(-dt / tau));
+  const cap = rate * dt;
+  const next = from + Math.max(-cap, Math.min(cap, want));
+  return Math.abs(to - next) < 1e-4 ? to : next;
+}
 
 /** A canvas here may sit in a window of the flow rather than span the screen (ScreenTag's margins). */
 export const windowed = () => flow.on || flow.windows > 0;

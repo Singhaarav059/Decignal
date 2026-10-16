@@ -272,7 +272,7 @@ export function ChapterBody({ ch }: { ch: number }) {
     case CH.fragments:
       return (
         <>
-      <Label ch={CH.fragments} />
+      <Label ch={CH.fragments} example={false} />
       <Rest>
         <p className="t-body story-body">
           {HERO.audience} <span className="hero-offer">{HERO.card}</span>

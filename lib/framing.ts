@@ -4,7 +4,7 @@
 import { CHAPTERS, CH, EXIT_DRIFT, store } from "./story";
 import { IND_BESIDE_MIN, ISO_DIR, ISO_R, ISO_U, indLayout, type Shot } from "./scene";
 import { mediaWidth } from "./device";
-import { flow } from "./flow";
+import { flow, flowBand, FLOW_FOOT, FLOW_SIDE, FLOW_TOP } from "./flow";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 /* ------------------------------------------------------------------ */
@@ -258,22 +258,20 @@ function place(n: number, f: number, hw: number, hh: number, ix: number, iy: num
   return false;
 }
 
-/** The phone flow's window margins (px): sides, top (a pin's label) and foot. */
-const FLOW_SIDE = 16;
-const FLOW_TOP = 40;
-const FLOW_FOOT = 10;
 /** How much larger than its own framing a subject may draw in a phone's window. */
 const FLOW_GROW = 1.8;
 
 /** Fills the stage and exclusions for chapter c: the card and the giant headline; an open panel shrinks the stage. */
 function setStage(c: number, vw: number, vh: number, panel: boolean) {
   // The flowing phone story: the canvas is the chapter's own window, with nothing over it. The subject
-  // fills it inside the page's gutter, under room for a pin's label at the top.
+  // fills it inside the page's gutter, under room for a pin's label at the top, within the band of the
+  // canvas its window shows (lib/flow.ts flowBand).
   if (flow.on) {
+    const cut = (vh - flowBand(c, vw, vh)) / 2;
     stage.x0 = FLOW_SIDE;
     stage.x1 = vw - FLOW_SIDE;
-    stage.y0 = FLOW_TOP;
-    stage.y1 = vh - FLOW_FOOT;
+    stage.y0 = cut + FLOW_TOP;
+    stage.y1 = vh - cut - FLOW_FOOT;
     nEx = 0;
     cardEx = false;
     indLayout.under = false;
