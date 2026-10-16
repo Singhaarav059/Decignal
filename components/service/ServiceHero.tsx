@@ -1,15 +1,17 @@
-import { AREA_SHARED, areaEyebrow, pageApps, type Area } from "@/lib/areas";
-import { CTA, SERVICE } from "@/lib/copy";
+import { AREA_SHARED, appRecords, areaEyebrow, pageApps, type Area } from "@/lib/areas";
+import { APPLICATIONS_COPY, CTA, SERVICE } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
 import { AreaPhoto } from "../sections/AreaPhoto";
 import { AreaArt } from "../sections/AreaArt";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
+import { SystemIcon, sourceIcon, sourceTone } from "../ui/SystemIcon";
 
 /**
  * The first screen (handoff §6): where you are, the two-line heading, the introduction, the two
  * actions, and the function's card (its place as a duotone, its drawing and its three application
- * examples, each a link to its record below).
+ * examples, each a link to its record below). Under the actions, what each example works from, so the
+ * copy column carries the records beside the card instead of ending at the buttons.
  */
 export function ServiceHero({ area }: { area: Area }) {
   const apps = pageApps(area);
@@ -43,6 +45,33 @@ export function ServiceHero({ area }: { area: Area }) {
             <SectionLink href={SERVICE.secondaryHref} className="btn btn-ghost" data-cta="svc-hero-apps">
               {SERVICE.secondary}
             </SectionLink>
+          </div>
+          {/* What each example works from: its records, each in its system's colour, merging into the
+              application (a link to its record below). */}
+          <div className="svc-sources">
+            <p className="t-label">{APPLICATIONS_COPY.labels.data}</p>
+            <ul>
+              {apps.map((a) => (
+                <li key={a.id} className="svc-source">
+                  <ul className="svc-source-chips" aria-label={`${APPLICATIONS_COPY.labels.data}: ${a.name}`}>
+                    {appRecords(a.data).map((r) => (
+                      <li key={r} className="t-small" style={toneVars(sourceTone(r))}>
+                        <SystemIcon id={sourceIcon(r)} size={15} />
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                  <svg className="svc-source-merge" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden>
+                    <path d="M0 18C22 18 18 50 40 50M0 50H40M0 82C22 82 18 50 40 50" />
+                  </svg>
+                  <SectionLink href={`#${a.id}`} className="svc-source-name t-small" data-cta="svc-hero-source">
+                    <span className="svc-dot" aria-hidden />
+                    {a.name}
+                    <Arrow />
+                  </SectionLink>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 

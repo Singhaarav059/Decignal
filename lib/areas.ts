@@ -319,5 +319,16 @@ export const pageApps = (area: Area) =>
     return { ...APPLICATIONS[i], i };
   });
 
+/** A record's "Works with" sentence as its list: commas, then the last "and" ("stock and allocation
+ *  records" earlier in the list keeps its own). */
+export function appRecords(data: string) {
+  const parts = data.replace(/\.$/, "").split(", ");
+  const last = parts.pop()!;
+  const cut = last.lastIndexOf(" and ");
+  if (cut > 0 && parts.length) parts.push(last.slice(0, cut), last.slice(cut + 5));
+  else parts.push(last);
+  return parts.map((r) => r[0].toUpperCase() + r.slice(1));
+}
+
 /** The function-page hero eyebrow. */
 export const areaEyebrow = () => "Application examples";

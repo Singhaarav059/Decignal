@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
-import { AREA_SHARED, pageApps, type Area } from "@/lib/areas";
+import { AREA_SHARED, appRecords, pageApps, type Area } from "@/lib/areas";
 import { FEATURED, appById } from "@/lib/content";
-import { CTA, DEMOS_COPY, FAQ_COPY, SERVICE } from "@/lib/copy";
+import { APPLICATIONS_COPY, CTA, DEMOS_COPY, FAQ_COPY, SERVICE } from "@/lib/copy";
 import SectionTitle from "../ui/SectionTitle";
 import { SectionLink } from "../ui/SectionLink";
 import { Arrow } from "../ui/Arrow";
@@ -10,23 +10,43 @@ import { FaqList } from "../sections/FaqList";
 import { ServiceAppsBoundary } from "./ServiceAppsBoundary";
 import { ExpectArt } from "./ExpectArt";
 import { AppRecord } from "./AppRecord";
+import { SplitArt } from "./SplitArt";
+import { SystemIcon, sourceIcon, sourceTone } from "../ui/SystemIcon";
+import { toneVars } from "@/lib/tone";
 
-/** "What changes": the three outcome bullets, each with a check. */
+/** The first record each example works from, then the second of the first: four for the drawing. */
+const records = (area: Area) => {
+  const lists = pageApps(area).map((a) => appRecords(a.data));
+  return [...lists.map((l) => l[0]), lists[0][1]];
+};
+
+/** "What changes": the three outcome bullets under the title, beside the records becoming one list. */
 export function ServiceOutcomes({ area }: { area: Area }) {
   return (
-    <section id="outcomes" className="svc-section svc-split page-wrap" aria-labelledby="svc-outcomes">
-      <SectionTitle id="svc-outcomes" lines={[AREA_SHARED.outcomesHeading]} tone={area.tone} reveal="lines" className="svc-split-head" />
-      <ul className="svc-checks">
-        {area.outcomes.map((d) => (
-          <li key={d} data-reveal>
-            <span className="svc-check" aria-hidden>
-              <Check size={14} strokeWidth={2.6} />
-            </span>
-            <span className="t-body">{d}</span>
-          </li>
-        ))}
-      </ul>
+    <section id="outcomes" className="svc-section svc-split svc-split--art page-wrap" aria-labelledby="svc-outcomes">
+      <div className="svc-split-head">
+        <SectionTitle id="svc-outcomes" lines={[AREA_SHARED.outcomesHeading]} tone={area.tone} reveal="lines" />
+        <Checks items={area.outcomes} />
+      </div>
+      <div className="svc-split-art" data-reveal>
+        <SplitArt kind="changes" records={records(area)} />
+      </div>
     </section>
+  );
+}
+
+function Checks({ items }: { items: string[] }) {
+  return (
+    <ul className="svc-checks">
+      {items.map((d) => (
+        <li key={d} data-reveal>
+          <span className="svc-check" aria-hidden>
+            <Check size={14} strokeWidth={2.6} />
+          </span>
+          <span className="t-body">{d}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -52,43 +72,45 @@ export function ServiceExpect({ area }: { area: Area }) {
   );
 }
 
-/** "What an application would prepare": the outputs, each with a check, then what stays with your team. */
+/** "What an application would prepare": the outputs and what stays with your team, beside the draft. */
 export function ServiceGet({ area }: { area: Area }) {
   return (
-    <section id="deliverables" className="svc-section svc-split page-wrap" aria-labelledby="svc-get">
-      <SectionTitle id="svc-get" lines={[AREA_SHARED.outputHeading]} tone={area.tone} reveal="lines" className="svc-split-head" />
-      <div>
-        <ul className="svc-checks">
-          {area.deliverables.map((d) => (
-            <li key={d} data-reveal>
-              <span className="svc-check" aria-hidden>
-                <Check size={14} strokeWidth={2.6} />
-              </span>
-              <span className="t-body">{d}</span>
-            </li>
-          ))}
-        </ul>
-        <p data-reveal className="t-small svc-scope">
-          <span className="t-label">{AREA_SHARED.scopeLabel}</span> {area.scope}
-        </p>
+    <section id="deliverables" className="svc-section svc-split svc-split--art page-wrap" aria-labelledby="svc-get">
+      <div className="svc-split-head">
+        <SectionTitle id="svc-get" lines={[AREA_SHARED.outputHeading]} tone={area.tone} reveal="lines" />
+        <div>
+          <Checks items={area.deliverables} />
+          <p data-reveal className="t-small svc-scope">
+            <span className="t-label">{AREA_SHARED.scopeLabel}</span> {area.scope}
+          </p>
+        </div>
+      </div>
+      <div className="svc-split-art" data-reveal>
+        <SplitArt kind="prepare" rows={area.deliverables.length} />
       </div>
     </section>
   );
 }
 
-/** "Start with the work your team does today": one short paragraph and the way to the full process. */
+/** "Start with the work your team does today": one short paragraph and the way to the full process,
+ *  beside the example, today's software and what an application adds. */
 export function ServiceProcess({ area }: { area: Area }) {
   return (
-    <section id="start" className="svc-section svc-split page-wrap" aria-labelledby="svc-how">
-      <SectionTitle id="svc-how" lines={[AREA_SHARED.processHeading]} tone={area.tone} reveal="lines" className="svc-split-head" />
-      <div className="svc-process">
-        <p data-reveal className="t-lede">
-          {AREA_SHARED.processBody}
-        </p>
-        <SectionLink href={AREA_SHARED.processLink.href} className="ed-link svc-process-link" data-cta="svc-how">
-          {AREA_SHARED.processLink.label}
-          <Arrow />
-        </SectionLink>
+    <section id="start" className="svc-section svc-split svc-split--art page-wrap" aria-labelledby="svc-how">
+      <div className="svc-split-head">
+        <SectionTitle id="svc-how" lines={[AREA_SHARED.processHeading]} tone={area.tone} reveal="lines" />
+        <div className="svc-process">
+          <p data-reveal className="t-lede">
+            {AREA_SHARED.processBody}
+          </p>
+          <SectionLink href={AREA_SHARED.processLink.href} className="ed-link svc-process-link" data-cta="svc-how">
+            {AREA_SHARED.processLink.label}
+            <Arrow />
+          </SectionLink>
+        </div>
+      </div>
+      <div className="svc-split-art" data-reveal>
+        <SplitArt kind="start" />
       </div>
     </section>
   );
@@ -102,6 +124,21 @@ export function ServiceApps({ area }: { area: Area }) {
       <ol className="svc-app-list">
         {pageApps(area).map((a) => (
           <li key={a.id} id={a.id} tabIndex={-1} className="card svc-app">
+            {/* What it works from, each record in its system's colour, flowing into what it prepares. */}
+            <div className="svc-app-flow" aria-hidden>
+              <span className="svc-app-flow-in">
+                {appRecords(a.data).slice(0, 5).map((r) => (
+                  <span key={r} className="svc-app-tile" title={r} style={toneVars(sourceTone(r))}>
+                    <SystemIcon id={sourceIcon(r)} size={18} />
+                  </span>
+                ))}
+              </span>
+              <span className="svc-app-flow-line" />
+              <span className="svc-app-tile svc-app-out">
+                <SystemIcon id="sup" size={20} />
+                <Check size={11} strokeWidth={3} />
+              </span>
+            </div>
             <AppRecord app={a} label={area.name} />
             <SectionLink href={CTA.href} className="ed-link svc-app-cta" data-cta="svc-workflow">
               {CTA.workflow}
@@ -122,11 +159,39 @@ export function ServiceExample({ area }: { area: Area }) {
   const d = area.demo;
   const id = d.href.split("#")[1];
   const featured = FEATURED.findIndex((a) => a.id === id);
+  const app = appById(id);
   return (
     <section id="example" className="svc-apps-section" aria-labelledby="svc-example">
       <div className="svc-section page-wrap">
         <div className="svc-why">
-          <SectionTitle id="svc-example" lines={[AREA_SHARED.exampleHeading]} lede={appById(id)?.name} tone={area.tone} reveal="lines" />
+          <div className="svc-why-head">
+            <SectionTitle id="svc-example" lines={[AREA_SHARED.exampleHeading]} lede={app?.name} tone={area.tone} reveal="lines" />
+            {/* Who reads the output and how the team would judge it: the record's own lines. */}
+            {app && (
+              <dl className="svc-why-facts" data-reveal>
+                {(
+                  [
+                    [APPLICATIONS_COPY.labels.owner, app.reviewer],
+                    [APPLICATIONS_COPY.labels.measure, app.measure],
+                  ] as const
+                ).map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="t-label">{k}</dt>
+                    <dd className="t-body">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {app && (
+              <div className="svc-split-art svc-why-art" data-reveal>
+                <SplitArt
+                  kind="example"
+                  records={appRecords(app.data)}
+                  labels={[DEMOS_COPY.labels.input, DEMOS_COPY.labels.application, DEMOS_COPY.labels.output, DEMOS_COPY.labels.next]}
+                />
+              </div>
+            )}
+          </div>
           <figure className="svc-example card card--panel" data-reveal>
             <figcaption className="t-label">{DEMOS_COPY.badge}</figcaption>
             <h3 className="t-title-card">{d.title}</h3>

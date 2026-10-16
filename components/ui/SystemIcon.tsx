@@ -43,6 +43,16 @@ const SOURCE_ICON: [RegExp, string][] = [
 ];
 export const sourceIcon = (name: string) => SOURCE_ICON.find(([re]) => re.test(name))?.[1] ?? "sheet";
 
+/** The colour of the system a record comes from (CONNECTS tones; the extra icons take their family's). */
+const SOURCE_TONE: Record<string, string> = {
+  erp: "cobalt", pos: "cobalt", crm: "violet", mes: "emerald", desk: "emerald", cmms: "emerald",
+  wms: "saffron", sheet: "saffron", sup: "tangerine", ext: "pink",
+};
+export const sourceTone = (name: string) => SOURCE_TONE[sourceIcon(name)] ?? "cobalt";
+
+/** An icon's path on its 24px grid, for drawings that place it inside their own SVG. */
+export const systemPath = (id: string) => PATHS[id];
+
 export function SystemIcon({ id, size = 24, className }: { id: string; size?: number; className?: string }) {
   const d = PATHS[id];
   if (!d) return null;

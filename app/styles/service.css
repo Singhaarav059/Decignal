@@ -61,9 +61,55 @@
 .svc-move-text { font-size: var(--fs-body); font-weight: 600; line-height: 1.35; }
 .svc-card-note { color: var(--color-ink-soft); }
 
+/* Under the actions: what each of the three examples works from. Its records (each icon in its system's
+   colour) merge through a drawn bracket into the application, a pill that links to its record. */
+.svc-sources { display: grid; gap: 4px; margin-top: clamp(32px, 5vh, 56px); padding-top: 20px; border-top: 1px solid var(--color-line); }
+.svc-sources > .t-label { color: var(--color-ink-soft); }
+.svc-source { display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, max-content); align-items: center; padding-block: 14px; }
+.svc-source + .svc-source { border-top: 1px solid var(--color-line); }
+.svc-source-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.svc-source-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 11px 5px 9px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  line-height: 1.3;
+}
+.svc-source-chips svg { flex: none; color: var(--tone); }
+.svc-source-merge { align-self: stretch; width: 40px; height: 100%; min-height: 40px; overflow: visible; }
+.svc-source-merge path { fill: none; stroke: var(--color-line-strong, var(--color-ink-muted)); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.svc-source-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tone) 10%, var(--color-surface));
+  color: var(--color-ink);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color var(--dur-2) var(--ease);
+}
+@media (hover: hover) {
+  .svc-source-name:hover { background: color-mix(in srgb, var(--tone) 18%, var(--color-surface)); }
+}
+/* Narrow: the application first, its records under it, no bracket. */
+@media (max-width: 767px) {
+  .svc-source { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .svc-source-merge { display: none; }
+  .svc-source-name { order: -1; justify-self: start; white-space: normal; padding: 0; background: none; }
+}
+
 @media (min-width: 1024px) {
   .svc-hero-row { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
-  .svc-hero-copy { grid-column: 1 / span 7; }
+  /* The card runs taller: the copy column rides beside it rather than leaving the space under it. */
+  .svc-hero-copy { grid-column: 1 / span 7; position: sticky; top: 112px; }
   .svc-hero-card { grid-column: 8 / span 5; }
   .svc-hero-card .area-photo-frame { aspect-ratio: 2 / 1; }
 }
@@ -80,6 +126,7 @@
 }
 /* 1280x680 and similar: the three-application card still ends above the fold. */
 @media (min-width: 1024px) and (max-height: 720px) {
+  .svc-hero-copy { position: static; }
   .svc-hero-card .area-photo-frame { aspect-ratio: 16 / 5; }
   .svc-hero-art { display: none; }
   .svc-hero-row { margin-top: 16px; }
@@ -102,7 +149,36 @@
 .svc-apps-section > .svc-section { padding-bottom: 0; }
 /* Without 3D the explorer gives way to the same applications as cards. */
 .svc-app-list { display: grid; gap: var(--col-gap); padding-top: var(--stack-content); }
-.svc-app { display: grid; align-content: start; gap: 12px; }
+.svc-app { display: flex; flex-direction: column; gap: 12px; }
+/* The link sits on the card's floor, so a row of cards ends on one line. */
+.svc-app > .svc-app-cta { margin-top: auto; padding-top: 8px; }
+/* The card's picture: its records, each a tile in its system's colour, then the line to what it prepares. */
+.svc-app-flow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 18px 16px; border-radius: var(--radius-sm); background: var(--color-sunken); }
+.svc-app-flow-in { display: flex; flex: none; gap: 6px; }
+@media (max-width: 400px) { .svc-app-flow-in { flex: 0 1 auto; flex-wrap: wrap; } }
+.svc-app-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--tone) 14%, var(--color-surface));
+  color: var(--tone);
+}
+.svc-app-flow-line { flex: 1 1 16px; min-width: 16px; height: 0; border-top: 1.5px dashed var(--color-line-strong); }
+.svc-app-out { flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--tone, var(--color-ink)); color: var(--color-on-ink); }
+.svc-app-out > svg:last-child {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  box-sizing: content-box;
+  padding: 3px;
+  border: 2px solid var(--color-sunken);
+  border-radius: 50%;
+  background: var(--color-ok, var(--color-ink));
+  color: var(--color-on-ink);
+}
 .svc-app .t-label { display: flex; align-items: center; gap: 8px; }
 .svc-app-line { color: var(--color-ink-2); max-width: 52ch; }
 @media (min-width: 768px) {
@@ -121,7 +197,12 @@
   /* A head in a side column is set a step smaller, so it holds two or three lines: at the page's
      title size in four columns "What a scoped application would prepare" ran to five. */
   .svc-split-head :is(h2, .t-title) { font-size: clamp(32px, 3vw, 44px); text-wrap: balance; }
+  /* With a drawing: the title and its list on the left, the drawing on the right, centred on them. */
+  .svc-split--art { align-items: center; }
+  .svc-split--art > .svc-split-head { position: static; }
 }
+.svc-split--art > .svc-split-head { display: grid; gap: var(--stack-content); align-content: start; }
+.svc-split--art .svc-checks { grid-template-columns: minmax(0, 1fr); }
 
 .svc-checks { display: grid; border-top: 1px solid var(--color-line-strong); }
 .svc-checks li { display: flex; align-items: flex-start; gap: 14px; padding: 18px 2px; border-bottom: 1px solid var(--color-line); }
@@ -146,8 +227,7 @@
 .svc-example .t-num-lg { margin-top: 8px; }
 @media (min-width: 1024px) {
   .svc-why { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: start; }
-  .svc-why > .section-title { grid-column: 1 / span 7; }
-  .svc-why > .section-title .section-title-lede { max-width: 52ch; }
+  .svc-why-head .section-title-lede { max-width: 52ch; }
   .svc-example { grid-column: 9 / span 4; }
 }
 
@@ -279,9 +359,13 @@
 .svc-app-more .svc-app-fields { margin-top: 10px; }
 .svc-app:target { box-shadow: inset 0 0 0 2px var(--tone); }
 
-/* The worked example on a function page: the title beside the four lines. */
+/* The worked example on a function page: the title and who uses it beside the four lines. */
+.svc-why-facts { display: grid; margin-top: clamp(28px, 4vh, 48px); border-top: 1px solid var(--color-line); }
+.svc-why-facts > div { display: grid; gap: 6px; padding-block: 16px; border-bottom: 1px solid var(--color-line); }
+.svc-why-facts dt { color: var(--color-ink-soft); }
+.svc-why-facts dd { max-width: 44ch; }
 @media (min-width: 1024px) {
-  .svc-why > .section-title { grid-column: 1 / span 5; }
+  .svc-why > .svc-why-head { grid-column: 1 / span 5; position: sticky; top: 112px; }
   .svc-example { grid-column: 7 / span 6; }
 }
 
