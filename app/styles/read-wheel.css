@@ -15,6 +15,9 @@
 /* The held layer: the dial's stage. */
 .rw-track { position: relative; min-width: 0; height: calc(var(--rw-off, 0px) + var(--rw-len)); }
 .rw-stage { position: sticky; top: calc(-1 * var(--rw-off, 0px)); height: calc(var(--rw-off, 0px) + 100svh); overflow: hidden; }
+/* Phones: as tall as the screen with the browser's bar hidden, so no strip of the next section shows
+   under the dome then; the read itself is fitted to the shorter screen (ReadWheel's fit). */
+@media (max-width: 1023px) { .rw-stage { height: calc(var(--rw-off, 0px) + 100lvh); } }
 .rw-top { position: relative; z-index: 3; }
 @media (min-width: 1024px) {
   .rw-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 48px; padding-top: calc(92px + 2.4vh); }
@@ -130,9 +133,11 @@
   .rw-caption { margin-top: 6px; font-size: 14px; text-wrap: balance; }
   .rw-bars { gap: 10px; margin-top: 14px; }
 }
-/* Short phones: one field, so the dome's read ends on the screen. */
-@media (max-width: 1023px) and (max-height: 720px) {
-  .rw-bars li:nth-child(2), .rw-card-text { display: none; }
+/* Short phones: what the screen has room for, measured by ReadWheel (data-fit): first the card's text
+   goes, then the second field, so the dome's read ends on the screen without a blank under it. */
+@media (max-width: 1023px) {
+  .rw-track[data-fit="1"] .rw-card-text, .rw-track[data-fit="2"] .rw-card-text,
+  .rw-track[data-fit="2"] .rw-bars li:nth-child(2) { display: none; }
 }
 @media (min-width: 1024px) and (max-height: 760px) {
   .rw-bars li:nth-child(2), .rw-card-text, .rw-lede { display: none; }

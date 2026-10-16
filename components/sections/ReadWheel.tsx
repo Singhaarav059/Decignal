@@ -21,6 +21,10 @@ const PER = 0.3;
 const FIRST = PHASES.map((_, k) => ITEMS.findIndex((it) => it.phase === k));
 /** The nav's bottom edge on phones, which the held dial's tabs sit under. */
 const NAV = 72;
+/** Phones: the read's top under the dome's crown (.rw-readout), and the margin it keeps above the
+ *  screen's foot, with room for a caption a line longer than the one measured. */
+const READ_TOP = 62;
+const FIT_SLACK = 24;
 /** How far (px) the head fades over as the dial comes to hold the screen (phones). */
 const FADE = 160;
 /** Where a held layer sticks (its top is minus the head's height on phones, --rw-off), and how far
@@ -119,6 +123,10 @@ export function ReadWheel() {
       if (!w.hasAttribute("data-moved")) w.setAttribute("data-moved", "");
     };
     w.addEventListener("pointermove", moved, { passive: true });
+    // The screen's height with the browser's bar showing (innerHeight is the taller one once it hides).
+    const svh = document.createElement("div");
+    svh.style.cssText = "position:fixed;top:0;left:0;width:0;height:100svh;visibility:hidden;pointer-events:none";
+    document.body.appendChild(svh);
     const measure = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -138,12 +146,21 @@ export function ReadWheel() {
         const st = stage.getBoundingClientRect().top;
         const next = Math.max(0, Math.round(tabs.getBoundingClientRect().top - st - (NAV + 14)));
         if (next !== off) el.style.setProperty("--rw-off", `${(off = next)}px`);
-        crown = (card ? card.getBoundingClientRect().bottom - st : under) + 66;
+        // Fit the read to the screen with the browser's bar showing: the card's text, then the second
+        // field, give way only when the read would otherwise run off the bottom.
+        const readout = w.querySelector<HTMLElement>(".rw-readout");
+        const room = svh.offsetHeight - FIT_SLACK;
+        for (let level = 0; level <= 2; level++) {
+          el.setAttribute("data-fit", String(level));
+          crown = (card ? card.getBoundingClientRect().bottom - st : under) + 66;
+          if (!readout || crown - off + READ_TOP + readout.offsetHeight <= room) break;
+        }
         R = Math.min(560, Math.max(320, vh - crown + 40));
         horizon = 0.6;
         reach = labels.map((l) => Math.max(0, vw / 2 - 10 - l.offsetWidth / 2));
       } else {
         reach = [];
+        el.removeAttribute("data-fit");
         if (off) el.style.removeProperty("--rw-off");
         off = 0;
         const c = vw / 2 + 60;
@@ -220,6 +237,7 @@ export function ReadWheel() {
       io.disconnect();
       window.removeEventListener("scroll", onScroll);
       w.removeEventListener("pointermove", moved);
+      svh.remove();
     };
   }, []);
 
