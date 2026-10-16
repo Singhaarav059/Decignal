@@ -227,9 +227,12 @@ const steppedAt = (k: number, a: number, u: number, count: number, turn: number)
 /** Control's row brings its five layers to the front one per scroll step, Signal to the follow-up:
  *  the layer in front at local t (fractional while the row slides). */
 export const CONTROL_LAYERS = 5;
-export const controlLayer = (t: number) => stepped(t, 0.03, CHAPTERS[CH.control].ts - 0.06, CONTROL_LAYERS, 0.6);
+/** A turn as long as a hold: a short turn left the cards still, then pushed them a place at three times
+ *  the scroll's pace, which read as the row lurching ahead of the wheel. */
+const CONTROL_TURN = 1;
+export const controlLayer = (t: number) => stepped(t, 0.03, CHAPTERS[CH.control].ts - 0.06, CONTROL_LAYERS, CONTROL_TURN);
 /** Local progress where layer k holds in front (for the pills and a click on a card). */
-export const controlSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.control].ts - 0.06, CONTROL_LAYERS, 0.6);
+export const controlSettle = (k: number) => steppedAt(k, 0.03, CHAPTERS[CH.control].ts - 0.06, CONTROL_LAYERS, CONTROL_TURN);
 
 /** Scale deals its hand one card per step: the five functions, then the glass layer card that lands on
  *  top of them. How many are dealt at local t (fractional while one is on its way). */

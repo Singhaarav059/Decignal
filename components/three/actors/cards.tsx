@@ -172,6 +172,11 @@ function useHandArt(spec: FaceSpec | null, tier: number) {
   return { texture, step };
 }
 
+/** The read card's face size in Control's row, measured while it holds in front. Every card in the row
+ *  keeps a face that sharp: a card sliding to the front grew a tier mid-slide and redrew its face
+ *  (and dropped one as it left), a hitch in the middle of the move that read as shaking. */
+let rowPx = 0;
+
 const corner = new THREE.Vector3();
 const projected = [0, 0, 0, 0, 0, 0, 0, 0];
 /** Device pixels across the face's width on screen, taking the larger of its two edges. */
@@ -553,11 +558,18 @@ function Card({ k }: { k: number }) {
 
     // Match the face texture to the footprint once it holds for a moment (sooner when it grows).
     if (n && g?.visible && g.scale.x > 0.2) {
-      const px = footprint(n, camera, size, gl.getPixelRatio());
+      let px = footprint(n, camera, size, gl.getPixelRatio());
+      const row = inRow();
+      if (row) {
+        const front = Math.round(store.layer);
+        if (front === k && Math.abs(store.layer - front) < 0.02) rowPx = px;
+        px = Math.max(px, rowPx);
+      }
       let t = TIERS.findIndex((w) => w >= px);
       if (t < 0) t = TIERS.length - 1;
-      // Hysteresis: step down only when the next tier below would still be clearly large enough.
-      if (t === tier - 1 && TIERS[t] < px * 1.15) t = tier;
+      // Hysteresis: step down only when the next tier below would still be clearly large enough. Never
+      // in the row, where every card comes back to the front.
+      if ((t === tier - 1 && TIERS[t] < px * 1.15) || (row && t < tier)) t = tier;
       const w = want.current;
       if (t !== w.tier) {
         w.tier = t;
