@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
@@ -52,7 +53,10 @@ export function Footer() {
   // The wordmark rises letter by letter as the page ends.
   useEffect(() => {
     const el = word.current;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el) return;
+    // The water in the letters rises as they do (app/styles/editorial.css).
+    const fill = () => el.setAttribute("data-on", "");
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return fill();
     const t = gsap.fromTo(
       el.querySelectorAll("[data-letter]"),
       { yPercent: 100 },
@@ -62,6 +66,7 @@ export function Footer() {
         duration: 1.4,
         stagger: 0.05,
         scrollTrigger: { trigger: el, start: "top 95%", once: true },
+        onStart: fill,
       },
     );
     return () => {
@@ -175,7 +180,7 @@ export function Footer() {
       <div ref={word} className="footer-wordmark" aria-hidden>
         <span className="footer-wordmark-word">
           {"decignal".split("").map((ch, i) => (
-            <span key={i} data-letter className="inline-block">
+            <span key={i} data-letter className="inline-block" style={{ "--i": i } as CSSProperties}>
               {ch}
             </span>
           ))}

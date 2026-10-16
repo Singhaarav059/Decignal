@@ -1,34 +1,48 @@
 /* Chrome: the nav bar, its readout, the section glances, the phone menu, the CTA pill, the phone dock
    and the chapter pictures (components/Nav, NavPeek, CtaPill, PhoneDock, ChapterArt, ui/Logo). Every fixed layer takes its z from the token scale. */
 
-/* ---------------- Logo ---------------- */
+/* ---------------- Logo: the name, held in water ---------------- */
+/* The brand's one device (no mark): a pill filled halfway with light cobalt like water, a wave on its
+   surface. It rises once as the page arrives and fills to the brim on hover. .water is that pill; the
+   wide nav's brand pill is one, and below 1024px the nav's logo link is (components/Nav). Flat fills only. */
 @property --fill { syntax: '<number>'; inherits: true; initial-value: 0.5; }
 @property --wave-x { syntax: '<length>'; inherits: true; initial-value: 0px; }
-@property --brand-h { syntax: '<length>'; inherits: true; initial-value: 52px; }
-@keyframes brand-fill { from { --fill: 0; --wave-x: -28px; } }
-.logo-word {
-  position: relative;
-  isolation: isolate;
-  display: inline-block;
-  font-size: var(--logo, 26px);
-}
-/* A highlighter stroke behind the name: a flat light cobalt (ink reads on it at ~10:1) over the lower
-   half, rising to the cap height on hover. */
-.logo-word::before {
+@keyframes water-rise { from { --fill: 0; --wave-x: -28px; } }
+.logo-word { display: inline-block; font-size: var(--logo, 26px); }
+.water { position: relative; isolation: isolate; border-radius: var(--radius-pill); --water: color-mix(in srgb, var(--color-cobalt) 40%, #fff); }
+.water::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 38% -0.16em -0.04em;
-  border-radius: 0.12em;
-  background: color-mix(in srgb, var(--color-cobalt) 40%, #fff);
-  transition: inset var(--dur-3) var(--ease);
+  inset: 0;
+  border-radius: inherit;
+  clip-path: inset(0 round var(--radius-pill));
+  pointer-events: none;
+  background: var(--water);
+  /* The wave rides on the solid: its foot sits --fill up the free height, the solid reaches just past it. */
+  -webkit-mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--fill) * 100%) / 28px 6px repeat-x,
+    linear-gradient(#000, #000) left 0 bottom 0 / 100% calc(var(--fill) * (100% - 6px) + 2px) no-repeat;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--fill) * 100%) / 28px 6px repeat-x,
+    linear-gradient(#000, #000) left 0 bottom 0 / 100% calc(var(--fill) * (100% - 6px) + 2px) no-repeat;
+  animation: water-rise 1.4s var(--ease) 0.3s both;
+  transition: --fill var(--dur-4) var(--ease), --wave-x 0.9s var(--ease);
 }
 @media (hover: hover) {
-  .logo:hover .logo-word::before { inset-block-start: 4%; }
+  .water:is(:hover, :has(.nav-logo:hover))::before { --fill: 1.15; --wave-x: 14px; }
 }
-/* The swatch carries the word on dark bars too, so it stays ink there. */
-.nav-shell[data-dark] .nav-logo .logo-word { color: var(--color-ink); }
-
+@media (prefers-reduced-motion: reduce) { .water::before { animation: none; transition: none; } }
+/* On dark bars the water is full cobalt and the word white. */
+.nav-shell[data-dark] .water { --water: var(--color-cobalt); }
+/* One pill at a time: the logo link below 1024px, the brand pill from 1024px. */
+@media (max-width: 1023px) {
+  .nav-brand.water::before { display: none; }
+  /* Inside the bar the logo link draws its own pill rim so the water reads as filling something. */
+  .nav-logo.water { background: rgb(255 255 255 / 0.55); box-shadow: var(--edge-line); }
+  .nav-shell[data-dark] .nav-logo.water { background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+}
+@media (min-width: 1024px) { .nav-logo.water::before { display: none; } }
 
 /* ---------------- Skip link (styles in infra.css): on the page grid's left edge ---------------- */
 a.skip-link { left: var(--edge); }
@@ -63,7 +77,7 @@ a.skip-link { left: var(--edge); }
 /* One solid surface, links straight on it. */
 .nav-surface { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--color-surface); box-shadow: var(--edge-line); transition: box-shadow var(--dur-3) var(--ease); }
 .nav-pill[data-solid] .nav-surface { box-shadow: var(--edge-strong); }
-.nav-logo { flex: none; padding: 4px 6px; border-radius: var(--radius-pill); }
+.nav-logo { flex: none; padding: 5px 11px 6px; border-radius: var(--radius-pill); }
 /* Wide: the pill's own padding centres the word; the 4px flex gap to the (empty) readout is counted in. */
 @media (min-width: 1024px) {
   .nav-logo { padding-inline: 0; }
@@ -147,35 +161,7 @@ a.skip-link { left: var(--edge); }
   .nav-pill[data-compact] { height: 54px; padding: 0; }
   .nav-surface { display: none; }
   .nav-brand { height: 52px; padding: 0 16px 0 22px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--edge-line), var(--shadow-float); transition: height var(--dur-3) var(--ease); }
-  .nav-pill[data-compact] .nav-brand { height: 46px; --brand-h: 46px; }
-  /* Wide: the pill itself is the highlight, filled halfway with light cobalt like water, a wave on its
-     surface. It rises once as the page arrives and the wave slides on hover. The word drops its stroke. */
-  .nav-brand { isolation: isolate; --brand-h: 52px; }
-  .nav-brand::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    inset: 0;
-    border-radius: inherit;
-    clip-path: inset(0 round var(--radius-pill));
-    pointer-events: none;
-    background: var(--water);
-    --water: color-mix(in srgb, var(--color-cobalt) 40%, #fff);
-    --h: calc(var(--brand-h) * var(--fill));
-    -webkit-mask:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--h) - 1px) / 28px 6px repeat-x,
-      linear-gradient(#000, #000) left 0 bottom 0 / 100% var(--h) no-repeat;
-    mask:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--h) - 1px) / 28px 6px repeat-x,
-      linear-gradient(#000, #000) left 0 bottom 0 / 100% var(--h) no-repeat;
-    animation: brand-fill 1.4s var(--ease) 0.3s both;
-    transition: --wave-x 0.9s var(--ease), --brand-h var(--dur-3) var(--ease);
-  }
-  @media (hover: hover) { .nav-brand:has(.nav-logo:hover)::before { --wave-x: 14px; } }
-  @media (prefers-reduced-motion: reduce) { .nav-brand::before { animation: none; transition: none; } }
-  .nav-brand .logo-word::before { display: none; }
-  .nav-shell[data-dark] .nav-brand::before { --water: var(--color-cobalt); }
-  .nav-shell[data-dark] .nav-brand .logo-word { color: #fff; }
+  .nav-pill[data-compact] .nav-brand { height: 46px; }
   .nav-cta { height: 52px; padding-left: 22px; padding-right: 6px; box-shadow: var(--shadow-float); }
   .nav-cta-icon { width: 40px; height: 40px; }
   .nav-pill[data-compact] .nav-cta { height: 46px; }
@@ -199,7 +185,7 @@ a.skip-link { left: var(--edge); }
   .nav-cta { gap: 6px; padding: 0 7px 0 12px; }
   .nav-pill[data-compact] .nav-cta { padding-right: 5px; }
   .nav-cta-icon, .nav-pill[data-compact] .nav-cta-icon { width: 28px; height: 28px; }
-  .nav-logo { padding-inline: 2px 4px; }
+  .nav-logo { padding-inline: 8px; }
 }
 /* Phones keep one bar height when it goes compact (the readout still animates). The
    bar shrinking by 8px resized its glass, and a phone re-rastered the pill and the CTA, with their

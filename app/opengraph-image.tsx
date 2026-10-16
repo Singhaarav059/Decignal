@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { WaterFill } from "@/lib/water";
 import { BRAND, HERO_LINES, OG_FOOTER, SHARE_IMAGE_ALT } from "@/lib/site";
 
 export const alt = SHARE_IMAGE_ALT;
@@ -32,8 +33,9 @@ export default async function OpengraphImage() {
           fontFamily: "Bricolage",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
-          decignal
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 232, height: 72, paddingBottom: 4, borderRadius: 999, overflow: "hidden", border: "1.5px solid #DCE1EA", background: BRAND.surface, fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
+          <WaterFill w={232} h={72} period={32} amp={4} />
+          <div style={{ display: "flex", position: "relative" }}>decignal</div>
         </div>
         <div
           style={{

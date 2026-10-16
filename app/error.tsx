@@ -12,7 +12,7 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
 
   return (
     <main className="page-wrap flex min-h-svh flex-col py-7 md:py-9">
-      <Link href="/" aria-label="Decignal home" className="self-start">
+      <Link href="/" aria-label="Decignal home" className="water self-start px-4 py-2">
         <Logo />
       </Link>
       <div className="my-auto py-16">

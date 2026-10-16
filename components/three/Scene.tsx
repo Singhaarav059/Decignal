@@ -18,7 +18,6 @@ import { onJumpCut } from "@/lib/jump";
 import { isTouch, probeGl } from "@/lib/pace";
 import { Pacer } from "./Pacer";
 import { SceneBoundary } from "./SceneBoundary";
-import { FinalMark } from "./actors/mark";
 import { ShadowFloor, ShadowGate } from "./Shadows";
 import { FrameGate, lastDraw } from "./FrameGate";
 import { Governor, useGovernedDpr } from "./Governor";
@@ -179,7 +178,7 @@ function Atmosphere() {
  *  meets them (the hero's islands first). Rendered at once they were one 1-2 s task on a phone (every building, person and merged
  *  part built in a single synchronous pass); each is now its own low-priority render, which React
  *  splits into short slices, and its own commit. Nothing draws until all are in and warm. */
-const ACTORS = [Islands, SignalCrate, ChartCrates, Transfer, Cards, IndustriesRoad, FinalMark, ChartMarks];
+const ACTORS = [Islands, SignalCrate, ChartCrates, Transfer, Cards, IndustriesRoad, ChartMarks];
 /** The longest an actor waits for a pause in the scroll before it builds anyway (ms), and the most all
  *  of them wait together (MOUNT_BY from the world's mount): eight waits of 3 s each kept a reader who
  *  never paused on a still world for half a minute. */

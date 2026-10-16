@@ -357,8 +357,7 @@ export function cardPose(k: number, c: number, t: number, portrait = false, phon
     case CH.final: {
       // The free AI audit, standing at the hub the six systems feed, tipped back to face the viewer
       // after a half turn (its face is drawn rotated to match). It rises there as Industries hands over.
-      // Wide screens end on the Decignal mark at the hub instead (actors/mark.tsx).
-      if (k !== DECISION_CARD || !portrait) return null;
+      if (k !== DECISION_CARD) return null;
       const lean = 0.5;
       const s = portrait ? FINAL_SP : 2.1;
       return { p: [HUB[0], standY(s, lean), HUB[1]], rx: -UP + lean, ry: Math.PI * 5 + ISO.az, s };
@@ -597,7 +596,8 @@ export function shotAt(c: number, t: number, portrait: boolean, o: Shot): Shot {
         o.dist = 12; // phones are framed by the stage; a portrait tablet stops at about 450px
       } else {
         islandPillars(o, portrait, 1.42, 1.75);
-        pillar(o, HUB[0], HUB[1], 1.3, 0, 1.6);
+        // The audit board at the hub (cardPose, s 2.1): half its width round, its leaned top high.
+        pillar(o, HUB[0], HUB[1], (CARD.w / 2) * 2.1 + 0.1, 0, CARD.h * 2.1 * Math.cos(0.5) + 0.1);
         o.dist = 23 * (1 - 0.03 * t);
       }
       // The board carries on into the hub while the systems rise round it: the camera keeps an even

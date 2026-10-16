@@ -21,7 +21,7 @@ import { phoneWide, portraitWide } from "@/lib/device";
 /* ------------------------------------------------------------------ */
 
 // The decision card stands out of Industries (each place's callout is page text), so it takes the
-// ending's face there, out of sight, before it rises at the hub on portrait screens.
+// ending's face there, out of sight, before it rises at the hub.
 const finalAt = (g: number) => g >= CH.industries + 0.5;
 
 /* Faces are drawn at about their size on screen in device pixels. A texture much larger than the

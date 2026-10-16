@@ -387,6 +387,26 @@
    width; the token caps it on very wide screens. */
 .footer-wordmark { display: flex; align-items: flex-end; justify-content: center; gap: max(1.5vw, 12px); overflow: hidden; margin-top: 40px; padding: 1vw 0 4.5vw; --mark: min(20vw, var(--wordmark)); }
 .footer-wordmark-word { display: flex; font-family: var(--font-heading); font-size: var(--mark); line-height: 0.9; color: #fff; font-weight: 500; letter-spacing: -0.014em; }
+/* The name held in water (the nav's .water, chrome.css): light cobalt fills each white letter halfway as
+   it rises, a wave on the surface, and to the brim on hover. Flat fills clipped to the glyphs. */
+.footer-wordmark-word [data-letter] {
+  --fill: 0;
+  /* Room for the g's tail: text clip paints only inside the box, and the line is set at 0.9. */
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
+  color: transparent;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath fill='%23ABBDFF' d='M0 4Q10 0 20 4T40 4V8H0z'/%3E%3C/svg%3E") left var(--wave-x) bottom calc(var(--fill) * 100%) / 0.3em 0.06em repeat-x,
+    linear-gradient(#abbdff, #abbdff) left 0 bottom 0 / 100% calc(var(--fill) * (100% - 0.06em) + 1px) no-repeat,
+    #fff;
+  -webkit-background-clip: text;
+  background-clip: text;
+  transition: --fill 1.2s var(--ease) calc(0.3s + var(--i, 0) * 60ms), --wave-x 0.9s var(--ease);
+}
+.footer-wordmark[data-on] [data-letter] { --fill: 0.5; }
+@media (hover: hover) {
+  .footer-wordmark[data-on]:hover [data-letter] { --fill: 1.15; --wave-x: 0.15em; transition-delay: calc(var(--i, 0) * 30ms); }
+}
 
 .footer-motif .footer-thread { stroke-dasharray: 1; stroke-dashoffset: 0; stroke: rgb(255 255 255 / 0.85); }
 .footer-motif-node { transform-box: fill-box; transform-origin: center; }

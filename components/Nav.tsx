@@ -465,7 +465,7 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
         >
           <span className="nav-surface" aria-hidden data-lens />
 
-          <div className="nav-brand relative flex min-w-0 items-center gap-1" data-lens>
+          <div className="nav-brand water relative flex min-w-0 items-center gap-1" data-lens>
             <button
               ref={burger}
               type="button"
@@ -483,7 +483,7 @@ export function Nav({ variant = "home", sections }: { variant?: "home" | "page";
             <Link
               href="/"
               aria-label={NAV.logoAria}
-              className="nav-logo flex items-center rounded-full"
+              className="nav-logo water flex items-center rounded-full"
               onClick={(e) => {
                 setOpen(false);
                 if (!home || !plainClick(e)) return;

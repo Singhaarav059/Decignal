@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { WaterFill } from "@/lib/water";
 import { AREA_SLUGS, appsOf, areaBySlug, areaEyebrow } from "@/lib/areas";
 import { BRAND, SITE_NAME } from "@/lib/site";
 
@@ -52,8 +53,9 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
-            decignal
+          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 232, height: 72, paddingBottom: 4, borderRadius: 999, overflow: "hidden", border: "1.5px solid #DCE1EA", background: BRAND.surface, fontSize: 40, fontWeight: 600, letterSpacing: -0.6 }}>
+            <WaterFill w={232} h={72} period={32} amp={4} />
+            <div style={{ display: "flex", position: "relative" }}>decignal</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "Figtree", fontSize: 24, fontWeight: 600, color: BRAND.inkSoft }}>
             <div style={{ width: 14, height: 14, borderRadius: 999, background: tone }} />
