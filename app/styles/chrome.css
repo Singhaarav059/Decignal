@@ -7,21 +7,23 @@
   isolation: isolate;
   display: inline-block;
   font-size: var(--logo, 26px);
-  color: #fff;
 }
-/* The name on a flat cobalt marker block, set in white; the block widens a touch on hover. */
+/* A highlighter stroke behind the name: a flat light cobalt (ink reads on it at ~10:1) over the lower
+   half, rising to the cap height on hover. */
 .logo-word::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: -0.1em -0.24em -0.06em;
-  border-radius: 0.16em;
-  background: var(--color-cobalt);
+  inset: 38% -0.16em -0.04em;
+  border-radius: 0.12em;
+  background: color-mix(in srgb, var(--color-cobalt) 40%, #fff);
   transition: inset var(--dur-3) var(--ease);
 }
 @media (hover: hover) {
-  .logo:hover .logo-word::before { inset-inline: -0.32em; }
+  .logo:hover .logo-word::before { inset-block-start: 4%; }
 }
+/* The swatch carries the word on dark bars too, so it stays ink there. */
+.nav-shell[data-dark] .nav-logo .logo-word { color: var(--color-ink); }
 
 
 /* ---------------- Skip link (styles in infra.css): on the page grid's left edge ---------------- */
