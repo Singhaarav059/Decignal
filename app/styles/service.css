@@ -317,6 +317,11 @@
 .svc-app-cta { justify-self: start; margin-top: 4px; }
 .svc-closing { display: grid; gap: 24px; justify-items: start; padding: var(--panel-pad); }
 .svc-closing .section-title-lede { max-width: 56ch; }
+/* ~300px phones (Android display zoom): tighter sides and a step down, so the longest word ("recommendation") fits the card. */
+@media (max-width: 380px) {
+  .svc-closing { padding-inline: 20px; }
+  .svc-closing .t-title { font-size: clamp(26px, 9.3vw, 34px); }
+}
 @media (min-width: 1024px) {
   .svc-closing { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
 }
