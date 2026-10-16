@@ -79,6 +79,18 @@ export const flowBandCss = (ch: number) => {
 };
 
 /**
+ * How far a stepped window has played, 0..1, from its top's place on the screen (`at`, px): from its
+ * centre on the focus line (the moment it becomes the window in view) to half of it gone under the nav.
+ * Its steps play while it is the one being read, tied to the thumb: none of them runs before it
+ * arrives or after it has gone.
+ */
+export function windowPlayed(at: number, h: number, vh: number, focus: number, nav: number) {
+  const from = focus * vh - h / 2;
+  const to = nav - h / 2;
+  return Math.min(Math.max((from - at) / Math.max(from - to, 1), 0), 1);
+}
+
+/**
  * Moves a window's step position toward where the scroll puts it: an ease of `tau` seconds, never faster
  * than `rate` per second. A flick past a window used to flip through its steps in a few frames, and the
  * reader saw none of them; now each step gets its moment, and the window catches up as it is read.

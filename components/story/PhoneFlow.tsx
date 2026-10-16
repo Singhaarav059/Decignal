@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { CH, CHAPTERS, setG, store } from "@/lib/story";
 import { FINAL, HERO } from "@/lib/copy";
 import { accentVars, toneVars } from "@/lib/tone";
-import { flow, flowBandCss, setFlowSeek, setSky, stepToward } from "@/lib/flow";
+import { flow, flowBandCss, setFlowSeek, setSky, stepToward, windowPlayed } from "@/lib/flow";
 import { jumpTo } from "@/lib/jump";
 import { SceneBoundary } from "../three/SceneBoundary";
 import { SystemIcon } from "../ui/SystemIcon";
@@ -31,16 +31,11 @@ const restAt = (i: number) => Math.min(CHAPTERS[i].ts * 0.5, 0.3);
 /** Where a stepped chapter's steps end: just before its hand-off. */
 const holdEnd = (i: number) => CHAPTERS[i].ts - 0.015;
 
-/** A stepped window plays its steps from its top at START of the screen to its top at END of its own
- *  height above the nav (half gone): over a screen of plain scrolling, the window in view throughout,
- *  so a step is never squeezed into a short stretch of the thumb's travel. */
-const START = 0.9;
-const END = 0.45;
-/** The steps follow the scroll through a short ease (s): a flick no longer flips several at once, and
- *  each move lands softly with the thumb instead of jumping by the scroll's own steps. */
-const EASE = 0.22;
-/** The least time a stepped chapter takes to play through (s), however fast the page is flicked. */
-const MIN_PLAY = 4.5;
+/** The steps follow the scroll through a short ease (s): a flick never flips several in one frame, and
+ *  a drag keeps them under the thumb. */
+const EASE = 0.1;
+/** The least time a stepped chapter takes to play through (s): only a flick ever meets it. */
+const MIN_PLAY = 1.2;
 /** The focus line, as a share of the screen's height from its top, and the lead the window already
  *  showing keeps (px), so the canvas never swaps back and forth at the midpoint. */
 const FOCUS = 0.62;
@@ -101,8 +96,7 @@ export function PhoneFlow({ live }: { live: boolean }) {
     /** How far a stepped chapter's window has played, 0..1, at scroll y (before any tab's offset). */
     const played = (k: number, y: number) => {
       const { top, h } = wGeo[k];
-      const at = top - y;
-      return Math.min(Math.max((START * vh - at) / (START * vh - (NAV - END * h)), 0), 1);
+      return windowPlayed(top - y, h, vh, FOCUS, NAV);
     };
     // A tab picked in a card (a function, an industry) moves that chapter's steps, not the page: the
     // offset holds while the chapter stays, so scrolling on carries on from the picked step.

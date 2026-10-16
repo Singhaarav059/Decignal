@@ -19,6 +19,20 @@ const STEP = 360 / N;
 /** Screen heights of scroll per item while the dial holds the screen. */
 const PER = 0.3;
 const FIRST = PHASES.map((_, k) => ITEMS.findIndex((it) => it.phase === k));
+/** The nav's bottom edge on phones, which the held dial's tabs sit under. */
+const NAV = 72;
+/** How far (px) the head fades over as the dial comes to hold the screen (phones). */
+const FADE = 160;
+/** Where a held layer sticks (its top is minus the head's height on phones, --rw-off), and how far
+ *  the page scrolls while it holds: the same on every width. */
+const holdOf = (track: HTMLElement) => {
+  const stage = track.querySelector<HTMLElement>(".rw-stage");
+  const cs = getComputedStyle(track);
+  const off = parseFloat(track.style.getPropertyValue("--rw-off")) || 0;
+  const top = track.getBoundingClientRect().top + window.scrollY + (parseFloat(cs.paddingTop) || 0) + off;
+  const range = Math.max(1, track.clientHeight - (parseFloat(cs.paddingTop) || 0) - (stage?.offsetHeight ?? window.innerHeight));
+  return { top, range };
+};
 
 const ItemIcon = ({ item, size }: { item: Item; size: number }) => <SystemIcon id={item.icon} size={size} />;
 
@@ -44,7 +58,8 @@ function UsedBy({ item }: { item: Item }) {
  * a horizon. On wide screens the section holds the screen while the scroll turns it; the record at the
  * crown fills the dome with one illustrative read (a figure and two fields or bars from an application's
  * scenario), the card names it and links the applications that use it, and the group tabs follow.
- * Phones read the same items as a list.
+ * Phones and tablets: the head scrolls away first, then the tabs, the card and a tighter dome hold the
+ * screen, the neighbours on either side of the crown in view.
  */
 export function ReadWheel() {
   const track = useRef<HTMLDivElement>(null);
@@ -56,20 +71,43 @@ export function ReadWheel() {
   /** Scrolls to where item k sits at the top of the dial (the middle of its hold). */
   const go = useCallback((k: number) => {
     const el = track.current;
-    if (!el || !window.matchMedia("(min-width: 1024px)").matches) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    const range = el.offsetHeight - window.innerHeight;
+    if (!el) return;
+    const { top, range } = holdOf(el);
     void jumpTo(top + (Math.min(k, N - 1) / (N - 1)) * range);
   }, []);
+
+  // Phones: the tabs run in one row that scrolls sideways; the group being read slides into view.
+  useLayoutEffect(() => {
+    const row = track.current?.querySelector<HTMLElement>(".rw-tabs");
+    const tab = row?.children[phase] as HTMLElement | undefined;
+    if (!row || !tab || row.scrollWidth <= row.clientWidth) return;
+    row.scrollTo({ left: tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2, behavior: "smooth" });
+  }, [phase]);
 
   useLayoutEffect(() => {
     const el = track.current;
     const w = wheel.current;
     if (!el || !w) return;
-    const wide = window.matchMedia("(min-width: 1024px)");
+    const narrow = window.matchMedia("(max-width: 1023px)");
     const ring = w.querySelector<SVGGElement>(".rw-ring");
     const labels = Array.from(w.querySelectorAll<HTMLElement>(".rw-label"));
     let R = 600;
+    let off = 0;
+    // Below the horizon of the screen the labels fade (phones: past the crown's neighbours).
+    let horizon = 0.25;
+    // Phones: how far a label's centre may go from the middle and stay whole on the screen (its half
+    // width plus a margin, short of half the screen); wide screens let them run off.
+    let reach: number[] = [];
+    // Phones: the head fades over the last stretch before the dial holds, so no cut-off line of it
+    // hangs over the tabs.
+    const head = Array.from(el.querySelectorAll<HTMLElement>(".rw-copy > :not(.rw-tabs)"));
+    let lastHead = "";
+    const fadeHead = (y: number) => {
+      const a = off ? Math.min(1, Math.max(0, (top - y) / FADE)).toFixed(3) : "1";
+      if (a === lastHead) return;
+      lastHead = a;
+      head.forEach((h) => (h.style.opacity = a === "1" ? "" : a));
+    };
     let raf = 0;
     let last = -1;
     let lastTurn = "";
@@ -90,18 +128,36 @@ export function ReadWheel() {
       const tabs = el.querySelector<HTMLElement>(".rw-tabs");
       const stage = el.querySelector<HTMLElement>(".rw-stage");
       const under = tabs && stage ? tabs.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 72 : 0;
-      const crown = Math.max(vh * 0.46, 320, under);
-      const c = vw / 2 + 60;
-      const h = vh - crown + 80;
-      R = (c * c + h * h) / (2 * h);
+      let crown = Math.max(vh * 0.46, 320, under);
+      if (narrow.matches && tabs && stage) {
+        // Phones: the head scrolls away until the tabs sit under the nav; the crown sits under the card,
+        // its pill clear of it, and the rim is tight enough that the items either side of the crown
+        // stay on the screen.
+        const card = el.querySelector<HTMLElement>(".rw-card");
+        const st = stage.getBoundingClientRect().top;
+        const next = Math.max(0, Math.round(tabs.getBoundingClientRect().top - st - (NAV + 14)));
+        if (next !== off) el.style.setProperty("--rw-off", `${(off = next)}px`);
+        crown = (card ? card.getBoundingClientRect().bottom - st : under) + 66;
+        R = Math.max(180, (vw / 2 - 64) / Math.sin((STEP * Math.PI) / 180) - 34);
+        horizon = 0.6;
+        reach = labels.map((l) => Math.max(0, vw / 2 - 10 - l.offsetWidth / 2));
+      } else {
+        reach = [];
+        if (off) el.style.removeProperty("--rw-off");
+        off = 0;
+        const c = vw / 2 + 60;
+        const h = vh - crown + 80;
+        R = (c * c + h * h) / (2 * h);
+        horizon = 0.25;
+      }
       w.style.setProperty("--R", `${R.toFixed(1)}px`);
       w.style.setProperty("--crown", `${crown.toFixed(1)}px`);
-      top = el.getBoundingClientRect().top + window.scrollY;
-      range = Math.max(1, el.offsetHeight - vh);
+      ({ top, range } = holdOf(el));
+      lastHead = "";
     };
     const frame = () => {
       raf = 0;
-      if (!wide.matches) return;
+      fadeHead(window.scrollY);
       const p = Math.min(Math.max((window.scrollY - top) / range, 0), 1);
       // Detents: each item holds the crown for half its stretch of scroll, then the dial turns to the next.
       const raw = p * (N - 1);
@@ -116,10 +172,9 @@ export function ReadWheel() {
         const r = R + 34;
         labels.forEach((l, k) => {
           const a = ((k * STEP + turn) * Math.PI) / 180;
-          const x = Math.sin(a) * r;
+          const x = reach.length ? Math.max(-reach[k], Math.min(reach[k], Math.sin(a) * r)) : Math.sin(a) * r;
           const y = -Math.cos(a) * r;
-          // Below the horizon of the screen the labels fade; nothing there to read.
-          const vis = Math.max(0, Math.min(1, (Math.cos(a) - 0.25) / 0.2));
+          const vis = Math.max(0, Math.min(1, (Math.cos(a) - horizon) / 0.2));
           l.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`;
           l.style.opacity = vis.toFixed(3);
           l.style.visibility = vis < 0.01 ? "hidden" : "visible";
@@ -158,13 +213,11 @@ export function ReadWheel() {
       if (near) kick();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    wide.addEventListener("change", kick);
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();
       window.removeEventListener("scroll", onScroll);
-      wide.removeEventListener("change", kick);
       w.removeEventListener("pointermove", moved);
     };
   }, []);
@@ -275,24 +328,6 @@ export function ReadWheel() {
         </div>
       </div>
 
-      {/* Phones: the same items, grouped. */}
-      <ol className="rw-list" aria-label={ALSO_READS.label}>
-        {ITEMS.map((it) => (
-          <li key={it.name} style={toneVars(it.tone)}>
-            <span className="rw-list-icon" aria-hidden>
-              <ItemIcon item={it} size={16} />
-            </span>
-            <span className="rw-list-body">
-              <span className="rw-list-k t-label">{PHASES[it.phase].label}</span>
-              <strong>{it.name}</strong>
-              <span className="t-small">{it.text}</span>
-              <span className="t-small rw-list-app">
-                {ALSO_READS.usedBy} <UsedBy item={it} />
-              </span>
-            </span>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

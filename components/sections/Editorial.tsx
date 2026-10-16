@@ -49,6 +49,7 @@ import { FaqList } from "./FaqList";
 import { FaqFigure, useFaqFigure } from "./FaqArt";
 import { Audit } from "./Audit";
 import { ApplicationExplorer } from "./ApplicationExplorer";
+import { scrollReveals } from "@/lib/reveal";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -60,7 +61,7 @@ const reduced = () =>
 function useReveal() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!ref.current || reduced()) return;
+    if (!ref.current || reduced() || scrollReveals()) return;
     const ctx = gsap.context(() => {
       gsap.utils
         .toArray<HTMLElement>(

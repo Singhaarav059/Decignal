@@ -7,6 +7,7 @@ import { landOnHash } from "@/lib/jump";
 import { LEGACY_ANCHORS } from "@/lib/content";
 import { SmoothScroll } from "../SmoothScroll";
 import { SERVICE_SECTIONS } from "./sections";
+import { scrollReveals } from "@/lib/reveal";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -30,7 +31,7 @@ export function ServiceRuntime() {
   // Paragraphs fade and rise into place; headlines rise line by line out of their own masks.
   useEffect(() => {
     const root = document.querySelector("main.svc");
-    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches || scrollReveals()) return;
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>("[data-reveal], .svc-section .section-title-label, .svc-section .section-title-lede").forEach((el) => {
         gsap.fromTo(

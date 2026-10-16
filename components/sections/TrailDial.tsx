@@ -20,12 +20,17 @@ const TICKS = Array.from({ length: 84 }, (_, k) => {
 });
 /** Each step's place on the dial, clockwise from the top. */
 const angleOf = (k: number) => -90 + (k * 360) / N;
+/** The nav's bottom edge on phones, which the held dial sits under. */
+const NAV = 72;
+/** How far (px) the head fades over as the dial comes to hold the screen (phones). */
+const FADE = 160;
 
 /**
  * The worked order-intake example in seven steps, as a dial (Orvan's process): the section pins for one
  * screen while its scroll turns the hand from 01 to 07. The step under the hand lights, its drawing
  * draws itself in the dial's face with the scroll (--q, trail/TrailArt.tsx), and the left column reads
- * its number, phase, name and the running example. Below 1024px the steps run as a list, each drawn.
+ * its number, phase, name and the running example. Below 1024px the head scrolls away first and the dial
+ * holds the screen with the step read under it.
  */
 export function TrailDial() {
   const root = useRef<HTMLDivElement>(null);
@@ -39,7 +44,12 @@ export function TrailDial() {
     const faces = Array.from(el.querySelectorAll<HTMLElement>(".dial-face-art"));
     const reads = Array.from(el.querySelectorAll<HTMLElement>(".dial-read"));
     const strip = Array.from(el.querySelectorAll<HTMLElement>(".dial-strip li"));
-    const wide = window.matchMedia("(min-width: 1024px)");
+    const sticky = el.querySelector<HTMLElement>(".dial-sticky");
+    const dial = el.querySelector<HTMLElement>(".dial");
+    const stripEl = el.querySelector<HTMLElement>(".dial-strip");
+    const narrow = window.matchMedia("(max-width: 1023px)");
+    const grid = el.querySelector<HTMLElement>(".dial-grid");
+    const head = Array.from(el.querySelectorAll<HTMLElement>(".dial-copy > :is(.section-title, .dial-example, .dial-intro)"));
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     let last = -1;
@@ -48,12 +58,44 @@ export function TrailDial() {
     const lastQ: string[] = [];
     let lastP = "";
     let lastHand = "";
+    // Phones and tablets: the head reads first and scrolls away, then the dial and the step under it
+    // hold the screen (the sticky layer's top is minus the head's height, --dial-off), set in the
+    // middle of the room under the nav.
+    let off = 0;
+    let stickH = 0;
+    const measure = () => {
+      if (!sticky || !dial) return;
+      if (narrow.matches && stripEl) {
+        const s = sticky.getBoundingClientRect();
+        const d = dial.getBoundingClientRect();
+        const room = sticky.offsetHeight - off;
+        const block = stripEl.getBoundingClientRect().bottom - d.top + 24;
+        const lead = Math.max(NAV + 26, NAV + (room - NAV - block) / 2);
+        const next = Math.max(0, Math.round(d.top - s.top - lead));
+        if (next !== off) el.style.setProperty("--dial-off", `${(off = next)}px`);
+      } else if (off) {
+        off = 0;
+        el.style.removeProperty("--dial-off");
+      }
+      stickH = sticky.offsetHeight;
+      lastHead = "";
+    };
+    // Phones: the head fades over the last stretch before the dial holds, so no cut-off line of it
+    // hangs over the dial.
+    let lastHead = "";
+    const fadeHead = (y: number, top: number) => {
+      const a = off ? Math.min(1, Math.max(0, (top + off - y) / FADE)).toFixed(3) : "1";
+      if (a === lastHead) return;
+      lastHead = a;
+      head.forEach((h) => (h.style.opacity = a === "1" ? "" : a));
+    };
     const frame = () => {
       raf = 0;
-      if (!wide.matches) return;
+      // The hand turns while the dial holds the screen: from the moment its layer sticks until it lets go.
       const box = pageBox(el);
-      const span = Math.max(1, box.height - window.innerHeight);
-      const p = Math.min(1, Math.max(0, (window.scrollY - box.top) / span));
+      const span = Math.max(1, box.height - stickH);
+      const p = Math.min(1, Math.max(0, (window.scrollY - box.top - off) / span));
+      fadeHead(window.scrollY, box.top);
       // The hand rests a beat on each step: eased between whole steps, still at each one. After the
       // seventh it carries on round to the first: the result closes the loop, the arc completes, and
       // the trail is ready for the next signal (on = N, the loop state).
@@ -92,7 +134,14 @@ export function TrailDial() {
     const kick = () => {
       if (!raf) raf = requestAnimationFrame(frame);
     };
+    measure();
     kick();
+    const ro = new ResizeObserver(() => {
+      measure();
+      kick();
+    });
+    ro.observe(el);
+    if (grid) ro.observe(grid);
     // Only near its own stretch of the page: the story's scroll above it costs nothing. Crossing the
     // edge settles the hand on its first or last step.
     let near = false;
@@ -107,13 +156,12 @@ export function TrailDial() {
     const onScroll = () => near && kick();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", kick);
-    wide.addEventListener("change", kick);
     return () => {
       cancelAnimationFrame(raf);
+      ro.disconnect();
       io.disconnect();
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", kick);
-      wide.removeEventListener("change", kick);
     };
   }, []);
 
@@ -188,11 +236,7 @@ export function TrailDial() {
                     <span className="dial-node-dot" aria-hidden />
                     <span className="dial-node-name">{s.step}</span>
                   </span>
-                  {/* Below 1024px: the list reads each step in full, with its drawing. */}
-                  <span className="dial-node-ex t-small">{s.ex}</span>
-                  <span className="dial-node-art" aria-hidden>
-                    <TrailArt index={i} />
-                  </span>
+                  <span className="dial-node-ex">{s.ex}</span>
                 </li>
               ))}
             </ol>

@@ -46,7 +46,9 @@ export function HowSteps({ head }: { head: ReactNode }) {
     if (!sheets) return;
     const io = new IntersectionObserver(
       (es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("is-in")),
-      { threshold: 0.5 },
+      // As a sheet's top passes the lower third, not at half of it in view: a phone's sheet runs taller
+      // than the screen and lit only once half of it had scrolled past.
+      { rootMargin: "0px 0px -30% 0px" },
     );
     sheets.forEach((el) => io.observe(el));
     return () => io.disconnect();
