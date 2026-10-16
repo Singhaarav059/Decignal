@@ -9,7 +9,7 @@ import { APPLICATION_DEMOS } from "@/lib/application-demos";
 import { APPLICATIONS_COPY } from "@/lib/copy";
 import { jumpTo, onApplication } from "@/lib/jump";
 import { accentVars, toneVars } from "@/lib/tone";
-import { flow, stepToward } from "@/lib/flow";
+import { flow, stepToward, windowPlayed } from "@/lib/flow";
 import { store } from "@/lib/story";
 import { whenStill } from "@/lib/idle";
 import type { Frame } from "../three/ApplicationScene";
@@ -25,19 +25,16 @@ const ApplicationScene = dynamic(() => import("../three/ApplicationScene"), { ss
 
 /** The nav's bottom edge, which the windows scroll under. */
 const NAV = 72;
-/** A window plays its three stages from its top at START of the screen to its top at END of its own
- *  height above the nav: about a screen of plain scrolling, the world in view throughout. */
-const START = 0.9;
-const END = 0.45;
-/** The stages follow the scroll through a short ease (s), as the story's steps do (PhoneFlow), and take
- *  at least MIN_PLAY (s) to play through. */
-const EASE = 0.22;
-const MIN_PLAY = 3.6;
+/** The stages follow the scroll through a short ease (s), and take at least MIN_PLAY (s) to play
+ *  through: only a flick ever meets it. */
+const EASE = 0.1;
+const MIN_PLAY = 1;
 /** The focus line (share of the screen's height) and the lead of the window already showing (px). */
 const FOCUS = 0.62;
 const HOLD = 40;
-/** The camera's free area in a window: the window is the world's alone. */
-const FRAME: Frame = { left: 8, right: 8, top: 10, bottom: 10 };
+/** The camera's free area in a window: the window is the world's alone, under a band at its top for
+ *  the labels (ScreenTag caption), so a label never sits on the world it names. */
+const FRAME: Frame = { left: 8, right: 8, top: 62, bottom: 10 };
 
 /** Hides the canvas's element while it moves (it still holds the window it left until it draws again). */
 const veil = (el: HTMLElement, on: boolean) => void (el.style.visibility = on ? "hidden" : "");
@@ -107,7 +104,7 @@ export function ApplicationFlow({ list }: { list: number[] }) {
     };
     const played = (k: number, y: number) => {
       const { top, h } = geo[k];
-      return Math.min(Math.max((START * vh - (top - y)) / (START * vh - (NAV - END * h)), 0), 1);
+      return windowPlayed(top - y, h, vh, FOCUS, NAV);
     };
     const offs = new Map<number, number>();
 
@@ -307,7 +304,7 @@ function AppSection({ i, n, count, step, onStage }: { i: number; n: number; coun
       </div>
       <div className="aflow-win" data-awin={n} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element -- a fixed-size poster, served as baked */}
-        <img className="pflow-poster" src={`/flow/app-${i}.webp`} alt="" width={780} height={676} loading="lazy" decoding="async" />
+        <img className="pflow-poster" src={`/flow/app-${i}.webp`} alt="" width={780} height={742} loading="lazy" decoding="async" />
         <canvas className="pflow-still" />
       </div>
       <div className="card aflow-card">

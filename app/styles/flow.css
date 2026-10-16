@@ -26,8 +26,10 @@ html:not([data-flow="phone"]) #story-flow { display: none; }
   line-height: 1.02;
   text-wrap: balance;
 }
-.pflow-final .pflow-head { padding-top: 8px; }
-.pflow-final .pflow-h1 { margin-top: 0; font-size: clamp(36px, 10.4vw, 52px); }
+/* The ending's head reads from the left, as its card and every section after it do (only the hero's
+   head is centred, over its centred world). */
+.pflow-final .pflow-head { justify-items: start; padding-top: 8px; text-align: left; }
+.pflow-final .pflow-h1 { margin-top: 0; font-size: clamp(34px, 10.4vw, 52px); }
 
 /* A window runs edge to edge: the world floats on the page's own sky, its subject inside the gutter
    (lib/framing.ts FLOW_SIDE). */
@@ -94,6 +96,10 @@ html:not([data-flow="phone"]) #story-flow { display: none; }
 
 /* Control's deck: the tabs and one card, at the card's own 16:10, with no empty band above or below. */
 .pflow-deck[data-win="5"] { height: calc((100vw - 2 * var(--gutter)) / 1.6 + 108px); }
+/* Scale's hand: as tall as the widest hand that fits the width (ScalePhone sizeFor: the fanned hand is
+   1.42 card heights wide, and rises 7% over its cards), so no empty band sits above it. The card being
+   dealt slides in from past the right edge: clipped at the screen, never past it. */
+.pflow-deck[data-win="6"] { height: min(var(--win-h), calc((100vw - 2 * var(--gutter)) * 0.7525 + 16px)); overflow-x: clip; }
 
 /* The baked poster shows the window's world from the first paint; the live canvas (or the copy it left)
    takes over once it has drawn here. */
@@ -115,7 +121,7 @@ html.scene-live .pflow-win[data-held] .pflow-poster,
 /* One height for every window, so the canvas never resizes as it moves between them. */
 .aflow-win {
   position: relative;
-  height: clamp(250px, 40svh, 360px);
+  height: clamp(280px, 44svh, 390px);
   margin: 4px calc(-1 * var(--gutter)) 0;
 }
 .aflow-gl, .aflow-win > .pflow-still, .aflow-win > .pflow-poster { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -128,10 +134,21 @@ html.scene-live .pflow-win[data-held] .pflow-poster,
 @supports (corner-shape: squircle) {
   .aflow-card { corner-shape: squircle; border-radius: 40px; }
 }
-.aflow-card .application-stages { align-self: flex-start; }
+/* The stages share the card's width: at a narrow screen (or Android's display zoom, about 300px) the
+   three pills ran past the card's edge. */
+.aflow-card .application-stages { display: flex; align-self: stretch; }
+.aflow-card .application-stages .seg-item { flex: 1 1 auto; justify-content: center; min-width: 0; padding: 0 8px; font-size: clamp(12px, 3.9vw, var(--fs-small)); }
 .aflow-card .application-metric { gap: 4px; }
 .aflow-card .application-metric-value { font-size: 40px; }
+/* The card's foot: the toggle keeps its label on one line beside the note (it wrapped into a centred
+   two-line block at a narrow width). */
+.aflow-card .application-toggle { flex: none; white-space: nowrap; }
+.aflow-card .application-card-foot { flex-wrap: wrap; row-gap: 4px; }
 /* The pinned stage hides the source chips on short screens for the scene's room; here the page scrolls,
    so they always show. Flat (no blur): they sit on the page, not over the moving world. */
 .aflow-head .application-reads { display: flex; }
 .aflow-head .application-reads li { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Under 360px the six systems take two columns: at three, "Documents" ran into its neighbours. */
+@media (max-width: 359px) {
+  .pflow-hero .story-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -459,3 +459,13 @@ html.ready .nav-pill > .nav-cta { animation: navItem var(--dur-4) var(--ease) va
 
 /* The Platform glance (NavPeek PlatformPeek): each fact numbered on a chip in its own colour. */
 .peek-fact .peek-row-text small { font-size: var(--fs-small); line-height: 1.35; color: var(--color-ink-2); }
+
+/* Under 360px (small phones, or Android's display zoom, about 300px wide): the nav's chapter readout
+   was clipped to "Contro" beside the call to action. The nav's button keeps its arrow (its words stay
+   its accessible name; the dock below says "Talk to us"), and the dock's links tighten. */
+@media (max-width: 359px) {
+  .nav-cta { gap: 0; padding: 0 5px; }
+  .nav-cta > span:not(.nav-cta-icon) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .phone-dock .seg-item { padding: 0 2px; font-size: 12px; }
+  .phone-dock-cta { padding: 0 12px; }
+}

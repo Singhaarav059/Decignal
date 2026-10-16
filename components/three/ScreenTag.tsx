@@ -52,6 +52,9 @@ type Entry = {
   last: Record<string, string>;
   /** On the phone story's canvas, whose window shows only a band of it (flow.inset). */
   story: boolean;
+  /** On a phone application's window: an upward label rises to the window's top band (CAPTION) on a
+   *  long stem, clear of the world, instead of sitting on it just above its pin. */
+  caption: boolean;
 };
 
 const entries = new Set<Entry>();
@@ -285,6 +288,7 @@ function tick() {
     if (e.k < 0.02) e.side = SIDES.find((side) => !hits(place(side, x, y, e, size), e, size)) ?? "up";
     const at = place(e.side, x, y, e, size);
     e.blocked = hits(at, e, size);
+    if (e.caption && e.side === "up") at[1] = Math.min(at[1], FLOW_EDGE);
     const left = at[0] - x;
     const top_ = at[1] - y;
 
@@ -311,6 +315,7 @@ function tick() {
     const vertical = e.side === "up" || e.side === "down";
     put(e, stem, "s.op", "opacity", vertical ? e.k.toFixed(3) : "0");
     put(e, stem, "s.side", "transform", e.side === "down" ? "translateY(18px)" : "none");
+    put(e, stem, "s.h", "height", `${e.side === "up" ? Math.max(8, snap(y - 5 - (at[1] + e.h))) : 8}px`);
     put(e, card, "c.left", "left", `${left}px`);
     put(e, card, "c.top", "top", `${top_}px`);
     put(e, card, "c.origin", "transform-origin", ORIGIN[e.side]);
@@ -345,7 +350,7 @@ export function ScreenTag(props: ScreenTagProps) {
     dpr = window.devicePixelRatio || 1;
     const built = build(layerFor(gl.domElement), () => entry.current);
     els.current = built;
-    const e: Entry = { anchor, props: latest, get, els: built, p: 0, k: 0, pop: 0, w: 0, h: 0, blocked: false, side: "up", last: {}, story: !!gl.domElement.closest(".pflow-gl") };
+    const e: Entry = { anchor, props: latest, get, els: built, p: 0, k: 0, pop: 0, w: 0, h: 0, blocked: false, side: "up", last: {}, story: !!gl.domElement.closest(".pflow-gl"), caption: !!gl.domElement.closest(".aflow-gl") };
     entry.current = e;
     entries.add(e);
     if (!stop) {

@@ -578,8 +578,9 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
   }
   .story-seg .seg-item { min-height: 36px; scroll-snap-align: center; }
   /* A short set that must fit one row without scrolling (the five layers): items share the width. */
-  .story-seg--fit { overflow-x: visible; }
-  .story-seg--fit .seg-item { flex: 1 1 auto; justify-content: center; padding: 0 6px; }
+  /* It wraps to a second row when the width is too narrow for all five (it ran off the screen). */
+  .story-seg--fit { flex-wrap: wrap; overflow-x: visible; border-radius: 20px; }
+  .story-seg--fit .seg-item { flex: 1 1 auto; justify-content: center; padding: 0 clamp(3px, 1.6vw, 6px); font-size: clamp(12px, 3.7vw, var(--fs-small)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .story-seg .seg-pill[data-glide] { transition: none; }
@@ -694,7 +695,8 @@ html.hero-film:not(.scene-live) .intro-stage { opacity: 0; }
   /* Phones: each result on its own row (dot, figure, what it means); the world keeps the room above
      (the systems are read on the islands themselves, the headline carries the line). */
   .final-outcomes { grid-template-columns: 1fr; gap: 6px; }
-  .final-outcomes li { grid-template-columns: auto 6.5em 1fr; align-items: center; gap: 10px; padding: 9px 12px; }
+  .final-outcomes li { grid-template-columns: auto 4.4em minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 12px; }
+  .final-systems { flex-wrap: wrap; }
   .final-lead { display: none; }
   .final-card .story-chips, .final-card .story-body { display: none; }
   /* The link wraps under the button: inset by the button's padding so the two labels share a left edge. */

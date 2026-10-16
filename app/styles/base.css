@@ -188,6 +188,29 @@ dd.tabular, p.tabular.font-semibold {
 }
 .word > span { display: inline-block; }
 
+/* Touch screens: the section reveals ride the scroll itself (scroll-driven animations, run by the
+   compositor), so a paragraph is in place by the time it is a fifth of the way up the screen however
+   fast the thumb moves. The timed reveals (Editorial useReveal, ServiceRuntime; lib/reveal.ts skips
+   them here) started late and ran a second, after a quick reader had already passed. */
+@supports (animation-timeline: view()) {
+  @media (pointer: coarse) and (hover: none) and (prefers-reduced-motion: no-preference) {
+    [data-reveal], :is(.ed-title, .svc-section) :is(.section-title-label, .section-title-lede) {
+      animation: reveal-rise both cubic-bezier(0.2, 0.7, 0.2, 1);
+      animation-timeline: view();
+      animation-range: cover 0% cover 20%;
+    }
+    [data-lines] { view-timeline-name: --lines; }
+    /* The headline's words rise out of their masks in a wave across both lines. */
+    [data-lines] .word > span {
+      animation: reveal-word both cubic-bezier(0.16, 0.8, 0.2, 1);
+      animation-timeline: --lines;
+      animation-range: cover calc(var(--w, 0) * 0.7%) cover calc(14% + var(--w, 0) * 0.7%);
+    }
+  }
+}
+@keyframes reveal-rise { from { opacity: 0; translate: 0 24px; } }
+@keyframes reveal-word { from { translate: 0 115%; } }
+
 /* In the base layer, so a component's or utility's own radius and outline still win. */
 @layer base {
   :focus-visible {
